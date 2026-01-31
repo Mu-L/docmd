@@ -20,33 +20,25 @@ const headingIdPlugin = (md) => {
 
   md.renderer.rules.heading_open = function(tokens, idx, options, env, self) {
     const token = tokens[idx];
-    
-    // Check if an ID was already set by markdown-it-attrs (e.g. {#my-id})
     const existingId = token.attrGet('id');
 
-    // If NO ID exists, generate one automatically from the text content
     if (!existingId) {
       const contentToken = tokens[idx + 1];
       if (contentToken && contentToken.type === 'inline' && contentToken.content) {
         const headingText = contentToken.content;
-        
-        // Note: markdown-it-attrs strips the curly braces content from .content 
-        // BEFORE this rule runs, so headingText should be clean.
-        
         const id = headingText
           .toLowerCase()
-          .replace(/\s+/g, '-')       // Replace spaces with -
-          .replace(/[^\w\u4e00-\u9fa5-]+/g, '') // Remove all non-word chars (keeping hyphens). Added unicode support implies keeping more chars if needed.
-          .replace(/--+/g, '-')       // Replace multiple - with single -
-          .replace(/^-+/, '')         // Trim - from start of text
-          .replace(/-+$/, '');        // Trim - from end of text
+          .replace(/\s+/g, '-')
+          .replace(/[^\w\u4e00-\u9fa5-]+/g, '')
+          .replace(/--+/g, '-')
+          .replace(/^-+/, '')
+          .replace(/-+$/, '');
 
         if (id) {
           token.attrSet('id', id);
         }
       }
     }
-    
     return originalHeadingOpen(tokens, idx, options, env, self);
   };
 };
@@ -59,13 +51,15 @@ function createMarkdownItInstance(config) {
     breaks: true,
   };
   
+  // Removed newlines from template literals to prevent extra padding in <pre> blocks
   const highlightFn = (str, lang) => {
     if (lang === 'mermaid') {
       return `<pre class="mermaid">${new MarkdownIt().utils.escapeHtml(str)}</pre>`;
     }
     if (lang && hljs.getLanguage(lang)) {
       try {
-        return `<pre class="hljs"><code>${hljs.highlight(str, { language: lang, ignoreIllegals: true }).value}</code></pre>`;
+        const highlighted = hljs.highlight(str, { language: lang, ignoreIllegals: true }).value;
+        return `<pre class="hljs"><code>${highlighted}</code></pre>`;
       } catch (e) { console.error(e); }
     }
     return `<pre class="hljs"><code>${new MarkdownIt().utils.escapeHtml(str)}</code></pre>`;
@@ -78,7 +72,6 @@ function createMarkdownItInstance(config) {
 
   const md = new MarkdownIt(mdOptions);
 
-  // Plugins
   md.use(attrs, { leftDelimiter: '{', rightDelimiter: '}' });
   md.use(markdown_it_footnote);
   md.use(markdown_it_task_lists);
@@ -86,28 +79,24 @@ function createMarkdownItInstance(config) {
   md.use(markdown_it_deflist);
   md.use(headingIdPlugin);
 
-  // Register Containers
   Object.keys(containers).forEach(containerName => {
     const container = containers[containerName];
     md.renderer.rules[`container_${containerName}_open`] = container.render;
     md.renderer.rules[`container_${containerName}_close`] = container.render;
   });
 
-  // Register Rules (Order Matters)
   md.block.ruler.before('fence', 'steps_container', rules.stepsContainerRule, { alt: ['paragraph', 'reference', 'blockquote', 'list'] });
   md.block.ruler.before('fence', 'enhanced_tabs', rules.enhancedTabsRule, { alt: ['paragraph', 'reference', 'blockquote', 'list'] });
   md.block.ruler.before('fence', 'changelog_timeline', rules.changelogTimelineRule, { alt: ['paragraph', 'reference', 'blockquote', 'list'] });
   md.block.ruler.before('paragraph', 'advanced_container', rules.advancedContainerRule, { alt: ['paragraph', 'reference', 'blockquote', 'list'] });
   md.block.ruler.before('paragraph', 'standalone_closing', rules.standaloneClosingRule, { alt: ['paragraph', 'reference', 'blockquote', 'list'] });
 
-  // Register Renderers
   md.renderer.rules.ordered_list_open = renderers.customOrderedListOpenRenderer;
   md.renderer.rules.list_item_open = renderers.customListItemOpenRenderer;
   md.renderer.rules.image = renderers.customImageRenderer;
   md.renderer.rules.table_open = renderers.tableOpenRenderer;
   md.renderer.rules.table_close = renderers.tableCloseRenderer;
 
-  // Tabs Renderers
   md.renderer.rules.tabs_open = renderers.tabsOpenRenderer;
   md.renderer.rules.tabs_nav_open = renderers.tabsNavOpenRenderer;
   md.renderer.rules.tabs_nav_close = renderers.tabsNavCloseRenderer;

@@ -38,6 +38,7 @@ async function loadConfig(configPath) {
     validateConfig(config);
 
     // Basic validation and defaults
+    config.base = config.base || '/';
     config.srcDir = config.srcDir || 'docs';
     config.outputDir = config.outputDir || 'site';
     config.theme = config.theme || {};

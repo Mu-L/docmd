@@ -7,12 +7,10 @@ const { createMarkdownItInstance } = require('./file-processor');
 const { generateSeoMetaTags } = require('../plugins/seo');
 const { generateAnalyticsScripts } = require('../plugins/analytics');
 const { renderIcon } = require('./icon-renderer');
-const { formatHtml } = require('./html-formatter');
 
 let mdInstance = null;
 let themeInitScript = '';
 
-// Load the theme initialization script into memory once to avoid repeated disk I/O
 (async () => {
     try {
         const themeInitPath = path.join(__dirname, '..', 'templates', 'partials', 'theme-init.js');
@@ -23,51 +21,58 @@ let themeInitScript = '';
     } catch (e) { /* ignore */ }
 })();
 
-// Removes excessive whitespace and blank lines from the generated HTML
+// Basic whitespace cleanup (keep this simple version)
 function cleanupHtml(html) {
     if (!html) return '';
-    return html
-        .replace(/^[ \t]+$/gm, '')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim();
+    return html.replace(/^\s*[\r\n]/gm, '').trim();
 }
 
-// Rewrites links based on build mode (Offline/File protocol vs Web Server)
-function fixHtmlLinks(htmlContent, relativePathToRoot, isOfflineMode) {
+function fixHtmlLinks(htmlContent, relativePathToRoot, isOfflineMode, configBase = '/') {
     if (!htmlContent) return '';
     const root = relativePathToRoot || './';
+    const baseUrl = configBase.endsWith('/') ? configBase : configBase + '/';
 
-    return htmlContent.replace(/href="((?:\/|\.\/|\.\.\/)[^"]*)"/g, (match, href) => {
-        let finalPath = href;
-        
-        // Convert absolute project paths to relative
-        if (href.startsWith('/')) {
-            finalPath = root + href.substring(1);
+    return htmlContent.replace(/(href|src)=["']([^"']+)["']/g, (match, attr, url) => {
+        if (url.startsWith('#') || url.startsWith('http') || url.startsWith('mailto:') || url === '') {
+            return match;
         }
-        
-        // Handle offline mode (force index.html for directories)
+
+        let finalPath = url;
+
+        // 1. Handle Base URL removal
+        if (baseUrl !== '/' && url.startsWith(baseUrl)) {
+            finalPath = '/' + url.substring(baseUrl.length);
+        }
+
+        // 2. Handle Absolute Paths
+        if (finalPath.startsWith('/')) {
+            // Simple logic: if root relative, prepend relative path
+            finalPath = root + finalPath.substring(1);
+        }
+
+        // 3. Offline Mode Logic
         if (isOfflineMode) {
-            const cleanPath = finalPath.split('#')[0].split('?')[0];
-            if (!path.extname(cleanPath)) {
-                if (finalPath.includes('#')) {
-                    const parts = finalPath.split('#');
-                    const prefix = parts[0].endsWith('/') ? parts[0] : parts[0] + '/';
-                    finalPath = prefix + 'index.html#' + parts[1];
-                } else {
-                    finalPath += (finalPath.endsWith('/') ? '' : '/') + 'index.html';
+            const [pathOnly] = finalPath.split(/[?#]/);
+            const ext = path.extname(pathOnly);
+            const isAsset = ['.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico'].includes(ext.toLowerCase());
+            
+            if (!isAsset && !ext) {
+                if (finalPath.endsWith('/')) {
+                    finalPath += 'index.html';
+                } else if (!finalPath.includes('#')) {
+                    finalPath += '/index.html';
                 }
             }
         } else {
-            // Web mode (strip index.html for clean URLs)
             if (finalPath.endsWith('/index.html')) {
                 finalPath = finalPath.substring(0, finalPath.length - 10);
             }
         }
-        return `href="${finalPath}"`;
+        
+        return `${attr}="${finalPath}"`;
     });
 }
 
-// aggregates HTML snippets from various plugins (SEO, Analytics, etc.)
 async function processPluginHooks(config, pageData, relativePathToRoot) {
     let metaTagsHtml = '';
     let faviconLinkHtml = '';
@@ -77,17 +82,16 @@ async function processPluginHooks(config, pageData, relativePathToRoot) {
     let pluginBodyScriptsHtml = '';
 
     const safeRoot = relativePathToRoot || './';
-    const indent = '    '; // 4 spaces for cleaner output
 
     if (config.favicon) {
         const cleanFaviconPath = config.favicon.startsWith('/') ? config.favicon.substring(1) : config.favicon;
         const finalFaviconHref = `${safeRoot}${cleanFaviconPath}`;
-        faviconLinkHtml = `${indent}<link rel="icon" href="${finalFaviconHref}" type="image/x-icon" sizes="any">\n${indent}<link rel="shortcut icon" href="${finalFaviconHref}" type="image/x-icon">`;
+        faviconLinkHtml = `<link rel="icon" href="${finalFaviconHref}" type="image/x-icon" sizes="any">\n<link rel="shortcut icon" href="${finalFaviconHref}" type="image/x-icon">`;
     }
 
     if (config.theme && config.theme.name && config.theme.name !== 'default') {
         const themeCssPath = `assets/css/docmd-theme-${config.theme.name}.css`;
-        themeCssLinkHtml = `${indent}<link rel="stylesheet" href="${safeRoot}${themeCssPath}">`;
+        themeCssLinkHtml = `<link rel="stylesheet" href="${safeRoot}${themeCssPath}">`;
     }
 
     if (config.plugins?.seo) {
@@ -103,7 +107,6 @@ async function processPluginHooks(config, pageData, relativePathToRoot) {
     return { metaTagsHtml, faviconLinkHtml, themeCssLinkHtml, pluginStylesHtml, pluginHeadScriptsHtml, pluginBodyScriptsHtml };
 }
 
-// Main function to assemble the page data and render the EJS template
 async function generateHtmlPage(templateData, isOfflineMode = false) {
     let { content, frontmatter, outputPath, headings, config } = templateData;
     const { currentPagePath, prevPage, nextPage, relativePathToRoot, navigationHtml, siteTitle } = templateData;
@@ -111,19 +114,16 @@ async function generateHtmlPage(templateData, isOfflineMode = false) {
 
     if (!relativePathToRoot) templateData.relativePathToRoot = './';
 
-    // Process content links and generate plugin assets
-    content = fixHtmlLinks(content, templateData.relativePathToRoot, isOfflineMode);
+    content = fixHtmlLinks(content, templateData.relativePathToRoot, isOfflineMode, config.base);
     const pluginOutputs = await processPluginHooks(config, { frontmatter, outputPath }, templateData.relativePathToRoot);
 
-    // Process footer markdown if present
     let footerHtml = '';
     if (config.footer) {
         if (!mdInstance) mdInstance = createMarkdownItInstance(config);
         footerHtml = mdInstance.renderInline(config.footer);
-        footerHtml = fixHtmlLinks(footerHtml, templateData.relativePathToRoot, isOfflineMode);
+        footerHtml = fixHtmlLinks(footerHtml, templateData.relativePathToRoot, isOfflineMode, config.base);
     }
 
-    // Determine which template to use
     let templateName = frontmatter.noStyle === true ? 'no-style.ejs' : 'layout.ejs';
     const layoutTemplatePath = path.join(__dirname, '..', 'templates', templateName);
     if (!await fs.exists(layoutTemplatePath)) throw new Error(`Template not found: ${layoutTemplatePath}`);
@@ -131,7 +131,6 @@ async function generateHtmlPage(templateData, isOfflineMode = false) {
 
     const isActivePage = currentPagePath && content && content.trim().length > 0;
 
-    // Build the "Edit this page" link
     let editUrl = null;
     let editLinkText = 'Edit this page';
     if (config.editLink && config.editLink.enabled && config.editLink.baseUrl) {
@@ -141,10 +140,9 @@ async function generateHtmlPage(templateData, isOfflineMode = false) {
          editLinkText = config.editLink.text || editLinkText;
     }
 
-    // Prepare complete data object for EJS
     const ejsData = {
         ...templateData,
-        description: frontmatter.description || '', // Fix for reference error
+        description: frontmatter.description || '',
         footerHtml, editUrl, editLinkText, isActivePage,
         defaultMode: config.theme?.defaultMode || 'light',
         logo: config.logo, sidebarConfig: config.sidebar || {}, theme: config.theme,
@@ -155,13 +153,12 @@ async function generateHtmlPage(templateData, isOfflineMode = false) {
         isOfflineMode 
     };
 
-    // Render and format
     const rawHtml = renderHtmlPage(layoutTemplate, ejsData, layoutTemplatePath);
     const pkgVersion = require('../../package.json').version;
     const brandingComment = `<!-- Generated by docmd (v${pkgVersion}) - https://docmd.io -->\n`;
     
-    // Apply smart formatting to the final HTML string
-    return brandingComment + formatHtml(rawHtml);
+    // REMOVED: formatHtml(rawHtml)
+    return brandingComment + cleanupHtml(rawHtml);
 }
 
 function renderHtmlPage(templateContent, ejsData, filename = 'template.ejs', options = {}) {
@@ -173,14 +170,12 @@ function renderHtmlPage(templateContent, ejsData, filename = 'template.ejs', opt
     }
 }
 
-// Generate the sidebar navigation HTML separately
 async function generateNavigationHtml(navItems, currentPagePath, relativePathToRoot, config, isOfflineMode = false) {
     const navTemplatePath = path.join(__dirname, '..', 'templates', 'navigation.ejs');
     if (!await fs.exists(navTemplatePath)) throw new Error(`Navigation template not found: ${navTemplatePath}`);
     const navTemplate = await fs.readFile(navTemplatePath, 'utf8');
     const safeRoot = relativePathToRoot || './';
 
-    // We render raw here; the main page formatter will clean this up later
     return ejs.render(navTemplate, { 
         navItems, currentPagePath, relativePathToRoot: safeRoot, config, isOfflineMode, renderIcon 
     }, { filename: navTemplatePath });
