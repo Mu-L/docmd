@@ -1,27 +1,27 @@
-// Source file from the docmd project — https://github.com/docmd-io/docmd
-
-/*
- * Initialize the theme from localStorage
- */
+/* Source file from the docmd project — https://github.com/docmd-io/docmd */
 
 (function() {
   try {
-    // Determine Theme
     var localValue = localStorage.getItem('docmd-theme');
     var configValue = window.DOCMD_DEFAULT_MODE || 'light'; 
     var theme = localValue ? localValue : configValue;
     
-    // Set HTML Attribute (for main CSS variables)
+    // Set HTML Attribute
     document.documentElement.setAttribute('data-theme', theme);
 
-    // Handle Highlight.js Theme (if present)
+    // Resolve 'system' to actual mode for Highlight.js
+    var effectiveTheme = theme;
+    if (theme === 'system') {
+      effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    // Handle Highlight.js Theme
     var highlightLink = document.getElementById('highlight-theme');
     if (highlightLink) {
       var baseHref = highlightLink.getAttribute('data-base-href');
-      // Check if the current href matches the desired theme
-      // If not, swap it immediately before the browser renders code blocks
-      if (baseHref && !highlightLink.href.includes('docmd-highlight-' + theme)) {
-        highlightLink.href = baseHref + 'docmd-highlight-' + theme + '.css';
+      if (baseHref) {
+        // Force load the resolved theme (light/dark)
+        highlightLink.href = baseHref + 'docmd-highlight-' + effectiveTheme + '.css';
       }
     }
   } catch (e) {

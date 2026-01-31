@@ -51,6 +51,11 @@
     --lightbox-text: #fff
 }
 
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 80px;
+}
+
 body {
     font-family: var(--font-family-sans);
     background-color: var(--bg-color);
@@ -212,7 +217,6 @@ body.sidebar-collapsed .main-content-wrapper {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden
 }
 
 .header-left,
@@ -886,11 +890,36 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
 }
 
 .toc-sidebar {
-    width: 180px;
+    position: -webkit-sticky;
     position: sticky;
     top: 2rem;
+    max-height: calc(100vh - 15rem);
     overflow-y: auto;
-    align-self: flex-start
+}
+
+.toc-link.active {
+    font-weight: 700;
+    color: var(--link-color);
+    border-left: 2px solid var(--link-color);
+    padding-left: 8px;
+    margin-left: -10px;
+}
+
+@media (max-width: 1024px) {
+    .content-layout {
+        flex-direction: column-reverse;
+    }
+
+    .toc-sidebar {
+        position: static; 
+        width: 100%;
+        max-height: none;
+        margin-bottom: 2rem;
+        border-left: none;
+        border-bottom: 1px solid var(--border-color);
+        padding-left: 0;
+        padding-bottom: 1rem;
+    }
 }
 
 .docmd-tabs,

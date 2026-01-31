@@ -1,14 +1,49 @@
 // Source file from the docmd project — https://github.com/docmd-io/docmd
 
-const MarkdownIt = require('markdown-it'); // Required for inner rendering fallback logic
+const MarkdownIt = require('markdown-it');
 const { containers } = require('./containers');
 
-// --- Helper: Create isolated parser for tabs (prevents recursion stack issues) ---
-// Note: We pass a callback to get the main config logic from setup.js later if needed,
-// but for now we reconstruct a basic one for tab/changelog internals to ensure plugins run.
-// Ideally, we prefer reusing state.md.render() where possible.
+// --- Helper: Smart Dedent ---
+// This handles the "Tab Indentation" and "Code Block" nesting issues
+function smartDedent(str) {
+    const lines = str.split('\n');
+    
+    // 1. Calculate global minimum indent (ignoring empty lines)
+    let minIndent = Infinity;
+    lines.forEach(line => {
+        if (line.trim().length === 0) return;
+        const match = line.match(/^ */);
+        const indent = match ? match[0].length : 0;
+        if (indent < minIndent) minIndent = indent;
+    });
 
-// --- 1. Advanced Container Rule (Nesting Logic) ---
+    if (minIndent === Infinity) return str;
+
+    // 2. Strip the common indent
+    const dedented = lines.map(line => {
+        if (line.trim().length === 0) return '';
+        return line.substring(minIndent);
+    });
+
+    // 3. Fix Code Fences
+    // If a line looks like a code fence (```) but is still indented 4+ spaces,
+    // it will be parsed as an "Indented Code Block" containing text, not a Fence.
+    // We force-pull these specific lines to the left to ensure they render as Fences.
+    return dedented.map(line => {
+        // Regex: 4 or more spaces, followed by 3 or more backticks/tildes
+        if (/^\s{4,}(`{3,}|~{3,})/.test(line)) {
+            return line.trimStart(); 
+        }
+        return line;
+    }).join('\n');
+}
+
+// Helper to check if a line starts a fence
+function isFenceLine(line) {
+    return /^(\s{0,3})(~{3,}|`{3,})/.test(line);
+}
+
+// --- 1. Advanced Container Rule ---
 function advancedContainerRule(state, startLine, endLine, silent) {
   const start = state.bMarks[startLine] + state.tShift[startLine];
   const max = state.eMarks[startLine];
@@ -33,6 +68,7 @@ function advancedContainerRule(state, startLine, endLine, silent) {
   let nextLine = startLine;
   let found = false;
   let depth = 1;
+  let inFence = false;
   
   while (nextLine < endLine) {
     nextLine++;
@@ -40,23 +76,28 @@ function advancedContainerRule(state, startLine, endLine, silent) {
     const nextMax = state.eMarks[nextLine];
     const nextContent = state.src.slice(nextStart, nextMax).trim();
     
-    if (nextContent.startsWith(':::')) {
-      const containerMatch = nextContent.match(/^:::\s*(\w+)/);
-      if (containerMatch && containerMatch[1] !== containerName) {
-        const innerContainer = containers[containerMatch[1]];
-        if (innerContainer && innerContainer.render && !innerContainer.selfClosing) {
-          depth++;
+    // Check for fences to prevent parsing ::: inside code blocks (#42)
+    if (isFenceLine(nextContent)) inFence = !inFence;
+
+    if (!inFence) {
+        if (nextContent.startsWith(':::')) {
+          const containerMatch = nextContent.match(/^:::\s*(\w+)/);
+          if (containerMatch && containerMatch[1] !== containerName) {
+            const innerContainer = containers[containerMatch[1]];
+            if (innerContainer && innerContainer.render && !innerContainer.selfClosing) {
+              depth++;
+            }
+            continue;
+          }
         }
-        continue;
-      }
-    }
-    
-    if (nextContent === ':::') {
-      depth--;
-      if (depth === 0) {
-        found = true;
-        break;
-      }
+        
+        if (nextContent === ':::') {
+          depth--;
+          if (depth === 0) {
+            found = true;
+            break;
+          }
+        }
     }
   }
   
@@ -81,7 +122,7 @@ function advancedContainerRule(state, startLine, endLine, silent) {
   return true;
 }
 
-// --- 2. Changelog Timeline Rule (FIXED FOR NESTING) ---
+// --- 2. Changelog Timeline Rule ---
 function changelogTimelineRule(state, startLine, endLine, silent) {
   const start = state.bMarks[startLine] + state.tShift[startLine];
   const max = state.eMarks[startLine];
@@ -93,6 +134,7 @@ function changelogTimelineRule(state, startLine, endLine, silent) {
   let nextLine = startLine;
   let found = false;
   let depth = 1;
+  let inFence = false;
   
   while (nextLine < endLine) {
     nextLine++;
@@ -100,21 +142,21 @@ function changelogTimelineRule(state, startLine, endLine, silent) {
     const nextMax = state.eMarks[nextLine];
     const nextContent = state.src.slice(nextStart, nextMax).trim();
     
-    if (nextContent.startsWith(':::')) {
-      const match = nextContent.match(/^:::\s*(\w+)/);
-      if (match) {
-        const containerName = match[1];
-        // Don't count self-closing like buttons for depth
-        const containerDef = containers[containerName];
-        if (!containerDef || !containerDef.selfClosing) {
-           depth++;
+    if (isFenceLine(nextContent)) inFence = !inFence;
+
+    if (!inFence) {
+        if (nextContent.startsWith(':::')) {
+          const match = nextContent.match(/^:::\s*(\w+)/);
+          if (match) {
+            const containerName = match[1];
+            const containerDef = containers[containerName];
+            if (!containerDef || !containerDef.selfClosing) depth++;
+          }
         }
-      }
-    }
-    
-    if (nextContent === ':::') {
-      depth--;
-      if (depth === 0) { found = true; break; }
+        if (nextContent === ':::') {
+          depth--;
+          if (depth === 0) { found = true; break; }
+        }
     }
   }
   
@@ -130,25 +172,26 @@ function changelogTimelineRule(state, startLine, endLine, silent) {
   const lines = content.split('\n');
   const entries = [];
   let currentEntry = null;
-  let currentContent = [];
+  let currentContentLines = [];
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    const markerMatch = line.match(/^==\s+(.+)$/);
+    const rawLine = lines[i];
+    const trimmedLine = rawLine.trim();
+    const markerMatch = trimmedLine.match(/^==\s+(.+)$/);
 
     if (markerMatch) {
       if (currentEntry) {
-        currentEntry.content = currentContent.join('\n');
+        currentEntry.content = smartDedent(currentContentLines.join('\n'));
         entries.push(currentEntry);
       }
       currentEntry = { meta: markerMatch[1], content: '' };
-      currentContent = [];
+      currentContentLines = [];
     } else if (currentEntry) {
-      currentContent.push(lines[i]); 
+      currentContentLines.push(rawLine);
     }
   }
   if (currentEntry) {
-    currentEntry.content = currentContent.join('\n');
+    currentEntry.content = smartDedent(currentContentLines.join('\n'));
     entries.push(currentEntry);
   }
 
@@ -160,7 +203,6 @@ function changelogTimelineRule(state, startLine, endLine, silent) {
       <div class="changelog-meta"><span class="changelog-date">${entry.meta}</span></div>
       <div class="changelog-body">`;
 
-    // This ensures callouts/cards inside changelogs are parsed
     entryOpen.content += state.md.render(entry.content, state.env);
     
     const entryClose = state.push('html_block', '', 0);
@@ -183,6 +225,7 @@ function stepsContainerRule(state, startLine, endLine, silent) {
     let nextLine = startLine;
     let found = false;
     let depth = 1;
+    let inFence = false;
     
     while (nextLine < endLine) {
       nextLine++;
@@ -190,23 +233,23 @@ function stepsContainerRule(state, startLine, endLine, silent) {
       const nextMax = state.eMarks[nextLine];
       const nextContent = state.src.slice(nextStart, nextMax).trim();
       
-      if (nextContent.startsWith('== tab')) { continue; }
-      
-      if (nextContent.startsWith(':::')) {
-        const containerMatch = nextContent.match(/^:::\s*(\w+)/);
-        if (containerMatch) {
-          const containerName = containerMatch[1];
-          const innerContainer = containers[containerName];
-          if (innerContainer && !innerContainer.selfClosing) {
-            depth++;
+      if (isFenceLine(nextContent)) inFence = !inFence;
+
+      if (!inFence) {
+          if (nextContent.startsWith('== tab')) continue;
+          if (nextContent.startsWith(':::')) {
+            const containerMatch = nextContent.match(/^:::\s*(\w+)/);
+            if (containerMatch) {
+              const containerName = containerMatch[1];
+              const innerContainer = containers[containerName];
+              if (innerContainer && !innerContainer.selfClosing) depth++;
+              continue;
+            }
           }
-          continue;
-        }
-      }
-      
-      if (nextContent === ':::') {
-        depth--;
-        if (depth === 0) { found = true; break; }
+          if (nextContent === ':::') {
+            depth--;
+            if (depth === 0) { found = true; break; }
+          }
       }
     }
     
@@ -227,7 +270,7 @@ function stepsContainerRule(state, startLine, endLine, silent) {
     return true;
 }
 
-// --- 4. Enhanced Tabs Rule ---
+// --- 4. Enhanced Tabs Rule (Fixed) ---
 function enhancedTabsRule(state, startLine, endLine, silent) {
   const start = state.bMarks[startLine] + state.tShift[startLine];
   const max = state.eMarks[startLine];
@@ -239,61 +282,69 @@ function enhancedTabsRule(state, startLine, endLine, silent) {
   let nextLine = startLine;
   let found = false;
   let depth = 1;
+  let inFence = false;
+
   while (nextLine < endLine) {
     nextLine++;
     const nextStart = state.bMarks[nextLine] + state.tShift[nextLine];
     const nextMax = state.eMarks[nextLine];
     const nextContent = state.src.slice(nextStart, nextMax).trim();
     
-    if (nextContent.startsWith(':::')) {
-      const containerMatch = nextContent.match(/^:::\s*(\w+)/);
-      if (containerMatch && containerMatch[1] !== 'tabs') {
-        if (containerMatch[1] === 'steps') continue;
-        const innerContainer = containers[containerMatch[1]];
-        if (innerContainer && !innerContainer.selfClosing) depth++;
-        continue;
-      }
-    }
-    
-    if (nextContent === ':::') {
-      depth--;
-      if (depth === 0) { found = true; break; }
+    if (isFenceLine(nextContent)) inFence = !inFence;
+
+    if (!inFence) {
+        if (nextContent.startsWith(':::')) {
+          const containerMatch = nextContent.match(/^:::\s*(\w+)/);
+          if (containerMatch && containerMatch[1] !== 'tabs') {
+            if (containerMatch[1] === 'steps') continue;
+            const innerContainer = containers[containerMatch[1]];
+            if (innerContainer && !innerContainer.selfClosing) depth++;
+            continue;
+          }
+        }
+        if (nextContent === ':::') {
+          depth--;
+          if (depth === 0) { found = true; break; }
+        }
     }
   }
   if (!found) return false;
 
   let content = '';
+  // Capture content preserving newlines
   for (let i = startLine + 1; i < nextLine; i++) {
     const lineStart = state.bMarks[i] + state.tShift[i];
     const lineEnd = state.eMarks[i];
+    // .slice() keeps the indentation of the line as it is in source
     content += state.src.slice(lineStart, lineEnd) + '\n';
   }
 
   const lines = content.split('\n');
   const tabs = [];
   let currentTab = null;
-  let currentContent = [];
+  let currentContentLines = [];
   
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    const tabMatch = line.match(/^==\s*tab\s+(?:"([^"]+)"|(\S+))$/);
+    const rawLine = lines[i]; 
+    const trimmedLine = rawLine.trim();
+    
+    const tabMatch = trimmedLine.match(/^==\s*tab\s+(?:"([^"]+)"|(\S+))$/);
     
     if (tabMatch) {
       if (currentTab) {
-        currentTab.content = currentContent.join('\n').trim();
+        // Apply Smart Dedent before saving
+        currentTab.content = smartDedent(currentContentLines.join('\n'));
         tabs.push(currentTab);
       }
       const title = tabMatch[1] || tabMatch[2];
       currentTab = { title: title, content: '' };
-      currentContent = [];
+      currentContentLines = [];
     } else if (currentTab) {
-      if (lines[i].trim() && !lines[i].trim().startsWith('==')) {
-        currentContent.push(lines[i]);
-      }
+      currentContentLines.push(rawLine); 
     }
   }
   if (currentTab) {
-    currentTab.content = currentContent.join('\n').trim();
+    currentTab.content = smartDedent(currentContentLines.join('\n'));
     tabs.push(currentTab);
   }
 
@@ -315,10 +366,8 @@ function enhancedTabsRule(state, startLine, endLine, silent) {
     const paneToken = state.push('tab_pane_open', 'div', 1);
     paneToken.attrs = [['class', `docmd-tab-pane ${index === 0 ? 'active' : ''}`]];
     
-    if (tab.content.trim()) {
-        // Use recursion here if possible, or create basic instance to prevent circular dep issues in this modular file
-        // Since we are inside rules.js, we rely on state.md being available or fallback to simple render
-        const renderedContent = state.md.render(tab.content.trim(), state.env);
+    if (tab.content) {
+        const renderedContent = state.md.render(tab.content, state.env);
         const htmlToken = state.push('html_block', '', 0);
         htmlToken.content = renderedContent;
     }
@@ -331,7 +380,6 @@ function enhancedTabsRule(state, startLine, endLine, silent) {
   return true;
 }
 
-// --- 5. Standalone Closing Rule ---
 const standaloneClosingRule = (state, startLine, endLine, silent) => {
   const start = state.bMarks[startLine] + state.tShift[startLine];
   const max = state.eMarks[startLine];

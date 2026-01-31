@@ -1,32 +1,6 @@
 // Source file from the docmd project — https://github.com/docmd-io/docmd
 
 module.exports = {
-  siteTitle: 'docmd dev',
-  srcDir: 'docs',
-  outputDir: 'site',
-  logo: {
-    light: 'assets/images/docmd-logo-dark.png',
-    dark: 'assets/images/docmd-logo-light.png',
-    alt: 'docmd logo',
-    href: './'
-  },
-  theme: {
-    name: 'default',
-    defaultMode: 'system',
-    enableModeToggle: true,
-    positionMode: 'top'
-  },
-  sidebar: {
-    collapsible: true,
-    defaultCollapsed: false,
-  },
-  navigation: [
-    { title: 'Playground', path: '/', icon: 'flask-conical' }
-  ]
-};
-
-// docmd.config.js
-module.exports = {
   siteTitle: 'Playground Documentation',
   srcDir: 'docs',
   outputDir: 'site',
