@@ -209,6 +209,43 @@ function syncBodyTheme() {
   }
 }
 
+// --- Scroll Spy Logic ---
+function initializeScrollSpy() {
+  const tocLinks = document.querySelectorAll('.toc-link');
+  const headings = document.querySelectorAll('.main-content h2, .main-content h3');
+  
+  if (tocLinks.length === 0 || headings.length === 0) return;
+
+  const observerOptions = {
+    root: null,
+    // Trigger when heading crosses the top 10% of screen
+    rootMargin: '-10% 0px -80% 0px', 
+    threshold: 0
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        // 1. Clear current active state
+        tocLinks.forEach(link => link.classList.remove('active'));
+        
+        // 2. Find link corresponding to this heading
+        const id = entry.target.getAttribute('id');
+        const activeLink = document.querySelector(`.toc-link[href="#${id}"]`);
+        
+        if (activeLink) {
+            activeLink.classList.add('active');
+            
+            // Optional: Auto-scroll the TOC sidebar itself if needed
+            // activeLink.scrollIntoView({ block: 'nearest' });
+        }
+      }
+    });
+  }, observerOptions);
+
+  headings.forEach(heading => observer.observe(heading));
+}
+
 // --- Main Execution ---
 document.addEventListener('DOMContentLoaded', () => {
   syncBodyTheme();
@@ -219,4 +256,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeCollapsibleNav();
   initializeMobileMenus();
   initializeSidebarScroll();
+  initializeScrollSpy();
 });
