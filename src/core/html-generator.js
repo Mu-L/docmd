@@ -24,7 +24,8 @@ let themeInitScript = '';
 // Basic whitespace cleanup (keep this simple version)
 function cleanupHtml(html) {
     if (!html) return '';
-    return html.replace(/^\s*[\r\n]/gm, '').trim();
+    // return html.replace(/^\s*[\r\n]/gm, '').trim(); // Remove leading/trailing blank lines from each line
+    return html.trim(); // Only trim the start/end of the whole document
 }
 
 function fixHtmlLinks(htmlContent, relativePathToRoot, isOfflineMode, configBase = '/') {
