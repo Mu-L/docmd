@@ -87,7 +87,6 @@
         <% if (isExplicitExternal) { %> <%- renderIcon('external-link', { class: 'nav-external-icon' }) %> <% } %>
       </a>
       <% if (item.children) { %>
-        <%# FIX: If NOT collapsible, always display. If collapsible, only show if open. %>
         <ul class="submenu" style="display: <%= (!isCollapsible || shouldBeOpen) ? 'block' : 'none' %>;">
           <% renderNav(item.children); %>
         </ul>
