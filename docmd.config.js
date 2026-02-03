@@ -12,7 +12,7 @@ module.exports = {
   },
   favicon: 'assets/favicon.ico',
   theme: {
-    name: 'sky',
+    name: 'default',
     defaultMode: 'system',
     enableModeToggle: true,
     positionMode: 'top',
@@ -29,7 +29,7 @@ module.exports = {
     {
       title: 'Guide',
       icon: 'book-open',
-      collapsible: true,
+      collapsible: false,
       children: [
         { title: 'Getting Started', path: 'https://docs.docmd.io/getting-started/installation', icon: 'rocket', external: true },
         { title: 'Configuration', path: 'https://docs.docmd.io/configuration', icon: 'settings', external: true },

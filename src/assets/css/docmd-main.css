@@ -852,13 +852,6 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
     margin-bottom: .5rem
 }
 
-.toc-title {
-    margin-top: 0;
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--text-muted)
-}
-
 .toc-list {
     list-style: none;
     padding-left: 0;
@@ -870,39 +863,67 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
     line-height: 1.4
 }
 
+/* Base Link State */
 .toc-link {
-    text-decoration: none;
-    color: var(--link-color);
-    display: inline-block;
-    padding: .1rem 0;
-    font-size: .9rem;
-    font-weight: 500
+    display: block;
+    padding: 0.3rem 1rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    /* Pre-allocate border space to prevent jumping */
+    border-left: 2px solid transparent;
+    margin-left: -1px; /* Overlap the sidebar's border-left */
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.toc-level-3 {
-    margin-left: .75rem;
-    font-size: .85rem
+.toc-link:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-surface);
 }
 
-.toc-level-4 {
-    margin-left: 1.5rem;
-    font-size: .8rem
+/* Active State - Only changes color, no layout shift */
+.toc-link.active {
+    color: var(--primary);
+    border-left-color: var(--primary);
+    background-color: var(--primary-light);
 }
 
+/* Nesting Levels */
+.toc-level-3 { padding-left: 2rem; }
+.toc-level-4 { padding-left: 3rem; }
+
+/* Handle Dark Mode specifics for the trail */
+:root[data-theme="dark"] .toc-link.active {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* TOC Sidebar Container */
 .toc-sidebar {
     position: -webkit-sticky;
     position: sticky;
-    top: 2rem;
+    top: 5rem;
     max-height: calc(100vh - 15rem);
     overflow-y: auto;
+    align-self: flex-start;
+    /* Create the vertical guide rail */
+    border-left: 1px solid var(--border-color);
+    padding-left: 0; 
+    margin-left: 1rem;
 }
 
-.toc-link.active {
-    font-weight: 700;
-    color: var(--link-color);
-    border-left: 2px solid var(--link-color);
-    padding-left: 8px;
-    margin-left: -10px;
+.toc-container {
+    padding: 0;
+}
+
+.toc-title {
+    padding-left: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 @media (max-width: 1024px) {

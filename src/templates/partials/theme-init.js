@@ -6,22 +6,28 @@
     var configValue = window.DOCMD_DEFAULT_MODE || 'light'; 
     var theme = localValue ? localValue : configValue;
     
-    // Set HTML Attribute
-    document.documentElement.setAttribute('data-theme', theme);
-
-    // Resolve 'system' to actual mode for Highlight.js
-    var effectiveTheme = theme;
+    // Resolve system preference immediately
     if (theme === 'system') {
-      effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
+
+    // Apply to HTML and Body to ensure all CSS selectors catch it
+    document.documentElement.setAttribute('data-theme', theme);
+    
+    // We use a small interval to ensure body exists (since this script is in head)
+    var checkBody = setInterval(function() {
+      if (document.body) {
+        document.body.setAttribute('data-theme', theme);
+        clearInterval(checkBody);
+      }
+    }, 10);
 
     // Handle Highlight.js Theme
     var highlightLink = document.getElementById('highlight-theme');
     if (highlightLink) {
       var baseHref = highlightLink.getAttribute('data-base-href');
       if (baseHref) {
-        // Force load the resolved theme (light/dark)
-        highlightLink.href = baseHref + 'docmd-highlight-' + effectiveTheme + '.css';
+        highlightLink.href = baseHref + 'docmd-highlight-' + theme + '.css';
       }
     }
   } catch (e) {
