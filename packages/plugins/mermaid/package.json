@@ -3,5 +3,36 @@
   "version": "0.4.1",
   "description": "Mermaid diagram support plugin for docmd",
   "main": "index.js",
+  "keywords": [
+    "docmd",
+    "plugin",
+    "mermaid",
+    "diagrams",
+    "flowchart",
+    "sequence",
+    "class",
+    "graph",
+    "mindmap",
+    "syntax",
+    "markdown",
+    "minimalist",
+    "zero-config",
+    "site-generator",
+    "static-site-generator",
+    "docs"
+  ],
+  "author": {
+    "name": "Ghazi",
+    "url": "https://mgks.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/docmd-io/docmd.git"
+  },
+  "bugs": {
+    "url": "https://github.com/docmd-io/docmd/issues"
+  },
+  "homepage": "https://docmd.io",
+  "funding": "https://github.com/sponsors/mgks",
   "license": "MIT"
 }

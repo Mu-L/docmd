@@ -20,6 +20,25 @@
     "commander": "^11.0.0",
     "ws": "^8.13.0"
   },
+  "keywords": [
+    "docmd",
+    "markdown",
+    "minimalist",
+    "zero-config",
+    "site-generator",
+    "static-site-generator",
+    "documentation",
+    "typescript",
+    "javascript",
+    "nodejs",
+    "browser",
+    "website",
+    "generator",
+    "hosted",
+    "cli",
+    "ssg",
+    "docs"
+  ],
   "author": {
     "name": "Ghazi",
     "url": "https://mgks.dev"

@@ -7,5 +7,38 @@
   },
   "dependencies": {
     "@docmd/core": "workspace:*"
-  }
+  },
+  "keywords": [
+    "docmd",
+    "markdown",
+    "minimalist",
+    "zero-config",
+    "site-generator",
+    "static-site-generator",
+    "documentation",
+    "typescript",
+    "javascript",
+    "nodejs",
+    "browser",
+    "website",
+    "generator",
+    "hosted",
+    "cli",
+    "ssg",
+    "docs"
+  ],
+  "author": {
+    "name": "Ghazi",
+    "url": "https://mgks.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/docmd-io/docmd.git"
+  },
+  "bugs": {
+    "url": "https://github.com/docmd-io/docmd/issues"
+  },
+  "homepage": "https://docmd.io",
+  "funding": "https://github.com/sponsors/mgks",
+  "license": "MIT"
 }

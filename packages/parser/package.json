@@ -16,5 +16,36 @@
     "markdown-it-deflist": "^3.0.0",
     "markdown-it-container": "^4.0.0"
   },
+  "keywords": [
+    "docmd",
+    "parser",
+    "utils",
+    "tools",
+    "containers",
+    "markdown-it",
+    "markdown",
+    "markdown-processor",
+    "icon-renderer",
+    "renderer",
+    "validator",
+    "minimalist",
+    "zero-config",
+    "site-generator",
+    "static-site-generator",
+    "docs"
+  ],
+  "author": {
+    "name": "Ghazi",
+    "url": "https://mgks.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/docmd-io/docmd.git"
+  },
+  "bugs": {
+    "url": "https://github.com/docmd-io/docmd/issues"
+  },
+  "homepage": "https://docmd.io",
+  "funding": "https://github.com/sponsors/mgks",
   "license": "MIT"
 }

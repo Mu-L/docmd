@@ -8,5 +8,36 @@
     "assets",
     "index.js"
   ],
+  "keywords": [
+    "docmd",
+    "ui",
+    "templates",
+    "assets",
+    "layout",
+    "html",
+    "css",
+    "scss",
+    "kit",
+    "base",
+    "markdown",
+    "minimalist",
+    "zero-config",
+    "site-generator",
+    "static-site-generator",
+    "docs"
+  ],
+  "author": {
+    "name": "Ghazi",
+    "url": "https://mgks.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/docmd-io/docmd.git"
+  },
+  "bugs": {
+    "url": "https://github.com/docmd-io/docmd/issues"
+  },
+  "homepage": "https://docmd.io",
+  "funding": "https://github.com/sponsors/mgks",
   "license": "MIT"
 }
