@@ -55,5 +55,8 @@ jobs:
         run: |
           find packages -mindepth 1 -maxdepth 2 -name "package.json" -exec dirname {} \; | xargs -I % cp LICENSE %
 
+      - name: Resolve workspace dependencies
+        run: node scripts/resolve-ws-deps.js
+
       - name: Publish to NPM (OIDC)
         run: npm publish --workspaces --include-workspace-root=false --access public
