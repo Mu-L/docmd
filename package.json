@@ -24,6 +24,27 @@
       "esbuild"
     ]
   },
+  "keywords": [
+    "docmd",
+    "markdown",
+    "minimalist",
+    "zero-config",
+    "site-generator",
+    "static-site-generator",
+    "documentation",
+    "typescript",
+    "javascript",
+    "nodejs",
+    "html",
+    "browser",
+    "website",
+    "generator",
+    "parser",
+    "hosted",
+    "cli",
+    "ssg",
+    "docs"
+  ],
   "author": {
     "name": "Ghazi",
     "url": "https://mgks.dev"

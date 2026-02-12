@@ -29,6 +29,9 @@ importers:
       '@docmd/plugin-analytics':
         specifier: workspace:*
         version: link:../plugins/analytics
+      '@docmd/plugin-mermaid':
+        specifier: workspace:*
+        version: link:../plugins/mermaid
       '@docmd/plugin-search':
         specifier: workspace:*
         version: link:../plugins/search
