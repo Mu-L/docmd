@@ -24,6 +24,10 @@
       "esbuild"
     ]
   },
+  "workspaces": [
+    "packages/*",
+    "packages/plugins/*"
+  ],
   "keywords": [
     "docmd",
     "markdown",
