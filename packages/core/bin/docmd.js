@@ -39,10 +39,11 @@ program
 
 program
   .command('live')
-  .action(async () => {
+  .description('Launch the Live Editor')
+  .option('--build-only', 'Generate the dist/ folder without starting the server')
+  .action(async (opts) => {
     try {
-      await buildLive();
-
+      await buildLive({ serve: !opts.buildOnly });
     } catch (e) {
       console.error(e);
       process.exit(1);
