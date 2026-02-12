@@ -1,0 +1,92 @@
+<%# packages/ui/templates/navigation.ejs %>
+
+<nav class="sidebar-nav" aria-label="Main navigation">
+  <ul>
+    <%
+      function normalizePath(p) {
+        if (!p || p === '#') return '#';
+        if (p.startsWith('http')) return p;
+        
+        // 1. Strip dot-slash and leading slash
+        let path = p.replace(/^(\.\/|\/)+/, '');
+        
+        // 2. Remove extensions and index
+        path = path.replace(/(\/index\.html|index\.html|\.html|\.md)$/, '');
+        
+        // 3. CRITICAL: Remove trailing slash for consistency
+        path = path.replace(/\/$/, '');
+        
+        // 4. Return with leading slash for comparison
+        return '/' + path;
+      }
+
+      function isChildActive(item, currentPath) {
+        if (!item.children) return false;
+        const currentNorm = normalizePath(currentPath);
+        return item.children.some(child => {
+           const childNorm = normalizePath(child.path);
+           // Exact match or if the child itself has active children (recursion)
+           if (childNorm === currentNorm) return true;
+           return isChildActive(child, currentPath);
+        });
+      }
+
+      function renderNav(items) {
+        if (!items || !Array.isArray(items)) return;
+        
+        items.forEach(item => {
+          const isExternal = item.external || false;
+          // An item is collapsible if it has children, unless explicitly set to false
+          const isCollapsible = item.children && item.children.length > 0 && item.collapsible !== false;
+          
+          const itemNorm = normalizePath(item.path);
+          const currentNorm = normalizePath(currentPagePath);
+          
+          const isActive = itemNorm === currentNorm && itemNorm !== '#';
+          const isParentOfActive = !isActive && isChildActive(item, currentPagePath);
+          
+          // Auto-expand if it's a parent of the active page
+          const isOpen = isParentOfActive || (isActive && isCollapsible); 
+
+          const liClasses = [];
+          if (isActive) liClasses.push('active');
+          if (isParentOfActive) liClasses.push('active-parent');
+          if (isCollapsible) liClasses.push('collapsible');
+          if (isOpen) liClasses.push('expanded');
+          
+          // Construct HREF (Same as before)
+          let href = item.path || '#';
+          if (!isExternal && href !== '#' && !href.startsWith('http')) {
+             let cleanPath = href.replace(/^(\.\/|\/)+/, '');
+             href = relativePathToRoot + cleanPath;
+             if (isOfflineMode) {
+                 if (href.endsWith('/')) href += 'index.html';
+                 else if (!href.endsWith('.html')) href += '/index.html';
+             } else {
+                 if (href.endsWith('/index.html')) href = href.slice(0, -10);
+             }
+          }
+    %>
+    <li class="<%= liClasses.join(' ') %>" <% if(isCollapsible) { %> aria-expanded="<%= isOpen %>" <% } %>>
+      <a href="<%= href %>" class="<%= isActive ? 'active' : '' %>" <%= isExternal ? 'target="_blank" rel="noopener"' : '' %>>
+        <% if (item.icon) { %> <%- renderIcon(item.icon) %> <% } %>
+        <span class="nav-item-title"><%= item.title %></span>
+        
+        <% if (isCollapsible) { %> 
+            <span class="collapse-icon-wrapper">
+                <%- renderIcon('chevron-right', { class: 'collapse-icon' }) %> 
+            </span>
+        <% } %>
+        
+        <% if (isExternal) { %> <%- renderIcon('external-link', { class: 'nav-external-icon' }) %> <% } %>
+      </a>
+      
+      <% if (item.children) { %>
+        <ul class="submenu">
+          <% renderNav(item.children); %>
+        </ul>
+      <% } %>
+    </li>
+    <% }); } renderNav(navItems); %>
+  </ul>
+</nav>

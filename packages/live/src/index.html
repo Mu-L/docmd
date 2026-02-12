@@ -1,0 +1,189 @@
+<!-- Source file from the docmd project — https://github.com/docmd-io/docmd -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docmd Live Editor</title>
+    <meta name="description" content="Real-time Markdown preview and editor powered by docmd.">
+
+    <link rel="stylesheet" href="docmd-live.css">
+    <script src="docmd-live.js"></script>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-VCMQ0MCSHN"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-VCMQ0MCSHN');
+    </script>
+</head>
+
+<body class="mode-split">
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="logo">
+            <!--<a href="/" class="back-link" id="back-btn" title="Previous Page" aria-label="Back to previous page">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m12 19-7-7 7-7" />
+                    <path d="M19 12H5" />
+                </svg>
+            </a>-->
+            <a href="https://docmd.io" class="docmd-logo" title="Back to home" aria-label="Back to homepage"><svg width="24" height="24" id="icon-feather" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path><line x1="16" y1="8" x2="2" y2="22"></line><line x1="17.5" y1="15" x2="9" y2="15"></line></svg></a> docmd <span>Live</span>
+        </div>
+
+        <!-- Unified 3-Way Switcher -->
+        <div class="view-switcher desktop-only">
+            <button class="view-btn active" onclick="setMode('split')" data-mode="split">Split</button>
+            <button class="view-btn" onclick="setMode('editor')" data-mode="editor">Editor</button>
+            <button class="view-btn" onclick="setMode('preview')" data-mode="preview">Preview</button>
+        </div>
+    </div>
+
+    <!-- Workspace -->
+    <div class="workspace" id="workspace">
+        <!-- Editor -->
+        <div class="pane editor-pane" id="editorPane">
+            <div class="pane-header">Markdown</div>
+            <textarea id="input" spellcheck="false">
+---
+title: My Documentation
+description: Start editing to see changes instantly.
+---
+
+# Hello World
+
+This is a **live** preview.
+
+::: callout tip
+Try resizing the window or switching to mobile view!
+:::
+
+## Features
+1. Responsive Design
+2. Split or Tabbed view
+3. Instant Rendering
+            </textarea>
+        </div>
+
+        <!-- Resizer Handle -->
+        <div class="resizer" id="resizer"></div>
+
+        <!-- Preview -->
+        <div class="pane preview-pane" id="previewPane">
+            <div class="pane-header">Preview</div>
+            <iframe id="preview"></iframe>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Tabs (Keep for small screens) -->
+    <div class="mobile-tabs">
+        <button class="mobile-tab-btn active" onclick="setMode('editor')" id="mob-edit">Editor</button>
+        <button class="mobile-tab-btn" onclick="setMode('preview')" id="mob-prev">Preview</button>
+    </div>
+
+    <script>
+        // --- Core Logic ---
+        const input = document.getElementById('input');
+        const preview = document.getElementById('preview');
+        const backBtn = document.getElementById('back-btn');
+
+        function render() {
+            try {
+                let html = docmd.compile(input.value, {
+                    siteTitle: 'My Project',
+                    search: false,
+                    theme: { name: 'sky', defaultMode: 'light' },
+                    sidebar: { collapsible: false }
+                });
+
+                // Injections
+                html = html.replace('<head>', '<head><base target="_blank">');
+                const customStyle = `
+                    <style>
+                        .sidebar-header { display: none !important; }
+                        .sidebar-nav { margin-top: 1rem; }
+                    </style>
+                `;
+                html = html.replace('</body>', `${customStyle}</body>`);
+
+                const doc = preview.contentWindow.document;
+                doc.open();
+                doc.write(html);
+                doc.close();
+            } catch (e) { console.error(e); }
+        }
+
+        let timer;
+        input.addEventListener('input', () => {
+            clearTimeout(timer);
+            timer = setTimeout(render, 300);
+        });
+        render();
+
+        // --- Resizer Logic ---
+        const resizer = document.getElementById('resizer');
+        const editorPane = document.getElementById('editorPane');
+        const workspace = document.getElementById('workspace');
+        let isResizing = false;
+
+        resizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            resizer.classList.add('resizing');
+            preview.style.pointerEvents = 'none';
+            document.body.style.cursor = 'col-resize';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const containerWidth = workspace.offsetWidth;
+            const newEditorWidth = (e.clientX / containerWidth) * 100;
+            if (newEditorWidth > 15 && newEditorWidth < 85) {
+                editorPane.style.width = newEditorWidth + '%';
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                resizer.classList.remove('resizing');
+                preview.style.pointerEvents = 'auto';
+                document.body.style.cursor = 'default';
+            }
+        });
+
+        // --- Unified View Logic ---
+        function setMode(mode) {
+            // 1. Update UI Buttons (Desktop)
+            document.querySelectorAll('.view-switcher .view-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+
+            // 2. Update Mobile Buttons
+            const mobMode = mode === 'split' ? 'editor' : mode; // Map split to editor on mobile
+            document.getElementById('mob-edit').classList.toggle('active', mobMode === 'editor');
+            document.getElementById('mob-prev').classList.toggle('active', mobMode === 'preview');
+
+            // 3. Update Layout Classes
+            // Reset
+            document.body.classList.remove('mode-split', 'mode-single', 'show-editor', 'show-preview');
+
+            if (mode === 'split') {
+                document.body.classList.add('mode-split');
+            } else {
+                document.body.classList.add('mode-single');
+                document.body.classList.add('show-' + mode);
+            }
+        }
+
+        // --- Back Button ---
+        /*
+        if (window.history.length <= 1) backBtn.style.display = 'none';
+        else backBtn.addEventListener('click', (e) => { e.preventDefault(); window.history.back(); });
+        */
+    </script>
+</body>
+</html>

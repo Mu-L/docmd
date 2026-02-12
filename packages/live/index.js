@@ -1,0 +1,42 @@
+const path = require('path');
+const { spawn } = require('child_process');
+const { build } = require('./src/build');
+
+async function start() {
+  // 1. Build the editor
+  await build();
+
+  const distDir = path.resolve(process.cwd(), 'dist');
+  console.log(`\n🌍 Launching Live Editor at ${distDir}...`);
+  console.log('   (Press Ctrl+C to stop)');
+
+  // 2. Resolve the 'serve' executable path safely
+  // We do this to avoid using 'npx' (which triggers npm warnings in pnpm repos)
+  // and to avoid shell injection issues.
+  let serveBinPath;
+  try {
+    const servePkgJsonPath = require.resolve('serve/package.json');
+    const serveDir = path.dirname(servePkgJsonPath);
+    const servePkg = require(servePkgJsonPath);
+    // 'bin' can be a string or an object in package.json
+    const binPath = typeof servePkg.bin === 'string' ? servePkg.bin : servePkg.bin.serve;
+    serveBinPath = path.join(serveDir, binPath);
+  } catch (e) {
+    console.error('❌ Could not locate "serve" package. Ensure it is installed.');
+    process.exit(1);
+  }
+
+  // 3. Spawn Node directly
+  // shell: false is the default (fixing DEP0190)
+  // We pass the script path directly to node
+  const p = spawn(process.execPath, [serveBinPath, distDir], { 
+      stdio: 'inherit'
+  });
+  
+  process.on('SIGINT', () => {
+      p.kill();
+      process.exit();
+  });
+}
+
+module.exports = { start, build };

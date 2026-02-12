@@ -1,0 +1,7 @@
+{
+  "name": "@docmd/plugin-sitemap",
+  "version": "0.4.0",
+  "description": "Sitemap generator plugin for docmd",
+  "main": "index.js",
+  "license": "MIT"
+}

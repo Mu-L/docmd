@@ -1,0 +1,20 @@
+{
+  "name": "@docmd/parser",
+  "version": "0.4.0",
+  "description": "Pure Markdown parsing engine for docmd",
+  "main": "src/index.js",
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "gray-matter": "^4.0.3",
+    "highlight.js": "^11.9.0",
+    "lucide-static": "^0.370.0",
+    "markdown-it": "^14.1.0",
+    "markdown-it-attrs": "^4.1.6",
+    "markdown-it-footnote": "^4.0.0",
+    "markdown-it-task-lists": "^2.1.1",
+    "markdown-it-abbr": "^2.0.0",
+    "markdown-it-deflist": "^3.0.0",
+    "markdown-it-container": "^4.0.0"
+  },
+  "license": "MIT"
+}
