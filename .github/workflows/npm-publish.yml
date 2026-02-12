@@ -55,15 +55,5 @@ jobs:
         run: |
           find packages -mindepth 1 -maxdepth 2 -name "package.json" -exec dirname {} \; | xargs -I % cp LICENSE %
 
-      # ---------- Publish to npmjs via OIDC ----------
       - name: Publish to NPM (OIDC)
         run: npm publish --workspaces --include-workspace-root=false --access public
-
-      # ---------- Publish to GitHub Packages ----------
-      - name: Setup .npmrc for GitHub Packages
-        run: |
-          echo "@docmd:registry=https://npm.pkg.github.com" > .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
-
-      - name: Publish to GitHub Packages
-        run: npm publish --workspaces --include-workspace-root=false --access public || true
