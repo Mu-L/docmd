@@ -32,8 +32,8 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build Packages (if any have build scripts)
-        run: pnpm -r run build --if-present
+      - name: Build Packages
+        run: pnpm -r run build
 
       - name: Run Tests
         run: node scripts/failsafe.js
