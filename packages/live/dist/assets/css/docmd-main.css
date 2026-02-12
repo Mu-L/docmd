@@ -289,6 +289,7 @@ body.sidebar-collapsed .main-content-wrapper {
 }
 
 .header-left,
+.header-right,
 .page-header {
     align-items: center;
     display: flex
@@ -307,8 +308,7 @@ body.sidebar-collapsed .main-content-wrapper {
 }
 
 .header-right {
-    display: flex;
-    align-items: center
+    gap: 5px
 }
 
 .page-header h1 {
@@ -329,9 +329,8 @@ body.sidebar-collapsed .main-content-wrapper {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 2.5em;
-    width: 100%;
-    margin: 0 .25em
+    height: 3em;
+    width: 3em;
 }
 
 .docmd-search-trigger:hover,
@@ -361,7 +360,32 @@ body.sidebar-collapsed .main-content-wrapper {
     fill: var(--white);
 }
 
-.card .card-title{
+.docmd-search-trigger {
+    gap: .5rem;
+    color: var(--image-caption-text);
+    width: 15em;
+}
+
+html[data-theme=dark] .theme-toggle-button .icon-moon {
+    color: var(--text-color)
+}
+
+.docmd-search-trigger .icon-search {
+    width: 1.25em;
+    height: 1.25em
+}
+
+.docmd-search-trigger .search-label {
+    margin-right: 1rem;
+    font-size: 1.25em
+}
+
+.docmd-search-trigger .search-keys {
+    display: flex;
+    gap: 2px
+}
+
+.card .card-title {
     border-bottom: 1px solid var(--border-color)
 }
 
@@ -443,7 +467,6 @@ tr:last-child td {
     padding-bottom: 10px;
     text-align: center;
     height: 2.5em;
-    box-shadow: 0 20px 15px -18px var(--border-color)
 }
 
 .sidebar-header h1 {
@@ -1181,7 +1204,7 @@ img.with-shadow {
     flex-direction: column
 }
 
-.copy-code-button svg{
+.copy-code-button svg {
     width: 1rem;
     height: 1rem
 }
@@ -1222,7 +1245,7 @@ img.with-shadow {
     color: #ddd
 }
 
-a.docmd-button{
+a.docmd-button {
     color: #fff;
     text-decoration: none
 }
@@ -1305,26 +1328,6 @@ hr {
 .edit-link svg {
     width: 1em;
     height: 1em
-}
-
-.docmd-search-trigger {
-    gap: .5rem;
-    padding: .4rem .6rem;
-    font-size: .85rem;
-    color: var(--image-caption-text);
-}
-
-html[data-theme=dark] .theme-toggle-button .icon-moon {
-    color: var(--text-color)
-}
-
-.search-label {
-    margin-right: 1rem
-}
-
-.search-keys {
-    display: flex;
-    gap: 2px
 }
 
 .docmd-kbd {
@@ -1513,7 +1516,9 @@ html[data-theme=dark] .theme-toggle-button .icon-moon {
 }
 
 @keyframes heartbeat {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: scale(1);
     }
 
