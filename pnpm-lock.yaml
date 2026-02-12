@@ -21,31 +21,31 @@ importers:
   packages/core:
     dependencies:
       '@docmd/live':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../live
       '@docmd/parser':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../parser
       '@docmd/plugin-analytics':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../plugins/analytics
       '@docmd/plugin-mermaid':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../plugins/mermaid
       '@docmd/plugin-search':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../plugins/search
       '@docmd/plugin-seo':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../plugins/seo
       '@docmd/plugin-sitemap':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../plugins/sitemap
       '@docmd/themes':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../themes
       '@docmd/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       chalk:
         specifier: ^4.1.2
@@ -63,19 +63,19 @@ importers:
   packages/legacy:
     dependencies:
       '@docmd/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
 
   packages/live:
     dependencies:
       '@docmd/parser':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../parser
       '@docmd/themes':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../themes
       '@docmd/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       buffer:
         specifier: ^6.0.3
