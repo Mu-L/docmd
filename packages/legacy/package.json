@@ -6,7 +6,7 @@
     "docmd": "bin/docmd.js"
   },
   "dependencies": {
-    "@docmd/core": "workspace:*"
+    "@docmd/core": "workspace:^"
   },
   "keywords": [
     "docmd",

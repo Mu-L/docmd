@@ -18,9 +18,9 @@
     "esbuild": "^0.27.3",
     "buffer": "^6.0.3",
     "serve": "^14.2.1",
-    "@docmd/parser": "workspace:*",
-    "@docmd/ui": "workspace:*",
-    "@docmd/themes": "workspace:*"
+    "@docmd/parser": "workspace:^",
+    "@docmd/ui": "workspace:^",
+    "@docmd/themes": "workspace:^"
   },
   "keywords": [
     "docmd",
