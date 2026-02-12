@@ -1,6 +1,6 @@
 {
   "name": "@docmd/core",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "The minimalist, zero-config documentation generator.",
   "bin": {
     "docmd": "./bin/docmd.js"
@@ -14,10 +14,24 @@
     "@docmd/plugin-seo": "workspace:*",
     "@docmd/plugin-sitemap": "workspace:*",
     "@docmd/plugin-analytics": "workspace:*",
+    "@docmd/plugin-mermaid": "workspace:*",
     "chalk": "^4.1.2",
     "chokidar": "^3.5.3",
     "commander": "^11.0.0",
     "ws": "^8.13.0"
   },
+  "author": {
+    "name": "Ghazi",
+    "url": "https://mgks.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/docmd-io/docmd.git"
+  },
+  "bugs": {
+    "url": "https://github.com/docmd-io/docmd/issues"
+  },
+  "homepage": "https://docmd.io",
+  "funding": "https://github.com/sponsors/mgks",
   "license": "MIT"
 }

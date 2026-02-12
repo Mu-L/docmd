@@ -1,6 +1,6 @@
 {
   "name": "@docmd/monorepo",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "description": "The minimalist, zero-config documentation generator monorepo.",
   "scripts": {
@@ -28,5 +28,14 @@
     "name": "Ghazi",
     "url": "https://mgks.dev"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/docmd-io/docmd.git"
+  },
+  "bugs": {
+    "url": "https://github.com/docmd-io/docmd/issues"
+  },
+  "homepage": "https://docmd.io",
+  "funding": "https://github.com/sponsors/mgks",
   "license": "MIT"
 }

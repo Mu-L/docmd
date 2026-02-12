@@ -132,6 +132,7 @@ This is a simple tab content.
 ::: callout info
 You can even nest other components inside tabs!
 :::
+
 :::
 
 ## 📚 Next Steps

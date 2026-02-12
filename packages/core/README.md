@@ -1,10 +1,10 @@
 <div align="center">
 
   <!-- PROJECT TITLE -->
-  <h1>
-    <img src="https://github.com/docmd-io/docmd/blob/main/src/assets/images/docmd-logo-dark.png?raw=true" alt="docmd logo" width="200" />
+  <h3>
+    <img src="https://github.com/docmd-io/docmd/blob/main/packages/ui/assets/images/docmd-logo-dark.png?raw=true" alt="docmd logo" width="210" />
     <!-- docmd -->
-  </h1>
+  </h3>
   
   <!-- ONE LINE SUMMARY -->
   <p>
