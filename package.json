@@ -1,84 +1,32 @@
 {
-  "name": "@mgks/docmd",
-  "version": "0.3.11",
-  "description": "Generate beautiful, lightweight static documentation sites directly from your Markdown files. Zero clutter, just content.",
-  "main": "src/index.js",
-  "exports": {
-    ".": {
-      "import": "./src/index.js",
-      "require": "./src/index.js"
-    }
-  },
-  "files": [
-    "bin",
-    "src",
-    "LICENSE",
-    "README.md"
-  ],
-  "bin": {
-    "docmd": "bin/docmd.js"
-  },
+  "name": "@docmd/monorepo",
+  "version": "0.4.0",
+  "private": true,
+  "description": "The minimalist, zero-config documentation generator monorepo.",
   "scripts": {
     "test": "node scripts/failsafe.js",
-    "prepublishOnly": "npm test",
-    "start": "node bin/docmd.js dev",
-    "build": "node bin/docmd.js build",
-    "live": "node bin/docmd.js live",
-    "postinstall": "node bin/postinstall.js",
-    "lint": "eslint .",
-    "format": "prettier --write ."
-  },
-  "dependencies": {
-    "buffer": "^6.0.3",
-    "chalk": "^4.1.2",
-    "chokidar": "^5.0.0",
-    "commander": "^14.0.2",
-    "ejs": "^3.1.10",
-    "esbuild": "^0.27.2",
-    "gray-matter": "^4.0.3",
-    "highlight.js": "^11.11.1",
-    "lucide-static": "^0.563.0",
-    "markdown-it": "^14.1.0",
-    "markdown-it-abbr": "^2.0.0",
-    "markdown-it-attrs": "^4.3.1",
-    "markdown-it-container": "^4.0.0",
-    "markdown-it-deflist": "^3.0.0",
-    "markdown-it-footnote": "^4.0.0",
-    "markdown-it-task-lists": "^2.1.1",
-    "minisearch": "^7.2.0",
-    "ws": "^8.19.0"
+    "lint": "pnpm -r run lint",
+    "build": "pnpm -r run build",
+    "release": "pnpm publish -r --access public",
+    "clean": "rm -rf node_modules packages/*/node_modules"
   },
   "devDependencies": {
-    "buffer": "^6.0.3",
-    "eslint": "^9.39.2",
-    "prettier": "^3.7.4"
+    "chalk": "4.1.2",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0"
   },
-  "directories": {
-    "doc": "docs"
-  },
-  "keywords": [
-    "markdown",
-    "static-site-generator",
-    "documentation",
-    "ssg",
-    "docs",
-    "generator"
-  ],
   "engines": {
     "node": ">=18.0.0"
+  },
+  "packageManager": "pnpm@10.28.2",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   },
   "author": {
     "name": "Ghazi",
     "url": "https://mgks.dev"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/docmd-io/docmd.git"
-  },
-  "bugs": {
-    "url": "https://github.com/docmd-io/docmd/issues"
-  },
-  "homepage": "https://docmd.io",
-  "funding": "https://github.com/sponsors/mgks",
   "license": "MIT"
 }

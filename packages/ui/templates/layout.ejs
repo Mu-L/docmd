@@ -1,0 +1,195 @@
+<%# packages/ui/templates/layout.ejs %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Define Globals -->
+    <script>
+        var root = "<%= relativePathToRoot %>";
+        if (root && !root.endsWith('/')) root += '/';
+        if (root === '') root = './';
+        window.DOCMD_ROOT = root;
+        window.DOCMD_DEFAULT_MODE = "<%= defaultMode %>";
+    </script>
+
+    <title><%= pageTitle %></title>
+
+    <!-- Favicon -->
+    <%- faviconLinkHtml || '' %>
+    
+    <!-- 1. CORE STYLES (Foundation) -->
+    <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-main.css?v=<%= buildHash %>">
+
+    <!-- 2. HIGHLIGHT.JS (Toggle Strategy) -->
+    <% if (config.theme?.codeHighlight !== false) { 
+       const isDarkDefault = defaultMode === 'dark';
+    %>
+    <link rel="stylesheet" 
+          href="<%= relativePathToRoot %>assets/css/docmd-highlight-light.css?v=<%= buildHash %>" 
+          id="hljs-light" 
+          <%= isDarkDefault ? 'disabled' : '' %>>
+          
+    <link rel="stylesheet" 
+          href="<%= relativePathToRoot %>assets/css/docmd-highlight-dark.css?v=<%= buildHash %>" 
+          id="hljs-dark" 
+          <%= isDarkDefault ? '' : 'disabled' %>>
+    <% } %>
+
+    <!-- 3. PLUGINS & THEMES (Overrides Core) -->
+    <!-- This includes 'docmd-theme-sky.css' injected by build.js -->
+    <%- pluginHeadScriptsHtml || '' %>
+
+    <!-- 4. CUSTOM CSS (Overrides Everything) -->
+    <% (customCssFiles || []).forEach(cssFile => { %>
+    <link rel="stylesheet" href="<%= relativePathToRoot %><%- cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
+    <% }); %>
+
+    <!-- Theme Init Script (Must be after styles to prevent FOUC) -->
+    <%- themeInitScript %>
+</head>
+<body class="<%= sidebarConfig.collapsible ? 'sidebar-collapsible' : 'sidebar-not-collapsible' %>" 
+      data-default-collapsed="<%= sidebarConfig.defaultCollapsed %>" 
+      data-copy-code-enabled="<%= config.copyCode === true %>">
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <% if (logo && logo.light && logo.dark) { %>
+            <a href="<%= logo.href || relativePathToRoot %>" class="logo-link">
+                <img src="<%= relativePathToRoot %><%- logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>" alt="<%= logo.alt || siteTitle %>" class="logo-light" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>>
+                <img src="<%= relativePathToRoot %><%- logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>" alt="<%= logo.alt || siteTitle %>" class="logo-dark" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>>
+            </a>
+            <% } else { %>
+            <h1><a href="<%= relativePathToRoot %>index.html"><%= siteTitle %></a></h1>
+            <% } %>
+            <span class="mobile-view sidebar-menu-button float-right">
+                <%- renderIcon("ellipsis-vertical") %>
+            </span>
+        </div>
+
+        <%- navigationHtml %>
+
+        <% if (theme && theme.enableModeToggle && theme.positionMode !== 'top') { %>
+        <button id="theme-toggle-button" aria-label="Toggle theme" class="theme-toggle-button">
+            <%- renderIcon('sun', { class: 'icon-sun' }) %> <%- renderIcon('moon', { class: 'icon-moon' }) %>
+        </button>
+        <% } %>
+    </aside>
+
+    <div class="main-content-wrapper">
+        <div class="page-header">
+            <div class="header-left">
+                <% if (sidebarConfig.collapsible) { %>
+                <button id="sidebar-toggle-button" class="sidebar-toggle-button" aria-label="Toggle Sidebar">
+                    <%- renderIcon('panel-left-close') %>
+                </button>
+                <% } %>
+                <h1><%= pageTitle %></h1>
+            </div>
+            <% if (theme && theme.enableModeToggle && theme.positionMode === 'top') { %>
+            <div class="header-right">
+
+                <!-- SEARCH BUTTON -->
+                <% if (config.search !== false) { %>
+                <button class="docmd-search-trigger" aria-label="Search">
+                    <%- renderIcon('search') %>
+                    <span class="search-label">Search</span>
+                    <span class="search-keys"><kbd class="docmd-kbd">⌘</kbd><kbd class="docmd-kbd">k</kbd></span>
+                </button>
+                <% } %>
+
+                <!-- THEME TOGGLE -->
+                <button id="theme-toggle-button" aria-label="Toggle theme" class="theme-toggle-button theme-toggle-header">
+                    <%- renderIcon('sun', { class: 'icon-sun' }) %> <%- renderIcon('moon', { class: 'icon-moon' }) %>
+                </button>
+
+                <!-- SPONSOR BUTTON -->
+                <% if (sponsor && sponsor.enabled) { %>
+                <a href="<%= sponsor.link %>" target="_blank" rel="noopener noreferrer" aria-label="Sponsor Project">
+                    <button class="sponsor-link-button" aria-label="Sponsor">
+                    <%- renderIcon('heart', { class: 'sponsor-icon' }) %>
+                    </button>
+                </a>
+                <% } %>
+            </div>
+            <% } %>
+        </div>
+
+        <main class="content-area">
+            <div class="content-layout">
+                <div class="main-content">
+                    <%- content %>
+
+                    <% if (config.pageNavigation && (prevPage || nextPage)) { %>
+                    <div class="page-navigation">
+                        <% if (prevPage) { %>
+                        <a href="<%= prevPage.url %>" class="prev-page">
+                            <%- renderIcon('arrow-left', { class: 'page-nav-icon' }) %>
+                            <span><small>Previous</small><strong><%= prevPage.title %></strong></span>
+                        </a>
+                        <% } else { %><div class="prev-page-placeholder"></div><% } %>
+                        <% if (nextPage) { %>
+                        <a href="<%= nextPage.url %>" class="next-page">
+                            <span><small>Next</small><strong><%= nextPage.title %></strong></span>
+                            <%- renderIcon('arrow-right', { class: 'page-nav-icon' }) %>
+                        </a>
+                        <% } else { %><div class="next-page-placeholder"></div><% } %>
+                    </div>
+                    <% } %>
+                </div>
+
+                <div class="toc-sidebar">
+                    <%- include('toc', { content, headings, navigationHtml, isActivePage }) %>
+                </div>
+            </div>
+
+            <div class="page-footer-actions">
+                <% if (locals.editUrl) { %>
+                <a href="<%= editUrl %>" target="_blank" rel="noopener noreferrer" class="edit-link">
+                    <%- renderIcon('pencil') %> <%= editLinkText %>
+                </a>
+                <% } %>
+            </div>
+        </main>
+
+        <footer class="page-footer">
+            <div class="footer-content">
+                <div class="user-footer"><%- footerHtml || '' %></div>
+                <div class="branding-footer">
+                    Build with <a href="https://docmd.io" target="_blank" rel="noopener">docmd.</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <% if (config.search !== false) { %>
+    <!-- Search Modal -->
+    <div id="docmd-search-modal" class="docmd-search-modal" style="display: none;">
+        <div class="docmd-search-box">
+            <div class="docmd-search-header">
+                <%- renderIcon('search') %>
+                <input type="text" id="docmd-search-input" placeholder="Search documentation..." autocomplete="off" spellcheck="false">
+                <button onclick="window.closeDocmdSearch()" class="docmd-search-close" aria-label="Close search">
+                    <%- renderIcon('x') %>
+                </button>
+            </div>
+            <div id="docmd-search-results" class="docmd-search-results"></div>
+            <div class="docmd-search-footer">
+                <span><kbd class="docmd-kbd">↑</kbd> <kbd class="docmd-kbd">↓</kbd> to navigate</span>
+                <span><kbd class="docmd-kbd">ESC</kbd> to close</span>
+            </div>
+        </div>
+    </div>
+    <% } %>
+
+    <!-- Plugin Scripts -->
+    <%- pluginBodyScriptsHtml || '' %>
+
+    <!-- User Custom JS (Sanitized) -->
+    <% (customJsFiles || []).forEach(jsFile => { 
+       if (jsFile && jsFile.trim() !== '') { %>
+    <script src="<%= relativePathToRoot %><%- jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>"></script>
+    <% } }); %>
+</body>
+</html>

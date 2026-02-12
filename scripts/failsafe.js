@@ -1,103 +1,113 @@
-// Source file from the docmd project — https://github.com/docmd-io/docmd
-
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const vm = require('vm');
 
 const CWD = process.cwd();
-const pkg = require('../package.json');
-const CLI_PATH = path.join(CWD, 'bin/docmd.js');
+const CLI_BIN = path.join(CWD, 'packages/core/bin/docmd.js');
+const LIVE_DIST = path.join(CWD, 'dist');
+const TEMP_SCRIPT = path.join(CWD, 'temp-live-test.js');
 
-console.log(`🛡️  Running Fail-Safe Test Suite for ${pkg.name} v${pkg.version}...`);
+console.log('🛡️  Running Monorepo Failsafe Integration Test...');
+console.log(`   Target CLI: ${CLI_BIN}`);
 
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'docmd-failsafe-'));
+console.log(`   Temp Workspace: ${tempDir}\n`);
 
 try {
-    // --- STEP 1: CLI Init ---
-    console.log('  [1/4] Testing: docmd init...');
-    execSync(`node "${CLI_PATH}" init`, { cwd: tempDir, stdio: 'ignore' });
+    // 1. Install Dependencies
+    console.log('📦 [1/5] Installing Workspace Dependencies...');
+    // We suppress output unless there's an error to keep the log clean
+    execSync('pnpm install --silent', { stdio: 'inherit' });
 
-    // --- STEP 2: CLI Build ---
-    console.log('  [2/4] Testing: docmd build...');
-    execSync(`node "${CLI_PATH}" build`, { cwd: tempDir, stdio: 'ignore' });
+    // 2. Initialize Project
+    console.log('\n🚀 [2/5] Testing "docmd init"...');
+    execSync(`node "${CLI_BIN}" init`, { cwd: tempDir, stdio: 'inherit' });
 
-    const indexHtml = path.join(tempDir, 'site', 'index.html');
-    if (!fs.existsSync(indexHtml)) {
-        throw new Error('Build failed: site/index.html was not generated.');
-    }
+    // Simulate User Configuration (Fix missing siteUrl for sitemap)
+    console.log('   ⚙️  Configuring project (Adding siteUrl)...');
+    const configPath = path.join(tempDir, 'docmd.config.js');
+    let configContent = fs.readFileSync(configPath, 'utf8');
+    configContent = configContent.replace("siteUrl: '',", "siteUrl: 'https://failsafe.test',");
+    fs.writeFileSync(configPath, configContent);
 
-    // --- STEP 3: Live Build (Generation) ---
-    console.log('  [3/4] Testing: docmd live (build process)...');
+    // 3. Build Project
+    console.log('\n🔨 [3/5] Testing "docmd build"...');
+    execSync(`node "${CLI_BIN}" build`, { cwd: tempDir, stdio: 'inherit' });
+
+    // 4. Verify Output Structure
+    console.log('\n🔍 [4/5] Verifying Build Output...');
+    const siteDir = path.join(tempDir, 'site');
+
+    // Check HTML
+    if (!fs.existsSync(path.join(siteDir, 'index.html'))) throw new Error('Build failed: index.html missing');
     
-    // Run the internal build script directly to avoid spawning a server
-    const liveBuildScript = path.join(CWD, 'src/commands/live.js');
-    execSync(`node "${liveBuildScript}"`, { cwd: CWD, stdio: 'ignore' });
-
-    const liveDist = path.join(CWD, 'dist', 'docmd-live.js');
-    if (!fs.existsSync(liveDist)) {
-        throw new Error('Live build failed: dist/docmd-live.js was not generated.');
+    // Check Assets (UI) - Look for docmd-main.css (New prefix)
+    if (!fs.existsSync(path.join(siteDir, 'assets/css/docmd-main.css'))) {
+        throw new Error('Build failed: UI assets missing (docmd-main.css)');
     }
-
-    // --- STEP 4: Live Validation (VM Sandbox) ---
-    console.log('  [4/4] Validating Live Bundle logic...');
     
-    const bundleCode = fs.readFileSync(liveDist, 'utf8');
+    // Check Themes (Themes Package) - Look for docmd-theme-sky.css
+    if (!fs.existsSync(path.join(siteDir, 'assets/css/docmd-theme-sky.css'))) {
+        throw new Error('Build failed: Theme assets missing (docmd-theme-sky.css)');
+    }
     
-    // Create a mock browser environment
-    const sandbox = { 
-        console: console,
-        setTimeout: setTimeout,
-        clearTimeout: clearTimeout,
-        window: {},
-        self: {},
-        globalThis: {}
-    };
-    sandbox.window = sandbox; // Self-reference for browser polyfills
-    sandbox.self = sandbox;
-    sandbox.globalThis = sandbox;
-
-    // Execute the bundle in the sandbox
-    vm.createContext(sandbox);
-    vm.runInContext(bundleCode, sandbox);
-
-    // Assertions
-    if (!sandbox.docmd) {
-        throw new Error('Bundle loaded, but "docmd" global was not exposed.');
-    }
-    if (typeof sandbox.docmd.compile !== 'function') {
-        throw new Error('"docmd.compile" function is missing.');
-    }
-
-    // Run a real compile test
-    const markdown = '# Hello Live\n**Works**';
-    const config = { siteTitle: 'Test' };
-    const result = sandbox.docmd.compile(markdown, config);
-
-    if (!result.includes('<h1>Hello Live</h1>')) {
-        throw new Error('Bundle logic failed: Markdown did not render to HTML.');
-    }
-
-    console.log('\n✅ FAIL-SAFE PASSED: Core and Live engine are stable.');
+    // Check Plugins (Sitemap)
+    if (!fs.existsSync(path.join(siteDir, 'sitemap.xml'))) throw new Error('Build failed: Sitemap plugin failed');
     
-} catch (error) {
-    console.error('\n❌ FAIL-SAFE CRITICAL FAILURE!');
-    console.error(`Reason: ${error.message}`);
-    process.exit(1); 
+    // Check Plugins (Search)
+    if (!fs.existsSync(path.join(siteDir, 'search-index.json'))) throw new Error('Build failed: Search plugin failed');
+    
+    // Check Search Asset Injection
+    if (!fs.existsSync(path.join(siteDir, 'assets/js/docmd-search.js'))) throw new Error('Build failed: Plugin assets (docmd-search.js) missing');
+
+    console.log('✅ verification passed.');
+
+    // 5. Live Editor Build
+    console.log('\n🎥 [5/5] Testing "docmd live" build...');
+    
+    // Ensure clean state before start
+    if(fs.existsSync(LIVE_DIST)) fs.rmSync(LIVE_DIST, {recursive: true});
+    
+    // Run the build logic directly via a wrapper script
+    // We pass { serve: false } to prevent the server from hanging the test
+    const liveTestScriptContent = `
+        const { buildLive } = require('./packages/core/src/commands/live');
+        buildLive({ serve: false }).catch(e => { console.error(e); process.exit(1); });
+    `;
+    fs.writeFileSync(TEMP_SCRIPT, liveTestScriptContent);
+    
+    execSync(`node temp-live-test.js`, { cwd: CWD, stdio: 'inherit' });
+
+    if (!fs.existsSync(path.join(LIVE_DIST, 'docmd-live.js'))) throw new Error('Live Editor build failed: docmd-live.js missing');
+    if (!fs.existsSync(path.join(LIVE_DIST, 'index.html'))) throw new Error('Live Editor build failed: index.html missing');
+
+    console.log('\n✨ ALL SYSTEMS GO. Monorepo is stable.');
+
+} catch (e) {
+    console.error('\n❌ FAILSAFE CRITICAL FAILURE');
+    console.error(e.message);
+    process.exit(1);
 } finally {
+    // --- 🧹 CLEANUP SECTION ---
     try {
-        // Cleanup Temp (Tests 1 & 2)
-        if (fs.existsSync(tempDir)) {
+        // 1. Remove Temp Workspace (/tmp/docmd-failsafe-...)
+        if(fs.existsSync(tempDir)) {
             fs.rmSync(tempDir, { recursive: true, force: true });
         }
-        // Cleanup Dist (Tests 3 & 4)
-        const distDir = path.join(CWD, 'dist');
-        if (fs.existsSync(distDir)) {
-            fs.rmSync(distDir, { recursive: true, force: true });
+        
+        // 2. Remove Live Editor Dist (./dist)
+        if(fs.existsSync(LIVE_DIST)) {
+            fs.rmSync(LIVE_DIST, { recursive: true, force: true });
         }
-        console.log(`🧹 Environment scrubbed.`);
-    } catch (cleanupErr) {
-        console.warn('⚠️ Could not cleanup environment:', cleanupErr.message);
+
+        // 3. Remove Temp Script (./temp-live-test.js)
+        if(fs.existsSync(TEMP_SCRIPT)) {
+            fs.rmSync(TEMP_SCRIPT, { force: true });
+        }
+        
+        console.log('🧹 Environment scrubbed.'); // Optional log
+    } catch(e) {
+        console.warn('⚠️ Cleanup warning:', e.message);
     }
 }

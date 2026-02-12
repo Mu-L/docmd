@@ -1,0 +1,26 @@
+{
+  "name": "@docmd/live",
+  "version": "0.4.0",
+  "description": "Browser-based editor engine for docmd",
+  "bin": {
+    "docmd-live": "./bin/docmd-live.js"
+  },
+  "scripts": {
+    "build": "node -e \"require('./src/build.js').build()\""
+  },
+  "files": [
+    "bin",
+    "dist",
+    "index.js",
+    "src/build.js" 
+  ],
+  "dependencies": {
+    "esbuild": "^0.20.0",
+    "buffer": "^6.0.3",
+    "serve": "^14.2.1",
+    "@docmd/parser": "workspace:*",
+    "@docmd/ui": "workspace:*",
+    "@docmd/themes": "workspace:*"
+  },
+  "license": "MIT"
+}
