@@ -1,3 +1,17 @@
+/**
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025 docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
 const path = require('path');
 const fs = require('fs/promises');
 const esbuild = require('esbuild');
@@ -129,7 +143,12 @@ async function build() {
         // Simple check to avoid copying into itself if CWD is somehow dist parent
         try {
             await fs.cp(userAssets, distAssets, { recursive: true, force: false });
-        } catch(e) {} // Ignore if user assets don't exist
+        } catch(e) {}
+
+        // Copy Favicon
+        try {
+            await fs.copyFile(path.join(ui.getAssetsDir(), 'favicon.ico'), path.join(DIST_DIR, 'favicon.ico'));
+        } catch (e) {console.log('X Missing Fav');}
 
         console.log('✅ Live Editor built in ./dist');
     } catch (e) {
