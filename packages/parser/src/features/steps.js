@@ -1,3 +1,17 @@
+/**
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025 docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
 function stepsRule(state, startLine, endLine, silent) {
     const start = state.bMarks[startLine] + state.tShift[startLine];
     const max = state.eMarks[startLine];
@@ -5,37 +19,55 @@ function stepsRule(state, startLine, endLine, silent) {
     if (lineContent !== '::: steps') return false;
     if (silent) return true;
   
-    // ... (Same seeking logic as tabs, abbreviated for brevity) ...
     let nextLine = startLine;
     let found = false;
     let depth = 1;
     let inFence = false;
+
+    // Iterate lines to find the matching closing tag
     while (nextLine < endLine) {
       nextLine++;
       const nextStart = state.bMarks[nextLine] + state.tShift[nextLine];
       const nextMax = state.eMarks[nextLine];
       const nextContent = state.src.slice(nextStart, nextMax).trim();
+      
+      // Ignore contents of code fences
       if (/^(\s{0,3})(~{3,}|`{3,})/.test(nextContent)) inFence = !inFence;
-      if (!inFence && nextContent === ':::') {
-        depth--;
-        if (depth === 0) { found = true; break; }
+
+      if (!inFence) {
+        if (nextContent.startsWith(':::')) {
+          // If it's a NEW opening container (e.g. "::: card", "::: callout")
+          // We increment depth so we know we are deeper in the nest.
+          // Note: We ignore "::: button" because buttons are self-closing block rules now.
+          if (nextContent.match(/^:::\s+[a-zA-Z]/) && !nextContent.match(/^:::\s+button/)) {
+            depth++;
+          } 
+          // If it's a CLOSING tag (strictly ":::" with optional whitespace)
+          else if (nextContent.match(/^:::\s*$/)) {
+            depth--;
+            if (depth === 0) { 
+              found = true; 
+              break; 
+            }
+          }
+        }
       }
     }
-    
+
     if (!found) return false;
-  
+
     const openToken = state.push('steps_open', 'div', 1);
     openToken.info = '';
-    
+
     const oldParentType = state.parentType;
     const oldLineMax = state.lineMax;
     state.parentType = 'container';
     state.lineMax = nextLine;
-    
+
     state.md.block.tokenize(state, startLine + 1, nextLine);
-    
+
     const closeToken = state.push('steps_close', 'div', -1);
-    
+
     state.parentType = oldParentType;
     state.lineMax = oldLineMax;
     state.line = nextLine + 1;

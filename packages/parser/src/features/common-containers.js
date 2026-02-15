@@ -1,3 +1,17 @@
+/**
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025 docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
 const container = require('markdown-it-container');
 
 module.exports = {
@@ -46,51 +60,6 @@ module.exports = {
             <div class="collapsible-content">\n`;
         }
         return '</div></details>\n';
-      }
-    });
-
-    // 4. Button (Note: Buttons are often block-level if using :::, or inline if different syntax)
-    md.use(container, 'button', {
-      render: (tokens, idx) => {
-        if (tokens[idx].nesting === 1) {
-            const info = tokens[idx].info.trim().substring(6).trim(); // Remove "button"
-            
-            // Default vars
-            let text = 'Button';
-            let url = '#';
-            let style = '';
-            
-            // Helper to check if string looks like a URL
-            const isUrl = (s) => s.startsWith('http') || s.startsWith('/') || s.startsWith('./') || s.startsWith('#');
-            
-            const parts = info.split(/\s+/);
-            
-            // Logic: Scan parts to find the URL. Everything before is Text. Everything after is Color/Style.
-            const urlIndex = parts.findIndex(p => isUrl(p));
-            
-            if (urlIndex > -1) {
-                url = parts[urlIndex];
-                text = parts.slice(0, urlIndex).join(' ').replace(/_/g, ' '); // Allow underscores for spaces if needed
-                
-                // Check for color after URL
-                if (parts[urlIndex + 1] && parts[urlIndex + 1].startsWith('color:')) {
-                    const color = parts[urlIndex + 1].split(':')[1];
-                    style = ` style="background-color: ${color}; border-color: ${color}; color: #fff;"`;
-                }
-            } else {
-                // No URL found, assume first part is text
-                if (parts.length > 0) text = parts.join(' ');
-            }
-
-            // Handle External Link
-            let targetAttr = '';
-            if (url.startsWith('http')) {
-                targetAttr = ' target="_blank" rel="noopener noreferrer"';
-            }
-            
-            return `<a href="${url}" class="docmd-button"${style}${targetAttr}>${text}`;
-        }
-        return '</a>\n';
       }
     });
   }

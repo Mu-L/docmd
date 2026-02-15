@@ -1,4 +1,17 @@
-// Helper: Smart Dedent (reused, ideally move to utils, but inline is fine for isolation)
+/**
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025 docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
 function smartDedent(str) {
   const lines = str.split('\n');
   let minIndent = Infinity;
@@ -23,27 +36,31 @@ function changelogRule(state, startLine, endLine, silent) {
   let found = false;
   let depth = 1;
   let inFence = false;
-  
+
   while (nextLine < endLine) {
     nextLine++;
     const nextStart = state.bMarks[nextLine] + state.tShift[nextLine];
     const nextMax = state.eMarks[nextLine];
     const nextContent = state.src.slice(nextStart, nextMax).trim();
     
-    // Simple fence check
     if (/^(\s{0,3})(~{3,}|`{3,})/.test(nextContent)) inFence = !inFence;
 
     if (!inFence) {
-        if (nextContent.startsWith(':::')) {
-          if (nextContent.match(/^:::\s*changelog/)) depth++;
-          else if (nextContent === ':::') {
-            depth--;
-            if (depth === 0) { found = true; break; }
+      if (nextContent.startsWith(':::')) {
+        // Track depth of ALL containers starting with :::
+        if (nextContent.match(/^:::\s+\w+/)) {
+          depth++;
+        } else if (nextContent === ':::') {
+          depth--;
+          if (depth === 0) { 
+            found = true; 
+            break; 
           }
         }
+      }
     }
   }
-  
+
   if (!found) return false;
 
   // Extract content block

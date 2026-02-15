@@ -1,19 +1,34 @@
-// Helper for "Smart Dedent"
+/**
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025 docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
 function smartDedent(str) {
   const lines = str.split('\n');
   let minIndent = Infinity;
+
+  // 1. Find min indent
   lines.forEach(line => {
     if (line.trim().length === 0) return;
     const match = line.match(/^ */);
     if (match[0].length < minIndent) minIndent = match[0].length;
   });
+
   if (minIndent === Infinity) return str;
+
+  // 2. Dedent
   return lines.map(line => {
     if (line.trim().length === 0) return '';
-    const dedented = line.substring(minIndent);
-    // Fix Code Fences that were indented
-    if (/^\s{4,}(`{3,}|~{3,})/.test(dedented)) return dedented.trimStart();
-    return dedented;
+    return line.substring(minIndent);
   }).join('\n');
 }
 
@@ -46,13 +61,22 @@ function tabsRule(state, startLine, endLine, silent) {
     if (isFenceLine(nextContent)) inFence = !inFence;
 
     if (!inFence) {
-        if (nextContent.startsWith(':::')) {
-          if (nextContent.match(/^:::\s*tabs/)) depth++;
-          else if (nextContent === ':::') {
-            depth--;
-            if (depth === 0) { found = true; break; }
+      if (nextContent.startsWith(':::')) {
+        // We check if it has a name after :::
+        if (nextContent.match(/^:::\s+[a-zA-Z]/)) {
+            if (!nextContent.match(/^:::\s+button/)) {
+                depth++;
+            }
+        } 
+        // If it's a CLOSING tag (::: followed by nothing or whitespace)
+        else if (nextContent.match(/^:::\s*$/)) {
+          depth--;
+          if (depth === 0) { 
+            found = true; 
+            break; 
           }
         }
+      }
     }
   }
   if (!found) return false;
