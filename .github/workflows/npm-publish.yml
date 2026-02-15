@@ -19,7 +19,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      # Setup Node.js with pnpm cache enabled
+      # Install exact pnpm version (matches package.json)
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      # Setup Node.js with pnpm cache
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
@@ -27,22 +33,18 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           cache: 'pnpm'
 
-      # Enable Corepack (this activates pnpm from packageManager field)
-      - name: Enable Corepack
-        run: corepack enable
-
-      # Verify toolchain versions (debug safety)
+      # Verify versions (debug safety)
       - name: Verify versions
         run: |
-          node -v        # should be v22.x
+          node -v
           npm -v
-          pnpm -v        # should be 10.29.3 automatically
+          pnpm -v
 
-      # Install dependencies using locked versions
+      # Install dependencies
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Build all workspace packages
+      # Build all packages
       - name: Build packages
         run: pnpm -r run build
 
@@ -55,10 +57,10 @@ jobs:
         run: |
           find packages -mindepth 1 -maxdepth 2 -name "package.json" -exec dirname {} \; | xargs -I % cp LICENSE %
 
-      # Resolve workspace dependency versions before publish
+      # Resolve workspace dependencies
       - name: Resolve workspace dependencies
         run: node scripts/resolve-ws-deps.js
 
-      # Publish to npm using Trusted Publishing (OIDC)
+      # Publish to npm (OIDC trusted publishing)
       - name: Publish to npm
         run: npm publish --workspaces --include-workspace-root=false --access public
