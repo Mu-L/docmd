@@ -1,8 +1,16 @@
-<%# packages/ui/templates/layout.ejs %>
+<!--
+  ---------------------------------------------------------------
+  docmd : the minimalist, zero-config documentation generator.
+  @website https://docmd.io
+  [docmd-source] - Please do not remove this header.
+  ---------------------------------------------------------------
+-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="generator" content="docmd v0.4.x">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Define Globals -->
@@ -52,7 +60,7 @@
 <body class="<%= sidebarConfig.collapsible ? 'sidebar-collapsible' : 'sidebar-not-collapsible' %>" 
       data-default-collapsed="<%= sidebarConfig.defaultCollapsed %>" 
       data-copy-code-enabled="<%= config.copyCode === true %>">
-
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <aside class="sidebar">
         <div class="sidebar-header">
             <% if (logo && logo.light && logo.dark) { %>
@@ -116,7 +124,7 @@
             <% } %>
         </div>
 
-        <main class="content-area">
+        <main class="content-area" id="main-content">
             <div class="content-layout">
                 <div class="main-content">
                     <%- content %>
@@ -183,13 +191,16 @@
     </div>
     <% } %>
 
-    <!-- Plugin Scripts -->
+    <!-- CORE JS -->
+    <script src="<%= relativePathToRoot %>assets/js/docmd-main.js?v=<%= buildHash %>"></script>
+
+    <!-- PLUGINS -->
     <%- pluginBodyScriptsHtml || '' %>
 
-    <!-- User Custom JS (Sanitized) -->
+    <!-- CUSTOM JS -->
     <% (customJsFiles || []).forEach(jsFile => { 
        if (jsFile && jsFile.trim() !== '') { %>
-    <script src="<%= relativePathToRoot %><%- jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>"></script>
+    <script src="<%= relativePathToRoot %><%- jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>?v=<%= buildHash %>"></script>
     <% } }); %>
 </body>
 </html>

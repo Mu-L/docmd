@@ -1,4 +1,16 @@
-/* Source file from the docmd project — https://github.com/docmd-io/docmd */
+/**
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025 docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
 
 /*
  * docmd-main.css
@@ -98,6 +110,20 @@ pre {
 
 a:any-link {
     color: var(--link-color)
+}
+
+.skip-link {
+    position: absolute;
+    top: -100px;
+    left: 0;
+    background: var(--bg-color);
+    color: var(--link-color);
+    padding: 8px;
+    z-index: 9999;
+}
+
+.skip-link:focus {
+    top: 0;
 }
 
 .sidebar {
@@ -411,7 +437,8 @@ pre {
     padding: 1.25em;
     color: var(--code-text);
     overflow-x: auto;
-    position: relative
+    position: relative;
+    white-space: pre;
 }
 
 code {
