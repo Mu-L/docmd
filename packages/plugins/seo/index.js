@@ -1,4 +1,18 @@
 /**
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025 docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+/**
  * Generates HTML meta tags for a specific page.
  * @param {Object} config - Project config
  * @param {Object} pageData - { frontmatter, outputPath }
