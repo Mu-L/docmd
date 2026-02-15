@@ -1,3 +1,17 @@
+/**
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025 docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
 const { onPostBuild: searchPostBuild, getClientAssets: getSearchAssets } = require('@docmd/plugin-search');
 const { onPostBuild: sitemapPostBuild } = require('@docmd/plugin-sitemap');
 // We will implement SEO/Analytics later, but they are typically "hooks" inside the HTML generation
