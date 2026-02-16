@@ -28,8 +28,6 @@ function markdownSetup(md) {
 
 function getAssets() {
   return [
-    // REMOVED: The direct CDN link to mermaid.min.js
-    // We now rely on init-mermaid.js to import it as a module
     {
       src: path.join(__dirname, 'assets/init-mermaid.js'),
       dest: 'assets/js/init-mermaid.js',
