@@ -29,6 +29,9 @@ importers:
       '@docmd/plugin-analytics':
         specifier: workspace:^
         version: link:../plugins/analytics
+      '@docmd/plugin-llms':
+        specifier: workspace:*
+        version: link:../plugins/llms
       '@docmd/plugin-mermaid':
         specifier: workspace:^
         version: link:../plugins/mermaid
@@ -74,6 +77,9 @@ importers:
       '@docmd/parser':
         specifier: workspace:^
         version: link:../parser
+      '@docmd/plugin-mermaid':
+        specifier: workspace:*
+        version: link:../plugins/mermaid
       '@docmd/themes':
         specifier: workspace:^
         version: link:../themes
@@ -127,6 +133,8 @@ importers:
         version: 2.1.1
 
   packages/plugins/analytics: {}
+
+  packages/plugins/llms: {}
 
   packages/plugins/mermaid: {}
 
