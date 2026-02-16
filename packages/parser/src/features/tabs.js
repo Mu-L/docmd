@@ -14,22 +14,29 @@
 
 function smartDedent(str) {
   const lines = str.split('\n');
+
+  // Ignore first and last blank lines (common in container blocks)
+  while (lines.length && lines[0].trim() === '') lines.shift();
+  while (lines.length && lines[lines.length - 1].trim() === '') lines.pop();
+
   let minIndent = Infinity;
 
-  // 1. Find min indent
-  lines.forEach(line => {
-    if (line.trim().length === 0) return;
-    const match = line.match(/^ */);
-    if (match[0].length < minIndent) minIndent = match[0].length;
-  });
+  // Find minimum indentation of non-empty lines
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const indent = line.match(/^ */)[0].length;
+    minIndent = Math.min(minIndent, indent);
+  }
 
-  if (minIndent === Infinity) return str;
+  // If no indentation to strip, return joined lines
+  if (!isFinite(minIndent) || minIndent === 0) return lines.join('\n');
 
-  // 2. Dedent
-  return lines.map(line => {
-    if (line.trim().length === 0) return '';
-    return line.substring(minIndent);
-  }).join('\n');
+  // Strip exactly minIndent from each line
+  return lines.map(line =>
+    line.startsWith(' '.repeat(minIndent))
+      ? line.slice(minIndent)
+      : line
+  ).join('\n');
 }
 
 // Helper to identify fences
@@ -82,9 +89,9 @@ function tabsRule(state, startLine, endLine, silent) {
   if (!found) return false;
 
   // Extract content
-  let content = '';
+let content = '';
   for (let i = startLine + 1; i < nextLine; i++) {
-    const lineStart = state.bMarks[i] + state.tShift[i];
+    const lineStart = state.bMarks[i]; 
     const lineEnd = state.eMarks[i];
     content += state.src.slice(lineStart, lineEnd) + '\n';
   }
@@ -152,7 +159,6 @@ function tabsRule(state, startLine, endLine, silent) {
 module.exports = {
   name: 'tabs',
   setup(md) {
-    // Register Rule
     md.block.ruler.before('fence', 'enhanced_tabs', tabsRule, { alt: ['paragraph', 'reference', 'blockquote', 'list'] });
 
     // Register Renderers
