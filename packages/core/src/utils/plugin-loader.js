@@ -29,7 +29,8 @@ const ALIASES = {
   'seo': '@docmd/plugin-seo',
   'sitemap': '@docmd/plugin-sitemap',
   'analytics': '@docmd/plugin-analytics',
-  'mermaid': '@docmd/plugin-mermaid'
+  'mermaid': '@docmd/plugin-mermaid',
+  'llms': '@docmd/plugin-llms'
 };
 
 function loadPlugins(config) {
