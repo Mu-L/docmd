@@ -22,6 +22,7 @@ const footnote = require('markdown-it-footnote');
 const taskLists = require('markdown-it-task-lists');
 const abbr = require('markdown-it-abbr');
 const deflist = require('markdown-it-deflist');
+const emoji = require('markdown-it-emoji');
 
 // The Feature Registry
 const { registerFeatures } = require('./features');
@@ -55,6 +56,7 @@ const headingIdPlugin = (md) => {
   };
 };
 
+// Main Factory Function to Create a Markdown Processor
 function createMarkdownProcessor(config = {}, pluginsCallback) {
   const mdOptions = {
     html: true,
@@ -84,21 +86,44 @@ function createMarkdownProcessor(config = {}, pluginsCallback) {
 
   const md = new MarkdownIt(mdOptions);
 
-  // 1. Core Plugins
+  // Core Plugins
   md.use(attrs, { leftDelimiter: '{', rightDelimiter: '}' });
   md.use(footnote);
   md.use(taskLists);
   md.use(abbr);
   md.use(deflist);
+  md.use(emoji);
   md.use(headingIdPlugin);
 
-  // 2. Register Built-in Features (Callouts, Tabs, Steps, etc.)
+  // Register Built-in Features
   registerFeatures(md);
 
-  // 3. External Plugins Hook
+  // External Plugins Hook
   if (typeof pluginsCallback === 'function') {
     pluginsCallback(md);
   }
+
+  const defaultLinkOpen = md.renderer.rules.link_open || function(tokens, idx, options, env, self) {
+    return self.renderToken(tokens, idx, options);
+  };
+
+  md.renderer.rules.link_open = function(tokens, idx, options, env, self) {
+    const token = tokens[idx];
+    const hrefIndex = token.attrIndex('href');
+    
+    if (hrefIndex >= 0) {
+      let href = token.attrs[hrefIndex][1];
+      
+      const isExternal = href.match(/^(?:[a-z]+:|\/\/|#)/i);
+      const isAsset = href.match(/(^|\/)assets\//);
+
+      if (!isExternal && !isAsset && href.endsWith('.md')) {
+        href = href.replace(/\.md$/, '');
+        token.attrs[hrefIndex][1] = href;
+      }
+    }
+    return defaultLinkOpen(tokens, idx, options, env, self);
+  };
 
   return md;
 }
