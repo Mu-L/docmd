@@ -38,7 +38,7 @@ module.exports = {
 
   // --- Theme & Layout ---
   theme: {
-    name: 'sky',            // Options: 'default', 'sky', 'ruby', 'retro'
+    name: 'default',            // Options: 'default', 'sky', 'ruby', 'retro'
     defaultMode: 'system',  // 'light', 'dark', or 'system'
     enableModeToggle: true, // Show mode toggle button
     positionMode: 'top',    // 'top' or 'bottom'
@@ -82,13 +82,16 @@ module.exports = {
     },
     analytics: {
       googleV4: {
-        measurementId: 'G-X9WTDL262N' // Replace with your Google Analytics Measurement ID
+        measurementId: 'G-X9WTDL262N' // Replace with your GA Measurement ID
       }
     },
     sitemap: {
       defaultChangefreq: 'weekly',  // e.g. 'daily', 'weekly', 'monthly'
       defaultPriority: 0.8          // Priority between 0.0 and 1.0
-    }
+    },
+    search: {},
+    mermaid: {},
+    llms: {}
   },
 
   // --- Footer ---
@@ -108,51 +111,59 @@ title: "Welcome"
 description: "Welcome to your new documentation site."
 ---
 
-# Welcome to Your Docs
+# Welcome to Your Docs 🚀
 
 Congratulations! You have successfully initialized a new **docmd** project.
 
-## 🚀 Quick Start
+## Quick Start
 
-You are currently viewing the content of \`docs/index.md\`.
+You are currently viewing \`docs/index.md\`.
 
 \`\`\`bash
 npm start   # Start the dev server
 docmd build # Build for production
 \`\`\`
 
-## ✨ Features Demo
+## Features Demo
 
-docmd comes with built-in components to make your documentation beautiful.
-
-::: callout tip
-**Try this:** Edit this file and save it. The browser will live reload instantly!
+### 1. Smart Containers
+::: callout tip "Did you know?"
+You can nest containers, add custom titles, and use emojis! :tada:
 :::
 
-### Container Examples
-
-::: card Flexible Structure
-**Organize your way.**
-Create Markdown files in the \`docs/\` folder and map them in \`docmd.config.js\`.
+::: card "Flexible Structure"
+Organize your content with cards.
+::: button "View Documentation" https://docs.docmd.io
 :::
 
+### 2. Tabs & Code
 ::: tabs
-== tab "Simple"
-This is a simple tab content.
+== tab "JavaScript"
+\`\`\`javascript
+console.log('Hello World');
+\`\`\`
 
-== tab "Nested"
-::: callout info
-You can even nest other components inside tabs!
+== tab "Python"
+\`\`\`python
+print('Hello World')
+\`\`\`
 :::
 
-:::
+### 3. Diagrams (Mermaid)
+\`\`\`mermaid
+graph TD;
+    A[Init] --> B{Build?};
+    B -->|Yes| C[Site Generated];
+    B -->|No| D[Keep Editing];
+\`\`\`
 
-## 📚 Next Steps
+## Next Steps
 
 *   [Check the Official Documentation](https://docs.docmd.io)
 *   [Customize your Theme](https://docs.docmd.io/theming)
 *   [Deploy to GitHub Pages](https://docs.docmd.io/deployment)
-`;
+
+Happy documenting! 🎉`;
 
 const defaultPackageJson = {
   name: "my-docs",
