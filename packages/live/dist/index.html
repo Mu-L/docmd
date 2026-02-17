@@ -84,7 +84,6 @@
     </div>
 
     <script>
-        // --- SNIPPETS DATA ---
         const SNIPPETS = {
             basics: `---\ntitle: Welcome\ndescription: Getting started with docmd\n---\n\n# Hello World\n\nThis is **docmd**. It's fast, simple, and runs in your browser.\n\n::: card\n## Features\n1. Zero Config\n2. Offline Search\n3. Isomorphic Core\n:::`,
             
@@ -106,16 +105,14 @@
         function loadPreset(key) {
             if (SNIPPETS[key]) {
                 input.value = SNIPPETS[key];
-                render(); // Trigger immediate render
+                render(); 
             }
         }
 
         function render() {
             try {
-                // 1. Get Scroll
                 const scrollY = preview.contentWindow ? preview.contentWindow.scrollY : 0;
 
-                // 2. Compile
                 let html = docmd.compile(input.value, {
                     siteTitle: 'Live Preview',
                     search: false,
@@ -125,7 +122,6 @@
 
                 html = html.replace('<head>', '<head><base target="_blank">');
                 
-                // Keep scroll restoration (it's useful and invisible)
                 const scrollScript = `
                     <script>
                         if (window) window.scrollTo(0, ${scrollY});
@@ -133,7 +129,6 @@
                 `;
                 html = html.replace('</body>', `${scrollScript}</body>`);
 
-                // 3. Instant Write (No Await, No Timeout)
                 const doc = preview.contentWindow.document;
                 doc.open();
                 doc.write(html);
@@ -145,12 +140,11 @@
         let timer;
         input.addEventListener('input', () => {
             clearTimeout(timer);
-            timer = setTimeout(render, 300); // Keep debounce
+            timer = setTimeout(render, 300);
         });
         
         render();
 
-        // --- Resizer & View Logic (Keep existing code below) ---
         const resizer = document.getElementById('resizer');
         const editorPane = document.getElementById('editorPane');
         const workspace = document.getElementById('workspace');
