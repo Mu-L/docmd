@@ -1,6 +1,6 @@
 {
   "name": "@docmd/live",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "description": "Browser-based editor engine for docmd",
   "bin": {
     "docmd-live": "bin/docmd-live.js"
