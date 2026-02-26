@@ -124,6 +124,21 @@ async function renderPages({ config, srcDir, outputDir, hooks, buildHash, option
       hooks.injectBody.map(fn => fn(config, pageContext)).join('\n')
     ].join('\n');
 
+    let editUrl = null;
+    let editLinkText = config.editLink?.text || 'Edit this page';
+    
+    if (config.editLink && config.editLink.enabled && config.editLink.baseUrl) {
+         const cleanBase = config.editLink.baseUrl.replace(/\/$/, '');
+         const cleanPath = page.outputPath.replace(/\/index\.html$/, '.md');
+         editUrl = `${cleanBase}/${cleanPath}`;
+         if (page.outputPath.endsWith('index.html') && page.outputPath !== 'index.html') {
+             editUrl = editUrl.replace('.md', '/index.md');
+         }
+         if (page.outputPath === 'index.html') {
+             editUrl = `${cleanBase}/index.md`;
+         }
+    }
+
     // Navigation HTML
     const navigationHtml = parser.renderTemplate(templates.navigation, {
       config,
@@ -152,7 +167,7 @@ async function renderPages({ config, srcDir, outputDir, hooks, buildHash, option
       nextPage: fixNeighbor(nextPage),
       logo: config.logo,
       theme: config.theme,
-      // New Config Mappings passed to Template
+
       headerConfig: config.header,
       sidebarConfig: config.sidebar,
       footerConfig: config.footer,
@@ -164,12 +179,12 @@ async function renderPages({ config, srcDir, outputDir, hooks, buildHash, option
       pluginHeadScriptsHtml: fullHeadHtml,
       pluginBodyScriptsHtml: fullBodyHtml,
 
-      faviconLinkHtml: config.favicon ? `<link id="site-favicon" rel="icon" href="${relativePathToRoot}${config.favicon.replace(/^\//,'')}?v=${buildHash}" type="image/x-icon" sizes="any">` : '',
+      faviconLinkHtml: config.favicon ? `<link id="site-favicon" rel="icon" href="${relativePathToRoot}${config.favicon.replace(/^\//,'')}?v=${buildHash}">` : '',
       themeInitScript,
       footerHtml,
       isActivePage: page.htmlContent && page.htmlContent.trim().length > 0,
-      editUrl: null, // Logic moved out or simplified in template?
-      editLinkText: config.editLink?.text || 'Edit',
+      editUrl,
+      editLinkText,
       
       // Placeholders for template compatibility
       themeCssLinkHtml: '', 
