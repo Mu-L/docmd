@@ -131,3 +131,4 @@ genctx.config.json
 genctx.context.md
 _backup
 _playground
+/dist
