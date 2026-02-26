@@ -203,7 +203,7 @@ a:any-link {
     margin: 0
 }
 
-.sidebar nav li a {
+.sidebar nav li a, .sidebar nav li .nav-label {
     display: block;
     padding: .5em;
     margin: .15em 0;
@@ -636,20 +636,7 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
     scrollbar-width: thin;
 }
 
-.sidebar-nav .nav-category-label {
-    display: flex;
-    align-items: center;
-    padding: 0.5em 0.8em;
-    margin: 0.15em 0;
-    color: var(--text-heading);
-    font-weight: 600;
-    border-radius: 4px;
-    user-select: none;
-    transition: background-color 0.2s;
-    font-size: 0.9em;
-}
-
-.sidebar-nav li.collapsible>.nav-category-label:hover {
+.sidebar-nav li.collapsible>.nav-label:hover {
     background-color: var(--sidebar-link-active-bg);
 }
 
@@ -1627,6 +1614,20 @@ hr {
 .footer-brand {
     flex: 1;
     min-width: 250px;
+    max-width: 500px;
+    text-align: center;
+}
+
+.footer-brand .logo-link {
+    display: block;
+    overflow: hidden;
+    margin: 0 auto;
+    width: fit-content;
+}
+
+.footer-brand .logo-link img{
+    max-height: 30px;
+    width: auto;
 }
 
 .footer-columns {
@@ -1724,13 +1725,13 @@ hr {
     color: #fb3a3a
 }
 
-.page-footer a {
+.branding-footer a, .page-footer a {
     color: var(--link-color);
     text-decoration: none
 }
 
 .page-footer-actions {
-    margin-top: 3rem;
+    margin-top: 1.5rem;
     padding-top: 1.5rem;
     border-top: 1px solid var(--border-color);
     display: flex;
@@ -1819,7 +1820,7 @@ hr {
 
     .toc-container .mobile-view {
         display: inline-flex;
-        padding: 4px
+        padding: .15rem 0
     }
 
     .mobile-expanded {
