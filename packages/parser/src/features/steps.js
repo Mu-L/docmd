@@ -19,40 +19,38 @@ function stepsRule(state, startLine, endLine, silent) {
     if (lineContent !== '::: steps') return false;
     if (silent) return true;
   
-    let nextLine = startLine;
-    let found = false;
-    let depth = 1;
-    let inFence = false;
+  let nextLine = startLine;
+  let found = false;
+  let depth = 1;
+  let fenceMarker = null;
 
-    // Iterate lines to find the matching closing tag
-    while (nextLine < endLine) {
-      nextLine++;
-      const nextStart = state.bMarks[nextLine] + state.tShift[nextLine];
-      const nextMax = state.eMarks[nextLine];
-      const nextContent = state.src.slice(nextStart, nextMax).trim();
-      
-      // Ignore contents of code fences
-      if (/^(\s{0,3})(~{3,}|`{3,})/.test(nextContent)) inFence = !inFence;
+  while (nextLine < endLine) {
+    nextLine++;
+    if (nextLine >= endLine) break;
 
-      if (!inFence) {
-        if (nextContent.startsWith(':::')) {
-          // If it's a NEW opening container (e.g. "::: card", "::: callout")
-          // We increment depth so we know we are deeper in the nest.
-          // Note: We ignore "::: button" because buttons are self-closing block rules now.
-          if (nextContent.match(/^:::\s+[a-zA-Z]/) && !nextContent.match(/^:::\s+button/)) {
-            depth++;
-          } 
-          // If it's a CLOSING tag (strictly ":::" with optional whitespace)
-          else if (nextContent.match(/^:::\s*$/)) {
-            depth--;
-            if (depth === 0) { 
-              found = true; 
-              break; 
-            }
-          }
+    const nextStart = state.bMarks[nextLine] + state.tShift[nextLine];
+    const nextMax = state.eMarks[nextLine];
+    const nextContent = state.src.slice(nextStart, nextMax).trim();
+    
+    if (!fenceMarker) {
+        const match = nextContent.match(/^(`{3,}|~{3,})/);
+        if (match) fenceMarker = match[1];
+    } else if (nextContent.startsWith(fenceMarker)) {
+        fenceMarker = null;
+    }
+
+    if (!fenceMarker) {
+      if (nextContent.match(/^:::\s+[a-zA-Z]/) && !nextContent.match(/^:::\s+button/)) {
+          depth++;
+      } else if (nextContent.match(/^:::\s*$/)) {
+        depth--;
+        if (depth === 0) { 
+          found = true; 
+          break; 
         }
       }
     }
+  }
 
     if (!found) return false;
 

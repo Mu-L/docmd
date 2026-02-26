@@ -27,7 +27,7 @@ function createDepthTrackingContainer(md, name, renderOpen, renderClose) {
     let nextLine = startLine;
     let found = false;
     let depth = 1;
-    let inFence = false;
+    let fenceMarker = null;
 
     while (nextLine < endLine) {
       nextLine++;
@@ -37,14 +37,18 @@ function createDepthTrackingContainer(md, name, renderOpen, renderClose) {
       const nextMax = state.eMarks[nextLine];
       const nextContent = state.src.slice(nextStart, nextMax).trim();
       
-      // Ignore content inside code blocks
-      if (/^(\s{0,3})(~{3,}|`{3,})/.test(nextContent)) inFence = !inFence;
+      if (!fenceMarker) {
+          const match = nextContent.match(/^(`{3,}|~{3,})/);
+          if (match) fenceMarker = match[1];
+      } else if (nextContent.startsWith(fenceMarker)) {
+          fenceMarker = null;
+      }
 
-      if (!inFence) {
+      if (!fenceMarker) {
         if (nextContent.match(/^:::\s+[a-zA-Z]/) && !nextContent.match(/^:::\s+button/)) {
-          depth++; // Nested container opened
+          depth++; 
         } else if (nextContent.match(/^:::\s*$/)) {
-          depth--; // Container closed
+          depth--; 
           if (depth === 0) {
             found = true;
             break;

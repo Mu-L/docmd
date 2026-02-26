@@ -56,32 +56,31 @@ function tabsRule(state, startLine, endLine, silent) {
   let nextLine = startLine;
   let found = false;
   let depth = 1;
-  let inFence = false;
+  let fenceMarker = null;
 
-  // Find closing :::
   while (nextLine < endLine) {
     nextLine++;
+    if (nextLine >= endLine) break;
+
     const nextStart = state.bMarks[nextLine] + state.tShift[nextLine];
     const nextMax = state.eMarks[nextLine];
     const nextContent = state.src.slice(nextStart, nextMax).trim();
     
-    if (isFenceLine(nextContent)) inFence = !inFence;
+    if (!fenceMarker) {
+        const match = nextContent.match(/^(`{3,}|~{3,})/);
+        if (match) fenceMarker = match[1];
+    } else if (nextContent.startsWith(fenceMarker)) {
+        fenceMarker = null;
+    }
 
-    if (!inFence) {
-      if (nextContent.startsWith(':::')) {
-        // We check if it has a name after :::
-        if (nextContent.match(/^:::\s+[a-zA-Z]/)) {
-            if (!nextContent.match(/^:::\s+button/)) {
-                depth++;
-            }
-        } 
-        // If it's a CLOSING tag (::: followed by nothing or whitespace)
-        else if (nextContent.match(/^:::\s*$/)) {
-          depth--;
-          if (depth === 0) { 
-            found = true; 
-            break; 
-          }
+    if (!fenceMarker) {
+      if (nextContent.match(/^:::\s+[a-zA-Z]/) && !nextContent.match(/^:::\s+button/)) {
+          depth++;
+      } else if (nextContent.match(/^:::\s*$/)) {
+        depth--;
+        if (depth === 0) { 
+          found = true; 
+          break; 
         }
       }
     }
