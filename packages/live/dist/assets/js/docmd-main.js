@@ -18,7 +18,7 @@
   // =========================================================================
   document.addEventListener('click', (e) => {
     // Collapsible Navigation
-    const navLabel = e.target.closest('.nav-category-label, .collapse-icon-wrapper');
+    const navLabel = e.target.closest('.nav-label, .collapse-icon-wrapper');
     if (navLabel) {
       const item = navLabel.closest('li.collapsible');
       if (item) {
@@ -148,7 +148,7 @@
     let currentPath = window.location.pathname;
 
     document.addEventListener('click', async (e) => {
-      // NEW FIX: If they clicked the expand/collapse arrow, ignore SPA routing!
+
       if (e.target.closest('.collapse-icon-wrapper')) return;
 
       const link = e.target.closest('.sidebar-nav a, .page-navigation a');
@@ -183,14 +183,38 @@
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
 
+        // 1. UPDATE URL FIRST
+        if (pushHistory) history.pushState({}, '', finalUrl);
+        currentPath = new URL(finalUrl).pathname;
+        document.title = doc.title;
+
+        // 2. SAFELY SYNC HEAD ASSETS (Favicon & CSS)
+        const assetSelectors = 'link[rel="stylesheet"], link[rel="icon"], link[rel="shortcut icon"]';
+        const oldAssets = Array.from(document.head.querySelectorAll(assetSelectors));
+        const newAssets = Array.from(doc.head.querySelectorAll(assetSelectors));
+
+        newAssets.forEach((newAsset, index) => {
+            if (oldAssets[index]) {
+                // Only update if the relative path actually changed
+                if (oldAssets[index].getAttribute('href') !== newAsset.getAttribute('href')) {
+                    oldAssets[index].setAttribute('href', newAsset.getAttribute('href'));
+                }
+            } else {
+                document.head.appendChild(newAsset.cloneNode(true));
+            }
+        });
+
+        // 3. MEMORIZE SIDEBAR STATE
         const openMenus = new Set();
-        document.querySelectorAll('.sidebar-nav li.collapsible.expanded > .nav-category-label .nav-item-title, .sidebar-nav li.collapsible.expanded > a .nav-item-title').forEach(el => {
+        document.querySelectorAll('.sidebar-nav li.collapsible.expanded > .nav-label .nav-item-title, .sidebar-nav li.collapsible.expanded > a .nav-item-title').forEach(el => {
             openMenus.add(el.textContent.trim());
         });
         
+        // 4. SWAP BODY COMPONENTS
         const selectorsToSwap =[
           '.main-content', '.toc-sidebar', '.sidebar-nav', 
-          '.page-header .header-title', '.page-footer', '.footer-complete'
+          '.page-header .header-title', '.page-footer', '.footer-complete',
+          '.page-footer-actions'
         ];
 
         selectorsToSwap.forEach(selector => {
@@ -199,6 +223,7 @@
             if (oldEl && newEl) oldEl.innerHTML = newEl.innerHTML;
         });
 
+        // 5. RESTORE SIDEBAR STATE
         document.querySelectorAll('.sidebar-nav li.collapsible').forEach(li => {
             const title = li.querySelector('.nav-item-title')?.textContent.trim();
             if (openMenus.has(title)) {
@@ -207,18 +232,7 @@
             }
         });
 
-        const newFavicon = doc.querySelector('#site-favicon');
-        const oldFavicon = document.querySelector('#site-favicon');
-        if (newFavicon && oldFavicon) {
-            oldFavicon.setAttribute('href', newFavicon.getAttribute('href'));
-        }
-
-        document.title = doc.title;
-        if (pushHistory) history.pushState({}, '', finalUrl);
-        
-        // UPDATE tracker after successful navigation
-        currentPath = new URL(finalUrl).pathname;
-        
+        // 6. SCROLL & RE-INIT
         const hash = new URL(finalUrl).hash;
         if (hash) {
             document.querySelector(hash)?.scrollIntoView();

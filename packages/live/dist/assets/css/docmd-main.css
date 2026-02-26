@@ -255,8 +255,8 @@ a:any-link {
 
 .sidebar nav li[aria-expanded="true"]>a .collapse-icon,
 .sidebar nav li.expanded>a .collapse-icon,
-.sidebar nav li[aria-expanded="true"]>.nav-category-label .collapse-icon,
-.sidebar nav li.expanded>.nav-category-label .collapse-icon {
+.sidebar nav li[aria-expanded="true"]>.nav-label .collapse-icon,
+.sidebar nav li.expanded>.nav-label .collapse-icon {
     transform: rotate(90deg);
 }
 

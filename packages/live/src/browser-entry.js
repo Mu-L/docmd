@@ -29,10 +29,9 @@ function compile(markdown, config = {}) {
     const md = createMarkdownProcessor(defaults, (parser) => {
         const defaultFence = parser.renderer.rules.fence;
         parser.renderer.rules.fence = (tokens, idx, options, env, self) => {
-            const token = tokens[idx];
-            const info = token.info.trim();
+            const info = tokens[idx].info.trim();
             if (info === 'mermaid') {
-                return `<div class="mermaid">${token.content}</div>`;
+                return `<div class="mermaid">${parser.utils.escapeHtml(tokens[idx].content)}</div>\n`;
             }
             return defaultFence(tokens, idx, options, env, self);
         };
