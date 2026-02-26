@@ -12,8 +12,6 @@
     <meta charset="UTF-8">
     <meta name="generator" content="docmd v0.4.x">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Define Globals -->
     <script>
         var root = "<%= relativePathToRoot %>";
         if (root && !root.endsWith('/')) root += '/';
@@ -21,16 +19,9 @@
         window.DOCMD_ROOT = root;
         window.DOCMD_DEFAULT_MODE = "<%= defaultMode %>";
     </script>
-
     <title><%= pageTitle %></title>
-
-    <!-- Favicon -->
     <%- faviconLinkHtml || '' %>
-    
-    <!-- 1. CORE STYLES (Foundation) -->
     <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-main.css?v=<%= buildHash %>">
-
-    <!-- 2. HIGHLIGHT.JS (Toggle Strategy) -->
     <% if (config.theme?.codeHighlight !== false) { 
        const isDarkDefault = defaultMode === 'dark';
     %>
@@ -44,23 +35,19 @@
           id="hljs-dark" 
           <%= isDarkDefault ? '' : 'disabled' %>>
     <% } %>
-
-    <!-- 3. PLUGINS & THEMES (Overrides Core) -->
-    <!-- This includes 'docmd-theme-sky.css' injected by build.js -->
     <%- pluginHeadScriptsHtml || '' %>
-
-    <!-- 4. CUSTOM CSS (Overrides Everything) -->
     <% (customCssFiles || []).forEach(cssFile => { %>
     <link rel="stylesheet" href="<%= relativePathToRoot %><%- cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
     <% }); %>
-
-    <!-- Theme Init Script (Must be after styles to prevent FOUC) -->
     <%- themeInitScript %>
 </head>
-<body class="<%= sidebarConfig.collapsible ? 'sidebar-collapsible' : 'sidebar-not-collapsible' %>" 
-      data-default-collapsed="<%= sidebarConfig.defaultCollapsed %>" 
-      data-copy-code-enabled="<%= config.copyCode === true %>">
+<body class="<%= sidebarConfig?.collapsible ? 'sidebar-collapsible' : 'sidebar-not-collapsible' %>" 
+      data-default-collapsed="<%= sidebarConfig?.defaultCollapsed %>" 
+      data-copy-code-enabled="<%= config.copyCode === true %>"
+      data-spa-enabled="<%= config.layout?.spa !== false %>">
+    
     <a href="#main-content" class="skip-link">Skip to main content</a>
+    
     <aside class="sidebar">
         <div class="sidebar-header">
             <% if (logo && logo.light && logo.dark) { %>
@@ -72,61 +59,52 @@
             <h1><a href="<%= relativePathToRoot %>index.html"><%= siteTitle %></a></h1>
             <% } %>
             <span class="mobile-view sidebar-menu-button float-right">
-                <%- renderIcon("ellipsis-vertical") %>
+                <%- renderIcon("menu") %>
             </span>
         </div>
 
+        <% if (optionsMenu?.position === 'sidebar-top') { %>
+            <div class="sidebar-options-wrapper">
+                <%- include('partials/options-menu', { optionsMenu }) %>
+            </div>
+        <% } %>
+
         <%- navigationHtml %>
 
-        <% if (theme && theme.enableModeToggle && theme.positionMode !== 'top') { %>
-        <button id="theme-toggle-button" aria-label="Toggle theme" class="theme-toggle-button">
-            <%- renderIcon('sun', { class: 'icon-sun' }) %> <%- renderIcon('moon', { class: 'icon-moon' }) %>
-        </button>
+        <% if (optionsMenu?.position === 'sidebar-bottom') { %>
+            <div class="sidebar-options-wrapper mt-auto">
+                <%- include('partials/options-menu', { optionsMenu }) %>
+            </div>
         <% } %>
     </aside>
 
     <div class="main-content-wrapper">
-        <div class="page-header">
+        <% if (headerConfig?.enabled !== false) { %>
+        <header class="page-header">
             <div class="header-left">
-                <% if (sidebarConfig.collapsible) { %>
+                <% if (sidebarConfig?.collapsible) { %>
                 <button id="sidebar-toggle-button" class="sidebar-toggle-button" aria-label="Toggle Sidebar">
                     <%- renderIcon('panel-left-close') %>
                 </button>
                 <% } %>
-                <h1><%= pageTitle %></h1>
+                <span class="header-title"><%= pageTitle %></span>
             </div>
-            <% if (theme && theme.enableModeToggle && theme.positionMode === 'top') { %>
+            
             <div class="header-right">
-
-                <!-- SEARCH BUTTON -->
-                <% if (config.search !== false) { %>
-                <button class="docmd-search-trigger" aria-label="Search">
-                    <%- renderIcon('search') %>
-                    <span class="search-label">Search</span>
-                    <span class="search-keys"><kbd class="docmd-kbd">⌘</kbd><kbd class="docmd-kbd">k</kbd></span>
-                </button>
-                <% } %>
-
-                <!-- THEME TOGGLE -->
-                <button id="theme-toggle-button" aria-label="Toggle theme" class="theme-toggle-button theme-toggle-header">
-                    <%- renderIcon('sun', { class: 'icon-sun' }) %> <%- renderIcon('moon', { class: 'icon-moon' }) %>
-                </button>
-
-                <!-- SPONSOR BUTTON -->
-                <% if (sponsor && sponsor.enabled) { %>
-                <a href="<%= sponsor.link %>" target="_blank" rel="noopener noreferrer" aria-label="Sponsor Project">
-                    <button class="sponsor-link-button" aria-label="Sponsor">
-                    <%- renderIcon('heart', { class: 'sponsor-icon' }) %>
-                    </button>
-                </a>
+                <% if (optionsMenu?.position === 'header') { %>
+                    <%- include('partials/options-menu', { optionsMenu }) %>
                 <% } %>
             </div>
-            <% } %>
-        </div>
+        </header>
+        <% } %>
 
         <main class="content-area" id="main-content">
             <div class="content-layout">
                 <div class="main-content">
+                    <% if (headerConfig?.enabled === false) { %>
+                        <h1><%= pageTitle %></h1>
+                    <% } %>
+                    
                     <%- content %>
 
                     <% if (config.pageNavigation && (prevPage || nextPage)) { %>
@@ -161,43 +139,11 @@
             </div>
         </main>
 
-        <footer class="page-footer">
-            <div class="footer-content">
-                <div class="user-footer"><%- footerHtml || '' %></div>
-                <div class="branding-footer">
-                    Build with <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path><path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"></path><path d="m18 15-2-2"></path><path d="m15 18-2-2"></path></svg> <a href="https://docmd.io" target="_blank" rel="noopener">docmd.</a>
-                </div>
-            </div>
-        </footer>
+        <%- include('partials/footer', { footerConfig, config, relativePathToRoot, logo, siteTitle, footerHtml }) %>
     </div>
 
-    <% if (config.search !== false) { %>
-    <!-- Search Modal -->
-    <div id="docmd-search-modal" class="docmd-search-modal" style="display: none;">
-        <div class="docmd-search-box">
-            <div class="docmd-search-header">
-                <%- renderIcon('search') %>
-                <input type="text" id="docmd-search-input" placeholder="Search documentation..." autocomplete="off" spellcheck="false">
-                <button onclick="window.closeDocmdSearch()" class="docmd-search-close" aria-label="Close search">
-                    <%- renderIcon('x') %>
-                </button>
-            </div>
-            <div id="docmd-search-results" class="docmd-search-results"></div>
-            <div class="docmd-search-footer">
-                <span><kbd class="docmd-kbd">↑</kbd> <kbd class="docmd-kbd">↓</kbd> to navigate</span>
-                <span><kbd class="docmd-kbd">ESC</kbd> to close</span>
-            </div>
-        </div>
-    </div>
-    <% } %>
-
-    <!-- CORE JS -->
     <script src="<%= relativePathToRoot %>assets/js/docmd-main.js?v=<%= buildHash %>"></script>
-
-    <!-- PLUGINS -->
     <%- pluginBodyScriptsHtml || '' %>
-
-    <!-- CUSTOM JS -->
     <% (customJsFiles || []).forEach(jsFile => { 
        if (jsFile && jsFile.trim() !== '') { %>
     <script src="<%= relativePathToRoot %><%- jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>?v=<%= buildHash %>"></script>

@@ -1,0 +1,30 @@
+<%# ---------------------------------------------------------------
+  # docmd : the minimalist, zero-config documentation generator.
+  # @website https://docmd.io
+  # [docmd-source] - Please do not remove this header.
+  # ---------------------------------------------------------------
+%>
+
+<% if (optionsMenu && optionsMenu.components) { %>
+<div class="docmd-options-menu">
+    <% if (optionsMenu.components.search !== false) { %>
+    <button class="docmd-search-trigger" aria-label="Search">
+        <%- renderIcon('search') %>
+        <span class="search-label">Search</span>
+        <span class="search-keys"><kbd class="docmd-kbd">⌘</kbd><kbd class="docmd-kbd">K</kbd></span>
+    </button>
+    <% } %>
+
+    <% if (optionsMenu.components.themeSwitch !== false) { %>
+    <button class="theme-toggle-button" aria-label="Toggle theme">
+        <%- renderIcon('sun', { class: 'icon-sun' }) %> <%- renderIcon('moon', { class: 'icon-moon' }) %>
+    </button>
+    <% } %>
+
+    <% if (optionsMenu.components.sponsor) { %>
+    <a href="<%= optionsMenu.components.sponsor %>" target="_blank" rel="noopener noreferrer" class="sponsor-link-button" aria-label="Sponsor">
+        <%- renderIcon('heart', { class: 'sponsor-icon' }) %>
+    </a>
+    <% } %>
+</div>
+<% } %>
