@@ -50,13 +50,24 @@ async function build() {
                     try { return await fs.readFile(p, 'utf8'); } catch(e) { return null; }
                 };
 
+                // Read top-level EJS files
                 const files = await fs.readdir(templatesDir);
                 for (const file of files) {
                     if (file.endsWith('.ejs')) templates[file] = await tryRead(file);
                 }
-                
-                const themeInit = await tryRead('partials/theme-init.js');
-                if (themeInit) templates['partials/theme-init.js'] = themeInit;
+
+                // Read partials
+                try {
+                    const partialsDir = path.join(templatesDir, 'partials');
+                    const partials = await fs.readdir(partialsDir);
+                    for (const file of partials) {
+                        if (file.endsWith('.ejs') || file.endsWith('.js')) {
+                            templates[`partials/${file}`] = await tryRead(`partials/${file}`);
+                        }
+                    }
+                } catch (e) {
+                    // Ignore if partials dir doesn't exist
+                }
 
                 return {
                     contents: `module.exports = ${JSON.stringify(templates)};`,

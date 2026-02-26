@@ -21,6 +21,7 @@ function compile(markdown, config = {}) {
     const defaults = {
         siteTitle: 'Live Preview',
         theme: { defaultMode: 'light', name: 'default', codeHighlight: true },
+        layout: { spa: false },
         ...config
     };
 
@@ -110,23 +111,29 @@ function compile(markdown, config = {}) {
         relativePathToRoot: './', 
         outputPath: 'index.html',
         currentPagePath: '/index',
-        prevPage: null,
-        nextPage: null,
+        prevPage: null, nextPage: null,
 
-        // Inject the constructed assets
+        // Injecting Assets
         pluginHeadScriptsHtml: cssTags.join('\n'), 
-        pluginBodyScriptsHtml: jsTags.join('\n'),
+        pluginBodyScriptsHtml: mermaidScript,
         themeInitScript: themeInitScript,
 
-        // Helpers
+        // Layout & UI Configurations
         faviconLinkHtml: '', 
         logo: defaults.logo, 
-        sidebarConfig: { collapsible: false }, 
         theme: defaults.theme,
-        customCssFiles: [], customJsFiles: [],
-        sponsor: {}, footer: '', footerHtml: '',
+        customCssFiles: [], customJsFiles:[],
+        
+        // Layout Adapters
+        headerConfig: { enabled: true },
+        sidebarConfig: { collapsible: false, defaultCollapsed: false },
+        footerConfig: { style: 'minimal', content: '' },
+        optionsMenu: { position: 'header', components: { search: false, themeSwitch: true, sponsor: null } },
+        footerHtml: '',
+        
         isActivePage: true,
-        editUrl: null, editLinkText: ''
+        editUrl: null,
+        editLinkText: ''
     };
 
     // 5. Render

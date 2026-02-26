@@ -12,277 +12,280 @@
  * --------------------------------------------------------------------
  */
 
-/* 
- * Main client-side script for docmd UI interactions
- */
-
-// --- Collapsible Navigation Logic ---
-function initializeCollapsibleNav() {
-  const nav = document.querySelector('.sidebar-nav');
-  if (!nav) return;
-
-  // 1. Initial Cleanup (ensure classes match aria states)
-  nav.querySelectorAll('li.collapsible').forEach(item => {
-      // If server rendered it as expanded, ensure aria matches
-      if (item.classList.contains('expanded')) {
-          item.setAttribute('aria-expanded', 'true');
-      } else {
-          item.setAttribute('aria-expanded', 'false');
-      }
-  });
-
-  // 2. Event Delegation
-  nav.addEventListener('click', (e) => {
-    // Check if the click target is the arrow or inside the arrow wrapper
-    const arrow = e.target.closest('.collapse-icon-wrapper');
-    
-    if (arrow) {
-      // STOP everything. Do not follow the link.
-      e.preventDefault();
-      e.stopPropagation();
-
-      const item = arrow.closest('li.collapsible');
+(function() {
+  // =========================================================================
+  // 1. EVENT DELEGATION
+  // =========================================================================
+  document.addEventListener('click', (e) => {
+    // Collapsible Navigation
+    const navLabel = e.target.closest('.nav-category-label, .collapse-icon-wrapper');
+    if (navLabel) {
+      const item = navLabel.closest('li.collapsible');
       if (item) {
-        // Toggle State
+        e.preventDefault();
         const isExpanded = item.classList.contains('expanded');
-        
-        if (isExpanded) {
-            item.classList.remove('expanded');
-            item.setAttribute('aria-expanded', 'false');
-        } else {
-            item.classList.add('expanded');
-            item.setAttribute('aria-expanded', 'true');
-        }
+        item.classList.toggle('expanded', !isExpanded);
+        item.setAttribute('aria-expanded', !isExpanded);
       }
-      return false;
+      if (navLabel.classList.contains('collapse-icon-wrapper')) return; 
+    }
+
+    // Toggles
+    if (e.target.closest('.toc-menu-button, .toc-title')) {
+      document.querySelector('.toc-container')?.classList.toggle('mobile-expanded');
+    }
+    if (e.target.closest('.sidebar-menu-button')) {
+      document.querySelector('.sidebar')?.classList.toggle('mobile-expanded');
+    }
+    if (e.target.closest('#sidebar-toggle-button')) {
+      document.body.classList.toggle('sidebar-collapsed');
+      localStorage.setItem('docmd-sidebar-collapsed', document.body.classList.contains('sidebar-collapsed'));
+    }
+
+    // Tabs System
+    const tabItem = e.target.closest('.docmd-tabs-nav-item');
+    if (tabItem) {
+      const tabsContainer = tabItem.closest('.docmd-tabs');
+      const navItems = Array.from(tabsContainer.querySelectorAll('.docmd-tabs-nav-item'));
+      const tabPanes = Array.from(tabsContainer.querySelectorAll('.docmd-tab-pane'));
+      const index = navItems.indexOf(tabItem);
+      
+      navItems.forEach(item => item.classList.remove('active'));
+      tabPanes.forEach(pane => pane.classList.remove('active'));
+      
+      tabItem.classList.add('active');
+      if (tabPanes[index]) tabPanes[index].classList.add('active');
+    }
+
+    // Copy Code Button
+    const copyBtn = e.target.closest('.copy-code-button');
+    if (copyBtn) {
+      const code = copyBtn.closest('.code-wrapper')?.querySelector('code');
+      if (code) {
+        navigator.clipboard.writeText(code.innerText).then(() => {
+          copyBtn.classList.add('copied');
+          copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+          setTimeout(() => {
+            copyBtn.classList.remove('copied');
+            copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>`;
+          }, 2000);
+        });
+      }
     }
   });
-}
 
-// --- Mobile Menu Logic ---
-function initializeMobileMenus() {
-  const sidebarBtn = document.querySelector('.sidebar-menu-button');
-  const sidebar = document.querySelector('.sidebar');
-  
-  if (sidebarBtn && sidebar) {
-    sidebarBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      sidebar.classList.toggle('mobile-expanded');
-    });
-  }
-
-  const tocBtn = document.querySelector('.toc-menu-button');
-  const tocContainer = document.querySelector('.toc-container');
-  const tocTitle = document.querySelector('.toc-title');
-
-  const toggleToc = (e) => {
-    if (window.getComputedStyle(tocBtn).display === 'none') return;
-    e.stopPropagation();
-    tocContainer.classList.toggle('mobile-expanded');
-  };
-
-  if (tocBtn && tocContainer) {
-    tocBtn.addEventListener('click', toggleToc);
-    if (tocTitle) tocTitle.addEventListener('click', toggleToc);
-  }
-}
-
-// --- Sidebar Scroll Preservation (Instant Center) ---
-function initializeSidebarScroll() {
-  const sidebar = document.querySelector('.sidebar');
-  if (!sidebar) return;
-
-  // Wait for the layout to be stable
-  requestAnimationFrame(() => {
-    // Find the active link
-    const activeElement = sidebar.querySelector('a.active');
-
-    if (activeElement) {
-      activeElement.scrollIntoView({
-        behavior: 'auto', // INSTANT jump (prevents scrolling animation jitter)
-        block: 'center',  // Center it vertically in the sidebar
-        inline: 'nearest'
-      });
-    }
-  });
-}
-
-// --- Theme Toggle Logic ---
-function setupThemeToggleListener() {
-  const toggleButtons = document.querySelectorAll('.theme-toggle-button');
-
-  function applyTheme(theme) {
-    const validThemes = ['light', 'dark'];
-    const selectedTheme = validThemes.includes(theme) ? theme : 'light';
-
-    // 1. Update DOM & Storage
-    document.documentElement.setAttribute('data-theme', selectedTheme);
-    document.body.setAttribute('data-theme', selectedTheme);
-    localStorage.setItem('docmd-theme', selectedTheme);
-
-    // 2. Toggle Highlight.js Stylesheets
-    const lightLink = document.getElementById('hljs-light');
-    const darkLink = document.getElementById('hljs-dark');
-
-    if (lightLink && darkLink) {
-        if (selectedTheme === 'dark') {
-            lightLink.disabled = true;
-            darkLink.disabled = false;
-        } else {
-            lightLink.disabled = false;
-            darkLink.disabled = true;
-        }
-    }
-  }
-
-  toggleButtons.forEach(btn => {
-    // Clone button to remove old listeners if any (safety measure)
-    const newBtn = btn.cloneNode(true);
-    btn.parentNode.replaceChild(newBtn, btn);
+  // =========================================================================
+  // 2. COMPONENT INITIALIZERS
+  // =========================================================================
+  function injectCopyButtons() {
+    if (document.body.dataset.copyCodeEnabled !== 'true') return;
+    const svg = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>`;
     
-    newBtn.addEventListener('click', () => {
-      const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-      applyTheme(newTheme);
+    document.querySelectorAll('pre').forEach(preElement => {
+      if (preElement.closest('.code-wrapper')) return; 
+      const wrapper = document.createElement('div');
+      wrapper.className = 'code-wrapper';
+      wrapper.style.position = 'relative';
+      preElement.parentNode.insertBefore(wrapper, preElement);
+      wrapper.appendChild(preElement);
+      
+      const copyButton = document.createElement('button');
+      copyButton.className = 'copy-code-button';
+      copyButton.innerHTML = svg;
+      wrapper.appendChild(copyButton);
     });
-  });
-}
-
-// --- Sidebar Collapse Logic ---
-function initializeSidebarToggle() {
-  const toggleButton = document.getElementById('sidebar-toggle-button');
-  const body = document.body;
-
-  if (!body.classList.contains('sidebar-collapsible') || !toggleButton) return;
-
-  const defaultConfigCollapsed = body.dataset.defaultCollapsed === 'true';
-  let isCollapsed = localStorage.getItem('docmd-sidebar-collapsed');
-
-  if (isCollapsed === null) isCollapsed = defaultConfigCollapsed;
-  else isCollapsed = isCollapsed === 'true';
-
-  if (isCollapsed) body.classList.add('sidebar-collapsed');
-
-  toggleButton.addEventListener('click', () => {
-    body.classList.toggle('sidebar-collapsed');
-    const currentlyCollapsed = body.classList.contains('sidebar-collapsed');
-    localStorage.setItem('docmd-sidebar-collapsed', currentlyCollapsed);
-  });
-}
-
-// --- Tabs Container Logic ---
-function initializeTabs() {
-  document.querySelectorAll('.docmd-tabs').forEach(tabsContainer => {
-    const navItems = tabsContainer.querySelectorAll('.docmd-tabs-nav-item');
-    const tabPanes = tabsContainer.querySelectorAll('.docmd-tab-pane');
-
-    navItems.forEach((navItem, index) => {
-      navItem.addEventListener('click', () => {
-        navItems.forEach(item => item.classList.remove('active'));
-        tabPanes.forEach(pane => pane.classList.remove('active'));
-
-        navItem.classList.add('active');
-        if (tabPanes[index]) tabPanes[index].classList.add('active');
-      });
-    });
-  });
-}
-
-// --- Copy Code Button Logic ---
-function initializeCopyCodeButtons() {
-  if (document.body.dataset.copyCodeEnabled !== 'true') return;
-
-  const copyIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>`;
-  const checkIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-
-  document.querySelectorAll('pre').forEach(preElement => {
-    const codeElement = preElement.querySelector('code');
-    if (!codeElement) return;
-
-    const wrapper = document.createElement('div');
-    wrapper.style.position = 'relative';
-    wrapper.style.display = 'block';
-
-    preElement.parentNode.insertBefore(wrapper, preElement);
-    wrapper.appendChild(preElement);
-    preElement.style.position = 'static';
-
-    const copyButton = document.createElement('button');
-    copyButton.className = 'copy-code-button';
-    copyButton.innerHTML = copyIconSvg;
-    copyButton.setAttribute('aria-label', 'Copy code to clipboard');
-    wrapper.appendChild(copyButton);
-
-    copyButton.addEventListener('click', () => {
-      navigator.clipboard.writeText(codeElement.innerText).then(() => {
-        copyButton.innerHTML = checkIconSvg;
-        copyButton.classList.add('copied');
-        setTimeout(() => {
-          copyButton.innerHTML = copyIconSvg;
-          copyButton.classList.remove('copied');
-        }, 2000);
-      }).catch(err => {
-        console.error('Failed to copy text: ', err);
-        copyButton.innerText = 'Error';
-      });
-    });
-  });
-}
-
-// --- Theme Sync Function ---
-function syncBodyTheme() {
-  const currentTheme = document.documentElement.getAttribute('data-theme');
-  if (currentTheme && document.body) {
-    document.body.setAttribute('data-theme', currentTheme);
   }
-}
 
-// --- Scroll Spy Logic ---
-function initializeScrollSpy() {
-  const tocLinks = document.querySelectorAll('.toc-link');
-  const headings = document.querySelectorAll('.main-content h2, .main-content h3');
-  
-  if (tocLinks.length === 0 || headings.length === 0) return;
+  let scrollObserver = null;
+  function initializeScrollSpy() {
+    if (scrollObserver) scrollObserver.disconnect();
+    const tocLinks = document.querySelectorAll('.toc-link');
+    const headings = document.querySelectorAll('.main-content h2, .main-content h3, .main-content h4');
+    const tocContainer = document.querySelector('.toc-list');
+    
+    if (tocLinks.length === 0 || headings.length === 0) return;
 
-  const observerOptions = {
-    root: null,
-    // Trigger when heading crosses the top 10% of screen
-    rootMargin: '-10% 0px -80% 0px', 
-    threshold: 0
-  };
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        // 1. Clear current active state
-        tocLinks.forEach(link => link.classList.remove('active'));
-        
-        // 2. Find link corresponding to this heading
-        const id = entry.target.getAttribute('id');
-        const activeLink = document.querySelector(`.toc-link[href="#${id}"]`);
-        
-        if (activeLink) {
+    scrollObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          tocLinks.forEach(link => link.classList.remove('active'));
+          const id = entry.target.getAttribute('id');
+          const activeLink = document.querySelector(`.toc-link[href="#${id}"]`);
+          
+          if (activeLink) {
             activeLink.classList.add('active');
-            
-            // Optional: Auto-scroll the TOC sidebar itself if needed
-            // activeLink.scrollIntoView({ block: 'nearest' });
+            if (tocContainer) {
+              const linkRect = activeLink.getBoundingClientRect();
+              const containerRect = tocContainer.getBoundingClientRect();
+              if (linkRect.bottom > containerRect.bottom || linkRect.top < containerRect.top) {
+                tocContainer.scrollTo({ top: activeLink.offsetTop - (containerRect.height / 2) + (linkRect.height / 2), behavior: 'smooth' });
+              }
+            }
+          }
         }
-      }
+      });
+    }, { rootMargin: '-15% 0px -80% 0px', threshold: 0 });
+
+    headings.forEach(h => scrollObserver.observe(h));
+  }
+
+  function executeScripts(container) {
+    container.querySelectorAll('script').forEach(oldScript => {
+      const newScript = document.createElement('script');
+      Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+      newScript.text = oldScript.innerHTML;
+      oldScript.parentNode.replaceChild(newScript, oldScript);
     });
-  }, observerOptions);
+  }
 
-  headings.forEach(heading => observer.observe(heading));
-}
+// =========================================================================
+  // 3. TARGETED SPA ROUTER
+  // =========================================================================
+  function initializeSPA() {
+    if (location.protocol === 'file:') return;
+    if (document.body.dataset.spaEnabled !== 'true') return;
 
-// --- Main Execution ---
-document.addEventListener('DOMContentLoaded', () => {
-  syncBodyTheme();
-  setupThemeToggleListener();
-  initializeSidebarToggle();
-  initializeTabs();
-  initializeCopyCodeButtons();
-  initializeCollapsibleNav();
-  initializeMobileMenus();
-  initializeSidebarScroll();
-  initializeScrollSpy();
-});
+    let currentPath = window.location.pathname;
+
+    document.addEventListener('click', async (e) => {
+      // NEW FIX: If they clicked the expand/collapse arrow, ignore SPA routing!
+      if (e.target.closest('.collapse-icon-wrapper')) return;
+
+      const link = e.target.closest('.sidebar-nav a, .page-navigation a');
+      if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+      
+      const url = new URL(link.href);
+      if (url.origin !== location.origin) return;
+      if (url.pathname === window.location.pathname && url.hash) return;
+      
+      e.preventDefault();
+      await navigateTo(url.href);
+    });
+
+    // Handle Back/Forward browser buttons & TOC Hash clicks
+    window.addEventListener('popstate', () => {
+      // If the path is identical, it means ONLY the #hash changed. Do not reload!
+      if (window.location.pathname === currentPath) return;
+      
+      navigateTo(window.location.href, false);
+    });
+
+    async function navigateTo(url, pushHistory = true) {
+      const mainContentWrapper = document.querySelector('.main-content-wrapper');
+      
+      try {
+        if (mainContentWrapper) mainContentWrapper.style.opacity = '0.5';
+        
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Fetch failed');
+        const finalUrl = res.url;
+        const html = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        const openMenus = new Set();
+        document.querySelectorAll('.sidebar-nav li.collapsible.expanded > .nav-category-label .nav-item-title, .sidebar-nav li.collapsible.expanded > a .nav-item-title').forEach(el => {
+            openMenus.add(el.textContent.trim());
+        });
+        
+        const selectorsToSwap =[
+          '.main-content', '.toc-sidebar', '.sidebar-nav', 
+          '.page-header .header-title', '.page-footer', '.footer-complete'
+        ];
+
+        selectorsToSwap.forEach(selector => {
+            const oldEl = document.querySelector(selector);
+            const newEl = doc.querySelector(selector);
+            if (oldEl && newEl) oldEl.innerHTML = newEl.innerHTML;
+        });
+
+        document.querySelectorAll('.sidebar-nav li.collapsible').forEach(li => {
+            const title = li.querySelector('.nav-item-title')?.textContent.trim();
+            if (openMenus.has(title)) {
+                li.classList.add('expanded');
+                li.setAttribute('aria-expanded', 'true');
+            }
+        });
+
+        const newFavicon = doc.querySelector('#site-favicon');
+        const oldFavicon = document.querySelector('#site-favicon');
+        if (newFavicon && oldFavicon) {
+            oldFavicon.setAttribute('href', newFavicon.getAttribute('href'));
+        }
+
+        document.title = doc.title;
+        if (pushHistory) history.pushState({}, '', finalUrl);
+        
+        // UPDATE tracker after successful navigation
+        currentPath = new URL(finalUrl).pathname;
+        
+        const hash = new URL(finalUrl).hash;
+        if (hash) {
+            document.querySelector(hash)?.scrollIntoView();
+        } else {
+            if (mainContentWrapper) mainContentWrapper.scrollTo(0, 0);
+            window.scrollTo(0, 0);
+        }
+
+        if (mainContentWrapper) mainContentWrapper.style.opacity = '1';
+        injectCopyButtons();
+        initializeScrollSpy();
+        
+        const newMainContent = document.querySelector('.main-content');
+        if (newMainContent) executeScripts(newMainContent);
+
+        document.dispatchEvent(new CustomEvent('docmd:page-mounted', { detail: { url: finalUrl } }));
+
+      } catch(e) {
+        window.location.assign(url);
+      }
+    }
+  }
+
+  // =========================================================================
+  // 4. BOOTSTRAP
+  // =========================================================================
+  document.addEventListener('DOMContentLoaded', () => {
+    if (localStorage.getItem('docmd-sidebar-collapsed') === 'true') {
+        document.body.classList.add('sidebar-collapsed');
+    }
+    
+    document.querySelectorAll('.theme-toggle-button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const t = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+        document.body.setAttribute('data-theme', t);
+        localStorage.setItem('docmd-theme', t);
+        
+        // Highlight.js CSS swap
+        const lightLink = document.getElementById('hljs-light');
+        const darkLink = document.getElementById('hljs-dark');
+        if (lightLink && darkLink) {
+            lightLink.disabled = t === 'dark';
+            darkLink.disabled = t === 'light';
+        }
+      });
+    });
+
+    injectCopyButtons();
+    initializeScrollSpy();
+    initializeSPA();
+    
+    // Auto-scroll sidebar safely
+    setTimeout(() => {
+        const activeNav = document.querySelector('.sidebar-nav a.active');
+        const sidebarNav = document.querySelector('.sidebar-nav');
+        if (activeNav && sidebarNav) {
+            // Calculate scroll top safely instead of scrollIntoView which causes page jump
+            sidebarNav.scrollTo({ top: activeNav.offsetTop - (sidebarNav.clientHeight / 2), behavior: 'instant' });
+        }
+        
+        // Ensure Hash anchors work on direct link visits (New Tab)
+        if (window.location.hash) {
+            const el = document.querySelector(window.location.hash);
+            if (el) el.scrollIntoView();
+        }
+    }, 100);
+  });
+
+})();

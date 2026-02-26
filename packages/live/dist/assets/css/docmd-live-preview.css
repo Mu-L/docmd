@@ -12,7 +12,6 @@
  * --------------------------------------------------------------------
  */
 
-/* Always hide TOC and Footer Actions in preview to save space */
 .toc-sidebar,
 .page-footer-actions,
 .sidebar-header h1 {
@@ -32,16 +31,13 @@ body {
 }
 
 .content-area {
-    flex: 1; /* Pushes footer down */
+    flex: 1;
 }
 
-/* Ensure the main content takes full width since TOC is gone */
 .content-layout {
     display: block !important;
 }
 
-/* Hide Sidebar specifically on mobile in the preview */
-/* (In Split View on mobile, space is very limited) */
 @media (max-width: 768px) {
     .sidebar {
         display: none !important;
@@ -52,7 +48,6 @@ body {
     }
 }
 
-/* Adjust header to look better without sidebar on mobile */
 @media (max-width: 768px) {
     .sidebar-toggle-button {
         display: none !important;
