@@ -40,9 +40,10 @@ function loadPlugins(config) {
   // 2. Initialize Plugin Map (Name -> Options)
   // This ensures unique plugins (last write wins)
   const pluginMap = new Map();
+  const searchEnabled = config.optionsMenu ? config.optionsMenu.components.search !== false : config.search !== false;
 
   // A. Add Defaults
-  pluginMap.set('@docmd/plugin-search', config.search !== false ? {} : false);
+  pluginMap.set('@docmd/plugin-search', searchEnabled ? {} : false);
   pluginMap.set('@docmd/plugin-seo', config.plugins?.seo || {});
   pluginMap.set('@docmd/plugin-sitemap', config.plugins?.sitemap || {});
   pluginMap.set('@docmd/plugin-analytics', config.plugins?.analytics || {});
@@ -71,7 +72,7 @@ function loadPlugins(config) {
       } catch (e) {
         // Fallback for local development or misnamed packages
         console.warn(chalk.dim(`   > Debug: Could not require '${name}', checking alternatives...`));
-        throw e; 
+        pluginModule = require(require.resolve(name, { paths: [process.cwd(), __dirname] }));
       }
 
       registerPlugin(name, pluginModule, options);

@@ -60,10 +60,11 @@ npm install -g @docmd/core
 The Command Line Interface is the primary way to interact with `docmd`.
 
 ```bash
-docmd init      # Initialize a new project with config and assets
+docmd init      # Initialize a new project with V2 config
 docmd dev       # Start a local development server with hot-reload
 docmd build     # Generate a production-ready static site in ./site
 docmd live      # Launch the browser-based Live Editor locally
+docmd migrate   # Automatically upgrade legacy configs to latest structures
 ```
 
 ### API
@@ -114,24 +115,40 @@ module.exports = {
   srcDir: 'docs',
   outputDir: 'site',
   
-  // Theme Settings
-  theme: {
-    name: 'sky',           // 'default', 'sky', 'ruby', 'retro'
-    defaultMode: 'system', // 'light', 'dark', or 'system'
-    enableModeToggle: true
-  },
-  
-  // Sidebar Navigation
-  navigation: [
-    { title: 'Home', path: '/', icon: 'home' },
-    { 
-      title: 'Guide', 
-      icon: 'book',
-      children: [
-        { title: 'Installation', path: '/guide/install' }
+  // V2 Layout Architecture
+  layout: {
+    spa: true, // Enable seamless page transitions
+    header: { enabled: true },
+    sidebar: { collapsible: true },
+    
+    // Unified Options Menu
+    optionsMenu: {
+      position: 'header', // 'header' or 'sidebar-bottom'
+      components: {
+        search: true,
+        themeSwitch: true,
+        sponsor: 'https://github.com/sponsors/me'
+      }
+    },
+
+    // Multi-column Footer
+    footer: {
+      style: 'complete',
+      copyright: '© 2026 My Project',
+      columns: [
+        { 
+          title: 'Resources', 
+          links: [{ text: 'Guide', url: '/guide' }] 
+        }
       ]
     }
-  ],
+  },
+  
+  // Theme Settings
+  theme: {
+    name: 'sky',
+    defaultMode: 'system'
+  },
 
   // Plugins
   plugins: {
@@ -146,9 +163,10 @@ module.exports = {
 | Feature | docmd | Docusaurus | MkDocs | Mintlify |
 | :--- | :--- | :--- | :--- | :--- |
 | **Language** | **Node.js** | React.js | Python | Proprietary |
-| **Output** | **Static HTML** | React SPA | Static HTML | Hosted |
-| **JS Payload** | **Tiny (< 15kb)** | Heavy | Minimal | Medium |
-| **Search** | **Built-in (Offline)** | Algolia (Ext) | Built-in | Built-in |
+| **Navigation** | **Instant SPA** | React SPA | Page Reloads | Hosted SPA |
+| **Output** | **Static HTML** | React Hydration | Static HTML | Hosted |
+| **JS Payload** | **Tiny (< 20kb)** | Heavy (> 200kb) | Minimal | Medium |
+| **Search** | **Built-in (Offline)** | Algolia (Cloud) | Built-in (Lunr) | Built-in (Cloud) |
 | **Setup** | **~1 min** | ~15 mins | ~10 mins | Instant |
 | **Cost** | **Free OSS** | Free OSS | Free OSS | Freemium |
 

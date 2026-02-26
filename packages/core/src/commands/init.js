@@ -28,7 +28,7 @@ module.exports = {
     light: 'assets/images/docmd-logo-dark.png',
     dark: 'assets/images/docmd-logo-light.png',
     alt: 'Logo',
-    href: './',
+    href: '/',
   },
   favicon: 'assets/favicon.ico',
 
@@ -36,22 +36,48 @@ module.exports = {
   srcDir: 'docs',
   outputDir: 'site',
 
-  // --- Theme & Layout ---
+  // --- Layout & UI Architecture (V2) ---
+  layout: {
+    spa: true, // Enable seamless page transitions (Single Page App behavior)
+    header: {
+      enabled: true,
+    },
+    sidebar: {
+      collapsible: true,
+      defaultCollapsed: false,
+    },
+    // Centralized Options Menu (Search, Theme, Sponsor)
+    optionsMenu: {
+      position: 'sidebar-top', // 'header', 'sidebar-top', 'sidebar-bottom'
+      components: {
+        search: true,      // Enable built-in offline search
+        themeSwitch: true, // Enable light/dark toggle
+        sponsor: null,     // e.g. 'https://github.com/sponsors/myname'
+      }
+    },
+    // Footer Configuration
+    footer: {
+      style: 'minimal',    // 'minimal' or 'complete'
+      content: '© ' + new Date().getFullYear() + ' My Project. Built with [docmd](https://docmd.io).',
+      // For 'complete' style, you can add 'columns': [...] here.
+    }
+  },
+
+  // --- Theme Settings ---
   theme: {
-    name: 'default',            // Options: 'default', 'sky', 'ruby', 'retro'
+    name: 'default',        // Options: 'default', 'sky', 'ruby', 'retro'
     defaultMode: 'system',  // 'light', 'dark', or 'system'
-    enableModeToggle: true, // Show mode toggle button
-    positionMode: 'top',    // 'top' or 'bottom'
     codeHighlight: true,    // Enable Highlight.js
     customCss: [],          // e.g. ['assets/css/custom.css']
   },
 
-  // --- Features ---
-  search: true,           // Built-in offline search
+  // --- General Features ---
   minify: true,           // Minify HTML/CSS/JS in build
   autoTitleFromH1: true,  // Auto-generate page title from first H1
   copyCode: true,         // Show "copy" button on code blocks
   pageNavigation: true,   // Prev/Next buttons at bottom
+  
+  customJs: [],           // e.g. ['assets/js/custom.js']
 
   // --- Navigation (Sidebar) ---
   navigation: [
@@ -65,7 +91,6 @@ module.exports = {
         { title: 'Configuration', path: 'https://docs.docmd.io/configuration', icon: 'settings', external: true },
       ],
     },
-    { title: 'Live Editor', path: 'https://live.docmd.io', icon: 'pencil-ruler', external: true },
     { title: 'GitHub', path: 'https://github.com/docmd-io/docmd', icon: 'github', external: true },
   ],
 
@@ -80,22 +105,17 @@ module.exports = {
         cardType: 'summary_large_image',
       }
     },
-    analytics: {
-      googleV4: {
-        measurementId: 'G-X9WTDL262N' // Replace with your GA Measurement ID
-      }
-    },
     sitemap: {
-      defaultChangefreq: 'weekly',  // e.g. 'daily', 'weekly', 'monthly'
-      defaultPriority: 0.8          // Priority between 0.0 and 1.0
+      defaultChangefreq: 'weekly',
+      defaultPriority: 0.8
+    },
+    analytics: {
+      googleV4: { measurementId: 'G-X9WTDL262N' } // Replace with your GA Measurement ID
     },
     search: {},
     mermaid: {},
     llms: {}
   },
-
-  // --- Footer ---
-  footer: '© ' + new Date().getFullYear() + ' My Project. Built with [docmd](https://docmd.io).',
   
   // --- Edit Link ---
   editLink: {
@@ -269,7 +289,6 @@ async function initProject() {
     console.log('📁 Created `assets/` directory with css, js, and images subdirectories');
   } else {
     console.log('📁 Using existing `assets/` directory');
-    
     if (!await fs.pathExists(assetsCssDir)) await fs.ensureDir(assetsCssDir);
     if (!await fs.pathExists(assetsJsDir)) await fs.ensureDir(assetsJsDir);
     if (!await fs.pathExists(assetsImagesDir)) await fs.ensureDir(assetsImagesDir);
