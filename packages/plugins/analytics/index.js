@@ -17,6 +17,7 @@
  * @param {Object} config 
  * @returns {Object} { headScriptsHtml, bodyScriptsHtml }
  */
+
 function generateScripts(config) {
   let headScriptsHtml = '';
   let bodyScriptsHtml = '';

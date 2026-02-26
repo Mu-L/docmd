@@ -23,6 +23,7 @@ const fs = require('fs/promises');
  * @param {string} context.outputDir - Absolute path to output directory
  * @param {Function} context.log - Logger function
  */
+
 async function onPostBuild({ config, pages, outputDir, log }) {
   // 1. Check if enabled
   if (config.plugins?.sitemap === false || !config.siteUrl) {

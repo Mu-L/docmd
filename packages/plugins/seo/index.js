@@ -19,6 +19,7 @@
  * @param {string} relativePathToRoot - Path relative to root (for assets)
  * @returns {string} HTML string of meta tags
  */
+
 function generateMetaTags(config, pageData, relativePathToRoot) {
   let html = '';
   const { frontmatter, outputPath } = pageData;
