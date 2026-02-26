@@ -1,6 +1,6 @@
 {
   "name": "@docmd/live",
-  "version": "0.4.8",
+  "version": "0.4.9",
   "description": "Browser-based editor engine for docmd",
   "bin": {
     "docmd-live": "bin/docmd-live.js"
@@ -16,13 +16,12 @@
     "src/build.js"
   ],
   "dependencies": {
-    "esbuild": "^0.27.3",
-    "buffer": "^6.0.3",
-    "serve": "^14.2.1",
     "@docmd/parser": "workspace:^",
-    "@docmd/ui": "workspace:^",
+    "@docmd/plugin-mermaid": "workspace:*",
     "@docmd/themes": "workspace:^",
-    "@docmd/plugin-mermaid": "workspace:*"
+    "@docmd/ui": "workspace:^",
+    "buffer": "^6.0.3",
+    "esbuild": "^0.27.3"
   },
   "keywords": [
     "docmd",
