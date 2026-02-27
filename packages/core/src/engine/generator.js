@@ -76,11 +76,10 @@ async function renderPages({ config, srcDir, outputDir, hooks, buildHash, option
   const pages = [];
   for (const filePath of mdFiles) {
     const rawContent = await fs.readFile(filePath, 'utf8');
-    const processed = parser.processContent(rawContent, mdProcessor, config);
-    if (!processed) continue;
-    
     const relativePath = path.relative(srcDir, filePath);
     const isIndex = path.basename(relativePath).startsWith('index.');
+    const processed = parser.processContent(rawContent, mdProcessor, config, { isIndex });
+    if (!processed) continue;
     const htmlOutputPath = isIndex ? path.join(path.dirname(relativePath), 'index.html') : relativePath.replace(/\.md$/, '/index.html');
     pages.push({ ...processed, sourcePath: filePath, outputPath: htmlOutputPath });
   }
@@ -128,15 +127,9 @@ async function renderPages({ config, srcDir, outputDir, hooks, buildHash, option
     let editLinkText = config.editLink?.text || 'Edit this page';
     
     if (config.editLink && config.editLink.enabled && config.editLink.baseUrl) {
-         const cleanBase = config.editLink.baseUrl.replace(/\/$/, '');
-         const cleanPath = page.outputPath.replace(/\/index\.html$/, '.md');
-         editUrl = `${cleanBase}/${cleanPath}`;
-         if (page.outputPath.endsWith('index.html') && page.outputPath !== 'index.html') {
-             editUrl = editUrl.replace('.md', '/index.md');
-         }
-         if (page.outputPath === 'index.html') {
-             editUrl = `${cleanBase}/index.md`;
-         }
+      const cleanBase = config.editLink.baseUrl.replace(/\/$/, '');
+      const sourceRelative = path.relative(srcDir, page.sourcePath).replace(/\\/g, '/');
+      editUrl = `${cleanBase}/${sourceRelative}`;
     }
 
     // Navigation HTML
