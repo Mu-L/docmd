@@ -126,12 +126,33 @@ function createMarkdownProcessor(config = {}, pluginsCallback) {
     if (hrefIndex >= 0) {
       let href = token.attrs[hrefIndex][1];
       
-      const isExternal = href.match(/^(?:[a-z]+:|\/\/|#)/i);
+      const isExternal = href.match(/^(?:[a-z]+:|\/\/)/i);
       const isAsset = href.match(/(^|\/)assets\//);
+      const isHashOnly = href.startsWith('#');
 
-      if (!isExternal && !isAsset && href.endsWith('.md')) {
-        href = href.replace(/\.md$/, '');
-        token.attrs[hrefIndex][1] = href;
+      if (!isExternal && !isAsset && !isHashOnly) {
+        // Extract hash if it exists (e.g., info.md#section)
+        let hash = '';
+        const hashIndex = href.indexOf('#');
+        if (hashIndex >= 0) {
+          hash = href.substring(hashIndex);
+          href = href.substring(0, hashIndex);
+        }
+
+        if (href.endsWith('.md')) {
+          href = href.replace(/\.md$/, '');
+          
+          // If the page was shifted into a subfolder (Clean URLs), we must traverse up one level
+          if (!href.startsWith('/') && env && env.isIndex === false) {
+            if (href.startsWith('./')) {
+              href = '../' + href.substring(2);
+            } else {
+              href = '../' + href;
+            }
+          }
+          
+          token.attrs[hrefIndex][1] = href + hash;
+        }
       }
     }
     return defaultLinkOpen(tokens, idx, options, env, self);
@@ -159,7 +180,7 @@ function extractHeadings(html) {
   return headings;
 }
 
-function processContent(rawString, mdInstance, config) {
+function processContent(rawString, mdInstance, config, env = {}) {
   let frontmatter, markdownContent;
 
   try {
@@ -179,9 +200,9 @@ function processContent(rawString, mdInstance, config) {
   let htmlContent, headings;
   if (frontmatter.noStyle === true) {
     htmlContent = markdownContent;
-    headings = [];
+    headings =[];
   } else {
-    htmlContent = mdInstance.render(markdownContent);
+    htmlContent = mdInstance.render(markdownContent, env);
     headings = extractHeadings(htmlContent);
   }
 
