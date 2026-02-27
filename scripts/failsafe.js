@@ -187,8 +187,18 @@ title: "Stress Test"
         throw new Error(`Live Editor Runtime crashed! \nDetails: ${err.message}`);
     }
 
-    // 8. Monorepo & Publish Check
-    console.log('🏷️  [8/8] Verifying Monorepo Consistency & Dry Run Publish...');
+    // 8. Security Audit Check
+    console.log('🚨 [8/9] Checking for Vulnerabilities (Security Audit)...');
+    try {
+        // Runs an audit. Fails the script if HIGH or CRITICAL vulnerabilities are found.
+        execSync('pnpm audit --audit-level=high', { cwd: CWD, stdio: 'inherit' });
+        console.log('✅ Security Audit Passed.');
+    } catch (e) {
+        throw new Error(`Security vulnerabilities found! Please run 'pnpm audit' and fix them before releasing.`);
+    }
+
+    // 9. Monorepo & Publish Check
+    console.log('🏷️  [9/9] Verifying Monorepo Consistency & Dry Run Publish...');
     const rootPkg = JSON.parse(fs.readFileSync(path.join(CWD, 'package.json'), 'utf8'));
     const rootVersion = rootPkg.version;
     
