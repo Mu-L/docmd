@@ -84,7 +84,7 @@
     %>
     <li class="<%= liClasses.join(' ') %>" <% if(isInteractive) { %> aria-expanded="<%= isOpen %>" <% } %>>
       <% if (isDummyLink) { %>
-        <span class="nav-label" style="cursor: <%= isInteractive ? 'pointer' : 'default' %>;">
+        <span class="nav-label">
           <% if (item.icon) { %> <%- renderIcon(item.icon) %> <% } %>
           <span class="nav-item-title"><%= item.title %></span>
           <% if (isInteractive) { %> 

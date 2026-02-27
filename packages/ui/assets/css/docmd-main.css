@@ -203,15 +203,20 @@ a:any-link {
     margin: 0
 }
 
-.sidebar nav li a, .sidebar nav li .nav-label {
+.sidebar nav li a,
+.sidebar nav li .nav-label {
     display: block;
-    padding: .5em;
+    padding: .4em .5em;
     margin: .15em 0;
     text-decoration: none;
     color: var(--sidebar-text);
     border-radius: 4px;
     transition: background-color .2s;
     font-size: .9em;
+}
+
+.sidebar nav li a {
+    cursor: pointer;
 }
 
 .sidebar nav li>a.active {
@@ -237,11 +242,18 @@ a:any-link {
     opacity: 1;
 }
 
+.sidebar nav li .nav-label {
+    cursor: default;
+    padding: 0.25em .5em;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
 .sidebar nav .submenu {
     display: none;
     padding-left: .25em;
     border-left: 1px solid var(--link-color);
-    margin-left: .75em;
+    margin-left: .85em;
 }
 
 .sidebar nav li[aria-expanded="true"]>.submenu,
@@ -1604,7 +1616,7 @@ hr {
 
 .footer-complete-top {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     flex-wrap: wrap;
     gap: 2rem;
     max-width: 1200px;
@@ -1625,7 +1637,7 @@ hr {
     width: fit-content;
 }
 
-.footer-brand .logo-link img{
+.footer-brand .logo-link img {
     max-height: 30px;
     width: auto;
 }
@@ -1725,7 +1737,8 @@ hr {
     color: #fb3a3a
 }
 
-.branding-footer a, .page-footer a {
+.branding-footer a,
+.page-footer a {
     color: var(--link-color);
     text-decoration: none
 }

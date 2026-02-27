@@ -11,6 +11,11 @@
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
+/**
+ * --------------------------------------------------------------------
+ * docmd : Client-Side Application Logic (SPA Router & UI)
+ * --------------------------------------------------------------------
+ */
 
 (function() {
   // =========================================================================
@@ -138,7 +143,7 @@
     });
   }
 
-// =========================================================================
+  // =========================================================================
   // 3. TARGETED SPA ROUTER
   // =========================================================================
   function initializeSPA() {
@@ -148,7 +153,7 @@
     let currentPath = window.location.pathname;
 
     document.addEventListener('click', async (e) => {
-
+      // Ignore clicks on expand/collapse arrows so they don't trigger navigation
       if (e.target.closest('.collapse-icon-wrapper')) return;
 
       const link = e.target.closest('.sidebar-nav a, .page-navigation a');
@@ -162,19 +167,17 @@
       await navigateTo(url.href);
     });
 
-    // Handle Back/Forward browser buttons & TOC Hash clicks
     window.addEventListener('popstate', () => {
-      // If the path is identical, it means ONLY the #hash changed. Do not reload!
-      if (window.location.pathname === currentPath) return;
-      
+      if (window.location.pathname === currentPath) return; // Ignore hash-only changes
       navigateTo(window.location.href, false);
     });
 
     async function navigateTo(url, pushHistory = true) {
-      const mainContentWrapper = document.querySelector('.main-content-wrapper');
+      const layout = document.querySelector('.content-layout');
       
       try {
-        if (mainContentWrapper) mainContentWrapper.style.opacity = '0.5';
+        // Lock height to prevent scrollbar jitter/dragging during DOM swap
+        if (layout) layout.style.minHeight = layout.getBoundingClientRect().height + 'px';
         
         const res = await fetch(url);
         if (!res.ok) throw new Error('Fetch failed');
@@ -183,19 +186,17 @@
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
 
-        // 1. UPDATE URL FIRST
         if (pushHistory) history.pushState({}, '', finalUrl);
         currentPath = new URL(finalUrl).pathname;
         document.title = doc.title;
 
-        // 2. SAFELY SYNC HEAD ASSETS (Favicon & CSS)
+        // Sync Assets
         const assetSelectors = 'link[rel="stylesheet"], link[rel="icon"], link[rel="shortcut icon"]';
         const oldAssets = Array.from(document.head.querySelectorAll(assetSelectors));
         const newAssets = Array.from(doc.head.querySelectorAll(assetSelectors));
 
         newAssets.forEach((newAsset, index) => {
             if (oldAssets[index]) {
-                // Only update if the relative path actually changed
                 if (oldAssets[index].getAttribute('href') !== newAsset.getAttribute('href')) {
                     oldAssets[index].setAttribute('href', newAsset.getAttribute('href'));
                 }
@@ -204,16 +205,39 @@
             }
         });
 
-        // 3. MEMORIZE SIDEBAR STATE
-        const openMenus = new Set();
-        document.querySelectorAll('.sidebar-nav li.collapsible.expanded > .nav-label .nav-item-title, .sidebar-nav li.collapsible.expanded > a .nav-item-title').forEach(el => {
-            openMenus.add(el.textContent.trim());
-        });
+        // Memorize Sidebar
+        const oldLis = Array.from(document.querySelectorAll('.sidebar-nav li'));
+        const newLis = Array.from(doc.querySelectorAll('.sidebar-nav li'));
         
-        // 4. SWAP BODY COMPONENTS
+        oldLis.forEach((oldLi, i) => {
+            const newLi = newLis[i];
+            if (newLi) {
+                // Sync active classes
+                oldLi.classList.toggle('active', newLi.classList.contains('active'));
+                oldLi.classList.toggle('active-parent', newLi.classList.contains('active-parent'));
+
+                // Add expanded class if the new page requires it, but NEVER remove it
+                if (newLi.classList.contains('expanded')) {
+                    oldLi.classList.add('expanded');
+                    oldLi.setAttribute('aria-expanded', 'true');
+                }
+
+                // Sync relative hrefs
+                const oldA = oldLi.querySelector('a');
+                const newA = newLi.querySelector('a');
+                if (oldA && newA) {
+                    oldA.setAttribute('href', newA.getAttribute('href'));
+                    oldA.classList.toggle('active', newA.classList.contains('active'));
+                }
+            }
+        });
+
+        // 3. Swap Body Components (Removed .sidebar-nav from this list)
         const selectorsToSwap =[
-          '.main-content', '.toc-sidebar', '.sidebar-nav', 
-          '.page-header .header-title', '.page-footer', '.footer-complete',
+          '.content-layout', 
+          '.page-header .header-title', 
+          '.page-footer', 
+          '.footer-complete',
           '.page-footer-actions'
         ];
 
@@ -223,32 +247,26 @@
             if (oldEl && newEl) oldEl.innerHTML = newEl.innerHTML;
         });
 
-        // 5. RESTORE SIDEBAR STATE
-        document.querySelectorAll('.sidebar-nav li.collapsible').forEach(li => {
-            const title = li.querySelector('.nav-item-title')?.textContent.trim();
-            if (openMenus.has(title)) {
-                li.classList.add('expanded');
-                li.setAttribute('aria-expanded', 'true');
-            }
-        });
-
-        // 6. SCROLL & RE-INIT
+        // Scroll & Init
         const hash = new URL(finalUrl).hash;
         if (hash) {
             document.querySelector(hash)?.scrollIntoView();
         } else {
-            if (mainContentWrapper) mainContentWrapper.scrollTo(0, 0);
             window.scrollTo(0, 0);
         }
 
-        if (mainContentWrapper) mainContentWrapper.style.opacity = '1';
         injectCopyButtons();
         initializeScrollSpy();
-        
         const newMainContent = document.querySelector('.main-content');
         if (newMainContent) executeScripts(newMainContent);
 
         document.dispatchEvent(new CustomEvent('docmd:page-mounted', { detail: { url: finalUrl } }));
+
+        // Unlock height smoothly
+        setTimeout(() => {
+            const newLayout = document.querySelector('.content-layout');
+            if (newLayout) newLayout.style.minHeight = '';
+        }, 100);
 
       } catch(e) {
         window.location.assign(url);
@@ -271,7 +289,6 @@
         document.body.setAttribute('data-theme', t);
         localStorage.setItem('docmd-theme', t);
         
-        // Highlight.js CSS swap
         const lightLink = document.getElementById('hljs-light');
         const darkLink = document.getElementById('hljs-dark');
         if (lightLink && darkLink) {
@@ -285,19 +302,14 @@
     initializeScrollSpy();
     initializeSPA();
     
-    // Auto-scroll sidebar safely
     setTimeout(() => {
         const activeNav = document.querySelector('.sidebar-nav a.active');
         const sidebarNav = document.querySelector('.sidebar-nav');
         if (activeNav && sidebarNav) {
-            // Calculate scroll top safely instead of scrollIntoView which causes page jump
             sidebarNav.scrollTo({ top: activeNav.offsetTop - (sidebarNav.clientHeight / 2), behavior: 'instant' });
         }
-        
-        // Ensure Hash anchors work on direct link visits (New Tab)
         if (window.location.hash) {
-            const el = document.querySelector(window.location.hash);
-            if (el) el.scrollIntoView();
+            document.querySelector(window.location.hash)?.scrollIntoView();
         }
     }, 100);
   });
