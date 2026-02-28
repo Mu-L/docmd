@@ -155,7 +155,8 @@ pre {
 }
 
 a:any-link {
-    color: var(--link-color)
+    color: var(--link-color);
+    text-decoration: none;
 }
 
 .skip-link {

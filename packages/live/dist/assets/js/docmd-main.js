@@ -151,9 +151,32 @@
     if (document.body.dataset.spaEnabled !== 'true') return;
 
     let currentPath = window.location.pathname;
+    const pageCache = new Map();
+    let prefetchTimer = null;
+
+    // Intent-based Hover Prefetching
+    document.addEventListener('mouseover', (e) => {
+      const link = e.target.closest('.sidebar-nav a, .page-navigation a');
+      if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+      
+      const url = new URL(link.href).href;
+      if (new URL(url).origin !== location.origin) return;
+      if (pageCache.has(url)) return;
+
+      // Wait 65ms to ensure the user actually intends to click
+      clearTimeout(prefetchTimer);
+      prefetchTimer = setTimeout(() => {
+          pageCache.set(url, fetch(url).then(res => {
+              if (!res.ok) throw new Error('Prefetch failed');
+              return { html: res.text(), finalUrl: res.url };
+          }).catch(() => pageCache.delete(url)));
+      }, 65);
+    });
+
+    // Cancel prefetch if the mouse leaves before the 65ms "intent" delay
+    document.addEventListener('mouseout', () => clearTimeout(prefetchTimer));
 
     document.addEventListener('click', async (e) => {
-      // Ignore clicks on expand/collapse arrows so they don't trigger navigation
       if (e.target.closest('.collapse-icon-wrapper')) return;
 
       const link = e.target.closest('.sidebar-nav a, .page-navigation a');
@@ -168,7 +191,7 @@
     });
 
     window.addEventListener('popstate', () => {
-      if (window.location.pathname === currentPath) return; // Ignore hash-only changes
+      if (window.location.pathname === currentPath) return; 
       navigateTo(window.location.href, false);
     });
 
@@ -176,13 +199,22 @@
       const layout = document.querySelector('.content-layout');
       
       try {
-        // Lock height to prevent scrollbar jitter/dragging during DOM swap
         if (layout) layout.style.minHeight = layout.getBoundingClientRect().height + 'px';
         
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Fetch failed');
-        const finalUrl = res.url;
-        const html = await res.text();
+        let data;
+        if (pageCache.has(url)) {
+            data = await pageCache.get(url);
+            data.html = await data.html; 
+        } else {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('Fetch failed');
+            data = { html: await res.text(), finalUrl: res.url };
+            pageCache.set(url, Promise.resolve(data));
+        }
+
+        const finalUrl = data.finalUrl;
+        const html = data.html;
+        
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
 
@@ -205,24 +237,21 @@
             }
         });
 
-        // Memorize Sidebar
+        // Sync Sidebar State
         const oldLis = Array.from(document.querySelectorAll('.sidebar-nav li'));
         const newLis = Array.from(doc.querySelectorAll('.sidebar-nav li'));
         
         oldLis.forEach((oldLi, i) => {
             const newLi = newLis[i];
             if (newLi) {
-                // Sync active classes
                 oldLi.classList.toggle('active', newLi.classList.contains('active'));
                 oldLi.classList.toggle('active-parent', newLi.classList.contains('active-parent'));
 
-                // Add expanded class if the new page requires it, but NEVER remove it
                 if (newLi.classList.contains('expanded')) {
                     oldLi.classList.add('expanded');
                     oldLi.setAttribute('aria-expanded', 'true');
                 }
 
-                // Sync relative hrefs
                 const oldA = oldLi.querySelector('a');
                 const newA = newLi.querySelector('a');
                 if (oldA && newA) {
@@ -232,7 +261,6 @@
             }
         });
 
-        // 3. Swap Body Components (Removed .sidebar-nav from this list)
         const selectorsToSwap =[
           '.content-layout', 
           '.page-header .header-title', 
@@ -247,7 +275,6 @@
             if (oldEl && newEl) oldEl.innerHTML = newEl.innerHTML;
         });
 
-        // Scroll & Init
         const hash = new URL(finalUrl).hash;
         if (hash) {
             document.querySelector(hash)?.scrollIntoView();
@@ -262,7 +289,6 @@
 
         document.dispatchEvent(new CustomEvent('docmd:page-mounted', { detail: { url: finalUrl } }));
 
-        // Unlock height smoothly
         setTimeout(() => {
             const newLayout = document.querySelector('.content-layout');
             if (newLayout) newLayout.style.minHeight = '';
