@@ -85,7 +85,7 @@ module.exports = {
     {
       title: 'Guide',
       icon: 'book-open',
-      collapsible: true,
+      collapsible: false,
       children: [
         { title: 'Getting Started', path: 'https://docs.docmd.io/getting-started/installation', icon: 'rocket', external: true },
         { title: 'Configuration', path: 'https://docs.docmd.io/configuration', icon: 'settings', external: true },
@@ -169,19 +169,18 @@ print('Hello World')
 \`\`\`
 :::
 
-### 3. Diagrams (Mermaid)
-\`\`\`mermaid
-graph TD;
-    A[Init] --> B{Build?};
-    B -->|Yes| C[Site Generated];
-    B -->|No| D[Keep Editing];
-\`\`\`
+### 3. Plugins (Enabled by Default)
+- **Search**
+- **Sitemap**
+- **SEO Optimization**
+- **Analytics**
+- **Mermaid Diagrams**
+- **LLMs (AI Integration)**
 
 ## Next Steps
-
-*   [Check the Official Documentation](https://docs.docmd.io)
-*   [Customize your Theme](https://docs.docmd.io/theming)
-*   [Deploy to GitHub Pages](https://docs.docmd.io/deployment)
+- **[Official Documentation](https://docs.docmd.io)**
+- **[Customize Theme](https://docs.docmd.io/theming/available-themes)**
+- **[Deploy Site](https://docs.docmd.io/deployment)**
 
 Happy documenting! 🎉`;
 
