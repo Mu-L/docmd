@@ -32,9 +32,10 @@
 
   <!-- PREVIEW -->
   <p>
-    <img width="800" alt="docmd preview" src="https://github.com/user-attachments/assets/1a74d6f7-10f9-41fa-be8a-faeee278dbb9" />
     <br/>
-    <sup><i>docmd noStyle page preview in light mode</i></sup>
+    <img width="800" alt="docmd preview" src="https://github.com/user-attachments/assets/92558d3a-7c0d-46bc-862e-466c42cb7be4" />
+    <br/>
+    <sup><i>docmd `default` theme in light appearance</i></sup>
   </p>
 
 </div>
