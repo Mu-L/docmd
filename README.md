@@ -44,7 +44,7 @@
 
 - **Zero Config**: Intelligent auto-routing scans your folders and builds navigation trees instantly.
 - **Versioning**: Enterprise-grade versioning (v1, v2) with sticky context switching.
-- **Fast**: Generates pure static HTML. No hydration gap. No heavy frameworks.
+- **Super Fast**: Generates pure static HTML. No hydration gap. No heavy frameworks.
 - **AI-Ready**: Automatically generates `llms.txt` context for AI agents.
 - **Smart Search**: Built-in, privacy-friendly full-text search with deep-linking.
 - **Isomorphic**: Runs seamlessly in Node.js (CLI) or directly in the browser.
