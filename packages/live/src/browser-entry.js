@@ -106,10 +106,11 @@ function compile(markdown, config = {}) {
         defaultMode: defaults.theme.defaultMode,
 
         // Navigation Stub
-        navigationHtml: '', 
-        relativePathToRoot: './', 
+        navigationHtml: '',
+        relativePathToRoot: './',
         outputPath: 'index.html',
         currentPagePath: '/index',
+        isOfflineMode: false,
         prevPage: null, nextPage: null,
 
         // Injecting Assets
