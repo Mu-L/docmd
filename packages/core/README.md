@@ -13,10 +13,10 @@
   
   <!-- BADGES -->
   <p>
-    <a href="https://www.npmjs.com/package/@docmd/core"><img src="https://img.shields.io/npm/v/@docmd/core.svg?style=flat-square&color=d25353" alt="npm version"></a>
+    <a href="https://www.npmjs.com/package/@docmd/core"><img src="https://img.shields.io/npm/v/@docmd/core.svg?style=flat-square&color=CB3837" alt="npm version"></a>
     <a href="https://www.npmjs.com/package/@docmd/core?activeTab=versions"><img src="https://img.shields.io/npm/dt/@docmd/core.svg?style=flat-square&color=38bd24" alt="downloads"></a>
     <a href="https://github.com/docmd-io/docmd/stargazers"><img src="https://img.shields.io/github/stars/docmd-io/docmd?style=flat-square&logo=github" alt="stars"></a>
-    <a href="https://github.com/docmd-io/docmd/blob/main/LICENSE"><img src="https://img.shields.io/github/license/docmd-io/docmd.svg?style=flat-square&color=blue" alt="license"></a>
+    <a href="https://github.com/docmd-io/docmd/blob/main/LICENSE"><img src="https://img.shields.io/github/license/docmd-io/docmd.svg?style=flat-square&color=A31F34" alt="license"></a>
   </p>
 
   <!-- MENU -->
@@ -31,21 +31,24 @@
 
   <!-- PREVIEW -->
   <p>
-    <img width="800" alt="docmd preview" src="https://github.com/user-attachments/assets/1a74d6f7-10f9-41fa-be8a-faeee278dbb9" />
     <br/>
-    <sup><i>docmd noStyle page preview in light mode</i></sup>
+    <img width="800" alt="docmd preview" src="https://github.com/user-attachments/assets/92558d3a-7c0d-46bc-862e-466c42cb7be4" />
+    <br/>
+    <sup><i>docmd `default` theme in light appearance</i></sup>
   </p>
 
 </div>
 
 ## Features
 
-- **Zero Config**: Works out of the box with sensible defaults. Just `init` and go.
-- **Blazing Fast**: Generates **pure, static HTML**. No React hydration lag, no heavy bundles.
-- **Smart Search**: Built-in, **offline-capable** full-text search with fuzzy matching. No API keys required.
-- **Isomorphic Core**: Runs anywhere, Node.js CLI, CI/CD pipelines, or **directly in the browser**.
-- **Rich Content**: Built-in support for Callouts, Cards, Tabs, Steps, Changelogs, and Mermaid diagrams.
-- **Theming**: Beautiful light/dark modes and multiple pre-built themes (`sky`, `ruby`, `retro`).
+- **Zero Config**: Intelligent auto-routing scans your folders and builds navigation trees instantly.
+- **Versioning**: Enterprise-grade versioning (v1, v2) with sticky context switching.
+- **Fast**: Generates pure static HTML. No hydration gap. No heavy frameworks.
+- **AI-Ready**: Automatically generates `llms.txt` context for AI agents.
+- **Smart Search**: Built-in, privacy-friendly full-text search with deep-linking.
+- **Isomorphic**: Runs seamlessly in Node.js (CLI) or directly in the browser.
+- **Rich Content**: Native support for Tabs, Steps, Callouts, and Mermaid diagrams.
+- **SEO Optimized**: Native sitemaps, canonical tags, and static HTML redirects.
 
 ## Installation
 
@@ -60,11 +63,12 @@ npm install -g @docmd/core
 The Command Line Interface is the primary way to interact with `docmd`.
 
 ```bash
-docmd init      # Initialize a new project with V2 config
-docmd dev       # Start a local development server with hot-reload
-docmd build     # Generate a production-ready static site in ./site
-docmd live      # Launch the browser-based Live Editor locally
-docmd migrate   # Automatically upgrade legacy configs to latest structures
+docmd init      # Initialize a new project with V3 config
+docmd dev -z    # ⚡️ Start Zero-Config mode (no setup required)
+docmd dev       # Start local server with config
+docmd build     # Generate production static site
+docmd live      # Launch the browser-based Live Editor
+docmd migrate   # Upgrade legacy configs to V3 structure
 ```
 
 ### API
@@ -106,24 +110,35 @@ my-docs/
 
 ## Configuration
 
-Customize your site in seconds via `docmd.config.js`:
+Customize your site in seconds via `docmd.config.js`. We use a type-safe helper for better DX:
 
 ```javascript
-module.exports = {
-  siteTitle: 'My Project',
-  siteUrl: 'https://mysite.com',
-  srcDir: 'docs',
-  outputDir: 'site',
+const { defineConfig } = require('@docmd/core');
+
+module.exports = defineConfig({
+  title: 'My Project',
+  url: 'https://mysite.com',
+  src: 'docs',
+  out: 'site',
   
-  // V2 Layout Architecture
+  // Enterprise Versioning
+  versions: {
+    current: 'v2',
+    all: [
+      { id: 'v2', dir: 'docs', label: 'v2.x' },
+      { id: 'v1', dir: 'docs-v1', label: 'v1.x' }
+    ]
+  },
+
+  // Layout Architecture
   layout: {
-    spa: true, // Enable seamless page transitions
+    spa: true, // Seamless page transitions
     header: { enabled: true },
     sidebar: { collapsible: true },
     
     // Unified Options Menu
     optionsMenu: {
-      position: 'header', // 'header' or 'sidebar-bottom'
+      position: 'header',
       components: {
         search: true,
         themeSwitch: true,
@@ -131,16 +146,9 @@ module.exports = {
       }
     },
 
-    // Multi-column Footer
     footer: {
-      style: 'complete',
-      copyright: '© 2026 My Project',
-      columns: [
-        { 
-          title: 'Resources', 
-          links: [{ text: 'Guide', url: '/guide' }] 
-        }
-      ]
+      style: 'minimal',
+      branding: false // Whitelabeling
     }
   },
   
@@ -150,12 +158,10 @@ module.exports = {
     defaultMode: 'system'
   },
 
-  // Plugins
-  plugins: {
-    seo: { /* ... */ },
-    sitemap: { /* ... */ }
-  }
-}
+  // SEO & Redirects
+  redirects: { '/old-guide': '/new-guide' },
+  notFound: { title: 'Page Not Found', content: 'This page has moved.' }
+});
 ```
 
 ## Comparison
@@ -166,8 +172,9 @@ module.exports = {
 | **Navigation** | **Instant SPA** | React SPA | Page Reloads | Hosted SPA |
 | **Output** | **Static HTML** | React Hydration | Static HTML | Hosted |
 | **JS Payload** | **Tiny (< 20kb)** | Heavy (> 200kb) | Minimal | Medium |
+| **Versioning** | **Easy (Config + Auto)** | Complex (FS) | Plugin (Mike) | Native |
 | **Search** | **Built-in (Offline)** | Algolia (Cloud) | Built-in (Lunr) | Built-in (Cloud) |
-| **Setup** | **~1 min** | ~15 mins | ~10 mins | Instant |
+| **Setup** | **Instant (-z)** | ~15 mins | ~10 mins | Instant |
 | **Cost** | **Free OSS** | Free OSS | Free OSS | Freemium |
 
 ## Community & Support
