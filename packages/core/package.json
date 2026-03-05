@@ -1,7 +1,8 @@
 {
   "name": "@docmd/core",
-  "version": "0.4.11",
+  "version": "0.5.0",
   "description": "The minimalist, zero-config documentation generator.",
+  "main": "index.js",
   "bin": {
     "docmd": "bin/docmd.js"
   },
