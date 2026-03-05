@@ -14,21 +14,28 @@
 
 const chalk = require('chalk');
 
-// Known configuration keys for typo detection
+// Known configuration keys for typo detection (V2 + V3)
 const KNOWN_KEYS = [
-  'siteTitle', 'siteUrl', 'srcDir', 'outputDir', 'logo', 
-  'sidebar', 'theme', 'customJs', 'autoTitleFromH1', 
+  // V3 Modern Labels
+  'title', 'url', 'src', 'out', 'base', 'layout',
+  'versions', 'redirects', 'notFound',
+  
+  // V2 Legacy Labels
+  'siteTitle', 'siteUrl', 'srcDir', 'outputDir', 
+  
+  // Shared Features
+  'logo', 'sidebar', 'theme', 'customJs', 'autoTitleFromH1', 
   'copyCode', 'plugins', 'navigation', 'footer', 'sponsor', 'favicon',
   'search', 'minify', 'editLink', 'pageNavigation'
 ];
 
 // Common typos mapping
 const TYPO_MAPPING = {
-  'site_title': 'siteTitle',
-  'sitetitle': 'siteTitle',
-  'baseUrl': 'siteUrl',
-  'source': 'srcDir',
-  'out': 'outputDir',
+  'site_title': 'title',
+  'sitetitle': 'title',
+  'baseUrl': 'url',
+  'source': 'src',
+  'outDir': 'out',
   'customCSS': 'theme.customCss',
   'customcss': 'theme.customCss',
   'customJS': 'customJs',
@@ -41,9 +48,9 @@ function validateConfig(config) {
   const errors = [];
   const warnings = [];
 
-  // 1. Required Fields
-  if (!config.siteTitle) {
-    errors.push('Missing required property: "siteTitle"');
+  // 1. Required Fields (Accept either title OR siteTitle)
+  if (!config.title && !config.siteTitle) {
+    errors.push('Missing required property: "title" (or "siteTitle")');
   }
 
   // 2. Type Checking
@@ -61,10 +68,22 @@ function validateConfig(config) {
     }
   }
 
+  if (config.versions && config.versions.all && !Array.isArray(config.versions.all)) {
+    errors.push('"versions.all" must be an Array');
+  }
+
   // 3. Typos and Unknown Keys (Top Level)
   Object.keys(config).forEach(key => {
-    if (TYPO_MAPPING[key]) {
-      warnings.push(`Found unknown property "${key}". Did you mean "${TYPO_MAPPING[key]}"?`);
+    // Skip checking internal keys (starting with _)
+    if (key.startsWith('_')) return;
+
+    if (!KNOWN_KEYS.includes(key)) {
+      if (TYPO_MAPPING[key]) {
+        warnings.push(`Found unknown property "${key}". Did you mean "${TYPO_MAPPING[key]}"?`);
+      } else {
+        // Optional: Warn about completely unknown keys, or silent ignore to allow plugins
+        // warnings.push(`Unknown property "${key}".`);
+      }
     }
   });
 
