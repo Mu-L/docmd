@@ -24,7 +24,8 @@
         
         if (!searchModal) return;
 
-        const rawRoot = window.DOCMD_ROOT || './';
+        // Use Site Root if available (for versioning), fallback to Context Root
+        const rawRoot = window.DOCMD_SITE_ROOT || window.DOCMD_ROOT || './';
         let ROOT_PATH = new URL(rawRoot, window.location.href).href;
         if (!ROOT_PATH.endsWith('/')) ROOT_PATH += '/';
 
