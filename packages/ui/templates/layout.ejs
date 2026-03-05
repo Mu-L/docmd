@@ -10,14 +10,40 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="generator" content="docmd v0.4.x">
+    <meta name="generator" content="docmd v0.5.x">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <% 
+       let versionRoot = '/';
+       let siteRoot = relativePathToRoot;
+       
+       if (config.versions?.current && config._activeVersion?.id) {
+           const isSubVersion = config.versions.current !== config._activeVersion.id;
+           versionRoot = isSubVersion ? '/' + config._activeVersion.id + '/' : '/';
+           
+           // If we are in a sub-version (v04/), the relativePathToRoot takes us to /v04/.
+           // We need to go up one more level to reach the true site root.
+           if (isSubVersion) {
+               siteRoot = (relativePathToRoot === './' ? '' : relativePathToRoot) + '../';
+           }
+       }
+       
+       if (locals.isOfflineMode) {
+           versionRoot = '';
+       }
+    %>
     <script>
         var root = "<%= relativePathToRoot %>";
         if (root && !root.endsWith('/')) root += '/';
         if (root === '') root = './';
-        window.DOCMD_ROOT = root;
+        window.DOCMD_ROOT = root; // Context Root (Assets)
+        
+        var siteRoot = "<%= siteRoot %>";
+        if (siteRoot && !siteRoot.endsWith('/')) siteRoot += '/';
+        if (siteRoot === '') siteRoot = './';
+        window.DOCMD_SITE_ROOT = siteRoot; // True Site Root (Search Index)
+        
         window.DOCMD_DEFAULT_MODE = "<%= defaultMode %>";
+        window.DOCMD_VERSION_ROOT = "<%- versionRoot %>";
     </script>
     <title><%= pageTitle %></title>
     <%- faviconLinkHtml || '' %>
@@ -41,42 +67,60 @@
     <% }); %>
     <%- themeInitScript %>
 </head>
-<body class="<%= sidebarConfig?.collapsible ? 'sidebar-collapsible' : 'sidebar-not-collapsible' %>" 
-      data-default-collapsed="<%= sidebarConfig?.defaultCollapsed %>" 
-      data-copy-code-enabled="<%= config.copyCode === true %>"
-      data-spa-enabled="<%= config.layout?.spa !== false %>">
+<body class="<%= sidebarConfig?.enabled === false ? 'no-sidebar' : (sidebarConfig?.collapsible ? 'sidebar-collapsible' : 'sidebar-not-collapsible') %>" 
+data-default-collapsed="<%= sidebarConfig?.defaultCollapsed %>" 
+data-copy-code-enabled="<%= config.copyCode === true %>"
+data-spa-enabled="<%= config.layout?.spa !== false %>">
     
     <a href="#main-content" class="skip-link">Skip to main content</a>
-    
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <% if (logo && logo.light && logo.dark) { %>
-            <a href="<%= logo.href || relativePathToRoot %>" class="logo-link">
-                <img src="<%= relativePathToRoot %><%- logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>" alt="<%= logo.alt || siteTitle %>" class="logo-light" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>>
-                <img src="<%= relativePathToRoot %><%- logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>" alt="<%= logo.alt || siteTitle %>" class="logo-dark" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>>
-            </a>
-            <% } else { %>
-            <h1><a href="<%= relativePathToRoot %>index.html"><%= siteTitle %></a></h1>
-            <% } %>
-            <span class="mobile-view sidebar-menu-button float-right">
-                <%- renderIcon("menu") %>
-            </span>
-        </div>
 
-        <% if (optionsMenu?.position === 'sidebar-top') { %>
-            <div class="sidebar-options-wrapper">
-                <%- include('partials/options-menu', { optionsMenu }) %>
+    <% if (sidebarConfig?.enabled !== false) { %>
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <% if (logo && logo.light && logo.dark) { %>
+                <a href="<%= logo.href || relativePathToRoot %>" class="logo-link">
+                    <img src="<%= relativePathToRoot %><%- logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>" alt="<%= logo.alt || siteTitle %>" class="logo-light" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>>
+                    <img src="<%= relativePathToRoot %><%- logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>" alt="<%= logo.alt || siteTitle %>" class="logo-dark" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>>
+                </a>
+                <% } else { %>
+                <h1><a href="<%= relativePathToRoot %>index.html"><%= siteTitle %></a></h1>
+                <% } %>
+                <span class="mobile-view sidebar-menu-button float-right">
+                    <%- renderIcon("menu") %>
+                </span>
             </div>
-        <% } %>
 
-        <%- navigationHtml %>
-
-        <% if (optionsMenu?.position === 'sidebar-bottom') { %>
-            <div class="sidebar-options-wrapper mt-auto">
-                <%- include('partials/options-menu', { optionsMenu }) %>
+            <div class="sidebar-top-group">
+                <% if (locals.optionsMenu && optionsMenu.position === 'sidebar-top') { %>
+                    <div class="sidebar-options-wrapper">
+                        <%- include('partials/options-menu', { optionsMenu }) %>
+                    </div>
+                <% } %>
+                
+                <% if (config.versions && config.versions.position === 'sidebar-top') { %>
+                    <div class="sidebar-version-wrapper">
+                        <%- include('partials/version-dropdown', { versions: config.versions, activeVersion: config._activeVersion, relativePathToRoot }) %>
+                    </div>
+                <% } %>
             </div>
-        <% } %>
-    </aside>
+
+            <%- navigationHtml %>
+
+            <div class="sidebar-bottom-group mt-auto">
+                <% if (config.versions && config.versions.position === 'sidebar-bottom') { %>
+                    <div class="sidebar-version-wrapper">
+                        <%- include('partials/version-dropdown', { versions: config.versions, activeVersion: config._activeVersion, relativePathToRoot }) %>
+                    </div>
+                <% } %>
+
+                <% if (locals.optionsMenu && optionsMenu.position === 'sidebar-bottom') { %>
+                    <div class="sidebar-options-wrapper">
+                        <%- include('partials/options-menu', { optionsMenu }) %>
+                    </div>
+                <% } %>
+            </div>
+        </aside>
+    <% } %>
 
     <div class="main-content-wrapper">
         <% if (headerConfig?.enabled !== false) { %>

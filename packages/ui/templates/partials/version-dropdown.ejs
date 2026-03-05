@@ -1,0 +1,50 @@
+<%# ---------------------------------------------------------------
+  # docmd : the minimalist, zero-config documentation generator.
+  # @website https://docmd.io
+  # [docmd-source] - Please do not remove this header.
+  # ---------------------------------------------------------------
+%>
+
+<% if (versions && versions.all.length > 0) { 
+    const current = activeVersion || versions.all.find(v => v.id === versions.current);
+    
+    // If we are in a sub-version (e.g. /v1/), we go up one level (../) to get to root.
+    const isCurrentSubVersion = current && current.id !== versions.current;
+    const upOneLevel = isCurrentSubVersion ? '../' : '';
+%>
+<div class="docmd-version-dropdown">
+    <button class="version-dropdown-toggle" aria-expanded="false" aria-label="Select Version">
+        <span class="version-label"><%= current ? current.label : 'Version' %></span>
+        <%- renderIcon('chevron-down', { class: 'version-chevron' }) %>
+    </button>
+    <ul class="version-dropdown-menu">
+        <% versions.all.forEach(v => { 
+            const isCurrentActive = current && v.id === current.id;
+            const isTargetRootVersion = v.id === versions.current;
+            
+            // We use the 'config' object which is available in all templates
+            
+            const base = config.base || '/';
+            const normalizedBase = base.endsWith('/') ? base : base + '/';
+            
+            const targetSuffix = isTargetRootVersion ? '' : v.id + '/';
+            const absoluteHref = normalizedBase + targetSuffix;
+            
+            // Data Root for JS Sticky Logic
+            const dataRoot = absoluteHref;
+        %>
+        <li>
+            <a href="<%= absoluteHref %>" 
+               class="version-dropdown-item <%= isCurrentActive ? 'active' : '' %>" 
+               data-spa-ignore
+               data-version-root="<%= dataRoot %>">
+                <%= v.label %>
+                <% if (isCurrentActive) { %>
+                    <%- renderIcon('check', { class: 'version-check' }) %>
+                <% } %>
+            </a>
+        </li>
+        <% }) %>
+    </ul>
+</div>
+<% } %>

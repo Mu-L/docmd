@@ -11,6 +11,7 @@
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
+
 /**
  * --------------------------------------------------------------------
  * docmd : Client-Side Application Logic (SPA Router & UI)
@@ -18,9 +19,8 @@
  */
 
 (function() {
-  // =========================================================================
+
   // 1. EVENT DELEGATION
-  // =========================================================================
   document.addEventListener('click', (e) => {
     // Collapsible Navigation
     const navLabel = e.target.closest('.nav-label, .collapse-icon-wrapper');
@@ -61,6 +61,51 @@
       tabItem.classList.add('active');
       if (tabPanes[index]) tabPanes[index].classList.add('active');
     }
+    
+    // Version Dropdown Toggle
+    const versionToggle = e.target.closest('.version-dropdown-toggle');
+    if (versionToggle) {
+      e.preventDefault();
+      const dropdown = versionToggle.closest('.docmd-version-dropdown');
+      dropdown.classList.toggle('open');
+      versionToggle.setAttribute('aria-expanded', dropdown.classList.contains('open'));
+      return;
+    }
+
+    // Sticky Version Switching (Path Preservation)
+    const versionLink = e.target.closest('.version-dropdown-item');
+    if (versionLink) {
+        const targetRoot = versionLink.dataset.versionRoot;
+        // Use global fallback if undefined (e.g. on 404 pages)
+        const currentRoot = window.DOCMD_VERSION_ROOT || '/'; 
+        
+        if (targetRoot && window.location.pathname) {
+            try {
+                let currentPath = window.location.pathname;
+                const normCurrentRoot = currentRoot.endsWith('/') ? currentRoot : currentRoot + '/';
+                
+                // Only try sticky if we are actually INSIDE the known version path
+                if (currentPath.startsWith(normCurrentRoot)) {
+                    e.preventDefault();
+                    const suffix = currentPath.substring(normCurrentRoot.length);
+                    const normTargetRoot = targetRoot.endsWith('/') ? targetRoot : targetRoot + '/';
+                    window.location.href = normTargetRoot + suffix + window.location.hash;
+                    return;
+                }
+            } catch(e) {
+                // Ignore errors, let default click happen
+            }
+        }
+        // If sticky logic skipped (e.g. on 404 page or outside root), default <a> click handles it
+    }
+
+    // Close Dropdown if clicked outside
+    if (!e.target.closest('.docmd-version-dropdown')) {
+      document.querySelectorAll('.docmd-version-dropdown.open').forEach(d => {
+        d.classList.remove('open');
+        d.querySelector('.version-dropdown-toggle').setAttribute('aria-expanded', 'false');
+      });
+    }
 
     // Copy Code Button
     const copyBtn = e.target.closest('.copy-code-button');
@@ -79,9 +124,7 @@
     }
   });
 
-  // =========================================================================
   // 2. COMPONENT INITIALIZERS
-  // =========================================================================
   function injectCopyButtons() {
     if (document.body.dataset.copyCodeEnabled !== 'true') return;
     const svg = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>`;
@@ -143,9 +186,7 @@
     });
   }
 
-  // =========================================================================
   // 3. TARGETED SPA ROUTER
-  // =========================================================================
   function initializeSPA() {
     if (location.protocol === 'file:') return;
     if (document.body.dataset.spaEnabled !== 'true') return;
@@ -178,6 +219,8 @@
 
     document.addEventListener('click', async (e) => {
       if (e.target.closest('.collapse-icon-wrapper')) return;
+
+      if (e.target.closest('[data-spa-ignore]')) return;
 
       const link = e.target.closest('.sidebar-nav a, .page-navigation a');
       if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
@@ -300,9 +343,7 @@
     }
   }
 
-  // =========================================================================
   // 4. BOOTSTRAP
-  // =========================================================================
   document.addEventListener('DOMContentLoaded', () => {
     if (localStorage.getItem('docmd-sidebar-collapsed') === 'true') {
         document.body.classList.add('sidebar-collapsed');

@@ -176,18 +176,19 @@ a:any-link {
 .sidebar {
     display: flex;
     flex-direction: column;
-    width: 260px;
+    width: var(--sidebar-width);
     background-color: var(--sidebar-bg);
     color: var(--sidebar-text);
-    padding: .5em .25em .5em .5em;
     border-right: 1px solid var(--border-color);
     height: 100vh;
     position: fixed;
+    padding: .5em .25em .5em .5em;
     top: 0;
     left: 0;
-    overflow-y: auto;
+    overflow: hidden;
     box-sizing: border-box;
-    flex-shrink: 0
+    flex-shrink: 0;
+    z-index: 100;
 }
 
 .sidebar h1 {
@@ -527,13 +528,130 @@ body.sidebar-collapsed .main-content-wrapper {
 }
 
 .sidebar-options-wrapper {
-    padding: .5rem 0;
+    padding: .25rem 0;
 }
 
 .sidebar-options-wrapper.mt-auto {
     margin-top: auto;
     padding: .5rem 0 0;
     border-top: 1px solid var(--border-color);
+}
+
+/* --- Version Dropdown (Flat UI) --- */
+.sidebar-version-wrapper {
+    padding: 0.25rem .5em;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-bottom-group.mt-auto {
+    margin-top: auto;
+}
+
+.sidebar-bottom-group .sidebar-version-wrapper {
+    border-bottom: none;
+}
+
+.docmd-version-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.version-dropdown-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--ui-border-radius);
+    color: var(--text-heading);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.version-dropdown-toggle:hover {
+    border-color: var(--text-muted);
+}
+
+.version-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 0.25rem;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--ui-border-radius);
+    box-shadow: var(--shadow-md);
+    list-style: none;
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-5px);
+    transition: all 0.2s ease;
+}
+
+.docmd-version-dropdown.open .version-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.version-dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 0.5rem;
+    color: var(--text-color);
+    font-size: 0.85rem;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.version-dropdown-item:hover {
+    background-color: var(--sidebar-link-active-bg);
+    color: var(--text-heading);
+    text-decoration: none;
+}
+
+.version-dropdown-item.active {
+    font-weight: 600;
+    color: var(--link-color);
+    background-color: var(--sidebar-link-active-bg);
+}
+
+.version-check {
+    width: 1rem;
+    height: 1rem;
+}
+
+.version-chevron {
+    width: 1rem;
+    height: 1rem;
+    transition: transform 0.2s ease;
+}
+
+.docmd-version-dropdown.open .version-chevron {
+    transform: rotate(180deg);
+}
+
+.sidebar-bottom-group .version-dropdown-menu {
+    top: auto;
+    bottom: calc(100% + 4px);
+    transform: translateY(5px);
+}
+
+.sidebar-bottom-group .docmd-version-dropdown.open .version-dropdown-menu {
+    transform: translateY(0);
+}
+
+.sidebar-bottom-group .version-dropdown-toggle .version-chevron {
+    transform: rotate(180deg);
 }
 
 .card .card-title {
@@ -645,6 +763,7 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 .sidebar-nav {
     flex-grow: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     min-height: 0;
     scrollbar-width: thin;
 }

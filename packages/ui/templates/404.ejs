@@ -1,0 +1,89 @@
+<!--
+  ---------------------------------------------------------------
+  docmd : the minimalist, zero-config documentation generator.
+  @website https://docmd.io
+  [docmd-source] - Please do not remove this header.
+  ---------------------------------------------------------------
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= pageTitle %></title>
+    
+    <!-- Force absolute paths for assets using relativePathToRoot (which we will set to '/') -->
+    <%- faviconLinkHtml || '' %>
+    
+    <!-- 1. Core CSS -->
+    <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-main.css?v=<%= buildHash %>">
+    
+    <!-- 2. Highlight.js (Theme aware) -->
+    <% 
+       const isDarkDefault = defaultMode === 'dark';
+    %>
+    <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-light.css?v=<%= buildHash %>" id="hljs-light" <%= isDarkDefault ? 'disabled' : '' %>>
+    <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-dark.css?v=<%= buildHash %>" id="hljs-dark" <%= isDarkDefault ? '' : 'disabled' %>>
+
+    <!-- 3. Theme CSS -->
+    <% if (theme && theme.name !== 'default') { %>
+    <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-theme-<%= theme.name %>.css?v=<%= buildHash %>">
+    <% } %>
+
+    <!-- 4. Custom CSS -->
+    <% (customCssFiles || []).forEach(cssFile => { 
+       const cleanPath = cssFile.startsWith('/') ? cssFile.substring(1) : cssFile;
+    %>
+    <link rel="stylesheet" href="<%= relativePathToRoot %><%= cleanPath %>?v=<%= buildHash %>">
+    <% }); %>
+
+    <!-- 5. Theme Init (Dark Mode logic) -->
+    <%- themeInitScript %>
+
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .error-logo { height: 60px; margin-bottom: 2rem; width: auto; display: block; }
+        .error-logo.light { display: var(--display-light, block); }
+        .error-logo.dark { display: var(--display-dark, none); }
+        
+        /* Simple theme logic for logo if JS fails */
+        @media (prefers-color-scheme: dark) {
+            :root[data-theme="system"] .error-logo.light { display: none; }
+            :root[data-theme="system"] .error-logo.dark { display: block; }
+        }
+        :root[data-theme="dark"] .error-logo.light { display: none; }
+        :root[data-theme="dark"] .error-logo.dark { display: block; }
+
+        h1 { font-size: 5rem; margin: 0; line-height: 1; color: var(--link-color); font-weight: 700; }
+        h2 { font-size: 2rem; margin: 1rem 0; }
+        p { font-size: 1.2rem; color: var(--text-muted); margin-bottom: 2rem; max-width: 500px; }
+        .docmd-button { font-size: 1.1rem; padding: 0.8rem 1.5rem; }
+    </style>
+</head>
+<body>
+    <% if (logo) { %>
+        <% if (logo.light) { %>
+            <img src="<%= relativePathToRoot %><%= logo.light.replace(/^\//, '') %>" class="error-logo light" alt="Logo">
+        <% } %>
+        <% if (logo.dark) { %>
+            <img src="<%= relativePathToRoot %><%= logo.dark.replace(/^\//, '') %>" class="error-logo dark" alt="Logo">
+        <% } %>
+    <% } %>
+
+    <h1>404</h1>
+    <h2>Page Not Found</h2>
+    <p><%= content %></p>
+    <a href="<%= relativePathToRoot %>" class="docmd-button">Return Home</a>
+</body>
+</html>
