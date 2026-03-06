@@ -61,7 +61,7 @@
                     <button onclick="loadPreset('containers')">Callouts & Cards</button>
                     <button onclick="loadPreset('tabs')">Tabs</button>
                     <button onclick="loadPreset('steps')">Steps</button>
-                    <button onclick="loadPreset('mermaid')">Mermaid</button>
+                    <button onclick="loadPreset('mermaid')">Diagrams</button>
                 </div>
             </div>
             <textarea id="input" spellcheck="false"></textarea>
@@ -87,7 +87,7 @@
         const SNIPPETS = {
             basics: `---\ntitle: Welcome\ndescription: Getting started with docmd\n---\n\n# Hello World\n\nThis is **docmd**. It's fast, simple, and runs in your browser.\n\n::: card\n## Features\n1. Zero Config\n2. Offline Search\n3. Isomorphic Core\n:::`,
             
-            containers: `---\ntitle: Containers\n---\n\n# UI Components\n\n::: callout info Note\nThis is a callout block.\n:::\n\n::: card Feature Overview\nCards are great for grouping content.\n:::\n\n::: button "Action Button" /external:https://docmd.io\n`,
+            containers: `---\ntitle: Containers\n---\n\n# UI Components\n\n::: callout info Note\nThis is a callout block.\n:::\n\n::: card Feature Overview\nCards are great for grouping content.\n:::\n\n::: button "Action Button" https://docmd.io external\n`,
             
             tabs: `---\ntitle: Tabs\n---\n\n# Tabs Example\n\n::: tabs\n\n== tab "HTML"\n\`\`\`html\n<div>\n   <b>This is indentation</b>\n</div>\n\`\`\`\n\n== tab "JavaScript"\n\`\`\`javascript\nconsole.log('Hello');\n\`\`\`\n\n== tab "Python"\n\`\`\`python\nprint('Hello')\n\`\`\`\n\n:::`,
             
