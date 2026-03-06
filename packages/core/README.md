@@ -39,7 +39,7 @@
 
 </div>
 
-## ✨ Features
+## Features
 
 - **Zero Config**: Intelligent auto-routing scans your folders and builds navigation trees instantly.
 - **Versioning**: Enterprise-grade versioning (v1, v2) with sticky context switching and smart routing.
@@ -51,7 +51,7 @@
 - **Rich Content**: Native Markdown support for Tabs, Steps, Callouts, and Mermaid diagrams.
 - **SEO Optimized**: Auto-generates sitemaps, canonical tags, 404 pages, and static HTML redirects.
 
-## 🚀 Getting Started
+## Getting Started
 
 You can run `docmd` on-the-fly without installing, or add it permanently to your long term projects.
 
