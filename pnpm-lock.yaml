@@ -39,6 +39,9 @@ importers:
       '@docmd/plugin-mermaid':
         specifier: workspace:^
         version: link:../plugins/mermaid
+      '@docmd/plugin-pwa':
+        specifier: workspace:^
+        version: link:../plugins/pwa
       '@docmd/plugin-search':
         specifier: workspace:^
         version: link:../plugins/search
@@ -141,6 +144,8 @@ importers:
   packages/plugins/llms: {}
 
   packages/plugins/mermaid: {}
+
+  packages/plugins/pwa: {}
 
   packages/plugins/search:
     dependencies:
