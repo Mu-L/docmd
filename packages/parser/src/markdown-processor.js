@@ -211,7 +211,7 @@ function processContent(rawString, mdInstance, config, env = {}) {
     searchData = {
       title: frontmatter.title || 'Untitled',
       content: stripHtml(htmlContent).slice(0, 5000),
-      headings: headings.map(h => h.text)
+      headings: headings.map(h => ({ id: h.id, text: h.text }))
     };
   }
 
