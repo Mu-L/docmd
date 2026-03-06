@@ -23,7 +23,7 @@ import { buildLive } from '@docmd/core';
 await buildLive();
 ```
 
-## The docmd Ecosystem
+## The `docmd` Ecosystem
 
 `docmd` is a modular system. Here are the official packages:
 
@@ -38,6 +38,7 @@ await buildLive();
 
 **Plugins**
 *   [**@docmd/plugin-search**](https://www.npmjs.com/package/@docmd/plugin-search) - Offline full-text search.
+*   [**@docmd/plugin-pwa**](https://www.npmjs.com/package/@docmd/plugin-pwa) - Progressive Web App support.
 *   [**@docmd/plugin-mermaid**](https://www.npmjs.com/package/@docmd/plugin-mermaid) - Diagrams and flowcharts.
 *   [**@docmd/plugin-seo**](https://www.npmjs.com/package/@docmd/plugin-seo) - Meta tags and Open Graph data.
 *   [**@docmd/plugin-sitemap**](https://www.npmjs.com/package/@docmd/plugin-sitemap) - Automatic sitemap generation.

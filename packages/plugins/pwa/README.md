@@ -1,11 +1,31 @@
-# @docmd/ui
+# @docmd/plugin-pwa
 
-The visual foundation of **docmd**.
+Turns your **docmd** documentation into a blazingly fast, installable Progressive Web App (PWA).
 
-Contains:
-- **Templates:** EJS layout files (`layout.ejs`, `no-style.ejs`).
-- **Assets:** Core CSS and JavaScript.
-- **Icons:** SVG icon sets.
+## Configuration
+
+The plugin is included in `@docmd/core` and can be enabled with a single line.
+
+```javascript
+// docmd.config.js
+module.exports = {
+  plugins: {
+    pwa: {
+      // All options are optional
+      themeColor: '#0097ff',
+      bgColor: '#ffffff',
+      logo: 'assets/images/logo.png', // Fallback to config.logo or config.favicon
+    }
+  }
+}
+```
+
+## Features
+
+- **Web Manifest**: Automatically generates `manifest.webmanifest`.
+- **Service Worker**: Intelligent offline caching with background updates.
+- **Cache Busting**: Automatic timestamp-based cache purging on every build.
+- **Ghost Removal**: Automatically unregisters workers if the plugin is disabled.
 
 ## The `docmd` Ecosystem
 
