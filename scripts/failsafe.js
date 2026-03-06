@@ -233,7 +233,7 @@ title: "Stress Test"
     try {
         // Runs an audit. Fails the script if HIGH or CRITICAL vulnerabilities are found.
         execSync('pnpm audit --audit-level=high', { cwd: CWD, stdio: 'inherit' });
-        console.log('✅ Security Audit Passed.');
+        console.log('   ✅ Security Audit Passed.');
     } catch (e) {
         throw new Error(`Security vulnerabilities found! Please run 'pnpm audit' and fix them before releasing.`);
     }
