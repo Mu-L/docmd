@@ -31,22 +31,37 @@ function generateMetaTags(config, pageData, relativePathToRoot) {
     return '<meta name="robots" content="noindex">\n';
   }
 
+  // 1.5 AI Bots Control
+  const aiBots = seo.aiBots ?? globalSeo.aiBots;
+  if (aiBots === false) {
+    const bots = ['GPTBot', 'ChatGPT-User', 'Google-Extended', 'CCBot', 'anthropic-ai', 'Omgilibot', 'Omgili', 'FacebookBot', 'Diffbot', 'Bytespider', 'ImagesiftBot', 'cohere-ai'];
+    bots.forEach(bot => {
+      html += `<meta name="${bot}" content="noindex">\n`;
+    });
+  }
+
   // 2. Basic Meta
   const siteTitle = config.siteTitle;
   const pageTitle = frontmatter.title || 'Untitled';
-  const description = seo.description || frontmatter.description || globalSeo.defaultDescription || '';
-  
+  let description = seo.description || frontmatter.description || globalSeo.defaultDescription || '';
+
+  // Smart Fallback Description
+  if (!description && pageData.searchData && pageData.searchData.content) {
+    let contentPrefix = pageData.searchData.content.substring(0, 150).trim();
+    description = pageData.searchData.content.length > 150 ? contentPrefix + '...' : contentPrefix;
+  }
+
   html += `<meta name="description" content="${description}">\n`;
 
   // 3. Canonical URL
   const siteUrl = config.siteUrl ? config.siteUrl.replace(/\/$/, '') : '';
   // Convert "guide/index.html" -> "/guide/"
-  const urlPath = outputPath.replace(/(^|\/)index\.html$/, '$1'); 
+  const urlPath = outputPath.replace(/(^|\/)index\.html$/, '$1');
   const pageUrl = `${siteUrl}/${urlPath.replace(/^\//, '')}`;
-  
+
   const canonical = seo.canonicalUrl || frontmatter.canonicalUrl || pageUrl;
-  if(canonical) {
-      html += `<link rel="canonical" href="${canonical}">\n`;
+  if (canonical) {
+    html += `<link rel="canonical" href="${canonical}">\n`;
   }
 
   // 4. Open Graph (Facebook/LinkedIn)
@@ -68,11 +83,11 @@ function generateMetaTags(config, pageData, relativePathToRoot) {
   // 5. Twitter
   const cardType = seo.twitterCard || globalSeo.twitter?.cardType || 'summary_large_image';
   html += `<meta name="twitter:card" content="${cardType}">\n`;
-  
+
   if (globalSeo.twitter?.siteUsername) {
     html += `<meta name="twitter:site" content="${globalSeo.twitter.siteUsername}">\n`;
   }
-  
+
   html += `<meta name="twitter:title" content="${pageTitle}">\n`;
   html += `<meta name="twitter:description" content="${description}">\n`;
   if (image) {
