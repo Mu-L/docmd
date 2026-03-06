@@ -540,15 +540,10 @@ body.sidebar-collapsed .main-content-wrapper {
 /* --- Version Dropdown (Flat UI) --- */
 .sidebar-version-wrapper {
     padding: 0.25rem .5em;
-    border-bottom: 1px solid var(--border-color);
 }
 
 .sidebar-bottom-group.mt-auto {
     margin-top: auto;
-}
-
-.sidebar-bottom-group .sidebar-version-wrapper {
-    border-bottom: none;
 }
 
 .docmd-version-dropdown {
