@@ -196,7 +196,9 @@ await buildLive();
 ```
 
 ### Live Editor (`docmd live`)
-`docmd` features an isomorphic architecture. Running `npx @docmd/core live` builds a standalone web application where you can write Markdown and see the preview instantly without any server-side processing. You can also try our **[docmd live](https://live.docmd.io)** editor!
+`docmd` features an isomorphic architecture. Running `npx @docmd/core live` builds a standalone web application where you can write Markdown and see the preview instantly without any server-side processing. 
+
+> You can also try our **[docmd live](https://live.docmd.io)** editor online.
 
 ## Comparison
 
