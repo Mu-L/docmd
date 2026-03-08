@@ -7,7 +7,7 @@
     "test": "node scripts/failsafe.js",
     "lint": "pnpm -r run lint",
     "build": "pnpm -r run build",
-    "dev": "pnpm --filter @docmd/core node bin/docmd.js dev",
+    "dev": "pnpm --filter @docmd/playground dev", 
     "release": "pnpm publish -r --access public",
     "clean": "rm -rf node_modules packages/*/node_modules packages/plugins/*/node_modules"
   },
