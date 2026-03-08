@@ -1,129 +1,60 @@
-# Contributing to docmd
+# Contributing to `docmd`
 
-First off, thank you for considering contributing to `docmd`! It's people like you that make the open-source community such an amazing place to learn, inspire, and create.
-
-We welcome contributions of all kinds: bug fixes, new features, documentation improvements, or even just typo fixes.
-
-## ⚡ Quick Links
-
-*   [**Documentation**](https://docs.docmd.io) - Read the docs to understand how the tool works.
-*   [**GitHub Issues**](https://github.com/docmd-io/docmd/issues) - Browse existing bugs or feature requests.
-*   [**Discussions**](https://github.com/docmd-io/docmd/discussions) - Ask questions or share ideas.
-
----
+Thank you for contributing to `docmd`! We appreciate your help in making this tool faster, smarter, and more reliable.
 
 ## 🛠️ Development Setup
 
-`docmd` is a Node.js CLI tool. Developing it locally requires a slightly different setup than a standard web app.
+`docmd` is a Monorepo managed with [pnpm](https://pnpm.io/).
 
-### Prerequisites
-*   **Node.js**: Version 22.x or higher.
-*   **npm**: Version 10.x or higher.
+### 1. Prerequisites
+- **Node.js**: v20+
+- **pnpm**: v10+
 
-### 1. Fork and Clone
-1.  Fork the repository to your GitHub account.
-2.  Then clone your fork locally:
-    ```bash
-    git clone https://github.com/YOUR_USERNAME/docmd.git
-    cd docmd
-    ```
-
-### 2. Install Dependencies
-```bash
-npm install
-```
-
-### 3. Link for Local Development
-To test the CLI command (`docmd`) globally on your machine while modifying the source code, use `npm link`.
+### 2. Setup
+Clone the repository and install all workspace dependencies:
 
 ```bash
-# inside the project root
-npm link
+git clone https://github.com/docmd-io/docmd.git
+cd docmd
+pnpm install
 ```
 
-Now, when you run `docmd` in *any* terminal window, it will use the code from your local folder.
-
-### 4. Running the Dev Server
-We have a built-in test site located in the `docs/` folder (this is the documentation for docmd itself).
-
-To start the dev server and watch for changes:
+### 3. Running the Dev Server
+We use workspace filtering to ensure the local CLI is used during development. Start the documentation site and watch for changes in the core engine automatically:
 
 ```bash
-# Method 1: Using the npm script (Recommended)
-npm start
-
-# Method 2: If you have linked the package
-docmd dev
+pnpm run dev
 ```
 
-### 5. Developer Mode (Important)
-By default, `docmd` only watches the user's content files. To make `docmd` watch **its own internal source code** (templates, css, core logic) and trigger a rebuild when you edit them, set the environment variable:
+### 4. Developer Mode
+By default, the dev server watches content. To watch internal source code (templates, core engine, plugins), set the environment variable:
 
 ```bash
 # Mac/Linux
-export DOCMD_DEV=true
-npm start
+DOCMD_DEV=true pnpm run dev
 
 # Windows (PowerShell)
-$env:DOCMD_DEV="true"
-npm start
+$env:DOCMD_DEV="true"; pnpm run dev
 ```
 
----
+## 🧪 Testing & Quality
 
-## 📂 Project Structure
+Before submitting, ensure your changes haven't introduced regressions.
 
-Here is a map of the codebase to help you navigate:
+1. **Integration Suite:** Run our universal failsafe to test core engine features, versioning, and redirects:
+   ```bash
+   pnpm test
+   ```
+2. **Conventional Commits:** We follow [Conventional Commits](https://www.conventionalcommits.org/). Use prefixes like `feat:`, `fix:`, or `docs:`.
+3. **Copyright Header:** All new files in `packages/` must include the standard project copyright header. Please copy the header from any existing file in the `src/` directory.
 
-```text
-bin/
-  └── docmd.js          # The CLI entry point
-src/
-  ├── commands/         # Logic for 'init', 'build', 'dev'
-  ├── core/
-  │   ├── config-loader.js   # Loads docmd.config.js
-  │   ├── config-validator.js # Validates config structure
-  │   ├── file-processor.js  # Orchestrates file reading
-  │   ├── html-generator.js  # Injects content into EJS templates
-  │   └── markdown/          # The Core Parsing Engine
-  │       ├── containers.js  # Callout/Card definitions
-  │       ├── rules.js       # Complex logic (Tabs, Changelogs)
-  │       └── setup.js       # MarkdownIt configuration
-  ├── plugins/          # Built-in plugins (SEO, Sitemap)
-  ├── templates/        # EJS HTML templates
-  └── assets/           # Internal CSS and JS (Themes)
-docs/                   # The documentation site content
-site/                   # The generated output folder (gitignored)
-```
+## 🚀 Pull Request Workflow
 
----
+1. **Branch:** Create a branch from `main`.
+2. **Code:** Make your changes.
+3. **Verify:** Run `pnpm test` and ensure it outputs `✨ ALL SYSTEMS GO`.
+4. **Push & Open:** Open a Pull Request against the `main` branch.
 
-## 🚀 Submitting a Pull Request
+## 🤝 Code of Conduct
 
-1.  **Create a Branch:** Always create a new branch for your changes.
-    *   `feat/my-new-feature`
-    *   `fix/bug-description`
-    *   `docs/update-readme`
-2.  **Make Changes:** Write clear, concise code.
-3.  **Test:**
-    *   Run `docmd build` to ensure the build process finishes without errors.
-    *   Verify your changes visually by running `docmd dev`.
-4.  **Commit:** We prefer [Conventional Commits](https://www.conventionalcommits.org/).
-    *   `feat: add search bar`
-    *   `fix: resolve css overflow in tables`
-    *   `docs: fix typo in readme`
-5.  **Push & Open PR:** Push your branch to your fork and open a Pull Request against the `main` branch of `docmd-io/docmd`.
-
----
-
-## 🎨 Style Guidelines
-
-*   **Linting:** Please ensure your code follows the existing style. (We use standard ESLint/Prettier configurations).
-*   **No-Style:** If modifying `no-style` templates, ensure no external CSS is injected unless requested.
-*   **Compatibility:** `docmd` aims to be lightweight. Avoid adding heavy dependencies unless absolutely necessary.
-
----
-
-## 🤝 Community
-
-Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
+By participating in this project, you agree to abide by our Code of Conduct. We strive to maintain a welcoming, respectful, and inclusive environment for all contributors.
