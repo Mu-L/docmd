@@ -385,6 +385,16 @@ async function startDevServer(configPathOption, opts = {}) {
   process.on('SIGINT', () => {
     console.log(chalk.yellow('\n🛑 Shutting down...'));
     watcher.close();
+    if (server) {
+      server.close(() => {
+        process.exit(0);
+      });
+    } else {
+      process.exit(0);
+    }
+  });
+
+  process.on('SIGTERM', () => {
     process.exit(0);
   });
 }

@@ -33,7 +33,7 @@ async function buildSite(configPath, opts = {}) {
 
   // 1. Load Config (Zero-Config aware)
   try {
-    const config = await loadConfig(configPath, { zeroConfig: options.zeroConfig });
+    const config = await loadConfig(configPath, { zeroConfig: options.zeroConfig, isDev: options.isDev });
     const hooks = loadPlugins(config);
     const buildHash = Date.now().toString(36);
 

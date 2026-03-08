@@ -51,6 +51,7 @@ function buildAutoNav(dir, basePath = '/') { // Default base path is root '/'
     // Skip hidden files, node_modules, and typical output/asset dirs
     if (
       item.name.startsWith('.') || 
+      item.name === '_playground' || 
       item.name === 'node_modules' || 
       item.name === 'assets' || 
       item.name === 'site' || 

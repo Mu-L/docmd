@@ -21,7 +21,7 @@ const { generateAssetTag } = require('./assets');
 
 async function renderPages({ config, srcDir, outputDir, hooks, buildHash, options }) {
   const mdProcessor = parser.createMarkdownProcessor(config, (md) => hooks.markdownSetup.forEach(hook => hook(md)));
-  
+
   // Load Layout Templates
   const templates = {
     layout: await fs.readFile(ui.getTemplatePath('layout'), 'utf8'),
@@ -31,7 +31,7 @@ async function renderPages({ config, srcDir, outputDir, hooks, buildHash, option
 
   // Load Partials
   const themeInitPath = path.join(ui.getTemplatesDir(), 'partials', 'theme-init.js');
-  const themeInitScript = (await fs.exists(themeInitPath)) 
+  const themeInitScript = (await fs.exists(themeInitPath))
     ? `<script>${await fs.readFile(themeInitPath, 'utf8')}</script>`
     : '';
 
@@ -40,7 +40,7 @@ async function renderPages({ config, srcDir, outputDir, hooks, buildHash, option
 
   // --- 1. Identify Assets (Plugin Injection) ---
   const assetTags = { head: [], body: [] };
-  
+
   // Theme CSS
   if (config.theme.name && config.theme.name !== 'default') {
     assetTags.head.push(rel => generateAssetTag(`${rel}assets/css/docmd-theme-${config.theme.name}.css?v=${buildHash}`, 'css'));
@@ -72,7 +72,7 @@ async function renderPages({ config, srcDir, outputDir, hooks, buildHash, option
   // For now, assume findFilesRecursive is available via utils
   const { findFilesRecursive } = require('./assets');
   const mdFiles = await findFilesRecursive(srcDir, ['.md', '.markdown']);
-  
+
   const pages = [];
   for (const filePath of mdFiles) {
     const rawContent = await fs.readFile(filePath, 'utf8');
@@ -95,24 +95,24 @@ async function renderPages({ config, srcDir, outputDir, hooks, buildHash, option
 
     // Navigation Context
     let navPath = '/' + page.outputPath.replace(/\\/g, '/').replace(/\/index\.html$/, '').replace(/^index\.html$/, '');
-    if(navPath === '/.') navPath = '/';
+    if (navPath === '/.') navPath = '/';
     const { prevPage, nextPage } = findPageNeighbors(config.navigation, navPath);
 
     // Fix Neighbor Links
     const fixNeighbor = (node) => {
-        if (!node) return null;
-        if (node.path.startsWith('http')) return node;
-        let p = node.path.replace(/^\//, '');
-        if (options.offline && !p.endsWith('.html')) p = p.replace(/\/$/, '') + '/index.html';
-        node.url = relativePathToRoot + p;
-        return node;
+      if (!node) return null;
+      if (node.path.startsWith('http')) return node;
+      let p = node.path.replace(/^\//, '');
+      if (options.offline && !p.endsWith('.html')) p = p.replace(/\/$/, '') + '/index.html';
+      node.url = relativePathToRoot + p;
+      return node;
     };
-    
+
     // Inject Assets
     const assetHeadHtml = assetTags.head.map(gen => gen(relativePathToRoot)).join('\n');
     const assetBodyHtml = assetTags.body.map(gen => gen(relativePathToRoot)).join('\n');
     const pageContext = { frontmatter: page.frontmatter, outputPath: page.outputPath };
-    
+
     const fullHeadHtml = [
       hooks.injectHead.map(fn => fn(config, pageContext, relativePathToRoot)).join('\n'),
       assetHeadHtml
@@ -125,7 +125,7 @@ async function renderPages({ config, srcDir, outputDir, hooks, buildHash, option
 
     let editUrl = null;
     let editLinkText = config.editLink?.text || 'Edit this page';
-    
+
     if (config.editLink && config.editLink.enabled && config.editLink.baseUrl) {
       const cleanBase = config.editLink.baseUrl.replace(/\/$/, '');
       const sourceRelative = path.relative(srcDir, page.sourcePath).replace(/\\/g, '/');
@@ -164,25 +164,26 @@ async function renderPages({ config, srcDir, outputDir, hooks, buildHash, option
       headerConfig: config.header,
       sidebarConfig: config.sidebar,
       footerConfig: config.footer,
-      optionsMenu: config.optionsMenu, 
-      
+      menubarConfig: config.menubar,
+      optionsMenu: config.optionsMenu,
+
       customCssFiles: config.theme.customCss || [],
       customJsFiles: config.customJs || [],
-      
+
       pluginHeadScriptsHtml: fullHeadHtml,
       pluginBodyScriptsHtml: fullBodyHtml,
 
-      faviconLinkHtml: config.favicon ? `<link id="site-favicon" rel="icon" href="${relativePathToRoot}${config.favicon.replace(/^\//,'')}?v=${buildHash}">` : '',
+      faviconLinkHtml: config.favicon ? `<link id="site-favicon" rel="icon" href="${relativePathToRoot}${config.favicon.replace(/^\//, '')}?v=${buildHash}">` : '',
       themeInitScript,
       footerHtml,
       isActivePage: page.htmlContent && page.htmlContent.trim().length > 0,
       editUrl,
       editLinkText,
-      
+
       // Placeholders for template compatibility
-      themeCssLinkHtml: '', 
+      themeCssLinkHtml: '',
       metaTagsHtml: '',
-      pluginStylesHtml: '' 
+      pluginStylesHtml: ''
     }, { filename: ui.getTemplatePath('layout') });
 
     await fs.ensureDir(path.dirname(finalPath));

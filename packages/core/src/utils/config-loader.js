@@ -35,7 +35,8 @@ function hasMarkdownFiles(dir, maxDepth = 2, currentDepth = 0) {
 }
 
 async function buildZeroConfig(cwd) {
-  if (!global.__DOCMD_ZERO_LOGGED) {
+
+  if (isDev) {
     console.log(chalk.cyan('✨ Zero-Config mode activated. Analyzing directory...'));
     global.__DOCMD_ZERO_LOGGED = true;
   }
@@ -88,9 +89,8 @@ async function buildZeroConfig(cwd) {
 async function loadConfig(configPath, options = {}) {
   const cwd = process.cwd();
 
-  // 1. Intercept Zero-Config Mode
   if (options.zeroConfig) {
-    return await buildZeroConfig(cwd);
+    return await buildZeroConfig(cwd, options.isDev); 
   }
 
   let absoluteConfigPath = path.resolve(cwd, configPath);

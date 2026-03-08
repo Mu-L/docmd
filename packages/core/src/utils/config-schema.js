@@ -62,7 +62,7 @@ function normalizeConfig(userConfig) {
     const legacySidebar = config.sidebar || {};
     config.sidebar = {
         enabled: true,
-        collapsible: true, 
+        collapsible: true,
         defaultCollapsed: false,
         position: 'left',
         ...(userLayout.sidebar || legacySidebar)
@@ -79,21 +79,32 @@ function normalizeConfig(userConfig) {
 
     // --- 3. Options Menu (Search, Theme, Sponsor) ---
     config.optionsMenu = {
-        position: 'header', 
+        position: 'header',
         components: {
-        search: true,
-        themeSwitch: true,
-        sponsor: null 
+            search: true,
+            themeSwitch: true,
+            sponsor: null
         },
         ...(userLayout.optionsMenu || config.optionsMenu || {})
     };
 
+    // --- Menubar (Top Navigation Bar) ---
+    if (userLayout.menubar) {
+        config.menubar = {
+            enabled: true,
+            position: 'top', // 'top' or 'header'
+            ...userLayout.menubar
+        };
+    } else {
+        config.menubar = null;
+    }
+
     // --> Legacy Adapter: Sponsor
     if (config.sponsor) {
         if (typeof config.sponsor === 'object' && config.sponsor.enabled && config.sponsor.link) {
-        config.optionsMenu.components.sponsor = config.sponsor.link;
+            config.optionsMenu.components.sponsor = config.sponsor.link;
         } else if (typeof config.sponsor === 'string') {
-        config.optionsMenu.components.sponsor = config.sponsor;
+            config.optionsMenu.components.sponsor = config.sponsor;
         }
     }
 
@@ -105,12 +116,12 @@ function normalizeConfig(userConfig) {
     // --> Legacy Adapter: Theme Switch & Position
     if (config.theme) {
         if (config.theme.enableModeToggle === false) {
-        config.optionsMenu.components.themeSwitch = false;
+            config.optionsMenu.components.themeSwitch = false;
         }
         if (config.theme.positionMode === 'bottom') {
-        config.optionsMenu.position = 'sidebar-bottom';
+            config.optionsMenu.position = 'sidebar-bottom';
         } else if (config.theme.positionMode === 'top') {
-        config.optionsMenu.position = 'header';
+            config.optionsMenu.position = 'header';
         }
     }
 
@@ -118,14 +129,14 @@ function normalizeConfig(userConfig) {
     config.theme = {
         name: 'default',
         defaultMode: 'system',
-        customCss:[],
+        customCss: [],
         ...(config.theme || {})
     };
 
-    config.customJs = config.customJs ||[];
+    config.customJs = config.customJs || [];
 
     // Normalize Navigation
-    config.navigation = Array.isArray(config.navigation) ? config.navigation :[];
+    config.navigation = Array.isArray(config.navigation) ? config.navigation : [];
 
     // --- 5. Plugins ---
     config.plugins = config.plugins || {};
