@@ -65,22 +65,22 @@ function tabsRule(state, startLine, endLine, silent) {
     const nextStart = state.bMarks[nextLine] + state.tShift[nextLine];
     const nextMax = state.eMarks[nextLine];
     const nextContent = state.src.slice(nextStart, nextMax).trim();
-    
+
     if (!fenceMarker) {
-        const match = nextContent.match(/^(`{3,}|~{3,})/);
-        if (match) fenceMarker = match[1];
+      const match = nextContent.match(/^(`{3,}|~{3,})/);
+      if (match) fenceMarker = match[1];
     } else if (nextContent.startsWith(fenceMarker)) {
-        fenceMarker = null;
+      fenceMarker = null;
     }
 
     if (!fenceMarker) {
       if (nextContent.match(/^:::\s+[a-zA-Z]/) && !nextContent.match(/^:::\s+button/)) {
-          depth++;
+        depth++;
       } else if (nextContent.match(/^:::\s*$/)) {
         depth--;
-        if (depth === 0) { 
-          found = true; 
-          break; 
+        if (depth === 0) {
+          found = true;
+          break;
         }
       }
     }
@@ -88,9 +88,9 @@ function tabsRule(state, startLine, endLine, silent) {
   if (!found) return false;
 
   // Extract content
-let content = '';
+  let content = '';
   for (let i = startLine + 1; i < nextLine; i++) {
-    const lineStart = state.bMarks[i]; 
+    const lineStart = state.bMarks[i];
     const lineEnd = state.eMarks[i];
     content += state.src.slice(lineStart, lineEnd) + '\n';
   }
@@ -100,12 +100,12 @@ let content = '';
   const tabs = [];
   let currentTab = null;
   let currentContentLines = [];
-  
+
   for (let i = 0; i < lines.length; i++) {
-    const rawLine = lines[i]; 
+    const rawLine = lines[i];
     const trimmedLine = rawLine.trim();
     const tabMatch = trimmedLine.match(/^==\s*tab\s+(?:"([^"]+)"|(\S+))$/);
-    
+
     if (tabMatch) {
       if (currentTab) {
         currentTab.content = smartDedent(currentContentLines.join('\n'));
@@ -115,7 +115,7 @@ let content = '';
       currentTab = { title: title, content: '' };
       currentContentLines = [];
     } else if (currentTab) {
-      currentContentLines.push(rawLine); 
+      currentContentLines.push(rawLine);
     }
   }
   if (currentTab) {
@@ -126,7 +126,7 @@ let content = '';
   // Generate Tokens
   const openToken = state.push('tabs_open', 'div', 1);
   openToken.attrs = [['class', 'docmd-tabs']];
-  
+
   const navToken = state.push('tabs_nav_open', 'div', 1);
   tabs.forEach((tab, index) => {
     const navItemToken = state.push('tabs_nav_item', 'div', 0);
@@ -134,23 +134,23 @@ let content = '';
     navItemToken.content = tab.title;
   });
   state.push('tabs_nav_close', 'div', -1);
-  
+
   const contentToken = state.push('tabs_content_open', 'div', 1);
   tabs.forEach((tab, index) => {
     const paneToken = state.push('tab_pane_open', 'div', 1);
     paneToken.attrs = [['class', `docmd-tab-pane ${index === 0 ? 'active' : ''}`]];
-    
+
     if (tab.content) {
-        // Recurse parsing inside tabs
-        const renderedContent = state.md.render(tab.content, state.env);
-        const htmlToken = state.push('html_block', '', 0);
-        htmlToken.content = renderedContent;
+      // Recurse parsing inside tabs
+      const renderedContent = state.md.render(tab.content, state.env);
+      const htmlToken = state.push('html_block', '', 0);
+      htmlToken.content = renderedContent;
     }
     state.push('tab_pane_close', 'div', -1);
   });
   state.push('tabs_content_close', 'div', -1);
   state.push('tabs_close', 'div', -1);
-  
+
   state.line = nextLine + 1;
   return true;
 }

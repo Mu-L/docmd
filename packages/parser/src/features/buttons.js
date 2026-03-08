@@ -28,47 +28,47 @@ function buttonRule(state, startLine, endLine, silent) {
   let text = match[1] || match[2] || 'Button';
   // Replace underscores only if it was a single word (legacy support)
   if (match[2]) text = text.replace(/_/g, ' ');
-  
+
   const rest = match[3].trim();
-  
+
   // Parse Link and Options
   // We look for the first string as the link, rest as options
   const parts = rest.split(/\s+/);
   let rawLink = parts[0];
   let color = '';
-  
+
   // Look for color option in remaining parts
   for (let i = 1; i < parts.length; i++) {
-      if (parts[i].startsWith('color:')) {
-          color = parts[i].replace('color:', '');
-      }
+    if (parts[i].startsWith('color:')) {
+      color = parts[i].replace('color:', '');
+    }
   }
 
   // Handle Link Types
   let href = rawLink;
   let isExternal = false;
-  
+
   if (href.startsWith('external:')) {
-      href = href.replace('external:', '');
-      isExternal = true;
+    href = href.replace('external:', '');
+    isExternal = true;
   } else if (href.startsWith('mailto:')) {
-      // Keep as is
+    // Keep as is
   } else if (href.startsWith('http')) {
-      // Auto-detect external http
-      isExternal = true;
+    // Auto-detect external http
+    isExternal = true;
   }
 
   // Generate Token
   const token = state.push('html_inline', '', 0);
-  
+
   let styleAttr = '';
   if (color) {
-      // Basic validation to prevent CSS injection if needed, or allow flexibility
-      styleAttr = ` style="background-color: ${color}; border-color: ${color}; color: #fff;"`;
+    // Basic validation to prevent CSS injection if needed, or allow flexibility
+    styleAttr = ` style="background-color: ${color}; border-color: ${color}; color: #fff;"`;
   }
 
   const targetAttr = isExternal ? ' target="_blank" rel="noopener noreferrer"' : '';
-  
+
   token.content = `<a href="${href}" class="docmd-button"${styleAttr}${targetAttr}>${text}</a>`;
 
   state.line = startLine + 1;

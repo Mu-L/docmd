@@ -44,22 +44,22 @@ function changelogRule(state, startLine, endLine, silent) {
     const nextStart = state.bMarks[nextLine] + state.tShift[nextLine];
     const nextMax = state.eMarks[nextLine];
     const nextContent = state.src.slice(nextStart, nextMax).trim();
-    
+
     if (!fenceMarker) {
-        const match = nextContent.match(/^(`{3,}|~{3,})/);
-        if (match) fenceMarker = match[1];
+      const match = nextContent.match(/^(`{3,}|~{3,})/);
+      if (match) fenceMarker = match[1];
     } else if (nextContent.startsWith(fenceMarker)) {
-        fenceMarker = null;
+      fenceMarker = null;
     }
 
     if (!fenceMarker) {
       if (nextContent.match(/^:::\s+[a-zA-Z]/) && !nextContent.match(/^:::\s+button/)) {
-          depth++;
+        depth++;
       } else if (nextContent.match(/^:::\s*$/)) {
         depth--;
-        if (depth === 0) { 
-          found = true; 
-          break; 
+        if (depth === 0) {
+          found = true;
+          break;
         }
       }
     }
@@ -113,7 +113,7 @@ function changelogRule(state, startLine, endLine, silent) {
 
     // Recurse render the markdown inside the entry
     entryOpen.content += state.md.render(entry.content, state.env);
-    
+
     const entryClose = state.push('html_block', '', 0);
     entryClose.content = `</div></div>`;
   });
@@ -128,7 +128,7 @@ module.exports = {
   setup(md) {
     // Register Rule
     md.block.ruler.before('fence', 'changelog_timeline', changelogRule, { alt: ['paragraph', 'reference', 'blockquote', 'list'] });
-    
+
     // Register Container Renderer
     md.renderer.rules.changelog_open = () => '<div class="docmd-container changelog-timeline">';
     md.renderer.rules.changelog_close = () => '</div>';

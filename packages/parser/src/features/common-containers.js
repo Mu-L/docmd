@@ -36,19 +36,19 @@ function createDepthTrackingContainer(md, name, renderOpen, renderClose) {
       const nextStart = state.bMarks[nextLine] + state.tShift[nextLine];
       const nextMax = state.eMarks[nextLine];
       const nextContent = state.src.slice(nextStart, nextMax).trim();
-      
+
       if (!fenceMarker) {
-          const match = nextContent.match(/^(`{3,}|~{3,})/);
-          if (match) fenceMarker = match[1];
+        const match = nextContent.match(/^(`{3,}|~{3,})/);
+        if (match) fenceMarker = match[1];
       } else if (nextContent.startsWith(fenceMarker)) {
-          fenceMarker = null;
+        fenceMarker = null;
       }
 
       if (!fenceMarker) {
         if (nextContent.match(/^:::\s+[a-zA-Z]/) && !nextContent.match(/^:::\s+button/)) {
-          depth++; 
+          depth++;
         } else if (nextContent.match(/^:::\s*$/)) {
-          depth--; 
+          depth--;
           if (depth === 0) {
             found = true;
             break;
@@ -60,7 +60,7 @@ function createDepthTrackingContainer(md, name, renderOpen, renderClose) {
     if (!found) return false;
 
     const info = match[1] || '';
-    
+
     const openToken = state.push(`custom_${name}_open`, 'div', 1);
     openToken.info = info;
 
@@ -85,22 +85,39 @@ function createDepthTrackingContainer(md, name, renderOpen, renderClose) {
   md.renderer.rules[`custom_${name}_close`] = renderClose;
 }
 
+/**
+ * Extracts a quoted title (e.g., "My Title") from the info string.
+ * Falls back to the raw info if no quotes are found.
+ */
+function parseQuotedTitle(info) {
+  if (!info) return '';
+  const match = info.trim().match(/^"(.*)"$/);
+  return match ? match[1] : info.trim();
+}
+
 module.exports = {
   name: 'common-containers',
   setup(md) {
-    
+
     // 1. Callout
     createDepthTrackingContainer(md, 'callout', (tokens, idx) => {
       const info = tokens[idx].info.trim();
       const parts = info.split(' ');
-      const type = parts[0] || 'info'; 
-      const title = parts.slice(1).join(' ');
+      const type = parts[0] || 'info';
+
+      // Support ::: callout type "Title" or ::: callout type Title
+      let title = '';
+      const remaining = parts.slice(1).join(' ').trim();
+      if (remaining) {
+        title = parseQuotedTitle(remaining);
+      }
+
       return `<div class="docmd-container callout callout-${type}">${title ? `<div class="callout-title">${title}</div>` : ''}<div class="callout-content">\n`;
     }, () => '</div></div>\n');
 
     // 2. Card
     createDepthTrackingContainer(md, 'card', (tokens, idx) => {
-      const title = tokens[idx].info.trim();
+      const title = parseQuotedTitle(tokens[idx].info);
       return `<div class="docmd-container card">${title ? `<div class="card-title">${title}</div>` : ''}<div class="card-content">\n`;
     }, () => '</div></div>\n');
 
@@ -108,9 +125,10 @@ module.exports = {
     createDepthTrackingContainer(md, 'collapsible', (tokens, idx) => {
       const info = tokens[idx].info.trim();
       const isOpen = info.startsWith('open ') || info === 'open';
-      const title = isOpen ? info.replace('open', '').trim() : info;
+      const rawTitle = isOpen ? info.replace('open', '').trim() : info;
+      const title = parseQuotedTitle(rawTitle);
       const displayTitle = title || 'Click to expand';
-      
+
       return `<details class="docmd-container collapsible" ${isOpen ? 'open' : ''}>
         <summary class="collapsible-summary">
             <span class="collapsible-title">${displayTitle}</span>
