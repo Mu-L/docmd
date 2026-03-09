@@ -241,7 +241,8 @@ async function startDevServer(configPathOption, opts = {}) {
       path.join(DOCMD_ROOT, 'templates'),
       path.join(DOCMD_ROOT, 'assets'),
       path.join(DOCMD_ROOT, 'engine'),
-      path.join(DOCMD_ROOT, 'plugins')
+      path.join(DOCMD_ROOT, 'plugins'),
+      path.join(DOCMD_ROOT, 'utils')
     );
   }
 
@@ -379,7 +380,11 @@ async function startDevServer(configPathOption, opts = {}) {
     tryStartServer(finalPort);
   })();
 
+  let isShuttingDown = false;
   process.on('SIGINT', () => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
     console.log(chalk.yellow('\n🛑 Shutting down...'));
 
     // Set a timeout to force exit if closing takes too long

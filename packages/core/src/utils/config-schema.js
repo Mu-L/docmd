@@ -163,6 +163,13 @@ function normalizeConfig(userConfig) {
         content: 'The page you are looking for does not exist or has been moved.'
     };
 
+    // --- 8. OptionsMenu Fallbacks ---
+    if (config.optionsMenu.position === 'menubar' && (!config.menubar || config.menubar.enabled === false)) {
+        config.optionsMenu.position = 'sidebar-top';
+    } else if (config.optionsMenu.position === 'header' && (!config.header || config.header.enabled === false)) {
+        config.optionsMenu.position = 'sidebar-top';
+    }
+
     return config;
 }
 

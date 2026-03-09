@@ -47,7 +47,7 @@ module.exports = defineConfig({
       defaultCollapsed: false,
     },
     optionsMenu: {
-      position: 'sidebar-top', // 'header', 'sidebar-top', 'sidebar-bottom'
+      position: 'sidebar-top', // 'menubar', 'header', 'sidebar-top', 'sidebar-bottom'
       components: {
         search: true,      
         themeSwitch: true, 
