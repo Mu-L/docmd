@@ -1,0 +1,129 @@
+<%# ---------------------------------------------------------------
+  # docmd : the minimalist, zero-config documentation generator.
+  # @website https://docmd.io
+  # [docmd-source] - Please do not remove this header.
+  # ---------------------------------------------------------------
+%>
+
+<% function menubarHref(item) { if (!item.url) return '#' ; if (item.external || item.url.startsWith('http')) return
+  item.url; let clean=item.url.replace(/^\//, '' ); return relativePathToRoot + clean; } function menubarTarget(item)
+  { return (item.external || (item.url && item.url.startsWith('http'))) ? ' target="_blank" rel="noopener noreferrer"'
+  : '' ; } %>
+
+  <div class="docmd-menubar">
+    <div class="menubar-inner">
+      <div class="menubar-left">
+      <% if (menubarConfig.left && menubarConfig.left.length> 0) { %>
+          <% menubarConfig.left.forEach(item=> { %>
+            <% if (item.type==='title' ) { %>
+              <a href="<%= menubarHref(item) %>" class="menubar-brand" <%- menubarTarget(item) %>>
+                <% if (item.icon) { %>
+                  <%- renderIcon(item.icon, { class: 'menubar-icon' }) %>
+                    <% } %>
+                      <% if (item.text) { %>
+                        <span class="menubar-brand-text">
+                          <%= item.text %>
+                        </span>
+                        <% } %>
+              </a>
+              <% } else if (item.type==='dropdown' ) { %>
+                <div class="menubar-dropdown">
+                  <button class="menubar-dropdown-toggle" type="button" aria-expanded="false">
+                    <% if (item.icon) { %>
+                      <%- renderIcon(item.icon, { class: 'menubar-icon' }) %>
+                        <% } %>
+                          <span>
+                            <%= item.text %>
+                          </span>
+                          <%- renderIcon('chevron-down', { class: 'menubar-chevron' }) %>
+                  </button>
+                  <ul class="menubar-dropdown-menu">
+                    <% if (item.items && item.items.length> 0) { %>
+                      <% item.items.forEach(sub=> { %>
+                        <li>
+                          <a href="<%= menubarHref(sub) %>" <%- menubarTarget(sub) %>>
+                            <% if (sub.icon) { %>
+                              <%- renderIcon(sub.icon, { class: 'menubar-icon' }) %>
+                                <% } %>
+                                  <%= sub.text %>
+                                    <% if (sub.external || (sub.url && sub.url.startsWith('http'))) { %>
+                                      <%- renderIcon('external-link', { class: 'menubar-ext-icon' }) %>
+                                        <% } %>
+                          </a>
+                        </li>
+                        <% }) %>
+                          <% } %>
+                  </ul>
+                </div>
+                <% } else { %>
+                  <a href="<%= menubarHref(item) %>" class="menubar-link" <%- menubarTarget(item) %>>
+                    <% if (item.icon) { %>
+                      <%- renderIcon(item.icon, { class: 'menubar-icon' }) %>
+                        <% } %>
+                          <span>
+                            <%= item.text %>
+                          </span>
+                          <% if (item.external || (item.url && item.url.startsWith('http'))) { %>
+                            <%- renderIcon('external-link', { class: 'menubar-ext-icon' }) %>
+                              <% } %>
+                  </a>
+                  <% } %>
+                    <% }) %>
+        </div>
+        <% } %>
+        </div>
+        <div class="menubar-right">
+            <% if (menubarConfig.right && menubarConfig.right.length> 0) { %>
+              <% menubarConfig.right.forEach(item=> { %>
+                <% if (item.type==='dropdown' ) { %>
+                  <div class="menubar-dropdown">
+                    <button class="menubar-dropdown-toggle" type="button" aria-expanded="false">
+                      <% if (item.icon) { %>
+                        <%- renderIcon(item.icon, { class: 'menubar-icon' }) %>
+                          <% } %>
+                            <span>
+                              <%= item.text %>
+                            </span>
+                            <%- renderIcon('chevron-down', { class: 'menubar-chevron' }) %>
+                    </button>
+                    <ul class="menubar-dropdown-menu menubar-dropdown-right">
+                      <% if (item.items && item.items.length> 0) { %>
+                        <% item.items.forEach(sub=> { %>
+                          <li>
+                            <a href="<%= menubarHref(sub) %>" <%- menubarTarget(sub) %>>
+                              <% if (sub.icon) { %>
+                                <%- renderIcon(sub.icon, { class: 'menubar-icon' }) %>
+                                  <% } %>
+                                    <%= sub.text %>
+                                      <% if (sub.external || (sub.url && sub.url.startsWith('http'))) { %>
+                                        <%- renderIcon('external-link', { class: 'menubar-ext-icon' }) %>
+                                          <% } %>
+                            </a>
+                          </li>
+                          <% }) %>
+                            <% } %>
+                    </ul>
+                  </div>
+                  <% } else { %>
+                    <a href="<%= menubarHref(item) %>" class="menubar-link" <%- menubarTarget(item) %>>
+                      <% if (item.icon) { %>
+                        <%- renderIcon(item.icon, { class: 'menubar-icon' }) %>
+                          <% } %>
+                            <span>
+                              <%= item.text %>
+                            </span>
+                            <% if (item.external || (item.url && item.url.startsWith('http'))) { %>
+                              <%- renderIcon('external-link', { class: 'menubar-ext-icon' }) %>
+                                <% } %>
+                    </a>
+                    <% } %>
+                  <% }) %>
+                <% } %>
+              <% if (optionsMenu && optionsMenu.position==='menubar' ) { %>
+                <div class="menubar-options">
+                  <%- include('options-menu', { optionsMenu }) %>
+                </div>
+              <% } %>
+      </div>
+  </div>
+</div>
