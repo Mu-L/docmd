@@ -258,7 +258,7 @@ title: "Stress Test"
 
     runCmd('pnpm publish -r --dry-run --no-git-checks', CWD);
 
-    console.log('\n✅ ✨ ALL SYSTEMS GO. Ready to Publish. ✨');
+    console.log('\n✅ ✨ ALL SYSTEMS GO. ✨');
 
 } catch (e) {
     console.error('\n❌ FAILSAFE CRITICAL FAILURE ❌');
