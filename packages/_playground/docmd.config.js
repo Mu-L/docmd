@@ -32,10 +32,10 @@ module.exports = defineConfig({
   // --- Layout & UI Architecture ---
   layout: {
     spa: true,
-    menubar: {
+    /*menubar: {
       enabled: true,
       position: 'header',
-    },
+    },*/
     header: {
       enabled: false
     },
@@ -44,7 +44,7 @@ module.exports = defineConfig({
       defaultCollapsed: false,
     },
     optionsMenu: {
-      position: 'header',
+      position: 'menubar',
       components: {
         search: true,
         themeSwitch: true,
