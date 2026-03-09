@@ -34,26 +34,45 @@ function hasMarkdownFiles(dir, maxDepth = 2, currentDepth = 0) {
   return false;
 }
 
-async function buildZeroConfig(cwd) {
+async function buildZeroConfig(cwd, isDev = false, quiet = false) {
 
-  if (isDev) {
-    console.log(chalk.cyan('✨ Zero-Config mode activated. Analyzing directory...'));
-    global.__DOCMD_ZERO_LOGGED = true;
+  if (isDev && !quiet) {
+    if (!global.__DOCMD_ZERO_LOGGED) {
+      console.log(chalk.yellow('✨ Zero-Config mode activated. Analyzing directory...'));
+      global.__DOCMD_ZERO_LOGGED = true;
+    }
   }
 
   // Detect if there's a specific docs folder, otherwise use root
-  const candidates = ['docs', 'src/docs', 'content'];
-  let srcDir = '.';
+  const candidates = ['docs', 'src/docs', 'documentation', 'content'];
+  let srcDir = null;
   for (const c of candidates) {
     if (fs.existsSync(path.join(cwd, c))) {
       srcDir = c;
       break;
     }
   }
+
+  if (!srcDir) {
+    console.log(chalk.bold.red(`‼️  No documentation directory found in this root!  ‼️\n`));
+    console.log(chalk.yellow(`Zero-config expects one of these directories: ${chalk.bold(candidates.join(', '))}`));
+    console.log(chalk.dim('Please create one of these folders or provide a docmd.config.js file.\n'));
+    console.log(chalk.dim('Shutting down silently...\n'));
+
+    const err = new Error('No candidate documentation directory found.');
+    err.silent = true;
+    throw err;
+  }
+
   const absSrcDir = path.join(cwd, srcDir);
 
   if (!hasMarkdownFiles(absSrcDir, 2)) {
-    throw new Error(`Zero-Config Error: No markdown files (.md or .markdown) found in '${absSrcDir}'. Please create some content to build documentation.`);
+    console.log(chalk.yellow(`\n⚠️  No documentation content found in ${chalk.bold(absSrcDir)}`));
+    console.log(chalk.dim('   docmd expects markdown files in the documentation folder.\n'));
+
+    const err = new Error('No content found for documentation.');
+    err.silent = true;
+    throw err;
   }
 
   // Try extracting defaults from package.json
@@ -90,7 +109,7 @@ async function loadConfig(configPath, options = {}) {
   const cwd = process.cwd();
 
   if (options.zeroConfig) {
-    return await buildZeroConfig(cwd, options.isDev); 
+    return await buildZeroConfig(cwd, options.isDev, options.quiet);
   }
 
   let absoluteConfigPath = path.resolve(cwd, configPath);
@@ -100,11 +119,11 @@ async function loadConfig(configPath, options = {}) {
     if (fs.existsSync(legacyPath)) absoluteConfigPath = legacyPath;
     else {
       // Fallback to Zero-Config if nothing is found to prevent crashing!
-      if (!global.__DOCMD_NO_CONFIG_LOGGED) {
-        console.log(chalk.yellow('⚠️  No config file found. Falling back to Zero-Config mode...'));
+      if (!global.__DOCMD_NO_CONFIG_LOGGED && !options.quiet) {
+        console.log(chalk.yellow('⚠️  ') + chalk.dim('No config file found. Falling back to Zero-Config mode...'));
         global.__DOCMD_NO_CONFIG_LOGGED = true;
       }
-      return await buildZeroConfig(cwd);
+      return await buildZeroConfig(cwd, options.isDev, options.quiet);
     }
   }
 
@@ -143,7 +162,9 @@ async function loadConfig(configPath, options = {}) {
 
     // Ensure we have a navigation array, fallback to Auto-Router if empty
     if (!normalized.navigation || normalized.navigation.length === 0) {
-      console.log(chalk.dim('   > No navigation found in config. Auto-generating...'));
+      if (!options.quiet) {
+        console.log(chalk.dim('   > No navigation found in config. Auto-generating...'));
+      }
       normalized.navigation = buildAutoNav(path.resolve(cwd, normalized.srcDir));
     }
 

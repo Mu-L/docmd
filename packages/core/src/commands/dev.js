@@ -179,7 +179,15 @@ async function startDevServer(configPathOption, opts = {}) {
     zeroConfig: opts.zeroConfig || false
   };
 
-  let config = await loadConfig(configPathOption, { zeroConfig: options.zeroConfig });
+  let config;
+  try {
+    config = await loadConfig(configPathOption, { zeroConfig: options.zeroConfig, isDev: true, quiet: true });
+  } catch (e) {
+    if (e.silent) {
+      process.exit(0); // Exit gracefully if it's a known non-project folder error
+    }
+    throw e;
+  }
   const CWD = process.cwd();
 
   // Config Fallback Logic
@@ -318,20 +326,17 @@ async function startDevServer(configPathOption, opts = {}) {
     });
   }
 
-  function askUserConfirmation() {
-    return new Promise((resolve) => {
-      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-      console.log(chalk.yellow(`\n⚠️  Port ${PORT} is already in use.`));
-      rl.question('   Start on a different port? (Y/n) ', (answer) => {
-        rl.close();
-        resolve(answer.trim().toLowerCase() === 'y' || answer.trim() === '');
-      });
-    });
+  async function findAvailablePort(startPort) {
+    let port = startPort;
+    while (await checkPortInUse(port)) {
+      port++;
+    }
+    return port;
   }
 
   function tryStartServer(port) {
     server.listen(port, '0.0.0.0')
-      .on('listening', async () => {
+      .once('listening', async () => {
         wss = new WebSocket.Server({ server });
         wss.on('error', (e) => console.error('WebSocket Error:', e.message));
 
@@ -357,7 +362,7 @@ async function startDevServer(configPathOption, opts = {}) {
           console.warn(chalk.yellow(`⚠️  Warning: Root index.html not found.`));
         }
       })
-      .on('error', (err) => {
+      .once('error', (err) => {
         if (err.code === 'EADDRINUSE') {
           server.close();
           tryStartServer(port + 1);
@@ -369,24 +374,28 @@ async function startDevServer(configPathOption, opts = {}) {
   }
 
   // Execution Flow
-  if (options.port) {
-    tryStartServer(PORT);
-  } else {
-    const isBusy = await checkPortInUse(PORT);
-    if (isBusy) {
-      const shouldProceed = await askUserConfirmation();
-      if (!shouldProceed) process.exit(0);
-      tryStartServer(PORT + 1);
-    } else {
-      tryStartServer(PORT);
-    }
-  }
+  (async () => {
+    const finalPort = await findAvailablePort(PORT);
+    tryStartServer(finalPort);
+  })();
 
   process.on('SIGINT', () => {
     console.log(chalk.yellow('\n🛑 Shutting down...'));
-    watcher.close();
+
+    // Set a timeout to force exit if closing takes too long
+    const forceExitTimeout = setTimeout(() => {
+      process.exit(0);
+    }, 1000);
+
+    // Unref the timeout so it doesn't keep the process alive
+    forceExitTimeout.unref();
+
+    if (watcher) watcher.close();
+    if (wss) wss.close();
+
     if (server) {
       server.close(() => {
+        clearTimeout(forceExitTimeout);
         process.exit(0);
       });
     } else {

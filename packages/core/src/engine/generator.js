@@ -77,10 +77,24 @@ async function renderPages({ config, srcDir, outputDir, hooks, buildHash, option
   for (const filePath of mdFiles) {
     const rawContent = await fs.readFile(filePath, 'utf8');
     const relativePath = path.relative(srcDir, filePath);
-    const isIndex = path.basename(relativePath).startsWith('index.');
-    const processed = parser.processContent(rawContent, mdProcessor, config, { isIndex });
+    const filename = path.basename(relativePath).toLowerCase();
+    const isIndex = filename.startsWith('index.');
+    const isReadme = filename === 'readme.md';
+
+    // Treat README.md as index only if no index.md exists in the same folder
+    const hasIndexInFolder = mdFiles.some(f => {
+      const b = path.basename(f).toLowerCase();
+      return b.startsWith('index.') && path.dirname(f) === path.dirname(filePath);
+    });
+
+    const effectivelyIndex = isIndex || (isReadme && !hasIndexInFolder);
+
+    const processed = parser.processContent(rawContent, mdProcessor, config, { isIndex: effectivelyIndex });
     if (!processed) continue;
-    const htmlOutputPath = isIndex ? path.join(path.dirname(relativePath), 'index.html') : relativePath.replace(/\.md$/, '/index.html');
+
+    const htmlOutputPath = effectivelyIndex
+      ? path.join(path.dirname(relativePath), 'index.html')
+      : relativePath.replace(/\.md$/, '/index.html');
     pages.push({ ...processed, sourcePath: filePath, outputPath: htmlOutputPath });
   }
 
