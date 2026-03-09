@@ -12,6 +12,26 @@
  * --------------------------------------------------------------------
  */
 
+function smartDedent(str) {
+  const lines = str.split('\n');
+
+  while (lines.length && lines[0].trim() === '') lines.shift();
+  while (lines.length && lines[lines.length - 1].trim() === '') lines.pop();
+
+  let minIndent = Infinity;
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const indent = line.match(/^ */)[0].length;
+    minIndent = Math.min(minIndent, indent);
+  }
+
+  if (!isFinite(minIndent) || minIndent === 0) return lines.join('\n');
+
+  return lines.map(line =>
+    line.startsWith(' '.repeat(minIndent)) ? line.slice(minIndent) : line
+  ).join('\n');
+}
+
 function createDepthTrackingContainer(md, name, renderOpen, renderClose) {
   md.block.ruler.before('fence', `custom_${name}`, (state, startLine, endLine, silent) => {
     const start = state.bMarks[startLine] + state.tShift[startLine];
@@ -61,21 +81,27 @@ function createDepthTrackingContainer(md, name, renderOpen, renderClose) {
 
     const info = match[1] || '';
 
+    // Extract raw content lines and dedent to reset indentation,
+    // then re-render recursively so nested containers parse correctly.
+    let rawContent = '';
+    for (let i = startLine + 1; i < nextLine; i++) {
+      const lineStart = state.bMarks[i];
+      const lineEnd = state.eMarks[i];
+      rawContent += state.src.slice(lineStart, lineEnd) + '\n';
+    }
+    const innerContent = smartDedent(rawContent);
+
     const openToken = state.push(`custom_${name}_open`, 'div', 1);
     openToken.info = info;
 
-    const oldParentType = state.parentType;
-    const oldLineMax = state.lineMax;
-    state.parentType = 'container';
-    state.lineMax = nextLine;
+    if (innerContent) {
+      const renderedContent = state.md.render(innerContent, state.env);
+      const htmlToken = state.push('html_block', '', 0);
+      htmlToken.content = renderedContent;
+    }
 
-    // Tokenize inside the container
-    state.md.block.tokenize(state, startLine + 1, nextLine);
+    state.push(`custom_${name}_close`, 'div', -1);
 
-    const closeToken = state.push(`custom_${name}_close`, 'div', -1);
-
-    state.parentType = oldParentType;
-    state.lineMax = oldLineMax;
     state.line = nextLine + 1;
     return true;
   }, { alt: ['paragraph', 'reference', 'blockquote', 'list'] });
