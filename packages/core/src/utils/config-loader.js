@@ -55,7 +55,7 @@ async function buildZeroConfig(cwd, isDev = false, quiet = false) {
 
   if (!srcDir) {
     console.log(chalk.bold.red(`‼️  No documentation directory found in this root!  ‼️\n`));
-    console.log(chalk.yellow(`Zero-config expects one of these directories: ${chalk.bold(candidates.join(', '))}`));
+    console.log(chalk.yellow(`Zero-Config expects one of these directories: ${chalk.bold(candidates.join(', '))}`));
     console.log(chalk.dim('Please create one of these folders or provide a docmd.config.js file.\n'));
     console.log(chalk.dim('Shutting down silently...\n'));
 
@@ -163,7 +163,8 @@ async function loadConfig(configPath, options = {}) {
     // Ensure we have a navigation array, fallback to Auto-Router if empty
     if (!normalized.navigation || normalized.navigation.length === 0) {
       if (!options.quiet) {
-        console.log(chalk.dim('   > No navigation found in config. Auto-generating...'));
+        console.log(chalk.dim('   ➖ No navigation settings found in config!'));
+        console.log(chalk.dim('   ✨ Auto-generating navigation with Zero-Config...'));
       }
       normalized.navigation = buildAutoNav(path.resolve(cwd, normalized.srcDir));
     }
