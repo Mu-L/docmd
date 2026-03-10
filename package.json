@@ -1,6 +1,6 @@
 {
   "name": "@docmd/monorepo",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "private": true,
   "description": "The minimalist, zero-config documentation generator monorepo.",
   "scripts": {
@@ -8,6 +8,7 @@
     "lint": "pnpm -r run lint",
     "build": "pnpm -r run build",
     "dev": "pnpm --filter @docmd/playground dev",
+    "stop": "pnpm --filter @docmd/core exec docmd stop",
     "release": "pnpm publish -r --access public",
     "clean": "rm -rf node_modules packages/*/node_modules packages/plugins/*/node_modules packages/*/site packages/plugins/*/site packages/*/dist",
     "bump": "node scripts/bump.js"
@@ -20,7 +21,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "packageManager": "pnpm@10.31.0",
+  "packageManager": "pnpm@10.32.0",
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"
