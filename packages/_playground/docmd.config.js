@@ -37,14 +37,14 @@ module.exports = defineConfig({
       position: 'header',
     },*/
     header: {
-      enabled: false
+      enabled: true
     },
     sidebar: {
       collapsible: true,
       defaultCollapsed: false,
     },
     optionsMenu: {
-      position: 'menubar',
+      position: 'header',
       components: {
         search: true,
         themeSwitch: true,
@@ -70,5 +70,5 @@ module.exports = defineConfig({
   versions: {},
 
   // --- Navigation (Remains Unchanged) ---
-  navigation: [],
+  // navigation: [],
 });

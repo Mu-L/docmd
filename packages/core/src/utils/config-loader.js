@@ -99,7 +99,7 @@ async function buildZeroConfig(cwd, isDev = false, quiet = false) {
     outputDir: 'site',
     navigation: autoNav,
     layout: { spa: true },
-    theme: { name: 'default', defaultMode: 'system' }
+    theme: { name: 'default', appearance: 'system' }
   };
 
   return normalizeConfig(autoConfig);
@@ -158,10 +158,11 @@ async function loadConfig(configPath, options = {}) {
     }
 
     validateConfig(rawConfig);
+    const hasExplicitNav = 'navigation' in rawConfig;
     const normalized = normalizeConfig(rawConfig);
 
-    // Ensure we have a navigation array, fallback to Auto-Router if empty
-    if (!normalized.navigation || normalized.navigation.length === 0) {
+    // Ensure we have a navigation array, fallback to Auto-Router if empty (unless explicitly set to empty)
+    if (!normalized.navigation || (normalized.navigation.length === 0 && !hasExplicitNav)) {
       if (!options.quiet && !global.__DOCMD_ZERO_NAV_LOGGED) {
         console.log(chalk.dim('   ➖ No navigation settings found in config!'));
         console.log(chalk.dim('   ✨ Auto-generating navigation with Zero-Config...'));
