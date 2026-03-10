@@ -20,7 +20,7 @@ const templates = require('virtual:docmd-templates');
 function compile(markdown, config = {}) {
     const defaults = {
         siteTitle: 'Live Preview',
-        theme: { defaultMode: 'light', name: 'default', codeHighlight: true },
+        theme: { appearance: 'light', name: 'default', codeHighlight: true },
         layout: { spa: false },
         ...config
     };
@@ -37,22 +37,22 @@ function compile(markdown, config = {}) {
         };
     });
     const result = processContent(markdown, md, defaults);
-    
+
     if (!result) return '<p>Error parsing markdown</p>';
 
     // Since we are in the browser, we assume assets are served at ./assets/
     const assetsRoot = './assets';
-    
+
     // 1. CSS Injection
     const cssTags = [
         `<link rel="stylesheet" href="${assetsRoot}/css/docmd-main.css">`
     ];
-    
+
     if (defaults.theme.codeHighlight !== false) {
-        const mode = defaults.theme.defaultMode === 'dark' ? 'dark' : 'light';
+        const mode = defaults.theme.appearance === 'dark' ? 'dark' : 'light';
         cssTags.push(`<link rel="stylesheet" href="${assetsRoot}/css/docmd-highlight-${mode}.css">`);
     }
-    
+
     if (defaults.theme.name && defaults.theme.name !== 'default') {
         cssTags.push(`<link rel="stylesheet" href="${assetsRoot}/css/docmd-theme-${defaults.theme.name}.css">`);
     }
@@ -103,7 +103,8 @@ function compile(markdown, config = {}) {
         siteTitle: defaults.siteTitle,
         pageTitle: result.frontmatter.title || 'Untitled',
         description: result.frontmatter.description || '',
-        defaultMode: defaults.theme.defaultMode,
+        appearance: defaults.theme.appearance,
+        defaultMode: defaults.theme.appearance, // For legacy support during transition
 
         // Navigation Stub
         navigationHtml: '',
@@ -114,23 +115,23 @@ function compile(markdown, config = {}) {
         prevPage: null, nextPage: null,
 
         // Injecting Assets
-        pluginHeadScriptsHtml: cssTags.join('\n'), 
+        pluginHeadScriptsHtml: cssTags.join('\n'),
         pluginBodyScriptsHtml: mermaidScript,
         themeInitScript: themeInitScript,
 
         // Layout & UI Configurations
-        faviconLinkHtml: '', 
-        logo: defaults.logo, 
+        faviconLinkHtml: '',
+        logo: defaults.logo,
         theme: defaults.theme,
-        customCssFiles: [], customJsFiles:[],
-        
+        customCssFiles: [], customJsFiles: [],
+
         // Layout Adapters
         headerConfig: { enabled: true },
         sidebarConfig: { collapsible: false, defaultCollapsed: false },
         footerConfig: { style: 'minimal', content: '' },
         optionsMenu: { position: 'header', components: { search: false, themeSwitch: true, sponsor: null } },
         footerHtml: '',
-        
+
         isActivePage: true,
         editUrl: null,
         editLinkText: ''
@@ -139,7 +140,7 @@ function compile(markdown, config = {}) {
     // 5. Render
     const templateName = result.frontmatter.noStyle ? 'no-style.ejs' : 'layout.ejs';
     const templateStr = templates[templateName];
-    
+
     if (!templateStr) return `Template ${templateName} not found`;
 
     const options = {

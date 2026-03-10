@@ -8,6 +8,7 @@
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="generator" content="docmd v0.4.x">
@@ -86,13 +87,13 @@
     <script>
         const SNIPPETS = {
             basics: `---\ntitle: Welcome\ndescription: Getting started with docmd\n---\n\n# Hello World\n\nThis is **docmd**. It's fast, simple, and runs in your browser.\n\n::: card\n## Features\n1. Zero Config\n2. Offline Search\n3. Isomorphic Core\n:::`,
-            
+
             containers: `---\ntitle: Containers\n---\n\n# UI Components\n\n::: callout info Note\nThis is a callout block.\n:::\n\n::: card Feature Overview\nCards are great for grouping content.\n:::\n\n::: button "Action Button" https://docmd.io external\n`,
-            
+
             tabs: `---\ntitle: Tabs\n---\n\n# Tabs Example\n\n::: tabs\n\n== tab "HTML"\n\`\`\`html\n<div>\n   <b>This is indentation</b>\n</div>\n\`\`\`\n\n== tab "JavaScript"\n\`\`\`javascript\nconsole.log('Hello');\n\`\`\`\n\n== tab "Python"\n\`\`\`python\nprint('Hello')\n\`\`\`\n\n:::`,
-            
+
             steps: `---\ntitle: Steps\n---\n\n# How to Install\n\n::: steps\n\n1. **Download**\n   Get the CLI tool.\n\n2. **Initialize**\n   Run \`docmd init\`.\n\n3. **Build**\n   Run \`docmd build\`.\n\n:::`,
-            
+
             mermaid: `---\ntitle: Diagrams\n---\n\n# Mermaid.js Support\n\n\`\`\`mermaid\ngraph TD\n  A[Start] --> B{Is it working?}\n  B -->|Yes| C[Nice!]\n  B -->|No| D[Debug]\n\`\`\``
         };
 
@@ -100,12 +101,12 @@
         const preview = document.getElementById('preview');
 
         // Initialize with Basics
-        if(!input.value) input.value = SNIPPETS.basics;
+        if (!input.value) input.value = SNIPPETS.basics;
 
         function loadPreset(key) {
             if (SNIPPETS[key]) {
                 input.value = SNIPPETS[key];
-                render(); 
+                render();
             }
         }
 
@@ -116,12 +117,12 @@
                 let html = docmd.compile(input.value, {
                     siteTitle: 'Live Preview',
                     search: false,
-                    theme: { name: 'default', defaultMode: 'light' },
+                    theme: { name: 'default', appearance: 'light' },
                     sidebar: { collapsible: false }
                 });
 
                 html = html.replace('<head>', '<head><base target="_blank">');
-                
+
                 const scrollScript = `
                     <script>
                         if (window) window.scrollTo(0, ${scrollY});
@@ -142,7 +143,7 @@
             clearTimeout(timer);
             timer = setTimeout(render, 300);
         });
-        
+
         render();
 
         const resizer = document.getElementById('resizer');
@@ -179,7 +180,7 @@
             document.querySelectorAll('.view-switcher .view-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.mode === mode);
             });
-            const mobMode = mode === 'split' ? 'editor' : mode; 
+            const mobMode = mode === 'split' ? 'editor' : mode;
             document.getElementById('mob-edit').classList.toggle('active', mobMode === 'editor');
             document.getElementById('mob-prev').classList.toggle('active', mobMode === 'preview');
 
