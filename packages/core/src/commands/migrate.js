@@ -43,14 +43,26 @@ async function migrateProject(configPathOption = 'docmd.config.js') {
     return;
   }
 
-  // Check if already migrated (simple check for layout object)
-  if (oldConfig.layout && oldConfig.layout.optionsMenu) {
-    console.log(chalk.yellow('⚠️  Config appears to be already migrated (V2 layout detected).'));
+  // Check if fully modernized (V3 schema) with no legacy keys
+  const hasLegacyKeys = 
+    oldConfig.siteTitle !== undefined || 
+    oldConfig.siteUrl !== undefined || 
+    oldConfig.baseUrl !== undefined ||
+    oldConfig.srcDir !== undefined || 
+    oldConfig.source !== undefined ||
+    oldConfig.outputDir !== undefined ||
+    oldConfig.outDir !== undefined ||
+    oldConfig.theme?.defaultMode !== undefined;
+
+  const isV1 = !oldConfig.layout || !oldConfig.layout.optionsMenu;
+
+  if (!isV1 && !hasLegacyKeys) {
+    console.log(chalk.yellow('⚠️  Config appears to be fully modernized (V3 schema detected).'));
     console.log('   Aborting to prevent overwriting.');
     return;
   }
 
-  console.log(chalk.blue('📦 Starting migration to V2 Architecture...'));
+  console.log(chalk.blue('📦 Starting config migration...'));
 
   // 2. Create Backup
   const backupPath = path.resolve(CWD, 'docmd.config.legacy.js');
@@ -58,52 +70,72 @@ async function migrateProject(configPathOption = 'docmd.config.js') {
   console.log(chalk.dim(`   > Backup created: docmd.config.legacy.js`));
 
   // 3. Construct New Config Object
-  // We explicitly rebuild it to ensure order and structure, rather than just dumping the normalized object
   const newConfig = {};
 
   // -- Core --
-  if (oldConfig.siteTitle) newConfig.siteTitle = oldConfig.siteTitle;
-  if (oldConfig.siteUrl) newConfig.siteUrl = oldConfig.siteUrl;
+  if (oldConfig.title !== undefined) newConfig.title = oldConfig.title;
+  else if (oldConfig.siteTitle !== undefined) newConfig.title = oldConfig.siteTitle;
+
+  if (oldConfig.url !== undefined) newConfig.url = oldConfig.url;
+  else if (oldConfig.siteUrl !== undefined) newConfig.url = oldConfig.siteUrl;
+  else if (oldConfig.baseUrl !== undefined) newConfig.url = oldConfig.baseUrl;
+
+  if (oldConfig.base !== undefined) newConfig.base = oldConfig.base;
 
   // -- Branding --
   if (oldConfig.logo) newConfig.logo = oldConfig.logo;
   if (oldConfig.favicon) newConfig.favicon = oldConfig.favicon;
 
   // -- Directories --
-  if (oldConfig.srcDir) newConfig.srcDir = oldConfig.srcDir;
-  if (oldConfig.outputDir) newConfig.outputDir = oldConfig.outputDir;
+  if (oldConfig.src !== undefined) newConfig.src = oldConfig.src;
+  else if (oldConfig.srcDir !== undefined) newConfig.src = oldConfig.srcDir;
+  else if (oldConfig.source !== undefined) newConfig.src = oldConfig.source;
 
-  // -- V2 Layout Architecture --
-  newConfig.layout = {
-    spa: true, // Enable new feature by default
-    header: { enabled: true },
-    sidebar: {
-      collapsible: oldConfig.sidebar?.collapsible ?? true,
-      defaultCollapsed: oldConfig.sidebar?.defaultCollapsed ?? false,
-    },
-    optionsMenu: {
-      position: oldConfig.theme?.positionMode === 'bottom' ? 'sidebar-bottom' : 'header',
-      components: {
-        search: oldConfig.search !== false,
-        themeSwitch: oldConfig.theme?.enableModeToggle !== false,
-        sponsor: oldConfig.sponsor?.link || null
+  if (oldConfig.out !== undefined) newConfig.out = oldConfig.out;
+  else if (oldConfig.outDir !== undefined) newConfig.out = oldConfig.outDir;
+  else if (oldConfig.outputDir !== undefined) newConfig.out = oldConfig.outputDir;
+
+  // -- V2/V3 Layout Architecture --
+  if (oldConfig.layout) {
+    newConfig.layout = oldConfig.layout;
+  } else {
+    newConfig.layout = {
+      spa: true, // Enable new feature by default
+      header: { enabled: true },
+      sidebar: {
+        collapsible: oldConfig.sidebar?.collapsible ?? true,
+        defaultCollapsed: oldConfig.sidebar?.defaultCollapsed ?? false,
+      },
+      optionsMenu: {
+        position: oldConfig.theme?.positionMode === 'bottom' ? 'sidebar-bottom' : 'header',
+        components: {
+          search: oldConfig.search !== false,
+          themeSwitch: oldConfig.theme?.enableModeToggle !== false,
+          sponsor: oldConfig.sponsor?.link || null
+        }
+      },
+      footer: {
+        style: typeof oldConfig.footer === 'string' ? 'minimal' : 'complete',
+        content: typeof oldConfig.footer === 'string' ? oldConfig.footer : undefined,
+        ...(typeof oldConfig.footer === 'object' ? oldConfig.footer : {})
       }
-    },
-    footer: {
-      style: typeof oldConfig.footer === 'string' ? 'minimal' : 'complete',
-      content: typeof oldConfig.footer === 'string' ? oldConfig.footer : undefined,
-      // If they had a complex footer before (unlikely in v1, but safe to map)
-      ...(typeof oldConfig.footer === 'object' ? oldConfig.footer : {})
-    }
-  };
+    };
+  }
 
   // -- Theme --
-  newConfig.theme = {
-    name: oldConfig.theme?.name || 'default',
-    appearance: oldConfig.theme?.appearance || oldConfig.theme?.defaultMode || 'system',
-    codeHighlight: oldConfig.theme?.codeHighlight !== false,
-    customCss: oldConfig.theme?.customCss || [],
-  };
+  newConfig.theme = {};
+  if (oldConfig.theme?.name) newConfig.theme.name = oldConfig.theme.name;
+  
+  if (oldConfig.theme?.appearance) {
+    newConfig.theme.appearance = oldConfig.theme.appearance;
+  } else if (oldConfig.theme?.defaultMode) {
+    newConfig.theme.appearance = oldConfig.theme.defaultMode;
+  } else {
+    newConfig.theme.appearance = 'system';
+  }
+
+  if (oldConfig.theme?.codeHighlight !== undefined) newConfig.theme.codeHighlight = oldConfig.theme.codeHighlight;
+  if (oldConfig.theme?.customCss) newConfig.theme.customCss = oldConfig.theme.customCss;
 
   // -- Features --
   if (oldConfig.minify !== undefined) newConfig.minify = oldConfig.minify;
