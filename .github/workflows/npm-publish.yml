@@ -64,4 +64,10 @@ jobs:
 
       # Publish to npm (OIDC trusted publishing)
       - name: Publish to npm
-        run: npm publish --workspaces --include-workspace-root=false --access public
+        run: |
+          for dir in packages/* packages/plugins/*; do
+            if [ -f "$dir/package.json" ]; then
+              echo "Publishing $dir..."
+              npm publish "$dir" --access public || echo "::warning::Failed to publish $dir. Skipping..."
+            fi
+          done
