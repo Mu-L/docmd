@@ -1,0 +1,44 @@
+{
+  "analytics": {
+    "package": "@docmd/plugin-analytics",
+    "description": "Analytics injection plugin for docmd",
+    "configKey": "analytics",
+    "defaultConfig": "{}"
+  },
+  "search": {
+    "package": "@docmd/plugin-search",
+    "description": "Local search implementation for docmd",
+    "configKey": "search",
+    "defaultConfig": "{}"
+  },
+  "seo": {
+    "package": "@docmd/plugin-seo",
+    "description": "SEO meta tag generator for docmd",
+    "configKey": "seo",
+    "defaultConfig": "{}"
+  },
+  "sitemap": {
+    "package": "@docmd/plugin-sitemap",
+    "description": "Sitemap generator for docmd",
+    "configKey": "sitemap",
+    "defaultConfig": "{}"
+  },
+  "mermaid": {
+    "package": "@docmd/plugin-mermaid",
+    "description": "Mermaid.js diagram support for docmd",
+    "configKey": "mermaid",
+    "defaultConfig": "{}"
+  },
+  "llms": {
+    "package": "@docmd/plugin-llms",
+    "description": "LLM integration plugin for docmd",
+    "configKey": "llms",
+    "defaultConfig": "{}"
+  },
+  "pwa": {
+    "package": "@docmd/plugin-pwa",
+    "description": "Progressive Web App support for docmd",
+    "configKey": "pwa",
+    "defaultConfig": "{}"
+  }
+}

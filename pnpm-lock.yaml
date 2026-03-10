@@ -39,6 +39,9 @@ importers:
       '@docmd/plugin-analytics':
         specifier: workspace:*
         version: link:../plugins/analytics
+      '@docmd/plugin-installer':
+        specifier: workspace:*
+        version: link:../plugins/installer
       '@docmd/plugin-llms':
         specifier: workspace:*
         version: link:../plugins/llms
@@ -146,6 +149,12 @@ importers:
         version: 2.1.1
 
   packages/plugins/analytics: {}
+
+  packages/plugins/installer:
+    dependencies:
+      chalk:
+        specifier: ^4.1.2
+        version: 4.1.2
 
   packages/plugins/llms: {}
 

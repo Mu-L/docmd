@@ -1,6 +1,6 @@
 {
   "name": "@docmd/core",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "The minimalist, zero-config documentation generator.",
   "main": "index.js",
   "bin": {
@@ -10,6 +10,7 @@
     "@docmd/live": "workspace:*",
     "@docmd/parser": "workspace:*",
     "@docmd/plugin-analytics": "workspace:*",
+    "@docmd/plugin-installer": "workspace:*",
     "@docmd/plugin-llms": "workspace:*",
     "@docmd/plugin-mermaid": "workspace:*",
     "@docmd/plugin-pwa": "workspace:*",

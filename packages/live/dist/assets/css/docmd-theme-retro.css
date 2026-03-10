@@ -102,8 +102,7 @@ h6 {
 .content-theme-cover {
     position: fixed;
     overflow: scroll;
-    height: stretch;
-    width: stretch;
+    height: 100%;
     border: 1px solid var(--border-color);
     margin-top: calc(var(--sticky-top-offset) + 5px);
     border-radius: 3px 0 0 0;

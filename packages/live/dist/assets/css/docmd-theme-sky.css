@@ -149,8 +149,7 @@ body {
 .content-theme-cover {
     position: fixed;
     overflow: scroll;
-    height: stretch;
-    width: stretch;
+    height: 100%;
     border: 1px solid var(--sky-border);
     margin-top: calc(var(--sticky-top-offset) + 5px);
     border-radius: 1.5em 0 0 0;

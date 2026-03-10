@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-pwa",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Progressive Web App (PWA) plugin for docmd.",
   "main": "index.js",
   "keywords": [

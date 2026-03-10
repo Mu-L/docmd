@@ -1,6 +1,6 @@
 {
   "name": "@docmd/themes",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Official themes for docmd.",
   "main": "index.js",
   "files": [
