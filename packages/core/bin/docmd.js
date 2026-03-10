@@ -21,6 +21,7 @@ const { buildSite } = require('../src/commands/build');
 const { startDevServer } = require('../src/commands/dev');
 const { buildLive } = require('../src/commands/live');
 const { migrateProject } = require('../src/commands/migrate');
+const { stopServer } = require('../src/commands/stop');
 const { printBanner } = require('../src/utils/logger');
 
 program
@@ -47,7 +48,7 @@ program
   .option('-z, --zero-config', 'Run in auto-detect mode without a config file')
   .option('--offline', 'Optimize for file:// viewing')
   .action((opts) => {
-    printBanner(); 
+    printBanner();
     buildSite(opts.config, { isDev: false, offline: opts.offline, zeroConfig: opts.zeroConfig });
   });
 
@@ -83,6 +84,15 @@ program
   .action((opts) => {
     printBanner();
     migrateProject(opts.config);
+  });
+
+program
+  .command('stop')
+  .description('Kill all running background docmd dev servers')
+  .option('-p, --port <number>', 'Stop a specific docmd instance running on this port')
+  .action(async (opts) => {
+    // printBanner();
+    await stopServer(opts.port);
   });
 
 program.parse();

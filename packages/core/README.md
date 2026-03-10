@@ -29,10 +29,10 @@
     </h4>
   </p>
 
-  <!-- PREVIEW -->
+   <!-- PREVIEW -->
   <p>
     <br/>
-    <img width="800" alt="docmd preview" src="https://github.com/user-attachments/assets/92558d3a-7c0d-46bc-862e-466c42cb7be4" />
+    <img width="800" alt="docmd preview" src="https://github.com/user-attachments/assets/91c1ed2e-7c05-4701-ad60-4250f6e1c367" />
     <br/>
     <sup><i>docmd `default` theme in light appearance</i></sup>
   </p>
@@ -159,8 +159,8 @@ module.exports = defineConfig({
 
   // Theme Settings
   theme: {
-    name: 'sky',            // 'default', 'sky', 'ruby', 'retro'
-    defaultMode: 'system',  // 'light', 'dark', 'system'
+    name: 'sky',           // 'default', 'sky', 'ruby', 'retro'
+    appearance: 'system',  // 'light', 'dark', 'system'
   },
 
   // Powerful Plugins (Zero setup required)

@@ -45,10 +45,13 @@ function loadPlugins(config) {
 
   // A. Add Defaults
   pluginMap.set('@docmd/plugin-search', searchEnabled ? {} : false);
-  pluginMap.set('@docmd/plugin-seo', config.plugins?.seo || {});
-  pluginMap.set('@docmd/plugin-sitemap', config.plugins?.sitemap || {});
-  pluginMap.set('@docmd/plugin-analytics', config.plugins?.analytics || {});
-  pluginMap.set('@docmd/plugin-pwa', config.plugins?.pwa || {});
+
+  if (!config.hasExplicitPlugins) {
+    pluginMap.set('@docmd/plugin-seo', config.plugins?.seo || {});
+    pluginMap.set('@docmd/plugin-sitemap', config.plugins?.sitemap || {});
+    pluginMap.set('@docmd/plugin-analytics', config.plugins?.analytics || {});
+    pluginMap.set('@docmd/plugin-pwa', config.plugins?.pwa || {});
+  }
 
   // B. Add/Override from Config
   if (config.plugins) {

@@ -64,7 +64,7 @@ async function migrateProject(configPathOption = 'docmd.config.js') {
   // -- Core --
   if (oldConfig.siteTitle) newConfig.siteTitle = oldConfig.siteTitle;
   if (oldConfig.siteUrl) newConfig.siteUrl = oldConfig.siteUrl;
-  
+
   // -- Branding --
   if (oldConfig.logo) newConfig.logo = oldConfig.logo;
   if (oldConfig.favicon) newConfig.favicon = oldConfig.favicon;
@@ -100,7 +100,7 @@ async function migrateProject(configPathOption = 'docmd.config.js') {
   // -- Theme --
   newConfig.theme = {
     name: oldConfig.theme?.name || 'default',
-    defaultMode: oldConfig.theme?.defaultMode || 'system',
+    appearance: oldConfig.theme?.appearance || oldConfig.theme?.defaultMode || 'system',
     codeHighlight: oldConfig.theme?.codeHighlight !== false,
     customCss: oldConfig.theme?.customCss || [],
   };
@@ -111,7 +111,7 @@ async function migrateProject(configPathOption = 'docmd.config.js') {
   if (oldConfig.copyCode !== undefined) newConfig.copyCode = oldConfig.copyCode;
   if (oldConfig.pageNavigation !== undefined) newConfig.pageNavigation = oldConfig.pageNavigation;
   if (oldConfig.customJs) newConfig.customJs = oldConfig.customJs;
-  
+
   if (oldConfig.editLink) newConfig.editLink = oldConfig.editLink;
 
   // -- Navigation & Plugins (Pass through) --

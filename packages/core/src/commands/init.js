@@ -64,7 +64,7 @@ module.exports = defineConfig({
   // --- Theme Settings ---
   theme: {
     name: 'default',        // Options: 'default', 'sky', 'ruby', 'retro'
-    defaultMode: 'system',  // 'light', 'dark', or 'system'
+    appearance: 'system',   // 'light', 'dark', or 'system'
     codeHighlight: true,    
     customCss: [],          
   },
@@ -218,13 +218,13 @@ async function initProject() {
   const assetsCssDir = path.join(assetsDir, 'css');
   const assetsJsDir = path.join(assetsDir, 'js');
   const assetsImagesDir = path.join(assetsDir, 'images');
-  
+
   const existingFiles = [];
   const dirExists = {
     docs: false,
     assets: false
   };
-  
+
   // Check if package.json exists
   if (!await fs.pathExists(packageJsonFile)) {
     await fs.writeJson(packageJsonFile, defaultPackageJson, { spaces: 2 });
@@ -243,7 +243,7 @@ async function initProject() {
   if (await fs.pathExists(oldConfigFile)) {
     existingFiles.push('config.js');
   }
-  
+
   // Check if docs directory exists
   if (await fs.pathExists(docsDir)) {
     dirExists.docs = true;
@@ -256,31 +256,31 @@ async function initProject() {
   if (await fs.pathExists(assetsDir)) {
     dirExists.assets = true;
   }
-  
+
   // Determine if we should override existing files
   let shouldOverride = false;
   if (existingFiles.length > 0) {
     console.warn('⚠️  The following files already exist:');
     existingFiles.forEach(file => console.warn(`   - ${file}`));
-    
+
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
     });
-    
+
     const answer = await new Promise(resolve => {
       rl.question('Do you want to override these files? (y/N): ', resolve);
     });
-    
+
     rl.close();
-    
+
     shouldOverride = answer.toLowerCase() === 'y';
-    
+
     if (!shouldOverride) {
       console.log('⏭️  Skipping existing files. Will only create new files.');
     }
   }
-  
+
   // Create docs directory if it doesn't exist
   if (!dirExists.docs) {
     await fs.ensureDir(docsDir);
@@ -302,7 +302,7 @@ async function initProject() {
     if (!await fs.pathExists(assetsJsDir)) await fs.ensureDir(assetsJsDir);
     if (!await fs.pathExists(assetsImagesDir)) await fs.ensureDir(assetsImagesDir);
   }
-  
+
   // Write config file if it doesn't exist or user confirmed override
   if (!await fs.pathExists(configFile) || shouldOverride) {
     await fs.writeFile(configFile, defaultConfigContent, 'utf8');
@@ -310,7 +310,7 @@ async function initProject() {
   } else {
     console.log('⏭️  Skipped existing `docmd.config.js`');
   }
-  
+
   // Write index.md file if it doesn't exist or user confirmed override
   if (!await fs.pathExists(indexMdFile) || shouldOverride) {
     await fs.writeFile(indexMdFile, defaultIndexMdContent, 'utf8');
@@ -321,7 +321,7 @@ async function initProject() {
   } else {
     console.log('⏭️  Skipped existing `docs/index.md`');
   }
-  
+
   console.log('✅ Project initialization complete!');
   console.log('👉 Run `npm install` to setup dependencies.');
 }
