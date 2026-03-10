@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-mermaid",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Mermaid diagram support plugin for docmd.",
   "main": "index.js",
   "keywords": [

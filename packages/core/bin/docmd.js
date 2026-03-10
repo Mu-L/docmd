@@ -23,6 +23,7 @@ const { buildLive } = require('../src/commands/live');
 const { migrateProject } = require('../src/commands/migrate');
 const { stopServer } = require('../src/commands/stop');
 const { printBanner } = require('../src/utils/logger');
+const { installPlugin, removePlugin } = require('@docmd/plugin-installer');
 
 program
   .name('docmd')
@@ -93,6 +94,24 @@ program
   .action(async (opts) => {
     // printBanner();
     await stopServer(opts.port);
+  });
+
+program
+  .command('add <pluginName>')
+  .description('Install and configure a docmd plugin')
+  .option('-v, --verbose', 'Show detailed package manager logs')
+  .action((pluginName, opts) => {
+    printBanner();
+    installPlugin(pluginName, opts);
+  });
+
+program
+  .command('remove <pluginName>')
+  .description('Remove and unconfigure a docmd plugin')
+  .option('-v, --verbose', 'Show detailed package manager logs')
+  .action((pluginName, opts) => {
+    printBanner();
+    removePlugin(pluginName, opts);
   });
 
 program.parse();

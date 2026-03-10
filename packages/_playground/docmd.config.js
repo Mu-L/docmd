@@ -24,7 +24,7 @@ module.exports = defineConfig({
   // --- Theme ---
   theme: {
     name: 'default',
-    defaultMode: 'light',
+    appearance: 'light',
     codeHighlight: true,
     customCss: [],
   },
