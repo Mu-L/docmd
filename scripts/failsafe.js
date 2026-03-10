@@ -228,8 +228,28 @@ title: "Stress Test"
         throw new Error(`Live Editor Runtime crashed! \nDetails: ${err.message}`);
     }
 
-    // 8. Security Audit Check
-    console.log('🚨 [8/9] Checking for Vulnerabilities (Security Audit)...');
+    // 8. Plugin Installer End-to-End Verification
+    console.log('🔌 [8/10] Testing Plugin Installer Framework (add/remove)...');
+    
+    // We create a dummy package.json in the zeroConfigDir so pnpm doesn't throw `ERR_PNPM_ADDING_TO_ROOT`.
+    fs.writeFileSync(path.join(zeroConfigDir, 'package.json'), JSON.stringify({ name: "dummy-test-project", version: "1.0.0" }));
+
+    runCmd(`node "${CLI_BIN}" add search`, zeroConfigDir);
+    
+    // Ensure the config file was created and injected
+    const zeroConfigPath = path.join(zeroConfigDir, 'docmd.config.js');
+    assert(fs.existsSync(zeroConfigPath), "docmd add search failed to scaffold a docmd.config.js in a raw directory.");
+    
+    let zcConfigContent = fs.readFileSync(zeroConfigPath, 'utf8');
+    assert(zcConfigContent.includes("'search':"), "docmd add search failed to gracefully inject 'search' plugin config into the dummy file.");
+    
+    // Test the teardown (docmd remove search)
+    runCmd(`node "${CLI_BIN}" remove search`, zeroConfigDir);
+    zcConfigContent = fs.readFileSync(zeroConfigPath, 'utf8');
+    assert(!zcConfigContent.includes("'search':"), "docmd remove search failed to wipe the 'search' configuration key.");
+
+    // 9. Security Audit Check
+    console.log('🚨 [9/10] Checking for Vulnerabilities (Security Audit)...');
     try {
         // Runs an audit. Fails the script if HIGH or CRITICAL vulnerabilities are found.
         execSync('pnpm audit --audit-level=high', { cwd: CWD, stdio: 'inherit' });
@@ -238,8 +258,8 @@ title: "Stress Test"
         throw new Error(`Security vulnerabilities found! Please run 'pnpm audit' and fix them before releasing.`);
     }
 
-    // 9. Monorepo & Publish Check
-    console.log('🏷️  [9/9] Verifying Monorepo Consistency & Dry Run Publish...');
+    // 10. Monorepo & Publish Check
+    console.log('🏷️  [10/10] Verifying Monorepo Consistency & Dry Run Publish...');
     const rootPkg = JSON.parse(fs.readFileSync(path.join(CWD, 'package.json'), 'utf8'));
     const rootVersion = rootPkg.version;
     
