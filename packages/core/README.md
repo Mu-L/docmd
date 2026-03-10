@@ -32,7 +32,7 @@
    <!-- PREVIEW -->
   <p>
     <br/>
-    <img width="800" alt="docmd preview" src="https://github.com/user-attachments/assets/91c1ed2e-7c05-4701-ad60-4250f6e1c367" />
+    <img width="800" alt="docmd preview" src="https://github.com/user-attachments/assets/b8bb6fdc-b2f3-4e32-90d5-78a763609e34" />
     <br/>
     <sup><i>docmd `default` theme in light appearance</i></sup>
   </p>
@@ -234,6 +234,7 @@ await buildLive();
 *   [**@docmd/themes**](https://www.npmjs.com/package/@docmd/themes) - Official themes (Sky, Ruby, Retro).
 
 **Plugins**
+*   [**@docmd/plugin-installer**](https://www.npmjs.com/package/@docmd/plugin-installer) - Plugin installer for docmd.
 *   [**@docmd/plugin-search**](https://www.npmjs.com/package/@docmd/plugin-search) - Offline full-text search.
 *   [**@docmd/plugin-pwa**](https://www.npmjs.com/package/@docmd/plugin-pwa) - Progressive Web App support.
 *   [**@docmd/plugin-mermaid**](https://www.npmjs.com/package/@docmd/plugin-mermaid) - Diagrams and flowcharts.
