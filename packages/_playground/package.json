@@ -3,10 +3,7 @@
   "version": "0.5.4",
   "private": true,
   "dependencies": {
-    "@docmd/core": "workspace:*",
-    "@docmd/plugin-search": "^0.5.3",
-    "is-even": "^1.0.0",
-    "is-odd": "^3.0.1"
+    "@docmd/core": "workspace:*"
   },
   "scripts": {
     "dev": "docmd dev",
