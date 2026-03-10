@@ -355,16 +355,18 @@
 
     document.querySelectorAll('.theme-toggle-button').forEach(btn => {
       btn.addEventListener('click', () => {
-        const t = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-        document.documentElement.setAttribute('data-theme', t);
-        document.body.setAttribute('data-theme', t);
-        localStorage.setItem('docmd-theme', t);
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
+
+        document.documentElement.setAttribute('data-theme', nextTheme);
+        document.body.setAttribute('data-theme', nextTheme);
+        localStorage.setItem('docmd-theme', nextTheme);
 
         const lightLink = document.getElementById('hljs-light');
         const darkLink = document.getElementById('hljs-dark');
         if (lightLink && darkLink) {
-          lightLink.disabled = t === 'dark';
-          darkLink.disabled = t === 'light';
+          lightLink.disabled = nextTheme === 'dark';
+          darkLink.disabled = nextTheme === 'light';
         }
       });
     });

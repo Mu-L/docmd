@@ -270,24 +270,21 @@ async function startDevServer(configPathOption, opts = {}) {
 
   watcher.on('all', (event, filePath) => {
     const relativeFilePath = path.relative(CWD, filePath);
-
     // Ignore common system file noise from flooding terminals
     if (relativeFilePath.includes('.DS_Store')) return;
-
-    process.stdout.write(chalk.dim(`↻ Change in ${relativeFilePath}... `));
 
     if (filePath === paths.configFileToWatch) {
       configNeedsReload = true;
     }
 
     if (rebuildTimeout) clearTimeout(rebuildTimeout);
-
     rebuildTimeout = setTimeout(() => {
       const executeBuildFn = async () => {
         if (isRebuilding) {
           rebuildQueued = true;
           return;
         }
+        process.stdout.write(chalk.dim(`↻ Change in ${relativeFilePath}... `));
         isRebuilding = true;
         rebuildQueued = false;
 
@@ -381,29 +378,29 @@ async function startDevServer(configPathOption, opts = {}) {
   })();
 
   let isShuttingDown = false;
-  process.on('SIGINT', () => {
+  process.on('SIGINT', async () => {
     if (isShuttingDown) return;
     isShuttingDown = true;
 
-    console.log(chalk.yellow('\n🛑 Shutting down...'));
+    process.stdout.write(chalk.yellow('\n🛑 Shutting down... '));
 
-    // Set a timeout to force exit if closing takes too long
+    // Force exit after a shorter timeout if graceful shutdown hangs
     const forceExitTimeout = setTimeout(() => {
       process.exit(0);
-    }, 1000);
-
-    // Unref the timeout so it doesn't keep the process alive
+    }, 500);
     forceExitTimeout.unref();
 
-    if (watcher) watcher.close();
-    if (wss) wss.close();
+    try {
+      const closures = [];
+      if (watcher) closures.push(watcher.close());
+      if (wss) closures.push(new Promise(resolve => wss.close(resolve)));
+      if (server) closures.push(new Promise(resolve => server.close(resolve)));
 
-    if (server) {
-      server.close(() => {
-        clearTimeout(forceExitTimeout);
-        process.exit(0);
-      });
-    } else {
+      await Promise.all(closures);
+      clearTimeout(forceExitTimeout);
+      process.stdout.write(chalk.green('Done.\n'));
+      process.exit(0);
+    } catch (e) {
       process.exit(0);
     }
   });

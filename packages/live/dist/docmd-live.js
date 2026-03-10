@@ -30810,338 +30810,302 @@ try {
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="generator" content="docmd v0.5.x">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="generator" content="docmd v0.5.x">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <%- themeInitScript %>
+    <style>
+      html {
+        visibility: hidden;
+      }
+    </style>
     <% let versionRoot='/' ; let siteRoot=relativePathToRoot; if (config.versions?.current && config._activeVersion?.id)
-        { const isSubVersion=config.versions.current !==config._activeVersion.id; versionRoot=isSubVersion ? '/' +
-        config._activeVersion.id + '/' : '/' ; if (isSubVersion) { siteRoot=(relativePathToRoot==='./' ? '' :
-        relativePathToRoot) + '../' ; } } if (locals.isOfflineMode) { versionRoot='' ; } %>
-        <script>
-            var root = "<%= relativePathToRoot %>";
-            if (root && !root.endsWith('/')) root += '/';
-            if (root === '') root = './';
-            window.DOCMD_ROOT = root;
+      { const isSubVersion=config.versions.current !==config._activeVersion.id; versionRoot=isSubVersion ? '/' +
+      config._activeVersion.id + '/' : '/' ; if (isSubVersion) { siteRoot=(relativePathToRoot==='./' ? '' :
+      relativePathToRoot) + '../' ; } } if (locals.isOfflineMode) { versionRoot='' ; } %>
+      <script>
+        var root = "<%= relativePathToRoot %>";
+        if (root && !root.endsWith('/')) root += '/';
+        if (root === '') root = './';
+        window.DOCMD_ROOT = root;
 
-            var siteRoot = "<%= siteRoot %>";
-            if (siteRoot && !siteRoot.endsWith('/')) siteRoot += '/';
-            if (siteRoot === '') siteRoot = './';
-            window.DOCMD_SITE_ROOT = siteRoot;
+        var siteRoot = "<%= siteRoot %>";
+        if (siteRoot && !siteRoot.endsWith('/')) siteRoot += '/';
+        if (siteRoot === '') siteRoot = './';
+        window.DOCMD_SITE_ROOT = siteRoot;
 
-            window.DOCMD_DEFAULT_MODE = "<%= defaultMode %>";
-            window.DOCMD_VERSION_ROOT = "<%- versionRoot %>";
-        <\/script>
-        <title>
-            <%= pageTitle %>
-        </title>
-        <%- faviconLinkHtml || '' %>
-            <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-main.css?v=<%= buildHash %>">
-            <% if (config.theme?.codeHighlight !==false) { const isDarkDefault=defaultMode==='dark' ; %>
+        window.DOCMD_APPEARANCE = "<%= appearance %>";
+        window.DOCMD_VERSION_ROOT = "<%- versionRoot %>";
+      <\/script>
+      <title>
+        <%= pageTitle %>
+      </title>
+      <%- faviconLinkHtml || '' %>
+        <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-main.css?v=<%= buildHash %>">
+        <% if (config.theme?.codeHighlight !==false) { const isDarkDefault=appearance==='dark' ; %>
+          <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-light.css?v=<%= buildHash %>"
+            id="hljs-light" <%=isDarkDefault ? 'disabled' : '' %>>
+
+          <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-dark.css?v=<%= buildHash %>"
+            id="hljs-dark" <%=isDarkDefault ? '' : 'disabled' %>>
+          <% } %>
+            <%- pluginHeadScriptsHtml || '' %>
+              <% (customCssFiles || []).forEach(cssFile=> { %>
                 <link rel="stylesheet"
-                    href="<%= relativePathToRoot %>assets/css/docmd-highlight-light.css?v=<%= buildHash %>"
-                    id="hljs-light" <%=isDarkDefault ? 'disabled' : '' %>>
-
-                <link rel="stylesheet"
-                    href="<%= relativePathToRoot %>assets/css/docmd-highlight-dark.css?v=<%= buildHash %>"
-                    id="hljs-dark" <%=isDarkDefault ? '' : 'disabled' %>>
-                <% } %>
-                    <%- pluginHeadScriptsHtml || '' %>
-                        <% (customCssFiles || []).forEach(cssFile=> { %>
-                            <link rel="stylesheet"
-                                href="<%= relativePathToRoot %><%- cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
-                            <% }); %>
-                                <%- themeInitScript %>
+                  href="<%= relativePathToRoot %><%- cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
+                <% }); %>
+                  <%- themeInitScript %>
 </head>
 
 <body
-    class="<%= sidebarConfig?.enabled === false ? 'no-sidebar' : (sidebarConfig?.collapsible ? 'sidebar-collapsible' : 'sidebar-not-collapsible') %><%= (locals.menubarConfig && menubarConfig?.enabled !== false) ? ' has-menubar has-menubar-' + (menubarConfig.position || 'top') : '' %><%= headerConfig?.enabled === false ? ' no-header' : '' %>"
-    data-default-collapsed="<%= sidebarConfig?.defaultCollapsed %>"
-    data-copy-code-enabled="<%= config.copyCode === true %>" data-spa-enabled="<%= config.layout?.spa !== false %>">
+  class="<%= sidebarConfig?.enabled === false ? 'no-sidebar' : (sidebarConfig?.collapsible ? 'sidebar-collapsible' : 'sidebar-not-collapsible') %><%= (locals.menubarConfig && menubarConfig?.enabled !== false) ? ' has-menubar has-menubar-' + (menubarConfig.position || 'top') : '' %><%= headerConfig?.enabled === false ? ' no-header' : '' %>"
+  data-default-collapsed="<%= sidebarConfig?.defaultCollapsed %>"
+  data-copy-code-enabled="<%= config.copyCode === true %>" data-spa-enabled="<%= config.layout?.spa !== false %>">
 
-    <a href="#main-content" class="skip-link">Skip to main content</a>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
 
-    <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position !=='header' ) { %>
-        <%- include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu: locals.optionsMenu
-            }) %>
-            <% } %>
+  <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position !=='header' ) { %>
+    <%- include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu: locals.optionsMenu })
+      %>
+      <% } %>
 
-                <% if (sidebarConfig?.enabled !==false) { %>
-                    <aside class="sidebar">
-                        <div class="sidebar-header">
-                            <% if (logo && logo.light && logo.dark) { %>
-                                <a href="<%= logo.href || relativePathToRoot %>" class="logo-link">
-                                    <img src="<%= relativePathToRoot %><%- logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>"
-                                        alt="<%= logo.alt || siteTitle %>" class="logo-light" <% if (logo.height) {
-                                        %>style="height: <%= logo.height %>;"<% } %>>
-                                            <img src="<%= relativePathToRoot %><%- logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>"
-                                                alt="<%= logo.alt || siteTitle %>" class="logo-dark" <% if (logo.height)
-                                                { %>style="height: <%= logo.height %>;"<% } %>>
-                                </a>
-                                <% } else { %>
-                                    <h1><a href="<%= relativePathToRoot %>index.html">
-                                            <%= siteTitle %>
-                                        </a></h1>
-                                    <% } %>
-                                        <span class="mobile-view sidebar-menu-button float-right">
-                                            <%- renderIcon("menu") %>
-                                        </span>
+        <% if (sidebarConfig?.enabled !==false) { %>
+          <aside class="sidebar">
+            <div class="sidebar-header">
+              <% if (logo && logo.light && logo.dark) { %>
+                <a href="<%= logo.href || relativePathToRoot %>" class="logo-link">
+                  <img
+                    src="<%= relativePathToRoot %><%- logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>"
+                    alt="<%= logo.alt || siteTitle %>" class="logo-light" <% if (logo.height) { %>style="height: <%=
+                    logo.height %>;"<% } %>>
+                      <img
+                        src="<%= relativePathToRoot %><%- logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>"
+                        alt="<%= logo.alt || siteTitle %>" class="logo-dark" <% if (logo.height) { %>style="height: <%=
+                        logo.height %>;"<% } %>>
+                </a>
+                <% } else { %>
+                  <h1><a href="<%= relativePathToRoot %>index.html">
+                      <%= siteTitle %>
+                    </a></h1>
+                  <% } %>
+                    <span class="mobile-view sidebar-menu-button float-right">
+                      <%- renderIcon("menu") %>
+                    </span>
+            </div>
+
+            <div class="sidebar-top-group">
+              <% if (locals.optionsMenu && optionsMenu.position==='sidebar-top' ) { %>
+                <div class="sidebar-options-wrapper">
+                  <%- include('partials/options-menu', { optionsMenu }) %>
+                </div>
+                <% } %>
+                  <% if (config.versions && config.versions.position==='sidebar-top' ) { %>
+                    <div class="sidebar-version-wrapper">
+                      <%- include('partials/version-dropdown', { versions: config.versions, activeVersion:
+                        config._activeVersion, relativePathToRoot }) %>
+                    </div>
+                    <% } %>
+            </div>
+
+            <%- navigationHtml %>
+
+              <div class="sidebar-bottom-group mt-auto">
+                <% if (config.versions && config.versions.position==='sidebar-bottom' ) { %>
+                  <div class="sidebar-version-wrapper">
+                    <%- include('partials/version-dropdown', { versions: config.versions, activeVersion:
+                      config._activeVersion, relativePathToRoot }) %>
+                  </div>
+                  <% } %>
+                    <% if (locals.optionsMenu && optionsMenu.position==='sidebar-bottom' ) { %>
+                      <div class="sidebar-options-wrapper">
+                        <%- include('partials/options-menu', { optionsMenu }) %>
+                      </div>
+                      <% } %>
+              </div>
+          </aside>
+          <% } %>
+            <div class="main-content-wrapper">
+              <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position==='header' ) { %>
+                <%- include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu:
+                  locals.optionsMenu }) %>
+                  <% } %>
+                    <% if (headerConfig?.enabled !==false) { %>
+                      <header class="page-header">
+                        <div class="header-left">
+                          <% if (sidebarConfig?.collapsible) { %>
+                            <button id="sidebar-toggle-button" class="sidebar-toggle-button"
+                              aria-label="Toggle Sidebar">
+                              <%- renderIcon('panel-left-close') %>
+                            </button>
+                            <% } %>
+                              <span class="header-title">
+                                <%= pageTitle %>
+                              </span>
                         </div>
 
-                        <div class="sidebar-top-group">
-                            <% if (locals.optionsMenu && optionsMenu.position==='sidebar-top' ) { %>
-                                <div class="sidebar-options-wrapper">
-                                    <%- include('partials/options-menu', { optionsMenu }) %>
-                                </div>
-                                <% } %>
-
-                                    <% if (config.versions && config.versions.position==='sidebar-top' ) { %>
-                                        <div class="sidebar-version-wrapper">
-                                            <%- include('partials/version-dropdown', { versions: config.versions,
-                                                activeVersion: config._activeVersion, relativePathToRoot }) %>
+                        <div class="header-right">
+                          <% if (optionsMenu?.position==='header' ) { %>
+                            <%- include('partials/options-menu', { optionsMenu }) %>
+                              <% } %>
+                        </div>
+                      </header>
+                      <% } %>
+                        <div class="content-theme-cover">
+                          <main class="content-area" id="main-content">
+                            <div class="content-layout">
+                              <div class="main-content">
+                                <% if (headerConfig?.enabled===false) { %>
+                                  <h1>
+                                    <%= pageTitle %>
+                                  </h1>
+                                  <% } %>
+                                    <%- content %>
+                                      <% if (config.pageNavigation && (prevPage || nextPage)) { %>
+                                        <div class="page-navigation">
+                                          <% if (prevPage) { %>
+                                            <a href="<%= prevPage.url %>" class="prev-page">
+                                              <%- renderIcon('arrow-left', { class: 'page-nav-icon' }) %>
+                                                <span><small>Previous</small><strong>
+                                                    <%= prevPage.title %>
+                                                  </strong></span>
+                                            </a>
+                                            <% } else { %>
+                                              <div class="prev-page-placeholder">
+                                              </div>
+                                              <% } %>
+                                                <% if (nextPage) { %>
+                                                  <a href="<%= nextPage.url %>" class="next-page">
+                                                    <span><small>Next</small>
+                                                      <strong>
+                                                        <%= nextPage.title %>
+                                                      </strong></span>
+                                                    <%- renderIcon('arrow-right', { class: 'page-nav-icon' }) %>
+                                                  </a>
+                                                  <% } else { %>
+                                                    <div class="next-page-placeholder">
+                                                    </div>
+                                                    <% } %>
                                         </div>
                                         <% } %>
-                        </div>
-
-                        <%- navigationHtml %>
-
-                            <div class="sidebar-bottom-group mt-auto">
-                                <% if (config.versions && config.versions.position==='sidebar-bottom' ) { %>
-                                    <div class="sidebar-version-wrapper">
-                                        <%- include('partials/version-dropdown', { versions: config.versions,
-                                            activeVersion: config._activeVersion, relativePathToRoot }) %>
-                                    </div>
-                                    <% } %>
-
-                                        <% if (locals.optionsMenu && optionsMenu.position==='sidebar-bottom' ) { %>
-                                            <div class="sidebar-options-wrapper">
-                                                <%- include('partials/options-menu', { optionsMenu }) %>
-                                            </div>
-                                            <% } %>
+                              </div>
+                              <div class="toc-sidebar">
+                                <%- include('toc', { content, headings, navigationHtml, isActivePage }) %>
+                              </div>
                             </div>
-                    </aside>
-                    <% } %>
-
-                        <div class="main-content-wrapper">
-                            <% if (locals.menubarConfig && menubarConfig?.enabled !==false &&
-                                menubarConfig.position==='header' ) { %>
-                                <%- include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon,
-                                    optionsMenu: locals.optionsMenu }) %>
-                                    <% } %>
-                                        <% if (headerConfig?.enabled !==false) { %>
-                                            <header class="page-header">
-                                                <div class="header-left">
-                                                    <% if (sidebarConfig?.collapsible) { %>
-                                                        <button id="sidebar-toggle-button" class="sidebar-toggle-button"
-                                                            aria-label="Toggle Sidebar">
-                                                            <%- renderIcon('panel-left-close') %>
-                                                        </button>
-                                                        <% } %>
-                                                            <span class="header-title">
-                                                                <%= pageTitle %>
-                                                            </span>
-                                                </div>
-
-                                                <div class="header-right">
-                                                    <% if (optionsMenu?.position==='header' ) { %>
-                                                        <%- include('partials/options-menu', { optionsMenu }) %>
-                                                            <% } %>
-                                                </div>
-                                            </header>
-                                            <% } %>
-
-                                                <main class="content-area" id="main-content">
-                                                    <div class="content-layout">
-                                                        <div class="main-content">
-                                                            <% if (headerConfig?.enabled===false) { %>
-                                                                <h1>
-                                                                    <%= pageTitle %>
-                                                                </h1>
-                                                                <% } %>
-
-                                                                    <%- content %>
-
-                                                                        <% if (config.pageNavigation && (prevPage ||
-                                                                            nextPage)) { %>
-                                                                            <div class="page-navigation">
-                                                                                <% if (prevPage) { %>
-                                                                                    <a href="<%= prevPage.url %>"
-                                                                                        class="prev-page">
-                                                                                        <%- renderIcon('arrow-left', {
-                                                                                            class: 'page-nav-icon' }) %>
-                                                                                            <span><small>Previous</small><strong>
-                                                                                                    <%= prevPage.title
-                                                                                                        %>
-                                                                                                </strong></span>
-                                                                                    </a>
-                                                                                    <% } else { %>
-                                                                                        <div
-                                                                                            class="prev-page-placeholder">
-                                                                                        </div>
-                                                                                        <% } %>
-                                                                                            <% if (nextPage) { %>
-                                                                                                <a href="<%= nextPage.url %>"
-                                                                                                    class="next-page">
-                                                                                                    <span><small>Next</small><strong>
-                                                                                                            <%= nextPage.title
-                                                                                                                %>
-                                                                                                        </strong></span>
-                                                                                                    <%- renderIcon('arrow-right',
-                                                                                                        {
-                                                                                                        class: 'page-nav-icon'
-                                                                                                        }) %>
-                                                                                                </a>
-                                                                                                <% } else { %>
-                                                                                                    <div
-                                                                                                        class="next-page-placeholder">
-                                                                                                    </div>
-                                                                                                    <% } %>
-                                                                            </div>
-                                                                            <% } %>
-                                                        </div>
-
-                                                        <div class="toc-sidebar">
-                                                            <%- include('toc', { content, headings, navigationHtml,
-                                                                isActivePage }) %>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="page-footer-actions">
-                                                        <% if (locals.editUrl) { %>
-                                                            <a href="<%= editUrl %>" target="_blank"
-                                                                rel="noopener noreferrer" class="edit-link">
-                                                                <%- renderIcon('pencil') %>
-                                                                    <%= editLinkText %>
-                                                            </a>
-                                                            <% } %>
-                                                    </div>
-                                                </main>
-
-                                                <%- include('partials/footer', { footerConfig, config,
-                                                    relativePathToRoot, logo, siteTitle, footerHtml }) %>
+                            <div class="page-footer-actions">
+                              <% if (locals.editUrl) { %>
+                                <a href="<%= editUrl %>" target="_blank" rel="noopener noreferrer" class="edit-link">
+                                  <%- renderIcon('pencil') %>
+                                    <%= editLinkText %>
+                                </a>
+                                <% } %>
+                            </div>
+                          </main>
+                          <%- include('partials/footer', { footerConfig, config, relativePathToRoot, logo, siteTitle,
+                            footerHtml }) %>
                         </div>
-
-                        <script src="<%= relativePathToRoot %>assets/js/docmd-main.js?v=<%= buildHash %>"><\/script>
-                        <%- pluginBodyScriptsHtml || '' %>
-                            <% (customJsFiles || []).forEach(jsFile=> {
-                                if (jsFile && jsFile.trim() !== '') { %>
-                                <script
-                                    src="<%= relativePathToRoot %><%- jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>?v=<%= buildHash %>"><\/script>
-                                <% } }); %>
+            </div>
+            <script src="<%= relativePathToRoot %>assets/js/docmd-main.js?v=<%= buildHash %>"><\/script>
+            <%- pluginBodyScriptsHtml || '' %>
+              <% (customJsFiles || []).forEach(jsFile=> {
+                if (jsFile && jsFile.trim() !== '') { %>
+                <script
+                  src="<%= relativePathToRoot %><%- jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>?v=<%= buildHash %>"><\/script>
+                <% } }); %>
 </body>
 
-</html>`,"navigation.ejs":`<%# ---------------------------------------------------------------
-  # docmd : the minimalist, zero-config documentation generator.
-  # @website https://docmd.io
-  # [docmd-source] - Please do not remove this header.
-  # ---------------------------------------------------------------
-%>
+</html>`,"navigation.ejs":`<%# docmd : the minimalist, zero-config documentation generator. @website https://docmd.io [docmd-source] - Please do
+  not remove this header. %>
 
-<nav class="sidebar-nav" aria-label="Main Navigation">
-  <ul>
-    <%
-      function normalizePath(p) {
-        if (!p || p === '#') return '#';
-        if (p.startsWith('http')) return p;
-        
-        // 1. Strip dot-slash and leading slash
-        let path = p.replace(/^(\\.\\/|\\/)+/, '');
-        
-        // 2. Remove extensions and index
-        path = path.replace(/(\\/index\\.html|index\\.html|\\.html|\\.md)$/, '');
-        
-        // 3. Remove trailing slash
-        path = path.replace(/\\/$/, '');
-        
-        // 4. Return with leading slash for comparison
-        return '/' + path;
-      }
-
-      function isChildActive(item, currentPath) {
-        if (!item.children) return false;
-        const currentNorm = normalizePath(currentPath);
-        return item.children.some(child => {
-           const childNorm = normalizePath(child.path);
-           if (childNorm === currentNorm) return true;
-           return isChildActive(child, currentPath);
+  <nav class="sidebar-nav" aria-label="Main Navigation">
+    <ul>
+      <% function normalizePath(p) { if (!p || p==='#' ) return '#' ; if (p.startsWith('http')) return p; let
+        path=p.replace(/^(\\.\\/|\\/)+/, '' ); path=path.replace(/(\\/index\\.html|index\\.html|\\.html|\\.md)$/, '' );
+        path=path.replace(/\\/$/, '' ); return '/' + path; } function isChildActive(item, currentPath) { if
+        (!item.children) return false; const currentNorm=normalizePath(currentPath); return item.children.some(child=> {
+        const childNorm = normalizePath(child.path);
+        if (childNorm === currentNorm) return true;
+        return isChildActive(child, currentPath);
         });
-      }
+        }
 
-      function renderNav(items) {
+        function renderNav(items) {
         if (!items || !Array.isArray(items)) return;
-        
-        items.forEach(item => {
-          const isExternal = item.external || false;
-          const hasChildren = item.children && item.children.length > 0;
-          
-          // Determine interactions
-          // It is collapsible ONLY if it has children AND config doesn't say 'false'
-          const isInteractive = hasChildren && item.collapsible !== false;
-          
-          const itemNorm = normalizePath(item.path);
-          const currentNorm = normalizePath(currentPagePath);
-          
-          const isDummyLink = !item.path || item.path === '#' || item.path === 'javascript:;';
-          const isActive = itemNorm === currentNorm;
-          const isParentOfActive = !isActive && isChildActive(item, currentPagePath);
-          
-          // Expand Logic:
-          // 1. If Interactive: Expand if parent of active, or if it was previously toggled open.
-          // 2. If NOT Interactive (collapsible: false): ALWAYS expand.
-          const isOpen = isInteractive 
-            ? (isParentOfActive || (isActive && isInteractive)) 
-            : true; 
 
-          const liClasses = [];
-          if (isActive) liClasses.push('active');
-          if (isParentOfActive) liClasses.push('active-parent');
-          
-          // Only add 'collapsible' class if we want the arrow and click behavior
-          if (isInteractive) liClasses.push('collapsible');
-          
-          // Add 'expanded' to show children (via CSS)
-          if (hasChildren && isOpen) liClasses.push('expanded');
-          
-          let href = item.path || '#';
-          if (!isExternal && !isDummyLink && !href.startsWith('http')) {
-             let cleanPath = href.replace(/^(\\.\\/|\\/)+/, '');
-             href = relativePathToRoot + cleanPath;
-             if (isOfflineMode) {
-                 if (href.endsWith('/')) href += 'index.html';
-                 else if (!href.endsWith('.html')) href += '/index.html';
-             } else {
-                 if (href.endsWith('/index.html')) href = href.slice(0, -10);
-             }
-          }
-    %>
-    <li class="<%= liClasses.join(' ') %>" <% if(isInteractive) { %> aria-expanded="<%= isOpen %>" <% } %>>
-      <% if (isDummyLink) { %>
-        <span class="nav-label">
-          <% if (item.icon) { %> <%- renderIcon(item.icon) %> <% } %>
-          <span class="nav-item-title"><%= item.title %></span>
-          <% if (isInteractive) { %> 
-              <span class="collapse-icon-wrapper"><%- renderIcon('chevron-right', { class: 'collapse-icon' }) %></span>
-          <% } %>
-        </span>
-      <% } else { %>
-        <a href="<%= href %>" class="<%= isActive ? 'active' : '' %>" <%= isExternal ? 'target="_blank" rel="noopener"' : '' %>>
-          <% if (item.icon) { %> <%- renderIcon(item.icon) %> <% } %>
-          <span class="nav-item-title"><%= item.title %></span>
-          <% if (isInteractive) { %> 
-              <span class="collapse-icon-wrapper"><%- renderIcon('chevron-right', { class: 'collapse-icon' }) %></span>
-          <% } %>
-          <% if (isExternal) { %> <%- renderIcon('external-link', { class: 'nav-external-icon' }) %> <% } %>
-        </a>
-      <% } %>
-      
-      <% if (hasChildren) { %>
-        <ul class="submenu">
-          <% renderNav(item.children); %>
-        </ul>
-      <% } %>
-    </li>
-    <% }); } renderNav(navItems); %>
-  </ul>
-</nav>`,"no-style.ejs":`<!--
+        items.forEach(item => {
+        const isExternal = item.external || false;
+        const hasChildren = item.children && item.children.length > 0;
+        const isInteractive = hasChildren && item.collapsible !== false;
+
+        const itemNorm = normalizePath(item.path);
+        const currentNorm = normalizePath(currentPagePath);
+
+        const isDummyLink = !item.path || item.path === '#' || item.path === 'javascript:;';
+        const isActive = itemNorm === currentNorm;
+        const isParentOfActive = !isActive && isChildActive(item, currentPagePath);
+
+        const isOpen = isInteractive
+        ? (isParentOfActive || (isActive && isInteractive))
+        : true;
+
+        const liClasses = [];
+        if (isActive) liClasses.push('active');
+        if (isParentOfActive) liClasses.push('active-parent');
+        if (isInteractive) liClasses.push('collapsible');
+        if (hasChildren && isOpen) liClasses.push('expanded');
+        if (hasChildren) liClasses.push('nav-group');
+
+        let href = item.path || '#';
+        if (!isExternal && !isDummyLink && !href.startsWith('http')) {
+        let cleanPath = href.replace(/^(\\.\\/|\\/)+/, '');
+        href = relativePathToRoot + cleanPath;
+        if (isOfflineMode) {
+        if (href.endsWith('/')) href += 'index.html';
+        else if (!href.endsWith('.html')) href += '/index.html';
+        } else {
+        if (href.endsWith('/index.html')) href = href.slice(0, -10);
+        }
+        }
+        %>
+        <li class="<%= liClasses.join(' ') %>" <% if(isInteractive) { %> aria-expanded="<%= isOpen %>" <% } %>>
+              <% if (isDummyLink) { %>
+                <span class="nav-label <%= hasChildren ? 'nav-group' : '' %>">
+                  <% if (item.icon) { %> <%- renderIcon(item.icon) %>
+                      <% } %>
+                        <span class="nav-item-title">
+                          <%= item.title %>
+                        </span>
+                        <% if (isInteractive) { %>
+                          <span class="collapse-icon-wrapper"><%- renderIcon('chevron-right', { class: 'collapse-icon'
+                              }) %></span>
+                          <% } %>
+                </span>
+                <% } else { %>
+                  <a href="<%= href %>" class="<%= isActive ? 'active' : '' %> <%= hasChildren ? 'nav-group' : '' %>"
+                    <%=isExternal ? 'target="_blank" rel="noopener"' : '' %>>
+                    <% if (item.icon) { %> <%- renderIcon(item.icon) %>
+                        <% } %>
+                          <span class="nav-item-title">
+                            <%= item.title %>
+                          </span>
+                          <% if (isInteractive) { %>
+                            <span class="collapse-icon-wrapper"><%- renderIcon('chevron-right', { class: 'collapse-icon'
+                                }) %></span>
+                            <% } %>
+                              <% if (isExternal) { %> <%- renderIcon('external-link', { class: 'nav-external-icon' }) %>
+                                  <% } %>
+                  </a>
+                  <% } %>
+
+                    <% if (hasChildren) { %>
+                      <ul class="submenu">
+                        <% renderNav(item.children); %>
+                      </ul>
+                      <% } %>
+        </li>
+        <% }); } renderNav(navItems); %>
+    </ul>
+  </nav>`,"no-style.ejs":`<!--
   ---------------------------------------------------------------
   docmd : the minimalist, zero-config documentation generator.
   @website https://docmd.io
@@ -31151,25 +31115,29 @@ try {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="generator" content="docmd v0.5.x">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- 1. GLOBALS -->
     <script>
         var root = "<%= relativePathToRoot %>";
         if (root && !root.endsWith('/')) root += '/';
         if (root === '') root = './';
         window.DOCMD_ROOT = root;
-        window.DOCMD_DEFAULT_MODE = "<%= defaultMode %>";
+        window.DOCMD_APPEARANCE = "<%= appearance %>";
     <\/script>
 
     <!-- 2. META & TITLE -->
-    <% if (frontmatter.components?.meta !== false) { %>
-    <%- metaTagsHtml || '' %>
-    <title><%= pageTitle %><% if (frontmatter.components?.siteTitle !== false) { %> : <%= siteTitle %><% } %></title>
-    <% if (description && !(metaTagsHtml && metaTagsHtml.includes('name="description"'))) { %>
+    <% if (frontmatter.components?.meta !==false) { %>
+        <%- metaTagsHtml || '' %>
+            <title>
+                <%= pageTitle %>
+                    <% if (frontmatter.components?.siteTitle !==false) { %> : <%= siteTitle %>
+                            <% } %>
+            </title>
+            <% if (description && !(metaTagsHtml && metaTagsHtml.includes('name="description"'))) { %>
     <meta name="description" content="<%= description %>">
     <% } %>
     <% } %>
@@ -31185,163 +31153,228 @@ try {
 
         <!-- 5. HIGHLIGHT CSS (Toggle Strategy) -->
         <% if (frontmatter.components?.highlight !== false) { 
-           const isDarkDefault = defaultMode === 'dark';
-        %>
-        <link rel="stylesheet" 
-              href="<%= relativePathToRoot %>assets/css/docmd-highlight-light.css?v=<%= buildHash %>" 
-              id="hljs-light" 
-              <%= isDarkDefault ? 'disabled' : '' %>>
-              
-        <link rel="stylesheet" 
-              href="<%= relativePathToRoot %>assets/css/docmd-highlight-dark.css?v=<%= buildHash %>" 
-              id="hljs-dark" 
-              <%= isDarkDefault ? '' : 'disabled' %>>
-        <% } %>
-    <% } %>
+           const isDarkDefault = defaultMode === ' dark'; %>
+                <link rel="stylesheet"
+                    href="<%= relativePathToRoot %>assets/css/docmd-highlight-light.css?v=<%= buildHash %>"
+                    id="hljs-light" <%=isDarkDefault ? 'disabled' : '' %>>
 
-    <!-- 6. PLUGINS & THEMES (Overrides Core) -->
-    <% if (frontmatter.components?.pluginHeadScripts !== false) { %>
-    <%- pluginHeadScriptsHtml || '' %>
-    <% } %>
+                <link rel="stylesheet"
+                    href="<%= relativePathToRoot %>assets/css/docmd-highlight-dark.css?v=<%= buildHash %>"
+                    id="hljs-dark" <%=isDarkDefault ? '' : 'disabled' %>>
+                <% } %>
+                    <% } %>
 
-    <!-- 7. THEME CSS (Legacy/Specific overrides) -->
-    <% if (frontmatter.components?.theme !== false) { %>
-    <%- themeCssLinkHtml || '' %>
-    <% } %>
+                        <!-- 6. PLUGINS & THEMES (Overrides Core) -->
+                        <% if (frontmatter.components?.pluginHeadScripts !==false) { %>
+                            <%- pluginHeadScriptsHtml || '' %>
+                                <% } %>
 
-    <!-- 8. CUSTOM CSS (Overrides Everything) -->
-    <% if (frontmatter.components?.customCss !== false && customCssFiles && customCssFiles.length > 0) { %>
-    <% customCssFiles.forEach(cssFile => { %>
-    <link rel="stylesheet" href="<%= relativePathToRoot %><%- cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
-    <% }); %>
-    <% } %>
+                                    <!-- 7. THEME CSS (Legacy/Specific overrides) -->
+                                    <% if (frontmatter.components?.theme !==false) { %>
+                                        <%- themeCssLinkHtml || '' %>
+                                            <% } %>
 
-    <!-- 9. PLUGIN STYLES (If separate) -->
-    <% if (frontmatter.components?.pluginStyles !== false) { %>
-    <%- pluginStylesHtml || '' %>
-    <% } %>
+                                                <!-- 8. CUSTOM CSS (Overrides Everything) -->
+                                                <% if (frontmatter.components?.customCss !==false && customCssFiles &&
+                                                    customCssFiles.length> 0) { %>
+                                                    <% customCssFiles.forEach(cssFile=> { %>
+                                                        <link rel="stylesheet"
+                                                            href="<%= relativePathToRoot %><%- cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
+                                                        <% }); %>
+                                                            <% } %>
 
-    <!-- 10. THEME INIT (Must be last to apply correct mode immediately) -->
-    <% if (frontmatter.components?.themeMode !== false) { %>
-    <%- themeInitScript %>
-    <% } %>
+                                                                <!-- 9. PLUGIN STYLES (If separate) -->
+                                                                <% if (frontmatter.components?.pluginStyles !==false) {
+                                                                    %>
+                                                                    <%- pluginStylesHtml || '' %>
+                                                                        <% } %>
 
-    <!-- 11. USER CUSTOM HEAD -->
-    <% if (frontmatter.customHead) { %>
-    <%- frontmatter.customHead %>
-    <% } %>
+                                                                            <!-- 10. THEME INIT (Must be last to apply correct mode immediately) -->
+                                                                            <% if (frontmatter.components?.themeMode
+                                                                                !==false) { %>
+                                                                                <%- themeInitScript %>
+                                                                                    <% } %>
+
+                                                                                        <!-- 11. USER CUSTOM HEAD -->
+                                                                                        <% if (frontmatter.customHead) {
+                                                                                            %>
+                                                                                            <%- frontmatter.customHead
+                                                                                                %>
+                                                                                                <% } %>
 </head>
-<body<% if (frontmatter.components?.theme !== false) { %> data-theme="<%= defaultMode %>"<% } %><% if (frontmatter.bodyClass) { %> class="<%= frontmatter.bodyClass %>"<% } %> data-copy-code-enabled="<%= config.copyCode === true %>">
-    <% if (frontmatter.components?.layout === true || frontmatter.components?.layout === 'full') { %>
-    <div class="main-content-wrapper">
-        <% if (frontmatter.components?.header !== false) { %>
-        <header class="page-header">
-            <% if (frontmatter.components?.pageTitle !== false) { %>
-            <h1><%= pageTitle %></h1>
-            <% } %>
-        </header>
-        <% } %>
-        <main class="content-area">
-            <div class="content-layout">
-                <div class="main-content"><%- content %></div>
-                <% if (frontmatter.components?.toc !== false && headings && headings.length > 0) { %>
-                <div class="toc-sidebar">
-                    <%- include('toc', { content, headings, navigationHtml, isActivePage }) %>
-                </div>
-                <% } %>
-            </div>
-        </main>
-        <% if (frontmatter.components?.footer !== false) { %>
-        <footer class="page-footer">
-            <div class="footer-content">
-                <div class="user-footer"><%- footerHtml || '' %></div>
-                <% if (frontmatter.components?.branding !== false) { %>
-                <div class="branding-footer">
-                    Build with <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path><path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"></path><path d="m18 15-2-2"></path><path d="m15 18-2-2"></path></svg> <a href="https://docmd.io" target="_blank" rel="noopener">docmd.</a>
-                </div>
-                <% } %>
-            </div>
-        </footer>
-        <% } %>
-    </div>
-    <% } else if (frontmatter.components?.sidebar === true) { %>
-    <aside class="sidebar">
-        <% if (frontmatter.components?.logo !== false && logo && logo.light && logo.dark) { %>
-        <div class="sidebar-header">
-            <a href="<%= logo.href || (relativePathToRoot + 'index.html') %>" class="logo-link">
-                <img src="<%= relativePathToRoot %><%- logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>" alt="<%= logo.alt || siteTitle %>" class="logo-light" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>>
-                <img src="<%= relativePathToRoot %><%- logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>" alt="<%= logo.alt || siteTitle %>" class="logo-dark" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>>
-            </a>
-        </div>
-        <% } %>
-        <% if (frontmatter.components?.navigation !== false) { %>
-        <%- navigationHtml %>
-        <% } %>
-        <% if (frontmatter.components?.themeToggle !== false && theme && theme.enableModeToggle) { %>
-        <button id="theme-toggle-button" aria-label="Toggle theme" class="theme-toggle-button">
-            <%- renderIcon('sun', { class: 'icon-sun' }) %> <%- renderIcon('moon', { class: 'icon-moon' }) %>
-        </button>
-        <% } %>
-    </aside>
-    <div class="main-content-wrapper">
-        <% if (frontmatter.components?.header !== false) { %>
-        <header class="page-header">
-            <% if (frontmatter.components?.pageTitle !== false) { %>
-            <h1><%= pageTitle %></h1>
-            <% } %>
-        </header>
-        <% } %>
-        <main class="content-area">
-            <div class="content-layout">
-                <div class="main-content"><%- content %></div>
-                <% if (frontmatter.components?.toc !== false && headings && headings.length > 0) { %>
-                <div class="toc-sidebar">
-                    <%- include('toc', { content, headings, navigationHtml, isActivePage }) %>
-                </div>
-                <% } %>
-            </div>
-        </main>
-        <% if (frontmatter.components?.footer !== false) { %>
-        <footer class="page-footer">
-            <div class="footer-content">
-                <div class="user-footer"><%- footerHtml || '' %></div>
-                <% if (frontmatter.components?.branding !== false) { %>
-                <div class="branding-footer">
-                    Build with <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path><path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"></path><path d="m18 15-2-2"></path><path d="m15 18-2-2"></path></svg> <a href="https://docmd.io" target="_blank" rel="noopener">docmd.</a>
-                </div>
-                <% } %>
-            </div>
-        </footer>
-        <% } %>
-    </div>
-    <% } else { %>
-    <%- content %>
-    <% } %>
+<body<% if (frontmatter.components?.theme !==false) { %> data-theme="<%= defaultMode %>"<% } %>
+            <% if (frontmatter.bodyClass) { %> class="<%= frontmatter.bodyClass %>"<% } %> data-copy-code-enabled="<%=
+                            config.copyCode===true %>">
+                            <% if (frontmatter.components?.layout===true || frontmatter.components?.layout==='full' ) {
+                                %>
+                                <div class="main-content-wrapper">
+                                    <% if (frontmatter.components?.header !==false) { %>
+                                        <header class="page-header">
+                                            <% if (frontmatter.components?.pageTitle !==false) { %>
+                                                <h1>
+                                                    <%= pageTitle %>
+                                                </h1>
+                                                <% } %>
+                                        </header>
+                                        <% } %>
+                                            <main class="content-area">
+                                                <div class="content-layout">
+                                                    <div class="main-content"><%- content %></div>
+                                                    <% if (frontmatter.components?.toc !==false && headings &&
+                                                        headings.length> 0) { %>
+                                                        <div class="toc-sidebar">
+                                                            <%- include('toc', { content, headings, navigationHtml,
+                                                                isActivePage }) %>
+                                                        </div>
+                                                        <% } %>
+                                                </div>
+                                            </main>
+                                            <% if (frontmatter.components?.footer !==false) { %>
+                                                <footer class="page-footer">
+                                                    <div class="footer-content">
+                                                        <div class="user-footer"><%- footerHtml || '' %></div>
+                                                        <% if (frontmatter.components?.branding !==false) { %>
+                                                            <div class="branding-footer">
+                                                                Build with <svg xmlns="http://www.w3.org/2000/svg"
+                                                                    width="24" height="24" viewBox="0 0 24 24"
+                                                                    fill="none" stroke="currentColor" stroke-width="2"
+                                                                    stroke-linecap="round" stroke-linejoin="round">
+                                                                    <path
+                                                                        d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z">
+                                                                    </path>
+                                                                    <path
+                                                                        d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66">
+                                                                    </path>
+                                                                    <path d="m18 15-2-2"></path>
+                                                                    <path d="m15 18-2-2"></path>
+                                                                </svg> <a href="https://docmd.io" target="_blank"
+                                                                    rel="noopener">docmd.</a>
+                                                            </div>
+                                                            <% } %>
+                                                    </div>
+                                                </footer>
+                                                <% } %>
+                                </div>
+                                <% } else if (frontmatter.components?.sidebar===true) { %>
+                                    <aside class="sidebar">
+                                        <% if (frontmatter.components?.logo !==false && logo && logo.light && logo.dark)
+                                            { %>
+                                            <div class="sidebar-header">
+                                                <a href="<%= logo.href || (relativePathToRoot + 'index.html') %>"
+                                                    class="logo-link">
+                                                    <img src="<%= relativePathToRoot %><%- logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>"
+                                                        alt="<%= logo.alt || siteTitle %>" class="logo-light" <% if
+                                                        (logo.height) { %>style="height: <%= logo.height %>;"<% } %>>
+                                                            <img src="<%= relativePathToRoot %><%- logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>"
+                                                                alt="<%= logo.alt || siteTitle %>" class="logo-dark" <%
+                                                                if (logo.height) { %>style="height: <%= logo.height %>;"
+                                                                <% } %>>
+                                                </a>
+                                            </div>
+                                            <% } %>
+                                                <% if (frontmatter.components?.navigation !==false) { %>
+                                                    <%- navigationHtml %>
+                                                        <% } %>
+                                                            <% if (frontmatter.components?.themeToggle !==false && theme
+                                                                && theme.enableModeToggle) { %>
+                                                                <button id="theme-toggle-button"
+                                                                    aria-label="Toggle theme"
+                                                                    class="theme-toggle-button">
+                                                                    <%- renderIcon('sun', { class: 'icon-sun' }) %> <%-
+                                                                            renderIcon('moon', { class: 'icon-moon' })
+                                                                            %>
+                                                                </button>
+                                                                <% } %>
+                                    </aside>
+                                    <div class="main-content-wrapper">
+                                        <% if (frontmatter.components?.header !==false) { %>
+                                            <header class="page-header">
+                                                <% if (frontmatter.components?.pageTitle !==false) { %>
+                                                    <h1>
+                                                        <%= pageTitle %>
+                                                    </h1>
+                                                    <% } %>
+                                            </header>
+                                            <% } %>
+                                                <main class="content-area">
+                                                    <div class="content-layout">
+                                                        <div class="main-content"><%- content %></div>
+                                                        <% if (frontmatter.components?.toc !==false && headings &&
+                                                            headings.length> 0) { %>
+                                                            <div class="toc-sidebar">
+                                                                <%- include('toc', { content, headings, navigationHtml,
+                                                                    isActivePage }) %>
+                                                            </div>
+                                                            <% } %>
+                                                    </div>
+                                                </main>
+                                                <% if (frontmatter.components?.footer !==false) { %>
+                                                    <footer class="page-footer">
+                                                        <div class="footer-content">
+                                                            <div class="user-footer"><%- footerHtml || '' %></div>
+                                                            <% if (frontmatter.components?.branding !==false) { %>
+                                                                <div class="branding-footer">
+                                                                    Build with <svg xmlns="http://www.w3.org/2000/svg"
+                                                                        width="24" height="24" viewBox="0 0 24 24"
+                                                                        fill="none" stroke="currentColor"
+                                                                        stroke-width="2" stroke-linecap="round"
+                                                                        stroke-linejoin="round">
+                                                                        <path
+                                                                            d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z">
+                                                                        </path>
+                                                                        <path
+                                                                            d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66">
+                                                                        </path>
+                                                                        <path d="m18 15-2-2"></path>
+                                                                        <path d="m15 18-2-2"></path>
+                                                                    </svg> <a href="https://docmd.io" target="_blank"
+                                                                        rel="noopener">docmd.</a>
+                                                                </div>
+                                                                <% } %>
+                                                        </div>
+                                                    </footer>
+                                                    <% } %>
+                                    </div>
+                                    <% } else { %>
+                                        <%- content %>
+                                            <% } %>
 
-    <% if (frontmatter.components?.scripts === true) { %>
-        <% if (frontmatter.components?.mainScripts === true) { %>
-        <script>window.DOCMD_ROOT = "<%= relativePathToRoot %>";<\/script>
-        <script src="<%= relativePathToRoot %>assets/js/docmd-main.js"><\/script>
-        <% } %>
-        
-        <% if (frontmatter.components?.lightbox === true && frontmatter.components?.mainScripts === true) { %>
-        <script src="<%= relativePathToRoot %>assets/js/docmd-image-lightbox.js"><\/script>
-        <% } %>
+                                                <% if (frontmatter.components?.scripts===true) { %>
+                                                    <% if (frontmatter.components?.mainScripts===true) { %>
+                                                        <script>window.DOCMD_ROOT = "<%= relativePathToRoot %>";<\/script>
+                                                        <script
+                                                            src="<%= relativePathToRoot %>assets/js/docmd-main.js"><\/script>
+                                                        <% } %>
 
-        <% if (frontmatter.components?.customJs === true && customJsFiles && customJsFiles.length > 0) { %>
-        <% customJsFiles.forEach(jsFile => { %>
-        <script src="<%= relativePathToRoot %><%- jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>"><\/script>
-        <% }); %>
-        <% } %>
-        
-        <% if (frontmatter.components?.scripts !== false) { %>
-            <%- pluginBodyScriptsHtml || '' %>
-        <% } %>
-    <% } %>
-    <% if (frontmatter.customScripts) { %>
-    <%- frontmatter.customScripts %>
-    <% } %>
-</body>
+                                                            <% if (frontmatter.components?.lightbox===true &&
+                                                                frontmatter.components?.mainScripts===true) { %>
+                                                                <script
+                                                                    src="<%= relativePathToRoot %>assets/js/docmd-image-lightbox.js"><\/script>
+                                                                <% } %>
+
+                                                                    <% if (frontmatter.components?.customJs===true &&
+                                                                        customJsFiles && customJsFiles.length> 0) { %>
+                                                                        <% customJsFiles.forEach(jsFile=> { %>
+                                                                            <script
+                                                                                src="<%= relativePathToRoot %><%- jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>"><\/script>
+                                                                            <% }); %>
+                                                                                <% } %>
+
+                                                                                    <% if
+                                                                                        (frontmatter.components?.scripts
+                                                                                        !==false) { %>
+                                                                                        <%- pluginBodyScriptsHtml || ''
+                                                                                            %>
+                                                                                            <% } %>
+                                                                                                <% } %>
+                                                                                                    <% if
+                                                                                                        (frontmatter.customScripts)
+                                                                                                        { %>
+                                                                                                        <%- frontmatter.customScripts
+                                                                                                            %>
+                                                                                                            <% } %>
+                                                                                                                </body>
+
 </html>`,"toc.ejs":`<%# ---------------------------------------------------------------
   # docmd : the minimalist, zero-config documentation generator.
   # @website https://docmd.io
@@ -31615,35 +31648,37 @@ if (shouldShowToc && !frontmatter?.toc || frontmatter?.toc !== 'false') {
  * --------------------------------------------------------------------
  */
 
-(function() {
+(function () {
   try {
     // 1. Determine Theme
     var localValue = localStorage.getItem('docmd-theme');
-    var configValue = window.DOCMD_DEFAULT_MODE || 'light'; 
+    var configValue = window.DOCMD_DEFAULT_MODE || 'light';
     var theme = localValue ? localValue : configValue;
-    
+
     if (theme === 'system') {
       theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
 
     // 2. Apply to Root
     document.documentElement.setAttribute('data-theme', theme);
-    
+
     // 3. Highlight.js Toggle Strategy
     var lightLink = document.getElementById('hljs-light');
     var darkLink = document.getElementById('hljs-dark');
-    
+
     if (lightLink && darkLink) {
-        if (theme === 'dark') {
-            lightLink.disabled = true;
-            darkLink.disabled = false;
-        } else {
-            lightLink.disabled = false;
-            darkLink.disabled = true;
-        }
+      if (theme === 'dark') {
+        lightLink.disabled = true;
+        darkLink.disabled = false;
+      } else {
+        lightLink.disabled = false;
+        darkLink.disabled = true;
+      }
     }
 
+    document.documentElement.style.visibility = "visible";
   } catch (e) {
+    document.documentElement.style.visibility = "visible";
     console.error('Theme init failed', e);
   }
 })();`,"partials/version-dropdown.ejs":`<%# ---------------------------------------------------------------
@@ -31695,8 +31730,8 @@ if (shouldShowToc && !frontmatter?.toc || frontmatter?.toc !== 'false') {
         <% }) %>
     </ul>
 </div>
-<% } %>`}});var YJ=f((Aue,mv)=>{u();var{createMarkdownProcessor:HJ,processContent:GJ}=Fg(),{renderTemplate:VJ}=hv(),wr=_v();function qJ(e,t={}){let r={siteTitle:"Live Preview",theme:{defaultMode:"light",name:"default",codeHighlight:!0},layout:{spa:!1},...t},o=HJ(r,m=>{let v=m.renderer.rules.fence;m.renderer.rules.fence=(w,b,E,k,C)=>w[b].info.trim()==="mermaid"?`<div class="mermaid">${m.utils.escapeHtml(w[b].content)}</div>
-`:v(w,b,E,k,C)}),i=GJ(e,o,r);if(!i)return"<p>Error parsing markdown</p>";let a="./assets",s=[`<link rel="stylesheet" href="${a}/css/docmd-main.css">`];if(r.theme.codeHighlight!==!1){let m=r.theme.defaultMode==="dark"?"dark":"light";s.push(`<link rel="stylesheet" href="${a}/css/docmd-highlight-${m}.css">`)}r.theme.name&&r.theme.name!=="default"&&s.push(`<link rel="stylesheet" href="${a}/css/docmd-theme-${r.theme.name}.css">`),s.push(`<link rel="stylesheet" href="${a}/css/docmd-live-preview.css">`);let l=`
+<% } %>`}});var YJ=f((Aue,mv)=>{u();var{createMarkdownProcessor:HJ,processContent:GJ}=Fg(),{renderTemplate:VJ}=hv(),wr=_v();function qJ(e,t={}){let r={siteTitle:"Live Preview",theme:{appearance:"light",name:"default",codeHighlight:!0},layout:{spa:!1},...t},o=HJ(r,m=>{let v=m.renderer.rules.fence;m.renderer.rules.fence=(w,b,E,k,C)=>w[b].info.trim()==="mermaid"?`<div class="mermaid">${m.utils.escapeHtml(w[b].content)}</div>
+`:v(w,b,E,k,C)}),i=GJ(e,o,r);if(!i)return"<p>Error parsing markdown</p>";let a="./assets",s=[`<link rel="stylesheet" href="${a}/css/docmd-main.css">`];if(r.theme.codeHighlight!==!1){let m=r.theme.appearance==="dark"?"dark":"light";s.push(`<link rel="stylesheet" href="${a}/css/docmd-highlight-${m}.css">`)}r.theme.name&&r.theme.name!=="default"&&s.push(`<link rel="stylesheet" href="${a}/css/docmd-theme-${r.theme.name}.css">`),s.push(`<link rel="stylesheet" href="${a}/css/docmd-live-preview.css">`);let l=`
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
         async function initMermaid() {
@@ -31719,7 +31754,7 @@ if (shouldShowToc && !frontmatter?.toc || frontmatter?.toc !== 'false') {
             document.addEventListener('DOMContentLoaded', initMermaid);
         }
     <\/script>
-    `,c=[l],d="";wr["partials/theme-init.js"]&&(d=`<script>${wr["partials/theme-init.js"]}<\/script>`);let p={content:i.htmlContent,frontmatter:i.frontmatter,headings:i.headings,config:r,buildHash:"live",siteTitle:r.siteTitle,pageTitle:i.frontmatter.title||"Untitled",description:i.frontmatter.description||"",defaultMode:r.theme.defaultMode,navigationHtml:"",relativePathToRoot:"./",outputPath:"index.html",currentPagePath:"/index",isOfflineMode:!1,prevPage:null,nextPage:null,pluginHeadScriptsHtml:s.join(`
+    `,c=[l],d="";wr["partials/theme-init.js"]&&(d=`<script>${wr["partials/theme-init.js"]}<\/script>`);let p={content:i.htmlContent,frontmatter:i.frontmatter,headings:i.headings,config:r,buildHash:"live",siteTitle:r.siteTitle,pageTitle:i.frontmatter.title||"Untitled",description:i.frontmatter.description||"",appearance:r.theme.appearance,defaultMode:r.theme.appearance,navigationHtml:"",relativePathToRoot:"./",outputPath:"index.html",currentPagePath:"/index",isOfflineMode:!1,prevPage:null,nextPage:null,pluginHeadScriptsHtml:s.join(`
 `),pluginBodyScriptsHtml:l,themeInitScript:d,faviconLinkHtml:"",logo:r.logo,theme:r.theme,customCssFiles:[],customJsFiles:[],headerConfig:{enabled:!0},sidebarConfig:{collapsible:!1,defaultCollapsed:!1},footerConfig:{style:"minimal",content:""},optionsMenu:{position:"header",components:{search:!1,themeSwitch:!0,sponsor:null}},footerHtml:"",isActivePage:!0,editUrl:null,editLinkText:""},h=i.frontmatter.noStyle?"no-style.ejs":"layout.ejs",_=wr[h];return _?VJ(_,p,{includer:m=>{let v=m.endsWith(".ejs")?m:m+".ejs";return wr[v]?{template:wr[v]}:null}}):`Template ${h} not found`}mv.exports={compile:qJ}});return YJ();})();
 /**
  * --------------------------------------------------------------------

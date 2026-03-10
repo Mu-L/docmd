@@ -10,223 +10,208 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="generator" content="docmd v0.5.x">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="generator" content="docmd v0.5.x">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <%- themeInitScript %>
+    <style>
+      html {
+        visibility: hidden;
+      }
+    </style>
     <% let versionRoot='/' ; let siteRoot=relativePathToRoot; if (config.versions?.current && config._activeVersion?.id)
-        { const isSubVersion=config.versions.current !==config._activeVersion.id; versionRoot=isSubVersion ? '/' +
-        config._activeVersion.id + '/' : '/' ; if (isSubVersion) { siteRoot=(relativePathToRoot==='./' ? '' :
-        relativePathToRoot) + '../' ; } } if (locals.isOfflineMode) { versionRoot='' ; } %>
-        <script>
-            var root = "<%= relativePathToRoot %>";
-            if (root && !root.endsWith('/')) root += '/';
-            if (root === '') root = './';
-            window.DOCMD_ROOT = root;
+      { const isSubVersion=config.versions.current !==config._activeVersion.id; versionRoot=isSubVersion ? '/' +
+      config._activeVersion.id + '/' : '/' ; if (isSubVersion) { siteRoot=(relativePathToRoot==='./' ? '' :
+      relativePathToRoot) + '../' ; } } if (locals.isOfflineMode) { versionRoot='' ; } %>
+      <script>
+        var root = "<%= relativePathToRoot %>";
+        if (root && !root.endsWith('/')) root += '/';
+        if (root === '') root = './';
+        window.DOCMD_ROOT = root;
 
-            var siteRoot = "<%= siteRoot %>";
-            if (siteRoot && !siteRoot.endsWith('/')) siteRoot += '/';
-            if (siteRoot === '') siteRoot = './';
-            window.DOCMD_SITE_ROOT = siteRoot;
+        var siteRoot = "<%= siteRoot %>";
+        if (siteRoot && !siteRoot.endsWith('/')) siteRoot += '/';
+        if (siteRoot === '') siteRoot = './';
+        window.DOCMD_SITE_ROOT = siteRoot;
 
-            window.DOCMD_DEFAULT_MODE = "<%= defaultMode %>";
-            window.DOCMD_VERSION_ROOT = "<%- versionRoot %>";
-        </script>
-        <title>
-            <%= pageTitle %>
-        </title>
-        <%- faviconLinkHtml || '' %>
-            <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-main.css?v=<%= buildHash %>">
-            <% if (config.theme?.codeHighlight !==false) { const isDarkDefault=defaultMode==='dark' ; %>
+        window.DOCMD_APPEARANCE = "<%= appearance %>";
+        window.DOCMD_VERSION_ROOT = "<%- versionRoot %>";
+      </script>
+      <title>
+        <%= pageTitle %>
+      </title>
+      <%- faviconLinkHtml || '' %>
+        <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-main.css?v=<%= buildHash %>">
+        <% if (config.theme?.codeHighlight !==false) { const isDarkDefault=appearance==='dark' ; %>
+          <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-light.css?v=<%= buildHash %>"
+            id="hljs-light" <%=isDarkDefault ? 'disabled' : '' %>>
+
+          <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-dark.css?v=<%= buildHash %>"
+            id="hljs-dark" <%=isDarkDefault ? '' : 'disabled' %>>
+          <% } %>
+            <%- pluginHeadScriptsHtml || '' %>
+              <% (customCssFiles || []).forEach(cssFile=> { %>
                 <link rel="stylesheet"
-                    href="<%= relativePathToRoot %>assets/css/docmd-highlight-light.css?v=<%= buildHash %>"
-                    id="hljs-light" <%=isDarkDefault ? 'disabled' : '' %>>
-
-                <link rel="stylesheet"
-                    href="<%= relativePathToRoot %>assets/css/docmd-highlight-dark.css?v=<%= buildHash %>"
-                    id="hljs-dark" <%=isDarkDefault ? '' : 'disabled' %>>
-                <% } %>
-                    <%- pluginHeadScriptsHtml || '' %>
-                        <% (customCssFiles || []).forEach(cssFile=> { %>
-                            <link rel="stylesheet"
-                                href="<%= relativePathToRoot %><%- cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
-                            <% }); %>
-                                <%- themeInitScript %>
+                  href="<%= relativePathToRoot %><%- cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
+                <% }); %>
+                  <%- themeInitScript %>
 </head>
 
 <body
-    class="<%= sidebarConfig?.enabled === false ? 'no-sidebar' : (sidebarConfig?.collapsible ? 'sidebar-collapsible' : 'sidebar-not-collapsible') %><%= (locals.menubarConfig && menubarConfig?.enabled !== false) ? ' has-menubar has-menubar-' + (menubarConfig.position || 'top') : '' %><%= headerConfig?.enabled === false ? ' no-header' : '' %>"
-    data-default-collapsed="<%= sidebarConfig?.defaultCollapsed %>"
-    data-copy-code-enabled="<%= config.copyCode === true %>" data-spa-enabled="<%= config.layout?.spa !== false %>">
+  class="<%= sidebarConfig?.enabled === false ? 'no-sidebar' : (sidebarConfig?.collapsible ? 'sidebar-collapsible' : 'sidebar-not-collapsible') %><%= (locals.menubarConfig && menubarConfig?.enabled !== false) ? ' has-menubar has-menubar-' + (menubarConfig.position || 'top') : '' %><%= headerConfig?.enabled === false ? ' no-header' : '' %>"
+  data-default-collapsed="<%= sidebarConfig?.defaultCollapsed %>"
+  data-copy-code-enabled="<%= config.copyCode === true %>" data-spa-enabled="<%= config.layout?.spa !== false %>">
 
-    <a href="#main-content" class="skip-link">Skip to main content</a>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
 
-    <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position !=='header' ) { %>
-        <%- include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu: locals.optionsMenu
-            }) %>
-            <% } %>
+  <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position !=='header' ) { %>
+    <%- include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu: locals.optionsMenu })
+      %>
+      <% } %>
 
-                <% if (sidebarConfig?.enabled !==false) { %>
-                    <aside class="sidebar">
-                        <div class="sidebar-header">
-                            <% if (logo && logo.light && logo.dark) { %>
-                                <a href="<%= logo.href || relativePathToRoot %>" class="logo-link">
-                                    <img src="<%= relativePathToRoot %><%- logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>"
-                                        alt="<%= logo.alt || siteTitle %>" class="logo-light" <% if (logo.height) {
-                                        %>style="height: <%= logo.height %>;"<% } %>>
-                                            <img src="<%= relativePathToRoot %><%- logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>"
-                                                alt="<%= logo.alt || siteTitle %>" class="logo-dark" <% if (logo.height)
-                                                { %>style="height: <%= logo.height %>;"<% } %>>
-                                </a>
-                                <% } else { %>
-                                    <h1><a href="<%= relativePathToRoot %>index.html">
-                                            <%= siteTitle %>
-                                        </a></h1>
-                                    <% } %>
-                                        <span class="mobile-view sidebar-menu-button float-right">
-                                            <%- renderIcon("menu") %>
-                                        </span>
+        <% if (sidebarConfig?.enabled !==false) { %>
+          <aside class="sidebar">
+            <div class="sidebar-header">
+              <% if (logo && logo.light && logo.dark) { %>
+                <a href="<%= logo.href || relativePathToRoot %>" class="logo-link">
+                  <img
+                    src="<%= relativePathToRoot %><%- logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>"
+                    alt="<%= logo.alt || siteTitle %>" class="logo-light" <% if (logo.height) { %>style="height: <%=
+                    logo.height %>;"<% } %>>
+                      <img
+                        src="<%= relativePathToRoot %><%- logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>"
+                        alt="<%= logo.alt || siteTitle %>" class="logo-dark" <% if (logo.height) { %>style="height: <%=
+                        logo.height %>;"<% } %>>
+                </a>
+                <% } else { %>
+                  <h1><a href="<%= relativePathToRoot %>index.html">
+                      <%= siteTitle %>
+                    </a></h1>
+                  <% } %>
+                    <span class="mobile-view sidebar-menu-button float-right">
+                      <%- renderIcon("menu") %>
+                    </span>
+            </div>
+
+            <div class="sidebar-top-group">
+              <% if (locals.optionsMenu && optionsMenu.position==='sidebar-top' ) { %>
+                <div class="sidebar-options-wrapper">
+                  <%- include('partials/options-menu', { optionsMenu }) %>
+                </div>
+                <% } %>
+                  <% if (config.versions && config.versions.position==='sidebar-top' ) { %>
+                    <div class="sidebar-version-wrapper">
+                      <%- include('partials/version-dropdown', { versions: config.versions, activeVersion:
+                        config._activeVersion, relativePathToRoot }) %>
+                    </div>
+                    <% } %>
+            </div>
+
+            <%- navigationHtml %>
+
+              <div class="sidebar-bottom-group mt-auto">
+                <% if (config.versions && config.versions.position==='sidebar-bottom' ) { %>
+                  <div class="sidebar-version-wrapper">
+                    <%- include('partials/version-dropdown', { versions: config.versions, activeVersion:
+                      config._activeVersion, relativePathToRoot }) %>
+                  </div>
+                  <% } %>
+                    <% if (locals.optionsMenu && optionsMenu.position==='sidebar-bottom' ) { %>
+                      <div class="sidebar-options-wrapper">
+                        <%- include('partials/options-menu', { optionsMenu }) %>
+                      </div>
+                      <% } %>
+              </div>
+          </aside>
+          <% } %>
+            <div class="main-content-wrapper">
+              <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position==='header' ) { %>
+                <%- include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu:
+                  locals.optionsMenu }) %>
+                  <% } %>
+                    <% if (headerConfig?.enabled !==false) { %>
+                      <header class="page-header">
+                        <div class="header-left">
+                          <% if (sidebarConfig?.collapsible) { %>
+                            <button id="sidebar-toggle-button" class="sidebar-toggle-button"
+                              aria-label="Toggle Sidebar">
+                              <%- renderIcon('panel-left-close') %>
+                            </button>
+                            <% } %>
+                              <span class="header-title">
+                                <%= pageTitle %>
+                              </span>
                         </div>
 
-                        <div class="sidebar-top-group">
-                            <% if (locals.optionsMenu && optionsMenu.position==='sidebar-top' ) { %>
-                                <div class="sidebar-options-wrapper">
-                                    <%- include('partials/options-menu', { optionsMenu }) %>
-                                </div>
-                                <% } %>
-
-                                    <% if (config.versions && config.versions.position==='sidebar-top' ) { %>
-                                        <div class="sidebar-version-wrapper">
-                                            <%- include('partials/version-dropdown', { versions: config.versions,
-                                                activeVersion: config._activeVersion, relativePathToRoot }) %>
+                        <div class="header-right">
+                          <% if (optionsMenu?.position==='header' ) { %>
+                            <%- include('partials/options-menu', { optionsMenu }) %>
+                              <% } %>
+                        </div>
+                      </header>
+                      <% } %>
+                        <div class="content-theme-cover">
+                          <main class="content-area" id="main-content">
+                            <div class="content-layout">
+                              <div class="main-content">
+                                <% if (headerConfig?.enabled===false) { %>
+                                  <h1>
+                                    <%= pageTitle %>
+                                  </h1>
+                                  <% } %>
+                                    <%- content %>
+                                      <% if (config.pageNavigation && (prevPage || nextPage)) { %>
+                                        <div class="page-navigation">
+                                          <% if (prevPage) { %>
+                                            <a href="<%= prevPage.url %>" class="prev-page">
+                                              <%- renderIcon('arrow-left', { class: 'page-nav-icon' }) %>
+                                                <span><small>Previous</small><strong>
+                                                    <%= prevPage.title %>
+                                                  </strong></span>
+                                            </a>
+                                            <% } else { %>
+                                              <div class="prev-page-placeholder">
+                                              </div>
+                                              <% } %>
+                                                <% if (nextPage) { %>
+                                                  <a href="<%= nextPage.url %>" class="next-page">
+                                                    <span><small>Next</small>
+                                                      <strong>
+                                                        <%= nextPage.title %>
+                                                      </strong></span>
+                                                    <%- renderIcon('arrow-right', { class: 'page-nav-icon' }) %>
+                                                  </a>
+                                                  <% } else { %>
+                                                    <div class="next-page-placeholder">
+                                                    </div>
+                                                    <% } %>
                                         </div>
                                         <% } %>
-                        </div>
-
-                        <%- navigationHtml %>
-
-                            <div class="sidebar-bottom-group mt-auto">
-                                <% if (config.versions && config.versions.position==='sidebar-bottom' ) { %>
-                                    <div class="sidebar-version-wrapper">
-                                        <%- include('partials/version-dropdown', { versions: config.versions,
-                                            activeVersion: config._activeVersion, relativePathToRoot }) %>
-                                    </div>
-                                    <% } %>
-
-                                        <% if (locals.optionsMenu && optionsMenu.position==='sidebar-bottom' ) { %>
-                                            <div class="sidebar-options-wrapper">
-                                                <%- include('partials/options-menu', { optionsMenu }) %>
-                                            </div>
-                                            <% } %>
+                              </div>
+                              <div class="toc-sidebar">
+                                <%- include('toc', { content, headings, navigationHtml, isActivePage }) %>
+                              </div>
                             </div>
-                    </aside>
-                    <% } %>
-
-                        <div class="main-content-wrapper">
-                            <% if (locals.menubarConfig && menubarConfig?.enabled !==false &&
-                                menubarConfig.position==='header' ) { %>
-                                <%- include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon,
-                                    optionsMenu: locals.optionsMenu }) %>
-                                    <% } %>
-                                        <% if (headerConfig?.enabled !==false) { %>
-                                            <header class="page-header">
-                                                <div class="header-left">
-                                                    <% if (sidebarConfig?.collapsible) { %>
-                                                        <button id="sidebar-toggle-button" class="sidebar-toggle-button"
-                                                            aria-label="Toggle Sidebar">
-                                                            <%- renderIcon('panel-left-close') %>
-                                                        </button>
-                                                        <% } %>
-                                                            <span class="header-title">
-                                                                <%= pageTitle %>
-                                                            </span>
-                                                </div>
-
-                                                <div class="header-right">
-                                                    <% if (optionsMenu?.position==='header' ) { %>
-                                                        <%- include('partials/options-menu', { optionsMenu }) %>
-                                                            <% } %>
-                                                </div>
-                                            </header>
-                                            <% } %>
-
-                                                <main class="content-area" id="main-content">
-                                                    <div class="content-layout">
-                                                        <div class="main-content">
-                                                            <% if (headerConfig?.enabled===false) { %>
-                                                                <h1>
-                                                                    <%= pageTitle %>
-                                                                </h1>
-                                                                <% } %>
-
-                                                                    <%- content %>
-
-                                                                        <% if (config.pageNavigation && (prevPage ||
-                                                                            nextPage)) { %>
-                                                                            <div class="page-navigation">
-                                                                                <% if (prevPage) { %>
-                                                                                    <a href="<%= prevPage.url %>"
-                                                                                        class="prev-page">
-                                                                                        <%- renderIcon('arrow-left', {
-                                                                                            class: 'page-nav-icon' }) %>
-                                                                                            <span><small>Previous</small><strong>
-                                                                                                    <%= prevPage.title
-                                                                                                        %>
-                                                                                                </strong></span>
-                                                                                    </a>
-                                                                                    <% } else { %>
-                                                                                        <div
-                                                                                            class="prev-page-placeholder">
-                                                                                        </div>
-                                                                                        <% } %>
-                                                                                            <% if (nextPage) { %>
-                                                                                                <a href="<%= nextPage.url %>"
-                                                                                                    class="next-page">
-                                                                                                    <span><small>Next</small><strong>
-                                                                                                            <%= nextPage.title
-                                                                                                                %>
-                                                                                                        </strong></span>
-                                                                                                    <%- renderIcon('arrow-right',
-                                                                                                        {
-                                                                                                        class: 'page-nav-icon'
-                                                                                                        }) %>
-                                                                                                </a>
-                                                                                                <% } else { %>
-                                                                                                    <div
-                                                                                                        class="next-page-placeholder">
-                                                                                                    </div>
-                                                                                                    <% } %>
-                                                                            </div>
-                                                                            <% } %>
-                                                        </div>
-
-                                                        <div class="toc-sidebar">
-                                                            <%- include('toc', { content, headings, navigationHtml,
-                                                                isActivePage }) %>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="page-footer-actions">
-                                                        <% if (locals.editUrl) { %>
-                                                            <a href="<%= editUrl %>" target="_blank"
-                                                                rel="noopener noreferrer" class="edit-link">
-                                                                <%- renderIcon('pencil') %>
-                                                                    <%= editLinkText %>
-                                                            </a>
-                                                            <% } %>
-                                                    </div>
-                                                </main>
-
-                                                <%- include('partials/footer', { footerConfig, config,
-                                                    relativePathToRoot, logo, siteTitle, footerHtml }) %>
+                            <div class="page-footer-actions">
+                              <% if (locals.editUrl) { %>
+                                <a href="<%= editUrl %>" target="_blank" rel="noopener noreferrer" class="edit-link">
+                                  <%- renderIcon('pencil') %>
+                                    <%= editLinkText %>
+                                </a>
+                                <% } %>
+                            </div>
+                          </main>
+                          <%- include('partials/footer', { footerConfig, config, relativePathToRoot, logo, siteTitle,
+                            footerHtml }) %>
                         </div>
-
-                        <script src="<%= relativePathToRoot %>assets/js/docmd-main.js?v=<%= buildHash %>"></script>
-                        <%- pluginBodyScriptsHtml || '' %>
-                            <% (customJsFiles || []).forEach(jsFile=> {
-                                if (jsFile && jsFile.trim() !== '') { %>
-                                <script
-                                    src="<%= relativePathToRoot %><%- jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>?v=<%= buildHash %>"></script>
-                                <% } }); %>
+            </div>
+            <script src="<%= relativePathToRoot %>assets/js/docmd-main.js?v=<%= buildHash %>"></script>
+            <%- pluginBodyScriptsHtml || '' %>
+              <% (customJsFiles || []).forEach(jsFile=> {
+                if (jsFile && jsFile.trim() !== '') { %>
+                <script
+                  src="<%= relativePathToRoot %><%- jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>?v=<%= buildHash %>"></script>
+                <% } }); %>
 </body>
 
 </html>

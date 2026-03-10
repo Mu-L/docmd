@@ -64,16 +64,16 @@ async function buildSite(configPath, opts = {}) {
 
     // Filter out Ghost Versions (folders that don't exist)
     if (config.versions && config.versions.all) {
-        const validVersions = [];
-        for (const v of config.versions.all) {
-            const vSrcDir = path.resolve(CWD, v.dir);
-            if (await fs.exists(vSrcDir)) {
-                validVersions.push(v);
-            } else {
-                if (!options.isDev) console.log(chalk.yellow(`⚠️  Skipping missing version: ${v.id} (${v.dir})`));
-            }
+      const validVersions = [];
+      for (const v of config.versions.all) {
+        const vSrcDir = path.resolve(CWD, v.dir);
+        if (await fs.exists(vSrcDir)) {
+          validVersions.push(v);
+        } else {
+          if (!options.isDev) console.log(chalk.yellow(`⚠️  Skipping missing version: ${v.id} (${v.dir})`));
         }
-        config.versions.all = validVersions;
+      }
+      config.versions.all = validVersions;
     }
 
     // --- 1. THE VERSIONING LOOP ---
@@ -126,10 +126,10 @@ async function buildSite(configPath, opts = {}) {
               try {
                 const fs = require('fs'); // Native fs for sync check
                 if (!fs.existsSync(absoluteFilePath)) {
-                   // File doesn't exist in this version -> Skip this item
-                   return acc;
+                  // File doesn't exist in this version -> Skip this item
+                  return acc;
                 }
-              } catch(e) { return acc; }
+              } catch (e) { return acc; }
             }
 
             acc.push(newItem);
@@ -138,12 +138,12 @@ async function buildSite(configPath, opts = {}) {
         };
 
         const cleanedNav = filterNav(activeNav);
-        
+
         // Inject filtered nav into a temporary config for this build run
-        const versionedConfig = { 
-            ...config, 
-            _activeVersion: v,
-            navigation: cleanedNav 
+        const versionedConfig = {
+          ...config,
+          _activeVersion: v,
+          navigation: cleanedNav
         };
 
         const pages = await renderPages({
@@ -181,13 +181,13 @@ async function buildSite(configPath, opts = {}) {
     // --- 3. GENERATE CUSTOM 404 PAGE ---
     const { renderTemplate } = require('@docmd/parser/src/html-renderer');
     const ui = require('@docmd/ui');
-    
+
     const notFoundTemplatePath = path.join(ui.getTemplatesDir(), '404.ejs');
     let notFoundTemplateStr = '';
     if (await fs.exists(notFoundTemplatePath)) {
-        notFoundTemplateStr = await fs.readFile(notFoundTemplatePath, 'utf8');
+      notFoundTemplateStr = await fs.readFile(notFoundTemplatePath, 'utf8');
     } else {
-        notFoundTemplateStr = `<h1>404</h1><p>Page Not Found</p>`;
+      notFoundTemplateStr = `<h1>404</h1><p>Page Not Found</p>`;
     }
 
     const themeInitPath = path.join(ui.getTemplatesDir(), 'partials', 'theme-init.js');
@@ -197,20 +197,21 @@ async function buildSite(configPath, opts = {}) {
     const absoluteRoot = config.base && config.base !== '/' ? config.base.replace(/\/$/, '') + '/' : '/';
 
     const full404Html = renderTemplate(notFoundTemplateStr, {
-        pageTitle: config.notFound.title || 'Page Not Found',
-        title: config.notFound.title || 'Page Not Found',
-        content: config.notFound.content || 'The page you are looking for does not exist.',
-        logo: config.logo,
-        
-        // Context for Assets
-        relativePathToRoot: absoluteRoot, 
-        buildHash,
-        defaultMode: config.theme?.defaultMode || 'system',
-        theme: config.theme,
-        customCssFiles: config.theme.customCss || [],
-        
-        faviconLinkHtml: config.favicon ? `<link rel="icon" href="${absoluteRoot}${config.favicon.replace(/^\//,'')}">` : '',
-        themeInitScript
+      pageTitle: config.notFound.title || 'Page Not Found',
+      title: config.notFound.title || 'Page Not Found',
+      content: config.notFound.content || 'The page you are looking for does not exist.',
+      logo: config.logo,
+
+      // Context for Assets
+      relativePathToRoot: absoluteRoot,
+      buildHash,
+      appearance: config.theme?.appearance || config.theme?.defaultMode || 'system',
+      defaultMode: config.theme?.appearance || config.theme?.defaultMode || 'system',
+      theme: config.theme,
+      customCssFiles: config.theme.customCss || [],
+
+      faviconLinkHtml: config.favicon ? `<link rel="icon" href="${absoluteRoot}${config.favicon.replace(/^\//, '')}">` : '',
+      themeInitScript
     });
 
     await fs.writeFile(path.join(rootOutputDir, '404.html'), full404Html);

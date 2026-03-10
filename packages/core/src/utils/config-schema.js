@@ -128,10 +128,18 @@ function normalizeConfig(userConfig) {
     // --- 4. Theme & Branding ---
     config.theme = {
         name: 'default',
-        defaultMode: 'system',
+        appearance: 'system',
         customCss: [],
         ...(config.theme || {})
     };
+
+    // Legacy Support: Map defaultMode to appearance if appearance isn't explicitly set
+    if (config.theme.defaultMode && !userConfig.theme?.appearance) {
+        config.theme.appearance = config.theme.defaultMode;
+    }
+
+    // Ensure defaultMode is still available for legacy templates/plugins
+    config.theme.defaultMode = config.theme.appearance;
 
     config.customJs = config.customJs || [];
 
@@ -139,6 +147,7 @@ function normalizeConfig(userConfig) {
     config.navigation = Array.isArray(config.navigation) ? config.navigation : [];
 
     // --- 5. Plugins ---
+    config.hasExplicitPlugins = 'plugins' in userConfig;
     config.plugins = config.plugins || {};
 
     // --- 6. Versioning Engine ---
