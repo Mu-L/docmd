@@ -65,7 +65,7 @@
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
   <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position !=='header' ) { %>
-    <%- include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu: locals.optionsMenu })
+    <%- await include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu: locals.optionsMenu })
       %>
       <% } %>
 
@@ -96,12 +96,12 @@
             <div class="sidebar-top-group">
               <% if (locals.optionsMenu && optionsMenu.position==='sidebar-top' ) { %>
                 <div class="sidebar-options-wrapper">
-                  <%- include('partials/options-menu', { optionsMenu }) %>
+                  <%- await include('partials/options-menu', { optionsMenu }) %>
                 </div>
                 <% } %>
                   <% if (config.versions && config.versions.position==='sidebar-top' ) { %>
                     <div class="sidebar-version-wrapper">
-                      <%- include('partials/version-dropdown', { versions: config.versions, activeVersion:
+                      <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion:
                         config._activeVersion, relativePathToRoot }) %>
                     </div>
                     <% } %>
@@ -112,13 +112,13 @@
               <div class="sidebar-bottom-group mt-auto">
                 <% if (config.versions && config.versions.position==='sidebar-bottom' ) { %>
                   <div class="sidebar-version-wrapper">
-                    <%- include('partials/version-dropdown', { versions: config.versions, activeVersion:
+                    <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion:
                       config._activeVersion, relativePathToRoot }) %>
                   </div>
                   <% } %>
                     <% if (locals.optionsMenu && optionsMenu.position==='sidebar-bottom' ) { %>
                       <div class="sidebar-options-wrapper">
-                        <%- include('partials/options-menu', { optionsMenu }) %>
+                        <%- await include('partials/options-menu', { optionsMenu }) %>
                       </div>
                       <% } %>
               </div>
@@ -126,7 +126,7 @@
           <% } %>
             <div class="main-content-wrapper">
               <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position==='header' ) { %>
-                <%- include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu:
+                <%- await include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu:
                   locals.optionsMenu }) %>
                   <% } %>
                     <% if (headerConfig?.enabled !==false) { %>
@@ -145,7 +145,7 @@
 
                         <div class="header-right">
                           <% if (optionsMenu?.position==='header' ) { %>
-                            <%- include('partials/options-menu', { optionsMenu }) %>
+                            <%- await include('partials/options-menu', { optionsMenu }) %>
                               <% } %>
                         </div>
                       </header>
@@ -189,7 +189,7 @@
                                         <% } %>
                               </div>
                               <div class="toc-sidebar">
-                                <%- include('toc', { content, headings, navigationHtml, isActivePage }) %>
+                                <%- await include('toc', { content, headings, navigationHtml, isActivePage }) %>
                               </div>
                             </div>
                             <div class="page-footer-actions">
@@ -201,7 +201,7 @@
                                 <% } %>
                             </div>
                           </main>
-                          <%- include('partials/footer', { footerConfig, config, relativePathToRoot, logo, siteTitle,
+                          <%- await include('partials/footer', { footerConfig, config, relativePathToRoot, logo, siteTitle,
                             footerHtml }) %>
                         </div>
             </div>
