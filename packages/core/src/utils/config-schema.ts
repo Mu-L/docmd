@@ -6,19 +6,19 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const chalk = require('chalk');
+import chalk from 'chalk';
 
 /**
  * Normalizes user config to ensure all required nested objects exist.
  * Handles legacy backward compatibility transparently.
  */
-function normalizeConfig(userConfig) {
+export function normalizeConfig(userConfig: any) {
     const config = { ...userConfig };
 
     // --- 1. Modern Syntax Standard (V3) ---
@@ -156,10 +156,11 @@ function normalizeConfig(userConfig) {
             config.versions.current = config.versions.all[0]?.id || 'main';
         }
         config.versions.position = config.versions.position || 'sidebar-top';
-        config.versions.all = config.versions.all.map(v => ({
+        config.versions.all = config.versions.all.map((v: any) => ({
             id: v.id,
             dir: v.dir || `docs-${v.id}`,
-            label: v.label || v.id
+            label: v.label || v.id,
+            navigation: v.navigation || null
         }));
     } else {
         config.versions = false;
@@ -181,5 +182,3 @@ function normalizeConfig(userConfig) {
 
     return config;
 }
-
-module.exports = { normalizeConfig };

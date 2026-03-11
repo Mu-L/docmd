@@ -6,19 +6,22 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const fs = require('../utils/fs-utils');
-const path = require('path');
-const readline = require('readline');
+import fs from '../utils/fs-utils.js';
+import path from 'path';
+import readline from 'readline';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 const { version } = require('../../package.json');
 
 const defaultConfigContent = `// docmd.config.js
-module.exports = defineConfig({
+export default defineConfig({
   // --- Core Metadata ---
   title: 'My Documentation',
   url: '', // e.g. https://mysite.com (Critical for SEO/Sitemap)
@@ -198,6 +201,7 @@ const defaultPackageJson = {
   name: "my-docs",
   version: "0.0.1",
   private: true,
+  type: "module",
   scripts: {
     "dev": "docmd dev",
     "build": "docmd build",
@@ -208,7 +212,7 @@ const defaultPackageJson = {
   }
 };
 
-async function initProject() {
+export async function initProject() {
   const baseDir = process.cwd();
   const packageJsonFile = path.join(baseDir, 'package.json');
   const configFile = path.join(baseDir, 'docmd.config.js');
@@ -274,7 +278,7 @@ async function initProject() {
 
     rl.close();
 
-    shouldOverride = answer.toLowerCase() === 'y';
+    shouldOverride = (answer as string).toLowerCase() === 'y';
 
     if (!shouldOverride) {
       console.log('⏭️  Skipping existing files. Will only create new files.');
@@ -325,5 +329,3 @@ async function initProject() {
   console.log('✅ Project initialization complete!');
   console.log('👉 Run `npm install` to setup dependencies.');
 }
-
-module.exports = { initProject };

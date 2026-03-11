@@ -6,17 +6,17 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 // Extract title from Frontmatter or H1 without loading heavy parsers
-function extractTitleFromFile(filePath, filename) {
+function extractTitleFromFile(filePath: string, filename: string) {
   try {
     const content = fs.readFileSync(filePath, 'utf8');
 
@@ -43,9 +43,9 @@ function extractTitleFromFile(filePath, filename) {
 /**
  * Recursively builds the navigation array for Zero Config mode.
  */
-function buildAutoNav(dir, basePath = '/') { // Default base path is root '/'
+export function buildAutoNav(dir: string, basePath = '/'): any[] { // Default base path is root '/'
   const items = fs.readdirSync(dir, { withFileTypes: true });
-  const nav = [];
+  const nav: any[] = [];
 
   // Handle index.md (or README.md if no index.md) -> maps to the folder root
   const hasIndex = items.some(i => i.name.toLowerCase() === 'index.md');
@@ -139,5 +139,3 @@ function buildAutoNav(dir, basePath = '/') { // Default base path is root '/'
     return a.title.localeCompare(b.title);
   });
 }
-
-module.exports = { buildAutoNav };

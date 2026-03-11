@@ -6,47 +6,51 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const path = require('path');
-const fs = require('../utils/fs-utils');
-const parser = require('@docmd/parser');
-const ui = require('@docmd/ui');
-const { findPageNeighbors } = require('@docmd/parser/src/utils/navigation-helper');
-const { generateAssetTag } = require('./assets');
+import path from 'path';
+import fs from '../utils/fs-utils.js';
+import { createRequire } from 'module';
+import { generateAssetTag, findFilesRecursive } from './assets.js';
+import nativeFs from 'fs';
 
-async function renderPages({ config, srcDir, outputDir, hooks, buildHash, options }) {
-  const mdProcessor = parser.createMarkdownProcessor(config, (md) => hooks.markdownSetup.forEach(hook => hook(md)));
+const require = createRequire(import.meta.url);
+import * as parser from '@docmd/parser';
+import * as ui from '@docmd/ui';
+import { findPageNeighbors } from '@docmd/parser/dist/utils/navigation-helper.js';
+
+export async function renderPages({ config, srcDir, outputDir, hooks, buildHash, options }: any) {
+  const mdProcessor = parser.createMarkdownProcessor(config, (md: any) => hooks.markdownSetup.forEach((hook: any) => hook(md)));
 
   // Load Layout Templates
   const templates = {
-    layout: await fs.readFile(ui.getTemplatePath('layout'), 'utf8'),
-    noStyle: await fs.readFile(ui.getTemplatePath('no-style'), 'utf8'),
-    navigation: await fs.readFile(ui.getTemplatePath('navigation'), 'utf8')
+    layout: await nativeFs.promises.readFile(ui.getTemplatePath('layout'), 'utf8'),
+    noStyle: await nativeFs.promises.readFile(ui.getTemplatePath('no-style'), 'utf8'),
+    navigation: await nativeFs.promises.readFile(ui.getTemplatePath('navigation'), 'utf8')
   };
 
   // Load Partials
   const themeInitPath = path.join(ui.getTemplatesDir(), 'partials', 'theme-init.js');
   const themeInitScript = (await fs.exists(themeInitPath))
-    ? `<script>${await fs.readFile(themeInitPath, 'utf8')}</script>`
+    ? `<script>${await nativeFs.promises.readFile(themeInitPath, 'utf8')}</script>`
     : '';
 
   // Footer Processing
   const footerHtml = config.footer?.content ? mdProcessor.renderInline(config.footer.content) : '';
 
   // --- 1. Identify Assets (Plugin Injection) ---
-  const assetTags = { head: [], body: [] };
+  const assetTags: { head: any[], body: any[] } = { head: [], body: [] };
 
   // Theme CSS
   if (config.theme.name && config.theme.name !== 'default') {
-    assetTags.head.push(rel => generateAssetTag(`${rel}assets/css/docmd-theme-${config.theme.name}.css?v=${buildHash}`, 'css'));
+    assetTags.head.push((rel: string) => generateAssetTag(`${rel}assets/css/docmd-theme-${config.theme.name}.css?v=${buildHash}`, 'css'));
   }
   // Lightbox
-  assetTags.body.push(rel => generateAssetTag(`${rel}assets/js/docmd-image-lightbox.js?v=${buildHash}`, 'js'));
+  assetTags.body.push((rel: string) => generateAssetTag(`${rel}assets/js/docmd-image-lightbox.js?v=${buildHash}`, 'js'));
 
   // Plugin Assets
   if (hooks.assets) {
@@ -57,7 +61,7 @@ async function renderPages({ config, srcDir, outputDir, hooks, buildHash, option
           let tagGen;
           if (asset.src && asset.dest) {
             // Copy is handled in build.js main loop, here we just ref tags
-            tagGen = (rel) => generateAssetTag(`${rel}${asset.dest}?v=${buildHash}`, asset.type, asset.attributes);
+            tagGen = (rel: string) => generateAssetTag(`${rel}${asset.dest}?v=${buildHash}`, asset.type, asset.attributes);
           } else if (asset.url) {
             tagGen = () => generateAssetTag(asset.url, asset.type, asset.attributes);
           }
@@ -70,12 +74,11 @@ async function renderPages({ config, srcDir, outputDir, hooks, buildHash, option
   // --- 2. Process Content ---
   // Note: We use a passed-in file list or find them if not provided (future optimization)
   // For now, assume findFilesRecursive is available via utils
-  const { findFilesRecursive } = require('./assets');
   const mdFiles = await findFilesRecursive(srcDir, ['.md', '.markdown']);
 
   const pages = [];
   for (const filePath of mdFiles) {
-    const rawContent = await fs.readFile(filePath, 'utf8');
+    const rawContent = await nativeFs.promises.readFile(filePath, 'utf8');
     const relativePath = path.relative(srcDir, filePath);
     const filename = path.basename(relativePath).toLowerCase();
     const isIndex = filename.startsWith('index.');
@@ -113,7 +116,7 @@ async function renderPages({ config, srcDir, outputDir, hooks, buildHash, option
     const { prevPage, nextPage } = findPageNeighbors(config.navigation, navPath);
 
     // Fix Neighbor Links
-    const fixNeighbor = (node) => {
+    const fixNeighbor = (node: any) => {
       if (!node) return null;
       if (node.path.startsWith('http')) return node;
       let p = node.path.replace(/^\//, '');
@@ -123,18 +126,18 @@ async function renderPages({ config, srcDir, outputDir, hooks, buildHash, option
     };
 
     // Inject Assets
-    const assetHeadHtml = assetTags.head.map(gen => gen(relativePathToRoot)).join('\n');
-    const assetBodyHtml = assetTags.body.map(gen => gen(relativePathToRoot)).join('\n');
+    const assetHeadHtml = assetTags.head.map((gen: any) => gen(relativePathToRoot)).join('\n');
+    const assetBodyHtml = assetTags.body.map((gen: any) => gen(relativePathToRoot)).join('\n');
     const pageContext = { frontmatter: page.frontmatter, outputPath: page.outputPath };
 
     const fullHeadHtml = [
-      hooks.injectHead.map(fn => fn(config, pageContext, relativePathToRoot)).join('\n'),
+      hooks.injectHead.map((fn: any) => fn(config, pageContext, relativePathToRoot)).join('\n'),
       assetHeadHtml
     ].join('\n');
 
     const fullBodyHtml = [
       assetBodyHtml,
-      hooks.injectBody.map(fn => fn(config, pageContext)).join('\n')
+      hooks.injectBody.map((fn: any) => fn(config, pageContext)).join('\n')
     ].join('\n');
 
     let editUrl = null;
@@ -147,7 +150,7 @@ async function renderPages({ config, srcDir, outputDir, hooks, buildHash, option
     }
 
     // Navigation HTML
-    const navigationHtml = parser.renderTemplate(templates.navigation, {
+    const navigationHtml = await parser.renderTemplateAsync(templates.navigation, {
       config,
       navItems: config.navigation,
       currentPagePath: navPath,
@@ -157,7 +160,7 @@ async function renderPages({ config, srcDir, outputDir, hooks, buildHash, option
 
     // Render Full Page
     const templateString = page.frontmatter.noStyle ? templates.noStyle : templates.layout;
-    const fullHtml = parser.renderTemplate(templateString, {
+    const fullHtml = await parser.renderTemplateAsync(templateString, {
       content: page.htmlContent,
       frontmatter: page.frontmatter,
       headings: page.headings,
@@ -202,10 +205,8 @@ async function renderPages({ config, srcDir, outputDir, hooks, buildHash, option
     }, { filename: ui.getTemplatePath('layout') });
 
     await fs.ensureDir(path.dirname(finalPath));
-    await fs.writeFile(finalPath, fullHtml);
+    await nativeFs.promises.writeFile(finalPath, fullHtml);
   }
 
   return pages;
 }
-
-module.exports = { renderPages };

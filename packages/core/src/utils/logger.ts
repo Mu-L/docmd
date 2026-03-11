@@ -6,17 +6,19 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const chalk = require('chalk');
+import chalk from 'chalk';
+import { readFileSync } from 'fs';
 
-const { version } = require('../../package.json');
+const pkgUrl = new URL('../../package.json', import.meta.url);
+const { version } = JSON.parse(readFileSync(pkgUrl, 'utf-8'));
 
-const printBanner = () => {
+export const printBanner = () => {
   const logo = `
                        
 ${chalk.blue('     _                 _ ')}
@@ -29,5 +31,3 @@ ${chalk.blue('  |___|___|___|_|_|_|___|')}
   console.log(`   ${chalk.dim(`v${version}`)}`);
   console.log(`\n`);
 };
-
-module.exports = { printBanner };

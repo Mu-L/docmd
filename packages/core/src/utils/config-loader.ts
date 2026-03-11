@@ -6,20 +6,21 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const path = require('path');
-const fs = require('fs');
-const { validateConfig } = require('@docmd/parser');
-const { normalizeConfig } = require('./config-schema');
-const { buildAutoNav } = require('./auto-router');
-const chalk = require('chalk');
+import path from 'path';
+import fs from 'fs';
+import { validateConfig } from '@docmd/parser';
+import { normalizeConfig } from './config-schema.js';
+import { buildAutoNav } from './auto-router.js';
+import chalk from 'chalk';
+import { pathToFileURL } from 'url';
 
-function hasMarkdownFiles(dir, maxDepth = 2, currentDepth = 0) {
+function hasMarkdownFiles(dir: string, maxDepth = 2, currentDepth = 0): boolean {
   if (currentDepth > maxDepth) return false;
   try {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -34,18 +35,18 @@ function hasMarkdownFiles(dir, maxDepth = 2, currentDepth = 0) {
   return false;
 }
 
-async function buildZeroConfig(cwd, isDev = false, quiet = false) {
+async function buildZeroConfig(cwd: string, isDev = false, quiet = false) {
 
   if (isDev && !quiet) {
-    if (!global.__DOCMD_ZERO_LOGGED) {
+    if (!(global as any).__DOCMD_ZERO_LOGGED) {
       console.log(chalk.yellow('✨ Zero-Config mode activated. Analyzing directory...'));
-      global.__DOCMD_ZERO_LOGGED = true;
+      (global as any).__DOCMD_ZERO_LOGGED = true;
     }
   }
 
   // Detect if there's a specific docs folder, otherwise use root
   const candidates = ['docs', 'src/docs', 'documentation', 'content'];
-  let srcDir = null;
+  let srcDir: string | null = null;
   for (const c of candidates) {
     if (fs.existsSync(path.join(cwd, c))) {
       srcDir = c;
@@ -59,7 +60,7 @@ async function buildZeroConfig(cwd, isDev = false, quiet = false) {
     console.log(chalk.dim('Please create one of these folders or provide a docmd.config.js file.\n'));
     console.log(chalk.dim('Shutting down silently...\n'));
 
-    const err = new Error('No candidate documentation directory found.');
+    const err: any = new Error('No candidate documentation directory found.');
     err.silent = true;
     throw err;
   }
@@ -70,7 +71,7 @@ async function buildZeroConfig(cwd, isDev = false, quiet = false) {
     console.log(chalk.yellow(`\n⚠️  No documentation content found in ${chalk.bold(absSrcDir)}`));
     console.log(chalk.dim('   docmd expects markdown files in the documentation folder.\n'));
 
-    const err = new Error('No content found for documentation.');
+    const err: any = new Error('No content found for documentation.');
     err.silent = true;
     throw err;
   }
@@ -83,7 +84,7 @@ async function buildZeroConfig(cwd, isDev = false, quiet = false) {
     if (fs.existsSync(pkgPath)) {
       const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
       if (pkg.name) {
-        autoTitle = pkg.name.replace(/^@[^/]+\//, '').split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        autoTitle = pkg.name.replace(/^@[^/]+\//, '').split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
       }
       if (pkg.description) autoDesc = pkg.description;
     }
@@ -105,7 +106,7 @@ async function buildZeroConfig(cwd, isDev = false, quiet = false) {
   return normalizeConfig(autoConfig);
 }
 
-async function loadConfig(configPath, options = {}) {
+export async function loadConfig(configPath: string, options: any = {}) {
   const cwd = process.cwd();
 
   if (options.zeroConfig) {
@@ -119,25 +120,48 @@ async function loadConfig(configPath, options = {}) {
     if (fs.existsSync(legacyPath)) absoluteConfigPath = legacyPath;
     else {
       // Fallback to Zero-Config if nothing is found to prevent crashing!
-      if (!global.__DOCMD_NO_CONFIG_LOGGED && !options.quiet) {
+      if (!(global as any).__DOCMD_NO_CONFIG_LOGGED && !options.quiet) {
         console.log(chalk.yellow('⚠️  ') + chalk.dim('No config file found. Falling back to Zero-Config mode...'));
-        global.__DOCMD_NO_CONFIG_LOGGED = true;
+        (global as any).__DOCMD_NO_CONFIG_LOGGED = true;
       }
       return await buildZeroConfig(cwd, options.isDev, options.quiet);
     }
   }
 
   try {
-    delete require.cache[require.resolve(absoluteConfigPath)];
-
     // Polyfill defineConfig globally so the config file works 
     // even if @docmd/core isn't installed locally in the target project.
-    global.defineConfig = (config) => config;
+    (global as any).defineConfig = (config: any) => config;
 
-    const rawConfig = require(absoluteConfigPath);
+    // Use a timestamp to bypass ESM cache if file is likely changed
+    const ts = Date.now();
+    let configUrl = pathToFileURL(absoluteConfigPath).href + '?t=' + ts;
+    let tempConfigPath: string | null = null;
+
+    if (absoluteConfigPath.endsWith('.ts')) {
+        const esbuild = await import('esbuild');
+        tempConfigPath = absoluteConfigPath.replace(/\.ts$/, `-${ts}.mjs`);
+        await esbuild.build({
+            entryPoints: [absoluteConfigPath],
+            outfile: tempConfigPath,
+            format: 'esm',
+            bundle: true,
+            packages: 'external',
+            platform: 'node',
+            target: 'node18'
+        });
+        configUrl = pathToFileURL(tempConfigPath).href;
+    }
+
+    const rawModule = await import(configUrl);
+    const rawConfig = rawModule.default || rawModule;
+
+    if (tempConfigPath && fs.existsSync(tempConfigPath)) {
+        fs.unlinkSync(tempConfigPath);
+    }
 
     // Clean up global to avoid pollution
-    delete global.defineConfig;
+    delete (global as any).defineConfig;
 
     // If user has 'search' or 'theme' at root, but no 'layout' object, they are legacy.
     const isLegacy = !rawConfig.layout && (
@@ -163,20 +187,18 @@ async function loadConfig(configPath, options = {}) {
 
     // Ensure we have a navigation array, fallback to Auto-Router if empty (unless explicitly set to empty)
     if (!normalized.navigation || (normalized.navigation.length === 0 && !hasExplicitNav)) {
-      if (!options.quiet && !global.__DOCMD_ZERO_NAV_LOGGED) {
+      if (!options.quiet && !(global as any).__DOCMD_ZERO_NAV_LOGGED) {
         console.log(chalk.dim('   ➖ No navigation settings found in config!'));
         console.log(chalk.dim('   ✨ Auto-generating navigation with Zero-Config...'));
-        if (options.isDev) global.__DOCMD_ZERO_NAV_LOGGED = true;
+        if (options.isDev) (global as any).__DOCMD_ZERO_NAV_LOGGED = true;
       }
       normalized.navigation = buildAutoNav(path.resolve(cwd, normalized.srcDir));
     }
 
     return normalized;
 
-  } catch (e) {
+  } catch (e: any) {
     if (e.message === 'Invalid configuration file.') throw e;
     throw new Error(`Error parsing config file: ${e.message}`);
   }
 }
-
-module.exports = { loadConfig };

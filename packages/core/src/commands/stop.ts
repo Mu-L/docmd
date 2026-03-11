@@ -6,27 +6,27 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const { execSync } = require('child_process');
-const chalk = require('chalk');
+import { execSync } from 'child_process';
+import chalk from 'chalk';
 
 /**
  * find and kill running docmd processes
  * If port is provided, only kill the process listening on that port.
  */
-async function stopServer(port) {
+export async function stopServer(port: any) {
     if (port) {
         console.log(chalk.blue(`\n🔍 Searching for docmd server on port ${chalk.bold(port)}...`));
         try {
             const pid = execSync(`lsof -t -i:${port}`).toString().trim();
             if (pid) {
                 console.log(chalk.yellow(`   Found process ${pid} on port ${port}. Stopping...`));
-                process.kill(pid, 'SIGTERM');
+                process.kill(Number(pid), 'SIGTERM');
                 console.log(chalk.bold.green(`\n✅ docmd server on port ${port} has been stopped.\n`));
                 return;
             }
@@ -100,4 +100,3 @@ async function stopServer(port) {
     }
 }
 
-module.exports = { stopServer };

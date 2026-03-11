@@ -8,22 +8,25 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const { program } = require('commander');
-const { version } = require('../package.json');
-const { initProject } = require('../src/commands/init');
-const { buildSite } = require('../src/commands/build');
-const { startDevServer } = require('../src/commands/dev');
-const { buildLive } = require('../src/commands/live');
-const { migrateProject } = require('../src/commands/migrate');
-const { stopServer } = require('../src/commands/stop');
-const { printBanner } = require('../src/utils/logger');
-const { installPlugin, removePlugin } = require('@docmd/plugin-installer');
+import { program } from 'commander';
+import { readFileSync } from 'fs';
+import { initProject } from '../commands/init.js';
+import { buildSite } from '../commands/build.js';
+import { startDevServer } from '../commands/dev.js';
+import { buildLive } from '../commands/live.js';
+import { migrateProject } from '../commands/migrate.js';
+import { stopServer } from '../commands/stop.js';
+import { printBanner } from '../utils/logger.js';
+import { installPlugin, removePlugin } from '@docmd/plugin-installer';
+
+const pkgUrl = new URL('../../package.json', import.meta.url);
+const { version } = JSON.parse(readFileSync(pkgUrl, 'utf-8'));
 
 program
   .name('docmd')
@@ -91,8 +94,7 @@ program
   .command('stop')
   .description('Kill all running background docmd dev servers')
   .option('-p, --port <number>', 'Stop a specific docmd instance running on this port')
-  .action(async (opts) => {
-    // printBanner();
+  .action(async (opts: any) => {
     await stopServer(opts.port);
   });
 

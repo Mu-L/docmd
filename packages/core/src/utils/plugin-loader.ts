@@ -6,15 +6,19 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const chalk = require('chalk');
+import chalk from 'chalk';
+import path from 'path';
+import { createRequire } from 'module';
 
-const hooks = {
+const require = createRequire(import.meta.url);
+
+export const hooks: any = {
   markdownSetup: [],
   injectHead: [],
   injectBody: [],
@@ -24,7 +28,7 @@ const hooks = {
 };
 
 // Map short names to package names
-const ALIASES = {
+const ALIASES: Record<string, string> = {
   'search': '@docmd/plugin-search',
   'seo': '@docmd/plugin-seo',
   'sitemap': '@docmd/plugin-sitemap',
@@ -34,7 +38,7 @@ const ALIASES = {
   'pwa': '@docmd/plugin-pwa'
 };
 
-function loadPlugins(config) {
+export async function loadPlugins(config: any) {
   // 1. Reset hooks
   Object.keys(hooks).forEach(key => hooks[key] = []);
 
@@ -71,17 +75,18 @@ function loadPlugins(config) {
 
     try {
       // Try resolving standard package
-      let pluginModule;
+      let rawModule;
       try {
-        pluginModule = require(name);
+        rawModule = await import(name);
       } catch (e) {
         // Fallback for local development or misnamed packages
-        console.warn(chalk.dim(`   > Debug: Could not require '${name}', checking alternatives...`));
-        pluginModule = require(require.resolve(name, { paths: [process.cwd(), __dirname] }));
+        console.warn(chalk.dim(`   > Debug: Could not import '${name}', checking alternatives...`));
+        rawModule = await import(require.resolve(name, { paths: [process.cwd(), import.meta.dirname] }));
       }
 
+      const pluginModule = rawModule.default || rawModule;
       registerPlugin(name, pluginModule, options);
-    } catch (e) {
+    } catch (e: any) {
       console.warn(chalk.yellow(`⚠️  Could not load plugin: ${name}`));
       // Only log full error in verbose/debug mode to reduce noise
       // console.error(e.message); 
@@ -91,21 +96,19 @@ function loadPlugins(config) {
   return hooks;
 }
 
-function registerPlugin(name, plugin, options) {
-  if (typeof plugin.markdownSetup === 'function') hooks.markdownSetup.push((md) => plugin.markdownSetup(md, options));
+function registerPlugin(name: string, plugin: any, options: any) {
+  if (typeof plugin.markdownSetup === 'function') hooks.markdownSetup.push((md: any) => plugin.markdownSetup(md, options));
 
   if (typeof plugin.generateMetaTags === 'function') {
-    hooks.injectHead.push((config, page, root) => plugin.generateMetaTags(config, page, root));
+    hooks.injectHead.push((config: any, page: any, root: any) => plugin.generateMetaTags(config, page, root));
   }
 
   if (typeof plugin.generateScripts === 'function') {
-    hooks.injectHead.push((c) => plugin.generateScripts(c, options).headScriptsHtml || '');
-    hooks.injectBody.push((c) => plugin.generateScripts(c, options).bodyScriptsHtml || '');
+    hooks.injectHead.push((c: any) => plugin.generateScripts(c, options).headScriptsHtml || '');
+    hooks.injectBody.push((c: any) => plugin.generateScripts(c, options).bodyScriptsHtml || '');
   }
 
-  if (typeof plugin.onPostBuild === 'function') hooks.onPostBuild.push((ctx) => plugin.onPostBuild({ ...ctx, options }));
+  if (typeof plugin.onPostBuild === 'function') hooks.onPostBuild.push((ctx: any) => plugin.onPostBuild({ ...ctx, options }));
 
   if (typeof plugin.getAssets === 'function') hooks.assets.push(() => plugin.getAssets(options));
 }
-
-module.exports = { loadPlugins, hooks };

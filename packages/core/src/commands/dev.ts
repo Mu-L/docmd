@@ -6,22 +6,25 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const http = require('http');
-const WebSocket = require('ws');
-const chokidar = require('chokidar');
-const path = require('path');
-const fs = require('../utils/fs-utils');
-const chalk = require('chalk');
-const os = require('os');
-const readline = require('readline');
-const { buildSite } = require('./build');
-const { loadConfig } = require('../utils/config-loader');
+import http from 'http';
+import { WebSocketServer } from 'ws';
+import chokidar from 'chokidar';
+import path from 'path';
+import fs from '../utils/fs-utils.js';
+import chalk from 'chalk';
+import os from 'os';
+import readline from 'readline';
+import { buildSite } from './build.js';
+import { loadConfig } from '../utils/config-loader.js';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 // Helper Utilities
 
@@ -171,7 +174,7 @@ async function serveStatic(req, res, rootDir) {
 }
 
 // Main Dev Function
-async function startDevServer(configPathOption, opts = {}) {
+export async function startDevServer(configPathOption: string, opts: any = {}) {
   // Bulletproof defaults
   const options = {
     preserve: opts.preserve || false,
@@ -318,7 +321,7 @@ async function startDevServer(configPathOption, opts = {}) {
   function checkPortInUse(port) {
     return new Promise((resolve) => {
       const tester = http.createServer()
-        .once('error', (err) => resolve(err.code === 'EADDRINUSE'))
+        .once('error', (err: any) => resolve(err.code === 'EADDRINUSE'))
         .once('listening', () => tester.close(() => resolve(false)))
         .listen(port, '0.0.0.0');
     });
@@ -335,8 +338,8 @@ async function startDevServer(configPathOption, opts = {}) {
   function tryStartServer(port) {
     server.listen(port, '0.0.0.0')
       .once('listening', async () => {
-        wss = new WebSocket.Server({ server });
-        wss.on('error', (e) => console.error('WebSocket Error:', e.message));
+        wss = new WebSocketServer({ server });
+        wss.on('error', (e: any) => console.error('WebSocket Error:', e.message));
 
         const indexHtmlPath = path.join(paths.outputDir, 'index.html');
         const networkIp = getNetworkIp();
@@ -360,7 +363,7 @@ async function startDevServer(configPathOption, opts = {}) {
           console.warn(chalk.yellow(`⚠️  Warning: Root index.html not found.`));
         }
       })
-      .once('error', (err) => {
+      .once('error', (err: any) => {
         if (err.code === 'EADDRINUSE') {
           server.close();
           tryStartServer(port + 1);
@@ -409,5 +412,3 @@ async function startDevServer(configPathOption, opts = {}) {
     process.exit(0);
   });
 }
-
-module.exports = { startDevServer };

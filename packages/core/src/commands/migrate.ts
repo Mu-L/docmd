@@ -7,22 +7,25 @@
  * --------------------------------------------------------------------
  */
 
-const fs = require('../utils/fs-utils');
-const path = require('path');
-const chalk = require('chalk');
-const { loadConfig } = require('../utils/config-loader');
+import fs from '../utils/fs-utils.js';
+import path from 'path';
+import chalk from 'chalk';
+import { loadConfig } from '../utils/config-loader.js';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 // Helper to stringify object to clean JS content
-function serializeConfig(obj) {
+function serializeConfig(obj: any) {
   // Use JSON stringify with indentation
   const json = JSON.stringify(obj, null, 2);
   // Remove quotes from keys to make it look like idiomatic JS
   // (Regex matches "key": but ignores "https://..." values)
   const cleanJs = json.replace(/"([^"]+)":/g, '$1:');
-  return `module.exports = ${cleanJs};\n`;
+  return `export default ${cleanJs};\n`;
 }
 
-async function migrateProject(configPathOption = 'docmd.config.js') {
+export async function migrateProject(configPathOption = 'docmd.config.js') {
   const CWD = process.cwd();
   const configPath = path.resolve(CWD, configPathOption);
 
@@ -70,7 +73,7 @@ async function migrateProject(configPathOption = 'docmd.config.js') {
   console.log(chalk.dim(`   > Backup created: docmd.config.legacy.js`));
 
   // 3. Construct New Config Object
-  const newConfig = {};
+  const newConfig: any = {};
 
   // -- Core --
   if (oldConfig.title !== undefined) newConfig.title = oldConfig.title;
@@ -158,5 +161,3 @@ async function migrateProject(configPathOption = 'docmd.config.js') {
   console.log(`   Your config has been updated to the V2 structure.`);
   console.log(`   Run ${chalk.cyan('docmd dev')} to verify.`);
 }
-
-module.exports = { migrateProject };

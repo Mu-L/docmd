@@ -6,28 +6,35 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const path = require('path');
-const fs = require('../utils/fs-utils');
-const esbuild = require('esbuild');
-const themes = require('@docmd/themes');
-const ui = require('@docmd/ui');
+import path from 'path';
+import fs from '../utils/fs-utils.js';
+import esbuild from 'esbuild';
+import { createRequire } from 'module';
+import nativeFs from 'fs';
+
+const require = createRequire(import.meta.url);
+import * as themes from '@docmd/themes';
+import * as ui from '@docmd/ui';
+
+const pkgUrl = new URL('../../package.json', import.meta.url);
+const pkg = JSON.parse(nativeFs.readFileSync(pkgUrl, 'utf8'));
 
 const COPYRIGHT_BANNER = `/*!
- * docmd (v${require('../../package.json').version})
- * Copyright (c) 2025-present docmd.io
+ * docmd (v${pkg.version})
+ * Copyright (c) 2025-present-present docmd.io
  * License: MIT
  */`;
 
-async function findFilesRecursive(dir, extensions) {
-  let files = [];
+export async function findFilesRecursive(dir: string, extensions: string[]): Promise<string[]> {
+  let files: string[] = [];
   if (!await fs.exists(dir)) return [];
-  const items = await fs.readdir(dir, { withFileTypes: true });
+  const items = await nativeFs.promises.readdir(dir, { withFileTypes: true });
   for (const item of items) {
     // Explicitly ignore system files, git, and node_modules to prevent duplicate ID crashes
     if (item.name === 'node_modules' || item.name.startsWith('.') || item.name === 'site') continue;
@@ -44,7 +51,7 @@ async function findFilesRecursive(dir, extensions) {
   return files;
 }
 
-async function prepareAssets(config, outputDir, options = {}) {
+export async function prepareAssets(config: any, outputDir: string, options: any = {}) {
   const CWD = process.cwd();
 
   // 1. Core UI Assets
@@ -65,19 +72,19 @@ async function prepareAssets(config, outputDir, options = {}) {
   }
 }
 
-async function minifyDir(dir) {
+async function minifyDir(dir: string) {
   const assets = await findFilesRecursive(dir, ['.css', '.js']);
   for (const file of assets) {
     if (file.endsWith('.min.js') || file.endsWith('.min.css')) continue;
     try {
       const ext = path.extname(file);
-      const content = await fs.readFile(file, 'utf8');
+      const content = await nativeFs.promises.readFile(file, 'utf8');
       const result = await esbuild.transform(content, {
-        loader: ext.slice(1),
+        loader: ext.slice(1) as any,
         minify: true,
         legalComments: 'none'
       });
-      await fs.writeFile(file, COPYRIGHT_BANNER + '\n' + result.code);
+      await nativeFs.promises.writeFile(file, COPYRIGHT_BANNER + '\n' + result.code);
     } catch (e) {
       // Ignore errors for non-standard files or mixed content
     }
@@ -85,15 +92,9 @@ async function minifyDir(dir) {
 }
 
 // Generate HTML Tag Helper
-function generateAssetTag(pathOrUrl, type, attributes = {}) {
+export function generateAssetTag(pathOrUrl: string, type: string, attributes: any = {}) {
   const attrs = Object.entries(attributes).map(([k, v]) => v === true ? k : `${k}="${v}"`).join(' ');
   if (type === 'css') return `<link rel="stylesheet" href="${pathOrUrl}" ${attrs}>`;
   if (type === 'js') return `<script src="${pathOrUrl}" ${attrs}></script>`;
   return '';
 }
-
-module.exports = {
-  findFilesRecursive,
-  prepareAssets,
-  generateAssetTag
-};

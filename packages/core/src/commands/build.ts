@@ -6,21 +6,25 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const path = require('path');
-const fs = require('../utils/fs-utils');
-const chalk = require('chalk');
-const { loadConfig } = require('../utils/config-loader');
-const { loadPlugins } = require('../utils/plugin-loader');
-const { prepareAssets } = require('../engine/assets');
-const { renderPages } = require('../engine/generator');
+import path from 'path';
+import fs from '../utils/fs-utils.js';
+import nodeFs from 'fs';
+import chalk from 'chalk';
+import { loadConfig } from '../utils/config-loader.js';
+import { loadPlugins } from '../utils/plugin-loader.js';
+import { prepareAssets } from '../engine/assets.js';
+import { renderPages } from '../engine/generator.js';
+import { createRequire } from 'module';
 
-async function buildSite(configPath, opts = {}) {
+const require = createRequire(import.meta.url);
+
+export async function buildSite(configPath: string, opts: any = {}) {
 
   // Defaults to prevent ReferenceErrors
   const options = {
@@ -34,7 +38,7 @@ async function buildSite(configPath, opts = {}) {
   // 1. Load Config (Zero-Config aware)
   try {
     const config = await loadConfig(configPath, { zeroConfig: options.zeroConfig, isDev: options.isDev });
-    const hooks = loadPlugins(config);
+    const hooks = await loadPlugins(config);
     const buildHash = Date.now().toString(36);
 
     // Use V3 labels (config.out / config.src) which are normalized by config-schema
@@ -124,8 +128,7 @@ async function buildSite(configPath, opts = {}) {
               // Check existence synchronously (fast enough for build time)
               // We use try-catch because fs.statSync throws if missing
               try {
-                const fs = require('fs'); // Native fs for sync check
-                if (!fs.existsSync(absoluteFilePath)) {
+                if (!nodeFs.existsSync(absoluteFilePath)) {
                   // File doesn't exist in this version -> Skip this item
                   return acc;
                 }
@@ -179,8 +182,8 @@ async function buildSite(configPath, opts = {}) {
     }
 
     // --- 3. GENERATE CUSTOM 404 PAGE ---
-    const { renderTemplate } = require('@docmd/parser/src/html-renderer');
-    const ui = require('@docmd/ui');
+    const { renderTemplateAsync } = await import('@docmd/parser/dist/html-renderer.js');
+    const ui = await import('@docmd/ui');
 
     const notFoundTemplatePath = path.join(ui.getTemplatesDir(), '404.ejs');
     let notFoundTemplateStr = '';
@@ -196,7 +199,7 @@ async function buildSite(configPath, opts = {}) {
     // Determine Absolute Base (usually '/' unless 'base' config is set)
     const absoluteRoot = config.base && config.base !== '/' ? config.base.replace(/\/$/, '') + '/' : '/';
 
-    const full404Html = renderTemplate(notFoundTemplateStr, {
+    const full404Html = await renderTemplateAsync(notFoundTemplateStr, {
       pageTitle: config.notFound.title || 'Page Not Found',
       title: config.notFound.title || 'Page Not Found',
       content: config.notFound.content || 'The page you are looking for does not exist.',
@@ -256,5 +259,3 @@ async function buildSite(configPath, opts = {}) {
     throw e;
   }
 }
-
-module.exports = { buildSite };
