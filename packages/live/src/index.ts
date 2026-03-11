@@ -6,17 +6,16 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-
-const path = require('path');
-const http = require('http');
-const fs = require('fs/promises');
-const { build } = require('./src/build');
+import path from 'path';
+import http from 'http';
+import fs from 'fs/promises';
+import { build } from './build.js';
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -30,23 +29,32 @@ const MIME_TYPES = {
 };
 
 async function start() {
-  // 1. Build the editor
-  await build();
-
-  const distDir = path.resolve(process.cwd(), 'dist');
+  // Resolution logic: index.js is in dist/, public/ is its sibling at root
+  const publicDir = path.resolve(__dirname, '..', 'public');
   const port = process.env.PORT || 3000;
 
   // 2. Native HTTP Server
   const server = http.createServer(async (req, res) => {
     // Normalize path and prevent directory traversal attacks
-    let safePath = path.normalize(req.url).replace(/^(\.\.[\/\\])+/, '').split('?')[0].split('#')[0];
+    let safePath = path.normalize(req.url!).replace(/^(\.\.[\/\\])+/, '').split('?')[0].split('#')[0];
     if (safePath === '/' || safePath === '\\') safePath = 'index.html';
-    
-    let filePath = path.join(distDir, safePath);
+
+    let filePath = path.join(publicDir, safePath);
+
+    // Dynamic routing for project-local user assets (bypassing the precompiled bundle)
+    if (safePath.startsWith('assets/')) {
+      const userAssetPath = path.join(process.cwd(), safePath);
+      try {
+        await fs.stat(userAssetPath);
+        filePath = userAssetPath;
+      } catch (e) {
+        // fallback to bundled assets if not found locally
+      }
+    }
 
     try {
       let stats = await fs.stat(filePath);
-      
+
       // If it's a directory, serve its index.html
       if (stats.isDirectory()) {
         filePath = path.join(filePath, 'index.html');
@@ -72,13 +80,13 @@ async function start() {
   });
 
   // 3. Start Listening
-  server.listen(port, '0.0.0.0', () => {
+  server.listen(Number(port), '0.0.0.0', () => {
     console.log(`\n🌍 Launching Live Editor at http://localhost:${port}`);
-    console.log(`   Serving from: ${distDir}`);
+    console.log(`   Serving from: ${publicDir}`);
     console.log('   (Press Ctrl+C to stop)\n');
   });
 
-  server.on('error', (err) => {
+  server.on('error', (err: any) => {
     if (err.code === 'EADDRINUSE') {
       console.error(`\n❌ Port ${port} is already in use.`);
       console.error(`   Please free the port or set a custom one via PORT environment variable.`);
@@ -88,12 +96,12 @@ async function start() {
       process.exit(1);
     }
   });
-  
+
   process.on('SIGINT', () => {
-      console.log('\n🛑 Shutting down Live Editor...');
-      server.close();
-      process.exit();
+    console.log('\n🛑 Shutting down Live Editor...');
+    server.close();
+    process.exit();
   });
 }
 
-module.exports = { start, build };
+export { start, build };
