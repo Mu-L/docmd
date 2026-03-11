@@ -32,7 +32,7 @@
   <!-- PREVIEW -->
   <p>
     <br/>
-    <img width="800" alt="docmd preview" src="https://github.com/user-attachments/assets/b8bb6fdc-b2f3-4e32-90d5-78a763609e34" />
+    <img width="800" alt="docmd preview" src="https://github.com/user-attachments/assets/05a18bd2-6f85-4c7a-9fb7-1ae5b36573b2" />
     <br/>
     <sup><i>docmd `default` theme in light appearance</i></sup>
   </p>
