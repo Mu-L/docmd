@@ -6,25 +6,25 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const chalk = require('chalk');
+import chalk from 'chalk';
 
 // Known configuration keys for typo detection (V2 + V3)
 const KNOWN_KEYS = [
   // V3 Modern Labels
   'title', 'url', 'src', 'out', 'base', 'layout',
   'versions', 'redirects', 'notFound',
-  
+
   // V2 Legacy Labels
-  'siteTitle', 'siteUrl', 'srcDir', 'outputDir', 
-  
+  'siteTitle', 'siteUrl', 'srcDir', 'outputDir',
+
   // Shared Features
-  'logo', 'sidebar', 'theme', 'customJs', 'autoTitleFromH1', 
+  'logo', 'sidebar', 'theme', 'customJs', 'autoTitleFromH1',
   'copyCode', 'plugins', 'navigation', 'footer', 'sponsor', 'favicon',
   'search', 'minify', 'editLink', 'pageNavigation'
 ];
@@ -111,4 +111,4 @@ function validateConfig(config) {
   return true;
 }
 
-module.exports = { validateConfig };
+export { validateConfig };

@@ -6,7 +6,7 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
@@ -161,7 +161,7 @@ function tabsRule(state, startLine, endLine, silent) {
   return true;
 }
 
-module.exports = {
+export default {
   name: 'tabs',
   setup(md) {
     md.block.ruler.before('fence', 'enhanced_tabs', tabsRule, { alt: ['paragraph', 'reference', 'blockquote', 'list'] });

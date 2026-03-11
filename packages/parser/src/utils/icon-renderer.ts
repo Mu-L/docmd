@@ -6,30 +6,30 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const lucideStatic = require('lucide-static');
+import * as lucideStatic from 'lucide-static';
 
 // Convert kebab-case to PascalCase (e.g., arrow-right -> ArrowRight)
-function kebabToPascal(str) {
-  return str.split('-').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
+function kebabToPascal(str: any) {
+  return str.split('-').map((p: any) => p.charAt(0).toUpperCase() + p.slice(1)).join('');
 }
 
-const exceptions = {
+const exceptions: any = {
   'arrow-up-right-square': 'ExternalLink',
   'file-cog': 'Settings',
   'cloud-upload': 'UploadCloud'
 };
 
-function renderIcon(name, options = {}) {
+function renderIcon(name: string, options: any = {}) {
   if (!name) return '';
-  
+
   const key = exceptions[name] || kebabToPascal(name);
-  const svgData = lucideStatic[key];
+  const svgData = (lucideStatic as any)[key];
 
   if (!svgData) return ''; // Fail silently or warn via callback
 
@@ -48,4 +48,4 @@ function renderIcon(name, options = {}) {
   return svgData.replace('<svg', `<svg ${attrs}`);
 }
 
-module.exports = { renderIcon };
+export { renderIcon };

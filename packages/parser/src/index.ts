@@ -6,24 +6,24 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const { createMarkdownProcessor, processContent } = require('./markdown-processor');
-const { renderTemplate } = require('./html-renderer');
-const { renderIcon } = require('./utils/icon-renderer');
-const { validateConfig } = require('./utils/validator');
+import { createMarkdownProcessor, processContent } from './markdown-processor.js';
+import { renderTemplateAsync } from './html-renderer.js';
+import { renderIcon } from './utils/icon-renderer.js';
+import { validateConfig } from './utils/validator.js';
 
-module.exports = {
+export {
   // Logic
   createMarkdownProcessor,
   processContent,
-  renderTemplate,
+  renderTemplateAsync,
   validateConfig,
-  
+
   // Utils
   renderIcon
 };

@@ -6,26 +6,26 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const MarkdownIt = require('markdown-it');
-const matter = require('gray-matter');
-const hljs = require('highlight.js');
+import MarkdownIt from 'markdown-it';
+import matter from 'gray-matter';
+import hljs from 'highlight.js';
 
 // Standard Plugins
-const attrs = require('markdown-it-attrs');
-const footnote = require('markdown-it-footnote');
-const taskLists = require('markdown-it-task-lists');
-const abbr = require('markdown-it-abbr');
-const deflist = require('markdown-it-deflist');
-const emoji = require('markdown-it-emoji');
+import attrs from 'markdown-it-attrs';
+import footnote from 'markdown-it-footnote';
+import taskLists from 'markdown-it-task-lists';
+import abbr from 'markdown-it-abbr';
+import deflist from 'markdown-it-deflist';
+import emoji from 'markdown-it-emoji';
 
 // The Feature Registry
-const { registerFeatures } = require('./features');
+import { registerFeatures } from './features/index.js';
 
 // Custom Heading ID & Anchor Logic
 const headingIdPlugin = (md) => {
@@ -89,8 +89,8 @@ const headingIdPlugin = (md) => {
 };
 
 // Main Factory Function to Create a Markdown Processor
-function createMarkdownProcessor(config = {}, pluginsCallback) {
-  const mdOptions = {
+function createMarkdownProcessor(config: any = {}, pluginsCallback: any) {
+  const mdOptions: any = {
     html: true,
     linkify: true,
     typographer: true,
@@ -111,7 +111,7 @@ function createMarkdownProcessor(config = {}, pluginsCallback) {
     return `<pre class="hljs"><code>${new MarkdownIt().utils.escapeHtml(str)}</code></pre>`;
   };
 
-  mdOptions.highlight = config.theme?.codeHighlight !== false ? highlightFn : (str, lang) => {
+  mdOptions.highlight = config.theme?.codeHighlight !== false ? highlightFn : (str: any, lang: any) => {
     if (lang === 'mermaid') return `<pre class="mermaid">${new MarkdownIt().utils.escapeHtml(str)}</pre>`;
     return `<pre><code>${new MarkdownIt().utils.escapeHtml(str)}</code></pre>`;
   };
@@ -239,4 +239,4 @@ function processContent(rawString, mdInstance, config, env = {}) {
   return { frontmatter, htmlContent, headings, searchData };
 }
 
-module.exports = { createMarkdownProcessor, processContent };
+export { createMarkdownProcessor, processContent };

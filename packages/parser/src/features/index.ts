@@ -6,18 +6,18 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const common = require('./common-containers');
-const tabs = require('./tabs');
-const steps = require('./steps');
-const changelog = require('./changelog');
-const buttons = require('./buttons');
-const basics = require('./basics');
+import common from './common-containers.js';
+import tabs from './tabs.js';
+import steps from './steps.js';
+import changelog from './changelog.js';
+import buttons from './buttons.js';
+import basics from './basics.js';
 
 const FEATURES = [basics, buttons, common, tabs, steps, changelog];
 
@@ -27,4 +27,4 @@ function registerFeatures(md) {
   });
 }
 
-module.exports = { registerFeatures };
+export { registerFeatures };

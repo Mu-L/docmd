@@ -6,20 +6,20 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const ejs = require('ejs');
-const { renderIcon } = require('./utils/icon-renderer');
+import ejs from 'ejs';
+import { renderIcon } from './utils/icon-renderer.js';
 
 /**
  * Renders an EJS template string with provided data.
  * NOTE: The 'templateString' must be read by the CLI and passed here.
  */
-function renderTemplate(templateString, data, options = {}) {
+async function renderTemplateAsync(templateString, data, options = {}) {
   // Inject core helpers into every template
   const fullData = {
     ...data,
@@ -29,7 +29,7 @@ function renderTemplate(templateString, data, options = {}) {
   };
 
   try {
-    return ejs.render(templateString, fullData, options);
+    return await ejs.render(templateString, fullData, { ...options, async: true });
   } catch (e) {
     throw new Error(`EJS Render Error: ${e.message}`);
   }
@@ -39,7 +39,7 @@ function fixHtmlLinks(url, root = './', isOffline = false, base = '/') {
   if (!url || url.startsWith('http') || url.startsWith('#') || url.startsWith('mailto:')) return url;
 
   let final = url;
-  
+
   // Strip base if present
   if (base !== '/' && url.startsWith(base)) {
     final = '/' + url.substring(base.length);
@@ -62,4 +62,4 @@ function fixHtmlLinks(url, root = './', isOffline = false, base = '/') {
   return final;
 }
 
-module.exports = { renderTemplate };
+export { renderTemplateAsync, fixHtmlLinks };
