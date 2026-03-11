@@ -6,15 +6,19 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const path = require('path');
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-function markdownSetup(md) {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export function markdownSetup(md: any) {
   const defaultFence = md.renderer.rules.fence;
   md.renderer.rules.fence = (tokens, idx, options, env, self) => {
     const token = tokens[idx];
@@ -26,16 +30,14 @@ function markdownSetup(md) {
   };
 }
 
-function getAssets() {
+export function getAssets() {
   return [
     {
-      src: path.join(__dirname, 'assets/init-mermaid.js'),
+      src: path.join(__dirname, 'init-mermaid.js'),
       dest: 'assets/js/init-mermaid.js',
       type: 'js',
       location: 'body',
-      attributes: { type: 'module' } 
+      attributes: { type: 'module' }
     }
   ];
 }
-
-module.exports = { markdownSetup, getAssets };

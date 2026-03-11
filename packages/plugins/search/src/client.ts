@@ -6,22 +6,22 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-(function() {
+(function () {
     let miniSearch = null;
     let isIndexLoaded = false;
-    let selectedIndex = -1; 
-    
+    let selectedIndex = -1;
+
     function initSearch() {
         const searchModal = document.getElementById('docmd-search-modal');
         const searchInput = document.getElementById('docmd-search-input');
         const searchResults = document.getElementById('docmd-search-results');
-        
+
         if (!searchModal) return;
 
         // Use Site Root if available (for versioning), fallback to Context Root
@@ -36,7 +36,7 @@
             searchModal.style.display = 'flex';
             window.lastFocusedElement = document.activeElement;
             setTimeout(() => searchInput.focus(), 50);
-            
+
             if (!searchInput.value.trim()) {
                 searchResults.innerHTML = emptyStateHtml;
                 selectedIndex = -1;
@@ -67,7 +67,7 @@
                 e.preventDefault();
                 searchModal.style.display === 'flex' ? closeSearch() : openSearch();
             }
-            
+
             if (searchModal.style.display === 'flex') {
                 const items = searchResults.querySelectorAll('.search-result-item');
                 if (e.key === 'Escape') { e.preventDefault(); closeSearch(); }
@@ -122,7 +122,7 @@
             let snippet = text.substring(start, end);
             if (start > 0) snippet = '...' + snippet;
             if (end < text.length) snippet += '...';
-            
+
             const safeTerms = terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
             if (safeTerms) {
                 snippet = snippet.replace(new RegExp(`(${safeTerms})`, 'gi'), '<mark>$1</mark>');
@@ -161,7 +161,7 @@
         searchResults.addEventListener('click', (e) => {
             if (e.target.closest('.search-result-item')) closeSearch();
         });
-        
+
         window.closeDocmdSearch = closeSearch;
     }
 

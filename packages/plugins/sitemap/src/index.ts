@@ -6,14 +6,14 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const path = require('path');
-const fs = require('fs/promises');
+import path from 'path';
+import fs from 'fs/promises';
 
 /**
  * Hook to run after the build is complete.
@@ -24,7 +24,7 @@ const fs = require('fs/promises');
  * @param {Function} context.log - Logger function
  */
 
-async function onPostBuild({ config, pages, outputDir, log }) {
+export async function onPostBuild({ config, pages, outputDir, log }: any) {
   // 1. Check if enabled
   if (config.plugins?.sitemap === false || !config.siteUrl) {
     if (!config.siteUrl && log) log('⚠️  Skipping sitemap: "siteUrl" is missing in config.');
@@ -32,7 +32,7 @@ async function onPostBuild({ config, pages, outputDir, log }) {
   }
 
   const siteUrl = config.siteUrl.replace(/\/$/, '');
-  
+
   // 2. Build XML Header
   let sitemapXml = '<?xml version="1.0" encoding="UTF-8"?>\n';
   sitemapXml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
@@ -45,7 +45,7 @@ async function onPostBuild({ config, pages, outputDir, log }) {
   // 4. Loop Pages
   for (const page of pages) {
     const fm = page.frontmatter || {};
-    
+
     // Skip hidden pages
     if (fm.sitemap === false || fm.noindex === true) continue;
 
@@ -79,5 +79,3 @@ async function onPostBuild({ config, pages, outputDir, log }) {
   await fs.writeFile(path.join(outputDir, 'sitemap.xml'), sitemapXml);
   if (log) log('✅ Sitemap generated.');
 }
-
-module.exports = { onPostBuild };

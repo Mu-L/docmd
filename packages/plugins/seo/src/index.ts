@@ -6,7 +6,7 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
@@ -20,7 +20,7 @@
  * @returns {string} HTML string of meta tags
  */
 
-function generateMetaTags(config, pageData, relativePathToRoot) {
+export function generateMetaTags(config: any, pageData: any, relativePathToRoot: string) {
   let html = '';
   const { frontmatter, outputPath } = pageData;
   const seo = frontmatter.seo || {}; // Page-specific SEO overrides
@@ -103,5 +103,3 @@ function generateMetaTags(config, pageData, relativePathToRoot) {
 
   return html;
 }
-
-module.exports = { generateMetaTags };

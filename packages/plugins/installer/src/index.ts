@@ -1,10 +1,11 @@
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
-const chalk = require('chalk');
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
+import chalk from 'chalk';
+import { createRequire } from 'module';
 
-// Load the official plugins registry
-const pluginsRegistry = require('./registry/plugins.json');
+const require = createRequire(import.meta.url);
+const pluginsRegistry = require('../registry/plugins.json');
 
 /**
  * Detects the package manager used in the current project by looking for lockfiles upwards.
@@ -128,7 +129,7 @@ function removePluginFromConfig(configPath, meta) {
 }
 
 
-async function installPlugin(pluginInput, opts = {}) {
+async function installPlugin(pluginInput: string, opts: { verbose?: boolean } = {}) {
   const cwd = process.cwd();
   const pkgManager = getPackageManager(cwd);
   const meta = resolvePluginMeta(pluginInput);
@@ -180,7 +181,7 @@ async function installPlugin(pluginInput, opts = {}) {
   }
 }
 
-async function removePlugin(pluginInput, opts = {}) {
+async function removePlugin(pluginInput: string, opts: { verbose?: boolean } = {}) {
   const cwd = process.cwd();
   const pkgManager = getPackageManager(cwd);
   const meta = resolvePluginMeta(pluginInput);
@@ -223,7 +224,7 @@ async function removePlugin(pluginInput, opts = {}) {
   }
 }
 
-module.exports = {
+export {
   installPlugin,
   removePlugin
 };

@@ -1,8 +1,16 @@
 {
   "name": "@docmd/plugin-search",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "description": "Offline full-text search for docmd.",
-  "main": "index.js",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc && esbuild src/client.ts --bundle --outfile=dist/docmd-search.js --format=esm --platform=browser --minify"
+  },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "minisearch": "^7.2.0"
   },

@@ -6,7 +6,7 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
@@ -26,7 +26,7 @@ import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.mi
     mermaid.initialize({ startOnLoad: false, theme: getTheme(), securityLevel: 'loose' });
 
     const elements = document.querySelectorAll('.mermaid:not([data-processed="true"])');
-    
+
     for (const el of elements) {
       if (!el.dataset.original) el.dataset.original = el.textContent;
       const code = el.dataset.original;
@@ -72,6 +72,6 @@ import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.mi
       }
     }
   });
-  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter:['data-theme'] });
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
 })();

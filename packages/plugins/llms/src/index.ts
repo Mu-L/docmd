@@ -6,16 +6,16 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const path = require('path');
-const fs = require('fs').promises;
+import path from 'path';
+import fs from 'fs/promises';
 
-async function onPostBuild({ config, pages, outputDir, log }) {
+export async function onPostBuild({ config, pages, outputDir, log }: any) {
   // Validation
   if (!config.siteUrl) {
     if (log) log('⚠️  Skipping llms.txt: "siteUrl" is missing in config.');
@@ -101,5 +101,3 @@ async function onPostBuild({ config, pages, outputDir, log }) {
 
   await fs.writeFile(path.join(outputDir, 'llms-full.txt'), fullContent);
 }
-
-module.exports = { onPostBuild };

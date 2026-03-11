@@ -6,17 +6,21 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const path = require('path');
-const fs = require('fs/promises');
-const MiniSearch = require('minisearch');
+import path from 'path';
+import fs from 'fs/promises';
+import MiniSearch from 'minisearch';
+import { fileURLToPath } from 'url';
 
-async function onPostBuild({ config, pages, outputDir, log }) {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export async function onPostBuild({ config, pages, outputDir, log }: any) {
   // Check if disabled in new config schema or old config schema
   const isEnabled = config.optionsMenu ? config.optionsMenu.components.search !== false : config.search !== false;
   if (!isEnabled) return;
@@ -68,7 +72,7 @@ async function onPostBuild({ config, pages, outputDir, log }) {
 }
 
 // Inject the modal HTML only if the plugin is running
-function generateScripts(config) {
+export function generateScripts(config: any) {
   const isEnabled = config.optionsMenu ? config.optionsMenu.components.search !== false : config.search !== false;
   if (!isEnabled) return {};
 
@@ -97,11 +101,9 @@ function generateScripts(config) {
   return { bodyScriptsHtml: modalHtml };
 }
 
-function getAssets() {
+export function getAssets() {
   return [
     { url: 'https://cdn.jsdelivr.net/npm/minisearch@7.2.0/dist/umd/index.min.js', type: 'js', location: 'body' },
-    { src: path.join(__dirname, 'assets/docmd-search.js'), dest: 'assets/js/docmd-search.js', type: 'js', location: 'body' }
+    { src: path.join(__dirname, 'docmd-search.js'), dest: 'assets/js/docmd-search.js', type: 'js', location: 'body' }
   ];
 }
-
-module.exports = { onPostBuild, getAssets, generateScripts };

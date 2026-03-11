@@ -6,22 +6,20 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
 /**
- * Generates Analytics scripts.
- * @param {Object} config 
  * @returns {Object} { headScriptsHtml, bodyScriptsHtml }
  */
 
-function generateScripts(config) {
+export function generateScripts(config: any) {
   let headScriptsHtml = '';
   let bodyScriptsHtml = '';
-  
+
   const analytics = config.plugins?.analytics || {};
 
   // Google Analytics 4
@@ -53,5 +51,3 @@ function generateScripts(config) {
 
   return { headScriptsHtml, bodyScriptsHtml };
 }
-
-module.exports = { generateScripts };
