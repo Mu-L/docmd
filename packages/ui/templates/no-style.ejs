@@ -109,7 +109,7 @@
             <div class="main-content"><%- content %></div>
             <% if (frontmatter.components?.toc !==false && headings && headings.length> 0) { %>
               <div class="toc-sidebar">
-                <%- include('toc', { content, headings, navigationHtml, isActivePage }) %>
+                <%- await include('toc', { content, headings, navigationHtml, isActivePage }) %>
               </div>
             <% } %>
           </div>
@@ -172,7 +172,7 @@
             <div class="main-content"><%- content %></div>
             <% if (frontmatter.components?.toc !==false && headings && headings.length> 0) { %>
               <div class="toc-sidebar">
-                <%- include('toc', { content, headings, navigationHtml, isActivePage }) %>
+                <%- await include('toc', { content, headings, navigationHtml, isActivePage }) %>
               </div>
             <% } %>
           </div>

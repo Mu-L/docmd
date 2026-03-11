@@ -1,12 +1,20 @@
 {
   "name": "@docmd/ui",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "description": "Base UI templates and assets for docmd.",
-  "main": "index.js",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
   "files": [
+    "dist",
     "templates",
-    "assets",
-    "index.js"
+    "assets"
   ],
   "keywords": [
     "docmd",
