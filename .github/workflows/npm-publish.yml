@@ -67,6 +67,17 @@ jobs:
           for dir in packages/* packages/plugins/*; do
             if [ -f "$dir/package.json" ]; then
               echo "Publishing $dir..."
-              npm publish "$dir" --access public || echo "::warning::Failed to publish $dir. Skipping..."
+              publish_output=$(npm publish "./$dir" --access public 2>&1)
+              exit_code=$?
+              
+              if [ $exit_code -ne 0 ]; then
+                if echo "$publish_output" | grep -q 'previously published versions\|EPRIVATE'; then
+                  echo "::notice::Skipping $dir: Already published or private."
+                else
+                  echo "::error::Failed to publish $dir"
+                  echo "$publish_output"
+                  exit 1
+                fi
+              fi
             fi
           done
