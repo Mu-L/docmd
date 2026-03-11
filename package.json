@@ -1,24 +1,32 @@
 {
   "name": "@docmd/monorepo",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "private": true,
   "description": "The minimalist, zero-config documentation generator monorepo.",
   "scripts": {
-    "test": "node scripts/failsafe.js",
+    "verify": "node scripts/verify.js",
     "lint": "pnpm -r run lint",
     "build": "pnpm -r run build",
     "dev": "pnpm --filter @docmd/playground dev",
-    "stop": "pnpm --filter @docmd/core exec docmd stop",
+    "stop": "node packages/core/dist/bin/docmd.js stop >/dev/null 2>&1 || true",
     "playground:add": "pnpm --filter @docmd/playground exec docmd add",
     "playground:remove": "pnpm --filter @docmd/playground exec docmd remove",
     "release": "pnpm publish -r --access public",
-    "clean": "rm -rf node_modules packages/*/node_modules packages/plugins/*/node_modules packages/*/site packages/plugins/*/site packages/*/dist",
+    "unlink:global": "npm uninstall -g @docmd/core @docmd/monorepo docmd docmd-live -s >/dev/null 2>&1; pnpm uninstall -g @docmd/core @docmd/monorepo docmd docmd-live -s >/dev/null 2>&1; rm -f $(which docmd 2>/dev/null) $(which docmd-live 2>/dev/null);",
+    "clean": "rm -rf node_modules packages/*/node_modules packages/plugins/*/node_modules packages/*/dist packages/plugins/*/dist packages/*/public packages/plugins/*/public packages/*/site packages/plugins/*/site *.tsbuildinfo temp-* >/dev/null 2>&1;",
+    "reset": "node scripts/status.js start:reset && pnpm -s stop && pnpm -s unlink:global && pnpm -s clean && node scripts/status.js reset",
+    "onboard": "node scripts/onboard.js",
     "bump": "node scripts/bump.js"
   },
   "devDependencies": {
+    "@types/node": "^25.4.0",
     "chalk": "4.1.2",
+    "esbuild": "^0.27.3",
     "eslint": "^9.39.3",
-    "prettier": "^3.8.1"
+    "prettier": "^3.8.1",
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=18.0.0"
