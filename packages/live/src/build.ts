@@ -6,29 +6,35 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const path = require('path');
-const fs = require('fs/promises');
-const esbuild = require('esbuild');
-const ui = require('@docmd/ui');
-const themes = require('@docmd/themes'); // New import
+import path from 'path';
+import fs from 'fs/promises';
+import esbuild from 'esbuild';
+import * as ui from '@docmd/ui';
+import * as themes from '@docmd/themes';
+import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Path Constants
 const PKG_ROOT = path.resolve(__dirname, '..');
 const SRC_DIR = path.join(PKG_ROOT, 'src');
-const DIST_DIR = path.resolve(process.cwd(), 'dist');
+const PUBLIC_DIR = path.join(PKG_ROOT, 'public');
 
 async function build() {
     console.log('📦 Building Live Editor...');
 
     // 1. Prepare Dist
-    await fs.rm(DIST_DIR, { recursive: true, force: true });
-    await fs.mkdir(DIST_DIR, { recursive: true });
+    await fs.rm(PUBLIC_DIR, { recursive: true, force: true });
+    await fs.mkdir(PUBLIC_DIR, { recursive: true });
 
     // 2. Generate Shims
     const shimPath = path.join(SRC_DIR, 'shims.js');
@@ -44,10 +50,10 @@ async function build() {
             build.onLoad({ filter: /.*/, namespace: 'docmd-templates-ns' }, async () => {
                 const templatesDir = ui.getTemplatesDir();
                 const templates = {};
-                
+
                 const tryRead = async (f) => {
                     const p = path.join(templatesDir, f);
-                    try { return await fs.readFile(p, 'utf8'); } catch(e) { return null; }
+                    try { return await fs.readFile(p, 'utf8'); } catch (e) { return null; }
                 };
 
                 // Read top-level EJS files
@@ -70,7 +76,7 @@ async function build() {
                 }
 
                 return {
-                    contents: `module.exports = ${JSON.stringify(templates)};`,
+                    contents: `export default ${JSON.stringify(templates)};`,
                     loader: 'js',
                 };
             });
@@ -83,18 +89,23 @@ async function build() {
         setup(build) {
             build.onResolve({ filter: /^(node:)?path$/ }, args => ({ path: args.path, namespace: 'path-shim' }));
             build.onLoad({ filter: /.*/, namespace: 'path-shim' }, () => ({
-                contents: `module.exports = { 
-                    join: (...a) => a.filter(Boolean).join('/'), 
-                    resolve: (...a) => '/' + a.filter(Boolean).join('/'),
-                    basename: (p) => p ? p.split(/[\\\\/]/).pop() : '',
-                    dirname: (p) => p ? p.split(/[\\\\/]/).slice(0, -1).join('/') || '.' : '.',
-                    extname: (p) => p ? '.' + p.split('.').pop() : '',
-                    sep: '/' 
-                };`, loader: 'js'
+                contents: `
+                    export const join = (...a) => a.filter(Boolean).join('/');
+                    export const resolve = (...a) => '/' + a.filter(Boolean).join('/');
+                    export const basename = (p) => p ? p.split(/[\\\\/]/).pop() : '';
+                    export const dirname = (p) => p ? p.split(/[\\\\/]/).slice(0, -1).join('/') || '.' : '.';
+                    export const extname = (p) => p ? '.' + p.split('.').pop() : '';
+                    export const sep = '/';
+                    export default { join, resolve, basename, dirname, extname, sep };
+                `, loader: 'js'
             }));
             build.onResolve({ filter: /^(node:)?fs(\/promises)?|fs-extra$/ }, args => ({ path: args.path, namespace: 'fs-shim' }));
             build.onLoad({ filter: /.*/, namespace: 'fs-shim' }, () => ({
-                contents: `module.exports = { promises: {}, existsSync: ()=>false };`, loader: 'js'
+                contents: `
+                    export const promises = {};
+                    export const existsSync = () => false;
+                    export default { promises, existsSync };
+                `, loader: 'js'
             }));
         }
     };
@@ -102,9 +113,9 @@ async function build() {
     try {
         // 5. Bundle JS
         await esbuild.build({
-            entryPoints: [path.join(SRC_DIR, 'browser-entry.js')],
+            entryPoints: [path.join(SRC_DIR, 'browser-entry.ts')],
             bundle: true,
-            outfile: path.join(DIST_DIR, 'docmd-live.js'),
+            outfile: path.join(PUBLIC_DIR, 'docmd-live.js'),
             platform: 'browser',
             format: 'iife',
             globalName: 'docmd',
@@ -115,11 +126,11 @@ async function build() {
         });
 
         // 6. Copy Static Assets
-        await fs.copyFile(path.join(SRC_DIR, 'index.html'), path.join(DIST_DIR, 'index.html'));
-        await fs.copyFile(path.join(SRC_DIR, 'docmd-live.css'), path.join(DIST_DIR, 'docmd-live.css'));
-        
-        const cssDest = path.join(DIST_DIR, 'assets/css');
-        const jsDest = path.join(DIST_DIR, 'assets/js');
+        await fs.copyFile(path.join(SRC_DIR, 'index.html'), path.join(PUBLIC_DIR, 'index.html'));
+        await fs.copyFile(path.join(SRC_DIR, 'docmd-live.css'), path.join(PUBLIC_DIR, 'docmd-live.css'));
+
+        const cssDest = path.join(PUBLIC_DIR, 'assets/css');
+        const jsDest = path.join(PUBLIC_DIR, 'assets/js');
         await fs.mkdir(cssDest, { recursive: true });
         await fs.mkdir(jsDest, { recursive: true });
         await fs.copyFile(path.join(SRC_DIR, 'docmd-live-preview.css'), path.join(cssDest, 'docmd-live-preview.css'));
@@ -128,7 +139,7 @@ async function build() {
         const copy = async (src, destName) => {
             try {
                 await fs.copyFile(src, path.join(path.extname(destName) === '.js' ? jsDest : cssDest, destName));
-            } catch(e) { console.warn(`⚠️ Missing asset: ${path.basename(src)}`); }
+            } catch (e) { console.warn(`⚠️ Missing asset: ${path.basename(src)}`); }
         };
 
         // UI Assets (Source: main.css -> Dest: docmd-main.css)
@@ -140,9 +151,9 @@ async function build() {
         // Copy Mermaid Assets
         const mermaidPkgPath = require.resolve('@docmd/plugin-mermaid/package.json');
         const mermaidDir = path.dirname(mermaidPkgPath);
-        const mermaidSrc = path.join(mermaidDir, 'assets', 'init-mermaid.js');
+        const mermaidSrc = path.join(mermaidDir, 'dist', 'init-mermaid.js');
         await fs.copyFile(
-            mermaidSrc, 
+            mermaidSrc,
             path.join(jsDest, 'init-mermaid.js')
         );
 
@@ -152,29 +163,28 @@ async function build() {
         for (const t of themeFiles) {
             if (t.endsWith('.css')) {
                 // Remove prefix if source has it, then add it back standardly
-                const cleanName = t.replace('docmd-theme-', ''); 
+                const cleanName = t.replace('docmd-theme-', '');
                 await copy(path.join(themesDir, t), `docmd-theme-${cleanName}`);
             }
         }
-        
-        // Copy User Assets (if in playground context)
-        const userAssets = path.resolve(process.cwd(), 'assets');
-        const distAssets = path.join(DIST_DIR, 'assets');
-        // Simple check to avoid copying into itself if CWD is somehow dist parent
-        try {
-            await fs.cp(userAssets, distAssets, { recursive: true, force: false });
-        } catch(e) {}
+
+        // (User assets are no longer bundled; the Node server dynamically resolves them from CWD at runtime)
 
         // Copy Favicon
         try {
-            await fs.copyFile(path.join(ui.getAssetsDir(), 'favicon.ico'), path.join(DIST_DIR, 'favicon.ico'));
-        } catch (e) {console.log('X Missing Fav');}
+            await fs.copyFile(path.join(ui.getAssetsDir(), 'favicon.ico'), path.join(PUBLIC_DIR, 'favicon.ico'));
+        } catch (e) { console.log('X Missing Fav'); }
 
-        console.log('✅ Live Editor built in ./dist');
+        console.log('✅ Live Editor built in ./dist/public');
     } catch (e) {
         console.error('❌ Live build failed:', e);
         process.exit(1);
     }
 }
 
-module.exports = { build };
+export { build };
+
+// Trigger build if run directly
+if (process.argv[1].endsWith('build.js')) {
+    build();
+}

@@ -6,19 +6,20 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
 
-const { createMarkdownProcessor, processContent } = require('@docmd/parser/src/markdown-processor');
-const { renderTemplate } = require('@docmd/parser/src/html-renderer');
-const templates = require('virtual:docmd-templates');
+import { createMarkdownProcessor, processContent } from '@docmd/parser/dist/markdown-processor.js';
+import { renderTemplateAsync } from '@docmd/parser/dist/html-renderer.js';
+// @ts-ignore
+import templates from 'virtual:docmd-templates';
 
 // Expose the compile function to the window.docmd global
-function compile(markdown, config = {}) {
-    const defaults = {
+async function compile(markdown: string, config: any = {}) {
+    const defaults: any = {
         siteTitle: 'Live Preview',
         theme: { appearance: 'light', name: 'default', codeHighlight: true },
         layout: { spa: false },
@@ -151,7 +152,7 @@ function compile(markdown, config = {}) {
         }
     };
 
-    return renderTemplate(templateStr, pageData, options);
+    return await renderTemplateAsync(templateStr, pageData, options);
 }
 
-module.exports = { compile };
+export { compile };
