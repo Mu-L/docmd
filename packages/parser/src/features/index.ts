@@ -1,0 +1,30 @@
+/**
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+import common from './common-containers.js';
+import tabs from './tabs.js';
+import steps from './steps.js';
+import changelog from './changelog.js';
+import buttons from './buttons.js';
+import basics from './basics.js';
+
+const FEATURES = [basics, buttons, common, tabs, steps, changelog];
+
+function registerFeatures(md) {
+  FEATURES.forEach(feature => {
+    if (feature.setup) feature.setup(md);
+  });
+}
+
+export { registerFeatures };

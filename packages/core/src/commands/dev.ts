@@ -1,0 +1,414 @@
+/**
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+import http from 'http';
+import { WebSocketServer } from 'ws';
+import chokidar from 'chokidar';
+import path from 'path';
+import fs from '../utils/fs-utils.js';
+import chalk from 'chalk';
+import os from 'os';
+import readline from 'readline';
+import { buildSite } from './build.js';
+import { loadConfig } from '../utils/config-loader.js';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+
+// Helper Utilities
+
+const MIME_TYPES = {
+  '.html': 'text/html',
+  '.js': 'text/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.jpg': 'image/jpg',
+  '.jpeg': 'image/jpg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.woff': 'application/font-woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'application/font-ttf',
+  '.txt': 'text/plain',
+};
+
+function formatPathForDisplay(absolutePath, cwd) {
+  const relativePath = path.relative(cwd, absolutePath);
+  if (!relativePath.startsWith('..') && !path.isAbsolute(relativePath)) {
+    return `./${relativePath}`;
+  }
+  return relativePath;
+}
+
+function getNetworkIp() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return null;
+}
+
+// Static Server Logic
+
+async function serveStatic(req, res, rootDir) {
+  let safePath = path.normalize(req.url).replace(/^(\.\.[\/\\])+/, '').split('?')[0].split('#')[0];
+  if (safePath === '/' || safePath === '\\') safePath = 'index.html';
+
+  let filePath = path.join(rootDir, safePath);
+
+  try {
+    let stats;
+    try {
+      stats = await fs.stat(filePath);
+    } catch (e) {
+      if (path.extname(filePath) === '') {
+        filePath += '.html';
+        stats = await fs.stat(filePath);
+      } else {
+        throw e;
+      }
+    }
+
+    if (stats.isDirectory()) {
+      if (!req.url.split('?')[0].endsWith('/')) {
+        res.writeHead(301, { 'Location': req.url + '/' });
+        res.end();
+        return;
+      }
+
+      filePath = path.join(filePath, 'index.html');
+      await fs.stat(filePath);
+    }
+
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    const content = await fs.readFile(filePath);
+
+    res.writeHead(200, { 'Content-Type': contentType });
+
+    if (contentType === 'text/html') {
+      const htmlStr = content.toString('utf-8');
+      const liveReloadScript = `
+        <script>
+          (function() {
+            let socket;
+            let retryCount = 0;
+            const maxRetries = 50;
+            function connect() {
+              if (socket && (socket.readyState === 0 || socket.readyState === 1)) return;
+              socket = new WebSocket('ws://' + window.location.host);
+              socket.onopen = () => { console.log('⚡ docmd connected'); retryCount = 0; };
+              socket.onmessage = (e) => { if(e.data === 'reload') window.location.reload(); };
+              socket.onclose = () => {
+                if (retryCount < maxRetries) {
+                    retryCount++;
+                    setTimeout(connect, Math.min(1000 * (1.5 ** retryCount), 5000));
+                }
+              };
+            }
+            setTimeout(connect, 500);
+          })();
+        </script></body>`;
+      res.end(htmlStr.replace('</body>', liveReloadScript));
+    } else {
+      res.end(content);
+    }
+
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      // console.log(chalk.yellow(`⚠️  404 Not Found: ${req.url}`)); // Optional: Keep log quiet for 404s to avoid noise
+      // 1. Try to serve the generated custom 404 page
+      const custom404Path = path.join(rootDir, '404.html');
+      try {
+        const content = await fs.readFile(custom404Path);
+        res.writeHead(404, { 'Content-Type': 'text/html' });
+
+        // Inject Live Reload into 404 page too so development continues smoothly
+        const htmlStr = content.toString('utf-8');
+        const liveReloadScript = `
+        <script>
+          (function() {
+            let socket;
+            function connect() {
+              socket = new WebSocket('ws://' + window.location.host);
+              socket.onmessage = (e) => { if(e.data === 'reload') window.location.reload(); };
+              socket.onclose = () => setTimeout(connect, 1000);
+            }
+            setTimeout(connect, 500);
+          })();
+        </script></body>`;
+        res.end(htmlStr.replace('</body>', liveReloadScript));
+      } catch (e2) {
+        // 2. Fallback if 404.html doesn't exist (e.g. build failed)
+        res.writeHead(404, { 'Content-Type': 'text/html' });
+        res.end(`
+          <div style="font-family:system-ui;text-align:center;padding:50px;">
+            <h1>404 Not Found</h1>
+            <p>The requested URL <code>${req.url}</code> was not found.</p>
+            <p style="color:#666;font-size:0.9em;">(docmd dev server)</p>
+          </div>
+        `);
+      }
+    } else {
+      res.writeHead(500);
+      res.end(`Server Error: ${err.code}`);
+    }
+  }
+}
+
+// Main Dev Function
+export async function startDevServer(configPathOption: string, opts: any = {}) {
+  // Bulletproof defaults
+  const options = {
+    preserve: opts.preserve || false,
+    port: opts.port || undefined,
+    zeroConfig: opts.zeroConfig || false
+  };
+
+  let config;
+  try {
+    config = await loadConfig(configPathOption, { zeroConfig: options.zeroConfig, isDev: true, quiet: true });
+  } catch (e) {
+    if (e.silent) {
+      process.exit(0); // Exit gracefully if it's a known non-project folder error
+    }
+    throw e;
+  }
+  const CWD = process.cwd();
+
+  // Config Fallback Logic
+  let actualConfigPath = path.resolve(CWD, configPathOption);
+  if (configPathOption === 'docmd.config.js' && !await fs.pathExists(actualConfigPath)) {
+    const legacyPath = path.resolve(CWD, 'config.js');
+    if (await fs.pathExists(legacyPath)) actualConfigPath = legacyPath;
+  }
+
+  const resolveConfigPaths = (currentConfig) => ({
+    outputDir: path.resolve(CWD, currentConfig.out),
+    srcDirToWatch: path.resolve(CWD, currentConfig.src),
+    configFileToWatch: actualConfigPath,
+    userAssetsDir: path.resolve(CWD, 'assets'),
+  });
+
+  let paths = resolveConfigPaths(config);
+
+  // Create Server
+  const server = http.createServer((req, res) => serveStatic(req, res, paths.outputDir));
+  let wss;
+
+  function broadcastReload() {
+    if (wss) {
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) client.send('reload');
+      });
+    }
+  }
+
+  // Initial Build
+  console.log(chalk.blue('🚀 Performing initial build...'));
+  try {
+    await buildSite(configPathOption, { isDev: true, preserve: options.preserve, zeroConfig: options.zeroConfig });
+  } catch (error) {
+    console.error(chalk.red('❌ Initial build failed:'), error.message);
+  }
+
+  // Watcher Setup
+  const userAssetsDirExists = await fs.pathExists(paths.userAssetsDir);
+  const watchedPaths = [paths.srcDirToWatch];
+  if (!options.zeroConfig && await fs.pathExists(paths.configFileToWatch)) {
+    watchedPaths.push(paths.configFileToWatch);
+  }
+  if (userAssetsDirExists) watchedPaths.push(paths.userAssetsDir);
+
+  // Internal development watch logic
+  if (process.env.DOCMD_DEV === 'true') {
+    const DOCMD_ROOT = path.resolve(__dirname, '..');
+    watchedPaths.push(
+      path.join(DOCMD_ROOT, 'templates'),
+      path.join(DOCMD_ROOT, 'assets'),
+      path.join(DOCMD_ROOT, 'engine'),
+      path.join(DOCMD_ROOT, 'plugins'),
+      path.join(DOCMD_ROOT, 'utils')
+    );
+  }
+
+  console.log(chalk.dim('\n👀 Watching for changes in:'));
+  console.log(chalk.dim(`   - Source: ${chalk.cyan(formatPathForDisplay(paths.srcDirToWatch, CWD))}`));
+  if (!options.zeroConfig && await fs.pathExists(paths.configFileToWatch)) {
+    console.log(chalk.dim(`   - Config: ${chalk.cyan(formatPathForDisplay(paths.configFileToWatch, CWD))}`));
+  }
+  if (userAssetsDirExists) {
+    console.log(chalk.dim(`   - Assets: ${chalk.cyan(formatPathForDisplay(paths.userAssetsDir, CWD))}`));
+  }
+  console.log('');
+
+  const watcher = chokidar.watch(watchedPaths, {
+    ignored: [/(^|[\/\\])\../, '**/.git/**', '**/node_modules/**', paths.outputDir],
+    persistent: true,
+    ignoreInitial: true,
+    awaitWriteFinish: { stabilityThreshold: 100, pollInterval: 100 }
+  });
+
+  let isRebuilding = false;
+  let rebuildQueued = false;
+  let configNeedsReload = false;
+  let rebuildTimeout = null;
+
+  watcher.on('all', (event, filePath) => {
+    const relativeFilePath = path.relative(CWD, filePath);
+    // Ignore common system file noise from flooding terminals
+    if (relativeFilePath.includes('.DS_Store')) return;
+
+    if (filePath === paths.configFileToWatch) {
+      configNeedsReload = true;
+    }
+
+    if (rebuildTimeout) clearTimeout(rebuildTimeout);
+    rebuildTimeout = setTimeout(() => {
+      const executeBuildFn = async () => {
+        if (isRebuilding) {
+          rebuildQueued = true;
+          return;
+        }
+        process.stdout.write(chalk.dim(`↻ Change in ${relativeFilePath}... `));
+        isRebuilding = true;
+        rebuildQueued = false;
+
+        try {
+          if (configNeedsReload) {
+            configNeedsReload = false;
+            config = await loadConfig(configPathOption, { zeroConfig: options.zeroConfig });
+            paths = resolveConfigPaths(config);
+          }
+
+          await buildSite(configPathOption, { isDev: true, preserve: options.preserve, zeroConfig: options.zeroConfig });
+          broadcastReload();
+          process.stdout.write(chalk.green('Done.\n'));
+
+        } catch (error) {
+          console.error(chalk.red('\n❌ Rebuild failed:'), error.message);
+        } finally {
+          isRebuilding = false;
+          if (rebuildQueued) {
+            executeBuildFn();
+          }
+        }
+      };
+      executeBuildFn();
+    }, 150);
+  });
+
+  // Server Startup Logic
+  const PORT = parseInt(options.port || process.env.PORT || 3000, 10);
+
+  function checkPortInUse(port) {
+    return new Promise((resolve) => {
+      const tester = http.createServer()
+        .once('error', (err: any) => resolve(err.code === 'EADDRINUSE'))
+        .once('listening', () => tester.close(() => resolve(false)))
+        .listen(port, '0.0.0.0');
+    });
+  }
+
+  async function findAvailablePort(startPort) {
+    let port = startPort;
+    while (await checkPortInUse(port)) {
+      port++;
+    }
+    return port;
+  }
+
+  function tryStartServer(port) {
+    server.listen(port, '0.0.0.0')
+      .once('listening', async () => {
+        wss = new WebSocketServer({ server });
+        wss.on('error', (e: any) => console.error('WebSocket Error:', e.message));
+
+        const indexHtmlPath = path.join(paths.outputDir, 'index.html');
+        const networkIp = getNetworkIp();
+        const localUrl = `http://127.0.0.1:${port}`;
+        const networkUrl = networkIp ? `http://${networkIp}:${port}` : null;
+
+        const border = chalk.gray('────────────────────────────────────────');
+        console.log(border);
+        console.log(`  ${chalk.bold.green('SERVER RUNNING')}  ${chalk.dim(`(v${require('../../package.json').version})`)}`);
+        console.log('');
+        console.log(`  ${chalk.bold('Local:')}    ${chalk.cyan(localUrl)}`);
+        if (networkUrl) {
+          console.log(`  ${chalk.bold('Network:')}  ${chalk.cyan(networkUrl)}`);
+        }
+        console.log('');
+        console.log(`  ${chalk.dim('Serving:')}  ${formatPathForDisplay(paths.outputDir, CWD)}`);
+        console.log(border);
+        console.log('');
+
+        if (!await fs.pathExists(indexHtmlPath)) {
+          console.warn(chalk.yellow(`⚠️  Warning: Root index.html not found.`));
+        }
+      })
+      .once('error', (err: any) => {
+        if (err.code === 'EADDRINUSE') {
+          server.close();
+          tryStartServer(port + 1);
+        } else {
+          console.error(chalk.red(`Failed to start server: ${err.message}`));
+          process.exit(1);
+        }
+      });
+  }
+
+  // Execution Flow
+  (async () => {
+    const finalPort = await findAvailablePort(PORT);
+    tryStartServer(finalPort);
+  })();
+
+  let isShuttingDown = false;
+  process.on('SIGINT', async () => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
+    process.stdout.write(chalk.yellow('\n🛑 Shutting down... '));
+
+    // Force exit after a shorter timeout if graceful shutdown hangs
+    const forceExitTimeout = setTimeout(() => {
+      process.exit(0);
+    }, 500);
+    forceExitTimeout.unref();
+
+    try {
+      const closures = [];
+      if (watcher) closures.push(watcher.close());
+      if (wss) closures.push(new Promise(resolve => wss.close(resolve)));
+      if (server) closures.push(new Promise(resolve => server.close(resolve)));
+
+      await Promise.all(closures);
+      clearTimeout(forceExitTimeout);
+      process.stdout.write(chalk.green('Done.\n'));
+      process.exit(0);
+    } catch (e) {
+      process.exit(0);
+    }
+  });
+
+  process.on('SIGTERM', () => {
+    process.exit(0);
+  });
+}

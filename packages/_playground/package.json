@@ -1,12 +1,12 @@
 {
   "name": "@docmd/playground",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "private": true,
   "dependencies": {
     "@docmd/core": "workspace:*"
   },
   "scripts": {
-    "dev": "docmd dev",
-    "build": "docmd build"
+    "dev": "node ../core/dist/bin/docmd.js dev",
+    "build": "node ../core/dist/bin/docmd.js build"
   }
 }

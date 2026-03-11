@@ -1,11 +1,20 @@
 {
   "name": "@docmd/core",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "description": "The minimalist, zero-config documentation generator.",
-  "main": "index.js",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
-    "docmd": "bin/docmd.js"
+    "docmd": "dist/bin/docmd.js"
   },
+  "scripts": {
+    "build": "tsc",
+    "postbuild": "chmod +x dist/bin/docmd.js"
+  },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "@docmd/live": "workspace:*",
     "@docmd/parser": "workspace:*",

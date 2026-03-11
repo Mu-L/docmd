@@ -121,7 +121,7 @@
                 <% } %>
               <% if (optionsMenu && optionsMenu.position==='menubar' ) { %>
                 <div class="menubar-options">
-                  <%- include('options-menu', { optionsMenu }) %>
+                  <%- await include('options-menu', { optionsMenu }) %>
                 </div>
               <% } %>
       </div>

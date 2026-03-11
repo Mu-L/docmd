@@ -1,0 +1,114 @@
+/**
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+import chalk from 'chalk';
+
+// Known configuration keys for typo detection (V2 + V3)
+const KNOWN_KEYS = [
+  // V3 Modern Labels
+  'title', 'url', 'src', 'out', 'base', 'layout',
+  'versions', 'redirects', 'notFound',
+
+  // V2 Legacy Labels
+  'siteTitle', 'siteUrl', 'srcDir', 'outputDir',
+
+  // Shared Features
+  'logo', 'sidebar', 'theme', 'customJs', 'autoTitleFromH1',
+  'copyCode', 'plugins', 'navigation', 'footer', 'sponsor', 'favicon',
+  'search', 'minify', 'editLink', 'pageNavigation'
+];
+
+// Common typos mapping
+const TYPO_MAPPING = {
+  'site_title': 'title',
+  'sitetitle': 'title',
+  'baseUrl': 'url',
+  'source': 'src',
+  'outDir': 'out',
+  'customCSS': 'theme.customCss',
+  'customcss': 'theme.customCss',
+  'customJS': 'customJs',
+  'customjs': 'customJs',
+  'nav': 'navigation',
+  'menu': 'navigation'
+};
+
+function validateConfig(config) {
+  const errors = [];
+  const warnings = [];
+
+  // 1. Required Fields (Accept either title OR siteTitle)
+  if (!config.title && !config.siteTitle) {
+    errors.push('Missing required property: "title" (or "siteTitle")');
+  }
+
+  // 2. Type Checking
+  if (config.navigation && !Array.isArray(config.navigation)) {
+    errors.push('"navigation" must be an Array');
+  }
+
+  if (config.customJs && !Array.isArray(config.customJs)) {
+    errors.push('"customJs" must be an Array of strings');
+  }
+
+  if (config.theme) {
+    if (config.theme.customCss && !Array.isArray(config.theme.customCss)) {
+      errors.push('"theme.customCss" must be an Array of strings');
+    }
+  }
+
+  if (config.versions && config.versions.all && !Array.isArray(config.versions.all)) {
+    errors.push('"versions.all" must be an Array');
+  }
+
+  // 3. Typos and Unknown Keys (Top Level)
+  Object.keys(config).forEach(key => {
+    // Skip checking internal keys (starting with _)
+    if (key.startsWith('_')) return;
+
+    if (!KNOWN_KEYS.includes(key)) {
+      if (TYPO_MAPPING[key]) {
+        warnings.push(`Found unknown property "${key}". Did you mean "${TYPO_MAPPING[key]}"?`);
+      } else {
+        // Optional: Warn about completely unknown keys, or silent ignore to allow plugins
+        // warnings.push(`Unknown property "${key}".`);
+      }
+    }
+  });
+
+  // 4. Theme specific typos
+  if (config.theme) {
+    if (config.theme.customCSS) {
+      warnings.push('Found "theme.customCSS". Did you mean "theme.customCss"?');
+    }
+  }
+
+  // Output results
+  if (warnings.length > 0) {
+    console.log(chalk.yellow('\n⚠️  Configuration Warnings:'));
+    warnings.forEach(w => console.log(chalk.yellow(`   - ${w}`)));
+  }
+
+  if (errors.length > 0) {
+    console.log(chalk.red('\n❌ Configuration Errors:'));
+    errors.forEach(e => console.log(chalk.red(`   - ${e}`)));
+    console.log('');
+    // We throw to stop the build process in the CLI
+    throw new Error('Invalid configuration file.');
+  }
+
+  return true;
+}
+
+export { validateConfig };

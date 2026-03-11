@@ -58,8 +58,7 @@ module.exports = defineConfig({
 
   // --- Plugins ---
   plugins: {
-    // search: {},
-    // pwa: {},
+    //// pwa: {},
     // seo: {},
     // analytics: {},
     // sitemap: {},
@@ -67,8 +66,20 @@ module.exports = defineConfig({
     // llms: {}
   },
 
-  versions: {},
-
-  // --- Navigation (Remains Unchanged) ---
-  // navigation: [],
+  versions: {
+    current: '06',
+    position: 'sidebar-top',
+    all: [
+      { id: '06', dir: 'docs', label: 'v0.6.0 (Latest)' },
+      { id: '05', dir: 'docs-05', label: 'v0.5.0',
+        navigation: [
+          { title: 'V0.5 Home', path: '/', icon: 'home' },
+          { title: 'V0.5 Install', path: '/getting-started/installation', icon: 'download' }
+        ]
+      }
+    ]
+  },
+  navigation: [
+    { title: 'Latest Home', path: '/', icon: 'home' }
+  ]
 });

@@ -1,5 +1,4 @@
-name: Release to NPM and GitHub Packages
-
+name: docmd Release to NPM
 on:
   release:
     types: [published]
@@ -49,9 +48,9 @@ jobs:
       - name: Build packages
         run: pnpm -r run build
 
-      # Run failsafe tests
-      - name: Run tests
-        run: node scripts/failsafe.js
+      # Run failsafe verification
+      - name: Run verification
+        run: pnpm verify --skip-setup
 
       # Copy LICENSE into each package
       - name: Copy LICENSE

@@ -1,0 +1,43 @@
+/**
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export function markdownSetup(md: any) {
+  const defaultFence = md.renderer.rules.fence;
+  md.renderer.rules.fence = (tokens, idx, options, env, self) => {
+    const token = tokens[idx];
+    const info = token.info.trim();
+    if (info === 'mermaid') {
+      return `<div class="mermaid">${md.utils.escapeHtml(token.content)}</div>\n`;
+    }
+    return defaultFence(tokens, idx, options, env, self);
+  };
+}
+
+export function getAssets() {
+  return [
+    {
+      src: path.join(__dirname, 'init-mermaid.js'),
+      dest: 'assets/js/init-mermaid.js',
+      type: 'js',
+      location: 'body',
+      attributes: { type: 'module' }
+    }
+  ];
+}

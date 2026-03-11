@@ -1,8 +1,16 @@
 {
   "name": "@docmd/parser",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "description": "Pure Markdown parsing engine for docmd.",
-  "main": "src/index.js",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "ejs": "^3.1.10",
     "gray-matter": "^4.0.3",
@@ -11,7 +19,6 @@
     "markdown-it": "^14.1.1",
     "markdown-it-abbr": "^1.0.4",
     "markdown-it-attrs": "^4.3.1",
-    "markdown-it-container": "^3.0.0",
     "markdown-it-deflist": "^2.1.0",
     "markdown-it-emoji": "^2.0.2",
     "markdown-it-footnote": "^3.0.3",
