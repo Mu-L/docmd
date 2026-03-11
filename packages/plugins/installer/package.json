@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-installer",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Installer utility to add and remove plugins for docmd.",
   "type": "module",
   "main": "dist/index.js",
@@ -9,7 +9,8 @@
     "build": "tsc"
   },
   "files": [
-    "dist"
+    "dist",
+    "registry"
   ],
   "dependencies": {
     "chalk": "^4.1.2"
