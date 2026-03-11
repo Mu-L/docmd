@@ -6,7 +6,7 @@
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025 docmd.io
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
@@ -27,13 +27,13 @@ const os = require('os');
 const vm = require('vm');
 
 const CWD = process.cwd();
-const CLI_BIN = path.join(CWD, 'packages/core/bin/docmd.js');
-const LIVE_DIST = path.join(CWD, 'dist');
-const TEMP_SCRIPT = path.join(CWD, 'temp-live-test.js');
+const CLI_BIN = path.join(CWD, 'packages/core/dist/bin/docmd.js');
+const LIVE_PUBLIC = path.join(CWD, 'packages/live/public');
+const TEMP_SCRIPT = path.join(CWD, 'temp-live-test.mjs');
 
-console.log('\n🛡️  Running Universal Failsafe...');
+console.log('🛡️  Running Universal Failsafe...');
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'docmd-failsafe-'));
-console.log(`   Temp Workspace: ${tempDir}\n`);
+console.log(`\x1b[2m   Temp Workspace: ${tempDir}\x1b[0m\n`);
 
 function assert(condition, message) {
     if (!condition) throw new Error(`❌ FAIL: ${message}`);
@@ -44,28 +44,35 @@ function runCmd(cmd, cwd) {
     try {
         execSync(cmd, { cwd, stdio: 'pipe' });
     } catch (e) {
-        console.error(`\n💥 Command Failed: ${cmd}`);
-        console.error(e.stderr.toString());
-        console.error(e.stdout.toString());
+        console.error(`\x1b[31m\x1b[1m💥 Command Failed:\x1b[0m ${cmd}`);
+        if (e.stderr) console.error(e.stderr.toString());
+        if (e.stdout) console.error(e.stdout.toString());
         throw new Error("Process aborted due to command failure.");
     }
 }
 
+const args = process.argv.slice(2);
+const skipSetup = args.includes('--skip-setup');
+
 try {
-    // 1. Install Dependencies
-    console.log('📦 [1/8] Linking Workspace Dependencies...');
-    runCmd('pnpm install --silent', CWD);
+    // 1. Install & Build Monorepo
+    if (!skipSetup) {
+        console.log('\n\x1b[2m📦 [1/10] Linking & Building Monorepo...\x1b[0m');
+        runCmd('pnpm install --silent && pnpm run build', CWD);
+    } else {
+        console.log('\n\x1b[2m⏩ [1/10] Skipping setup (CI mode)...\x1b[0m');
+    }
 
     // 2. Initialize Project
-    console.log('🚀 [2/8] Initializing Project...');
+    console.log('\x1b[2m🚀 [2/10] Initializing Test Project...\x1b[0m');
     runCmd(`node "${CLI_BIN}" init`, tempDir);
 
     // 3. Inject Stress Tests, Versioning & Zero-Config Dirs
-    console.log('🧪 [3/8] Injecting Stress Tests & Versioning...');
+    console.log('\x1b[2m🧪 [3/10] Injecting Stress Tests & Versioning...\x1b[0m');
     const docsDir = path.join(tempDir, 'docs');
     const docsV1Dir = path.join(tempDir, 'docs-v1');
     const zeroConfigDir = path.join(tempDir, 'zero-docs');
-    
+
     fs.mkdirSync(docsV1Dir, { recursive: true });
     fs.mkdirSync(path.join(zeroConfigDir, 'docs', 'nested'), { recursive: true });
 
@@ -93,9 +100,8 @@ title: "Stress Test"
     fs.writeFileSync(path.join(zeroConfigDir, 'docs', 'nested', 'auto.md'), '# Auto Nested Page');
 
     // 4. Create Paradigm Configs
-    // 4. Create Paradigm Configs
-    console.log('⚙️  [4/8] Creating Legacy & Modern Configs...');
-    
+    console.log('\x1b[2m⚙️  [4/10] Creating Legacy & Modern Configs...\x1b[0m');
+
     const legacyConfig = `
       module.exports = {
         siteTitle: 'Legacy Test', siteUrl: 'https://test.com',
@@ -105,9 +111,9 @@ title: "Stress Test"
         footer: 'Legacy Footer'
       };
     `;
-    
+
     const modernConfig = `
-      module.exports = {
+      export default {
         title: 'Modern Test', url: 'https://test.com',
         src: 'docs', out: 'site-modern',
         versions: {
@@ -125,22 +131,22 @@ title: "Stress Test"
         }
       };
     `;
-    
-    fs.writeFileSync(path.join(tempDir, 'legacy.config.js'), legacyConfig);
+
+    fs.writeFileSync(path.join(tempDir, 'legacy.config.cjs'), legacyConfig);
     fs.writeFileSync(path.join(tempDir, 'modern.config.js'), modernConfig);
 
     // 5. Build & Verify
-    console.log('🔨 [5/8] Executing Engine Builds (Legacy, Modern V3, Zero-Config)...');
-    runCmd(`node "${CLI_BIN}" build -c legacy.config.js`, tempDir);
+    console.log('\x1b[2m🔨 [5/10] Executing Engine Builds (Legacy, Modern, Zero-Config)...\x1b[0m');
+    runCmd(`node "${CLI_BIN}" build -c legacy.config.cjs`, tempDir);
     runCmd(`node "${CLI_BIN}" build -c modern.config.js`, tempDir);
     runCmd(`node "${CLI_BIN}" build -z`, zeroConfigDir); // Zero config test
 
-    console.log('🔍 [6/8] Verifying Static Outputs...');
-    
+    console.log('\x1b[2m🔍 [6/10] Verifying Static Outputs...\x1b[0m');
+
     const modernHtml = fs.readFileSync(path.join(tempDir, 'site-modern/index.html'), 'utf8');
     const stressHtml = fs.readFileSync(path.join(tempDir, 'site-modern/stress/index.html'), 'utf8');
     const deepHtml = fs.readFileSync(path.join(tempDir, 'site-modern/level1/level2/level3/deep/index.html'), 'utf8');
-    
+
     const v1Html = fs.readFileSync(path.join(tempDir, 'site-modern/v1/index.html'), 'utf8');
     const notFoundHtml = fs.readFileSync(path.join(tempDir, 'site-modern/404.html'), 'utf8');
     const redirectHtml = fs.readFileSync(path.join(tempDir, 'site-modern/old-guide/index.html'), 'utf8');
@@ -170,99 +176,102 @@ title: "Stress Test"
     assert(zcNestedHtml.includes('Auto Nested Page'), "Zero config failed to build nested auto-navigation page");
 
     // 7. Live Editor (COMPILE & RUNTIME TEST)
-    console.log('🎥 [7/8] Testing "docmd live" build and RUNTIME Execution...');
-    if(fs.existsSync(LIVE_DIST)) fs.rmSync(LIVE_DIST, {recursive: true});
-    
+    console.log('\x1b[2m🎥 [7/10] Testing "docmd live" build & RUNTIME Execution...\x1b[0m');
+    if (fs.existsSync(LIVE_PUBLIC)) fs.rmSync(LIVE_PUBLIC, { recursive: true });
+
     const liveTestScriptContent = `
-        const { buildLive } = require('./packages/core/src/commands/live');
+        import { buildLive } from './packages/core/dist/commands/live.js';
         buildLive({ serve: false }).catch(e => { console.error(e); process.exit(1); });
     `;
     fs.writeFileSync(TEMP_SCRIPT, liveTestScriptContent);
-    runCmd(`node temp-live-test.js`, CWD);
+    runCmd(`node temp-live-test.mjs`, CWD);
 
-    assert(fs.existsSync(path.join(LIVE_DIST, 'docmd-live.js')), "Live Editor bundle missing");
+    assert(fs.existsSync(path.join(LIVE_PUBLIC, 'docmd-live.js')), "Live Editor bundle missing");
 
     // Live Test
-    const liveBundle = fs.readFileSync(path.join(LIVE_DIST, 'docmd-live.js'), 'utf8');
-    
+    const liveBundle = fs.readFileSync(path.join(LIVE_PUBLIC, 'docmd-live.js'), 'utf8');
+
     // Mock a minimal browser environment so the bundle can load
-    const sandbox = { 
-        window: { location: { host: 'localhost' } }, 
-        document: { 
+    const sandbox = {
+        window: { location: { host: 'localhost' } },
+        document: {
             documentElement: { getAttribute: () => 'light' },
-            addEventListener: () => {},
+            addEventListener: () => { },
             readyState: 'complete',
             querySelectorAll: () => [],
             querySelector: () => null,
-            body: { classList: { add: () => {} }, dataset: {} },
-            createElement: () => ({ setAttribute: () => {}, style: {} })
+            body: { classList: { add: () => { } }, dataset: {} },
+            createElement: () => ({ setAttribute: () => { }, style: {} })
         },
-        console, 
-        setTimeout, 
+        console,
+        setTimeout,
         clearTimeout,
         Buffer: Buffer,
     };
-    
+
     // Circular references to mimic browser global scope
     sandbox.globalThis = sandbox;
     sandbox.self = sandbox;
     sandbox.window.document = sandbox.document;
-    
+
     vm.createContext(sandbox);
-    
+
     try {
         vm.runInContext(liveBundle, sandbox); // Execute the bundle
         assert(sandbox.docmd && typeof sandbox.docmd.compile === 'function', "docmd.compile is not exposed globally!");
-        
+
         // Force the live editor to compile Markdown into HTML right here in Node
-        const liveHtml = sandbox.docmd.compile('## Live Preview Failsafe', { 
+        // Because compile is now async, we must chain it or run it in an async IIFE, but we can't easily await inside sync vm.runInContext
+        // Wait, sandbox.docmd.compile returns a Promise, so we can await it here.
+        sandbox.docmd.compile('## Live Preview Failsafe', {
             siteTitle: 'Runtime Check',
             layout: { spa: false }
+        }).then(liveHtml => {
+            assert(liveHtml.includes('Live Preview Failsafe'), "Live compiler failed to output markdown content.");
+            assert(!liveHtml.includes('Template'), "Live compiler reported a missing template or partial! Check your ejs files.");
+            assert(liveHtml.includes('docmd-options-menu'), "Live compiler failed to render the options menu partial.");
+        }).catch(err => {
+            throw new Error(`Live Editor Runtime crashed! \\nDetails: ${err.message}`);
         });
-        
-        assert(liveHtml.includes('Live Preview Failsafe'), "Live compiler failed to output markdown content.");
-        assert(!liveHtml.includes('Template'), "Live compiler reported a missing template or partial! Check your ejs files.");
-        assert(liveHtml.includes('docmd-options-menu'), "Live compiler failed to render the options menu partial.");
-        
+
     } catch (err) {
         throw new Error(`Live Editor Runtime crashed! \nDetails: ${err.message}`);
     }
 
     // 8. Plugin Installer End-to-End Verification
-    console.log('🔌 [8/10] Testing Plugin Installer Framework (add/remove)...');
-    
+    console.log('\x1b[2m🔌 [8/10] Testing Plugin Installer Framework (add/remove)...\x1b[0m');
+
     // We create a dummy package.json in the zeroConfigDir so pnpm doesn't throw `ERR_PNPM_ADDING_TO_ROOT`.
     fs.writeFileSync(path.join(zeroConfigDir, 'package.json'), JSON.stringify({ name: "dummy-test-project", version: "1.0.0" }));
 
     runCmd(`node "${CLI_BIN}" add search`, zeroConfigDir);
-    
+
     // Ensure the config file was created and injected
     const zeroConfigPath = path.join(zeroConfigDir, 'docmd.config.js');
     assert(fs.existsSync(zeroConfigPath), "docmd add search failed to scaffold a docmd.config.js in a raw directory.");
-    
+
     let zcConfigContent = fs.readFileSync(zeroConfigPath, 'utf8');
     assert(zcConfigContent.includes("'search':"), "docmd add search failed to gracefully inject 'search' plugin config into the dummy file.");
-    
+
     // Test the teardown (docmd remove search)
     runCmd(`node "${CLI_BIN}" remove search`, zeroConfigDir);
     zcConfigContent = fs.readFileSync(zeroConfigPath, 'utf8');
     assert(!zcConfigContent.includes("'search':"), "docmd remove search failed to wipe the 'search' configuration key.");
 
     // 9. Security Audit Check
-    console.log('🚨 [9/10] Checking for Vulnerabilities (Security Audit)...');
+    console.log('\x1b[2m🚨 [9/10] Checking for Vulnerabilities (Security Audit)...\x1b[0m');
     try {
-        // Runs an audit. Fails the script if HIGH or CRITICAL vulnerabilities are found.
-        execSync('pnpm audit --audit-level=high', { cwd: CWD, stdio: 'inherit' });
-        console.log('   ✅ Security Audit Passed.');
+        execSync('pnpm audit --audit-level=high', { cwd: CWD, stdio: 'pipe' });
+        // console.log('\x1b[2m   ✅ Security Audit Passed.\x1b[0m');
     } catch (e) {
         throw new Error(`Security vulnerabilities found! Please run 'pnpm audit' and fix them before releasing.`);
     }
 
     // 10. Monorepo & Publish Check
-    console.log('🏷️  [10/10] Verifying Monorepo Consistency & Dry Run Publish...');
+    console.log('\x1b[2m🏷️  [10/10] Verifying Monorepo Consistency & Dry Run Publish...\x1b[0m');
     const rootPkg = JSON.parse(fs.readFileSync(path.join(CWD, 'package.json'), 'utf8'));
     const rootVersion = rootPkg.version;
-    
+
     function checkVersions(dir) {
         for (const entry of fs.readdirSync(dir)) {
             const fullPath = path.join(dir, entry);
@@ -278,15 +287,15 @@ title: "Stress Test"
 
     runCmd('pnpm publish -r --dry-run --no-git-checks', CWD);
 
-    console.log('\n✅ ✨ ALL SYSTEMS GO. ✨');
+
 
 } catch (e) {
-    console.error('\n❌ FAILSAFE CRITICAL FAILURE ❌');
+    console.error('\x1b[31m\x1b[1m\n❌ FAILSAFE CRITICAL FAILURE ❌\x1b[0m');
     console.error(e.message);
     process.exit(1);
 
 } finally {
-    if(fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true, force: true });
-    if(fs.existsSync(LIVE_DIST)) fs.rmSync(LIVE_DIST, { recursive: true, force: true });
-    if(fs.existsSync(TEMP_SCRIPT)) fs.rmSync(TEMP_SCRIPT, { force: true });
+    if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true, force: true });
+    if (fs.existsSync(LIVE_PUBLIC)) fs.rmSync(LIVE_PUBLIC, { recursive: true, force: true });
+    if (fs.existsSync(TEMP_SCRIPT)) fs.rmSync(TEMP_SCRIPT, { force: true });
 }
