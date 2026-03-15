@@ -98,8 +98,21 @@ export async function buildSite(configPath: string, opts: any = {}) {
         await buildAssetsForDir(vOutputDir);
 
         // Inject current version data into config for the generator to use
-        // 1. Navigation Override: Use version-specific nav if provided
-        let activeNav = v.navigation || config.navigation;
+        // 1. Navigation Override: Check for navigation.json (Nav V2), then config override, then default
+        let activeNav = config.navigation;
+        
+        try {
+          const navJsonPath = path.join(vSrcDir, 'navigation.json');
+          if (nodeFs.existsSync(navJsonPath)) {
+            const rawNav = nodeFs.readFileSync(navJsonPath, 'utf-8');
+            activeNav = JSON.parse(rawNav);
+          } else if (v.navigation) {
+             activeNav = v.navigation;
+          }
+        } catch (err) {
+          console.warn(`[WARNING] Failed to parse navigation.json in ${vSrcDir}:`, err.message);
+          activeNav = v.navigation || config.navigation;
+        }
 
         // 2. Smart Filter: Remove dead links for this specific version directory
         // This ensures if 'advanced.md' was added in v2, it won't show in v1 nav

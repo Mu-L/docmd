@@ -557,6 +557,68 @@ body.sidebar-collapsed .main-content-wrapper {
     -webkit-backdrop-filter: blur(8px);
 }
 
+.header-titles-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.docmd-breadcrumbs {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    margin-bottom: var(--space-4);
+    display: block;
+}
+
+.docmd-breadcrumbs ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.docmd-breadcrumbs li {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.docmd-breadcrumbs a {
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.docmd-breadcrumbs a:hover {
+    color: var(--link-color);
+}
+
+.docmd-breadcrumbs .breadcrumb-separator {
+    margin-left: 0.25rem;
+    opacity: 0.5;
+    display: inline-flex;
+    align-items: center;
+}
+
+.docmd-breadcrumbs .breadcrumb-separator .lucide-icon {
+    width: 0.8em;
+    height: 0.8em;
+}
+
+.docmd-breadcrumbs .active {
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .docmd-breadcrumbs {
+        display: none;
+    }
+}
+
 .page-header .header-title {
     font-size: 1.25rem;
     font-weight: 600;

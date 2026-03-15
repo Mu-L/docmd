@@ -138,9 +138,11 @@
                               <%- renderIcon('panel-left-close') %>
                             </button>
                             <% } %>
-                              <span class="header-title">
-                                <%= pageTitle %>
-                              </span>
+                              <div class="header-titles-wrapper">
+                                <span class="header-title">
+                                  <%= pageTitle %>
+                                </span>
+                              </div>
                         </div>
 
                         <div class="header-right">
@@ -154,6 +156,24 @@
                           <main class="content-area" id="main-content">
                             <div class="content-layout">
                               <div class="main-content">
+                                <% if (config.layout?.breadcrumbs !== false && locals.breadcrumbs && breadcrumbs.length > 0) { %>
+                                  <nav aria-label="breadcrumb" class="docmd-breadcrumbs">
+                                    <ol>
+                                      <% breadcrumbs.forEach((crumb, index) => { %>
+                                        <li class="breadcrumb-item <%= index === breadcrumbs.length - 1 ? 'active' : '' %>" <%= index === breadcrumbs.length - 1 ? 'aria-current="page"' : '' %>>
+                                          <% if (crumb.path && index < breadcrumbs.length - 1) { %>
+                                            <a href="<%= relativePathToRoot %><%- crumb.path.startsWith('/') ? crumb.path.substring(1) : crumb.path %>"><%= crumb.title %></a>
+                                          <% } else { %>
+                                            <span><%= crumb.title %></span>
+                                          <% } %>
+                                          <% if (index < breadcrumbs.length - 1) { %>
+                                            <span class="breadcrumb-separator"><%- renderIcon('chevron-right') %></span>
+                                          <% } %>
+                                        </li>
+                                      <% }) %>
+                                    </ol>
+                                  </nav>
+                                <% } %>
                                 <% if (headerConfig?.enabled===false) { %>
                                   <h1>
                                     <%= pageTitle %>

@@ -65,4 +65,29 @@ function findPageNeighbors(navItems, currentPagePath) {
   };
 }
 
-export { findPageNeighbors };
+function findBreadcrumbs(navItems, currentPagePath) {
+  const currentCanonical = getCanonicalPath(currentPagePath);
+  let breadcrumbs = [];
+
+  function recurse(items, currentTrail = []) {
+    if (!items) return false;
+    for (const item of items) {
+      const trail = [...currentTrail, { title: item.title, path: item.path }];
+      
+      if (item.path && getCanonicalPath(item.path) === currentCanonical) {
+        breadcrumbs = trail;
+        return true;
+      }
+
+      if (item.children) {
+        if (recurse(item.children, trail)) return true;
+      }
+    }
+    return false;
+  }
+
+  recurse(navItems);
+  return breadcrumbs;
+}
+
+export { findPageNeighbors, findBreadcrumbs };

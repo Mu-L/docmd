@@ -21,7 +21,7 @@ import nativeFs from 'fs';
 const require = createRequire(import.meta.url);
 import * as parser from '@docmd/parser';
 import * as ui from '@docmd/ui';
-import { findPageNeighbors } from '@docmd/parser/dist/utils/navigation-helper.js';
+import { findPageNeighbors, findBreadcrumbs } from '@docmd/parser/dist/utils/navigation-helper.js';
 
 export async function renderPages({ config, srcDir, outputDir, hooks, buildHash, options }: any) {
   const mdProcessor = parser.createMarkdownProcessor(config, (md: any) => hooks.markdownSetup.forEach((hook: any) => hook(md)));
@@ -114,6 +114,7 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
     let navPath = '/' + page.outputPath.replace(/\\/g, '/').replace(/\/index\.html$/, '').replace(/^index\.html$/, '');
     if (navPath === '/.') navPath = '/';
     const { prevPage, nextPage } = findPageNeighbors(config.navigation, navPath);
+    const breadcrumbs = config.layout?.breadcrumbs !== false ? findBreadcrumbs(config.navigation, navPath) : [];
 
     // Fix Neighbor Links
     const fixNeighbor = (node: any) => {
@@ -197,6 +198,7 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
       isActivePage: page.htmlContent && page.htmlContent.trim().length > 0,
       editUrl,
       editLinkText,
+      breadcrumbs,
 
       // Placeholders for template compatibility
       themeCssLinkHtml: '',
