@@ -70,7 +70,7 @@ function changelogRule(state, startLine, endLine, silent) {
   // Extract content block
   let content = '';
   for (let i = startLine + 1; i < nextLine; i++) {
-    const lineStart = state.bMarks[i] + state.tShift[i];
+    const lineStart = state.bMarks[i];
     const lineEnd = state.eMarks[i];
     content += state.src.slice(lineStart, lineEnd) + '\n';
   }
