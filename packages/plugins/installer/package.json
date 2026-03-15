@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-installer",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Installer utility to add and remove plugins for docmd.",
   "type": "module",
   "main": "dist/index.js",
@@ -44,6 +44,6 @@
   "funding": "https://github.com/sponsors/mgks",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^25.4.0"
+    "@types/node": "^25.5.0"
   }
 }

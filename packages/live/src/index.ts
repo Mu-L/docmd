@@ -15,7 +15,11 @@
 import path from 'path';
 import http from 'http';
 import fs from 'fs/promises';
+import { fileURLToPath } from 'node:url';
 import { build } from './build.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -28,10 +32,28 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon'
 };
 
+function checkPortInUse(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const tester = http.createServer()
+      .once('error', (err: any) => resolve(err.code === 'EADDRINUSE'))
+      .once('listening', () => tester.close(() => resolve(false)))
+      .listen(port, '0.0.0.0');
+  });
+}
+
+async function findAvailablePort(startPort: number): Promise<number> {
+  let port = startPort;
+  while (await checkPortInUse(port)) {
+    port++;
+  }
+  return port;
+}
+
 async function start() {
   // Resolution logic: index.js is in dist/, public/ is its sibling at root
   const publicDir = path.resolve(__dirname, '..', 'public');
-  const port = process.env.PORT || 3000;
+  const initialPort = parseInt(process.env.PORT || '3000', 10);
+  const port = await findAvailablePort(initialPort);
 
   // 2. Native HTTP Server
   const server = http.createServer(async (req, res) => {
@@ -80,21 +102,15 @@ async function start() {
   });
 
   // 3. Start Listening
-  server.listen(Number(port), '0.0.0.0', () => {
+  server.listen(port, '0.0.0.0', () => {
     console.log(`\n🌍 Launching Live Editor at http://localhost:${port}`);
     console.log(`   Serving from: ${publicDir}`);
     console.log('   (Press Ctrl+C to stop)\n');
   });
 
   server.on('error', (err: any) => {
-    if (err.code === 'EADDRINUSE') {
-      console.error(`\n❌ Port ${port} is already in use.`);
-      console.error(`   Please free the port or set a custom one via PORT environment variable.`);
-      process.exit(1);
-    } else {
-      console.error(err);
-      process.exit(1);
-    }
+    console.error(err);
+    process.exit(1);
   });
 
   process.on('SIGINT', () => {
