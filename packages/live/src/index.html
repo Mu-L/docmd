@@ -110,16 +110,22 @@
             }
         }
 
-        function render() {
+        let currentRenderId = 0;
+
+        async function render() {
+            const renderId = ++currentRenderId;
             try {
                 const scrollY = preview.contentWindow ? preview.contentWindow.scrollY : 0;
 
-                let html = docmd.compile(input.value, {
+                let html = await docmd.compile(input.value, {
                     siteTitle: 'Live Preview',
                     search: false,
                     theme: { name: 'default', appearance: 'light' },
                     sidebar: { collapsible: false }
                 });
+
+                // Prevent older renders from overwriting newer ones
+                if (renderId !== currentRenderId) return;
 
                 html = html.replace('<head>', '<head><base target="_blank">');
 
