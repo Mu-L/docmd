@@ -75,28 +75,38 @@
     // Sticky Version Switching (Path Preservation)
     const versionLink = e.target.closest('.version-dropdown-item');
     if (versionLink) {
+      e.preventDefault(); // Prevent default link behavior immediately
       const targetRoot = versionLink.dataset.versionRoot;
       // Use global fallback if undefined (e.g. on 404 pages)
       const currentRoot = window.DOCMD_VERSION_ROOT || '/';
 
       if (targetRoot && window.location.pathname) {
-        try {
-          let currentPath = window.location.pathname;
-          const normCurrentRoot = currentRoot.endsWith('/') ? currentRoot : currentRoot + '/';
+        let currentPath = window.location.pathname;
+        const normCurrentRoot = currentRoot.endsWith('/') ? currentRoot : currentRoot + '/';
 
-          // Only try sticky if we are actually INSIDE the known version path
-          if (currentPath.startsWith(normCurrentRoot)) {
-            e.preventDefault();
-            const suffix = currentPath.substring(normCurrentRoot.length);
-            const normTargetRoot = targetRoot.endsWith('/') ? targetRoot : targetRoot + '/';
-            window.location.href = normTargetRoot + suffix + window.location.hash;
-            return;
-          }
-        } catch (e) {
-          // Ignore errors, let default click happen
+        // Only try sticky if we are actually INSIDE the known version path
+        if (currentPath.startsWith(normCurrentRoot)) {
+          const suffix = currentPath.substring(normCurrentRoot.length);
+          const normTargetRoot = targetRoot.endsWith('/') ? targetRoot : targetRoot + '/';
+          const targetHref = normTargetRoot + suffix + window.location.hash;
+
+          // Smart Switcher: Check if the exact page exists in the target version
+          fetch(targetHref, { method: 'HEAD' })
+            .then(response => {
+              if (response.ok) {
+                window.location.href = targetHref; // Exact match found
+              } else {
+                window.location.href = normTargetRoot; // Fallback to version root
+              }
+            })
+            .catch(() => {
+              window.location.href = normTargetRoot; // Network error fallback
+            });
+          return;
         }
       }
-      // If sticky logic skipped (e.g. on 404 page or outside root), default <a> click handles it
+      // If we are outside the root (or targetRoot is missing), just use the href defined in the link
+      window.location.href = versionLink.href;
     }
 
     // Close Dropdown if clicked outside
@@ -306,6 +316,7 @@
 
         const selectorsToSwap = [
           '.content-layout',
+          '.docmd-breadcrumbs',
           '.page-header .header-title',
           '.page-footer',
           '.footer-complete',
