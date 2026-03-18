@@ -31,6 +31,8 @@ import { registerFeatures } from './features/index.js';
 const headingIdPlugin = (md) => {
   md.core.ruler.push('heading_anchors', function (state) {
     let containerDepth = 0;
+    const lastHeadingIds = new Array(7).fill(null);
+    const usedIds = new Map();
 
     for (let i = 0; i < state.tokens.length; i++) {
       const token = state.tokens[i];
@@ -52,14 +54,40 @@ const headingIdPlugin = (md) => {
         // 1. Generate ID if not present and NOT in a container
         let id = token.attrGet('id');
         if (!id && inlineToken && inlineToken.content && !inContainer) {
-          id = inlineToken.content
+          const slug = inlineToken.content
             .toLowerCase()
             .replace(/\s+/g, '-')
             .replace(/[^\w\u4e00-\u9fa5-]+/g, '')
             .replace(/--+/g, '-')
             .replace(/^-+/, '')
             .replace(/-+$/, '');
-          if (id) token.attrSet('id', id);
+
+          if (slug) {
+            // Find parent ID from previous levels
+            let parentId = null;
+            for (let j = level - 1; j >= 1; j--) {
+              if (lastHeadingIds[j]) {
+                parentId = lastHeadingIds[j];
+                break;
+              }
+            }
+
+            id = parentId ? `${parentId}-${slug}` : slug;
+
+            // Handle hard collisions (same heading sequence twice)
+            if (usedIds.has(id)) {
+              const count = usedIds.get(id);
+              usedIds.set(id, count + 1);
+              id = `${id}-${count}`;
+            } else {
+              usedIds.set(id, 1);
+            }
+
+            token.attrSet('id', id);
+            lastHeadingIds[level] = id;
+            // Clear deeper levels to prevent wrong parent nesting on backtrack
+            for (let j = level + 1; j <= 6; j++) lastHeadingIds[j] = null;
+          }
         }
 
         // If we are in a container, strip existing IDs so they don't break the TOC parsing
