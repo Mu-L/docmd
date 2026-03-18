@@ -2,7 +2,7 @@ const { execSync } = require('child_process');
 const path = require('path');
 
 const args = process.argv.slice(2);
-const shouldLink = args.includes('--link-docmd');
+const shouldLink = args.includes('--link');
 
 function run(cmd, silent = true) {
     try {
