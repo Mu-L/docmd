@@ -1,22 +1,23 @@
 {
   "name": "@docmd/monorepo",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "private": true,
   "description": "The minimalist, zero-config documentation generator monorepo.",
   "scripts": {
     "verify": "node scripts/verify.js",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "build": "pnpm -r run build",
     "dev": "pnpm --filter @docmd/playground dev",
     "stop": "node packages/core/dist/bin/docmd.js stop >/dev/null 2>&1 || true",
     "playground:add": "pnpm --filter @docmd/playground exec docmd add",
     "playground:remove": "pnpm --filter @docmd/playground exec docmd remove",
-    "release": "pnpm publish -r --access public",
     "unlink:global": "npm uninstall -g @docmd/core @docmd/monorepo docmd docmd-live -s >/dev/null 2>&1; pnpm uninstall -g @docmd/core @docmd/monorepo docmd docmd-live -s >/dev/null 2>&1; rm -f $(which docmd 2>/dev/null) $(which docmd-live 2>/dev/null);",
     "clean": "rm -rf node_modules packages/*/node_modules packages/plugins/*/node_modules packages/*/dist packages/plugins/*/dist packages/*/public packages/plugins/*/public packages/*/site packages/plugins/*/site *.tsbuildinfo temp-* >/dev/null 2>&1;",
     "reset": "node scripts/status.js start:reset && pnpm -s stop && pnpm -s unlink:global && pnpm -s clean && node scripts/status.js reset",
     "onboard": "node scripts/onboard.js",
-    "bump": "node scripts/bump.js"
+    "bump": "node scripts/bump.js",
+    "prep": "pnpm reset && pnpm verify"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -38,7 +39,9 @@
     "onlyBuiltDependencies": [
       "esbuild"
     ],
-    "overrides": {}
+    "overrides": {
+      "flatted": ">=3.4.2"
+    }
   },
   "workspaces": [
     "packages/*",
