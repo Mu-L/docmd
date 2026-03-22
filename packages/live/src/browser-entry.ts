@@ -146,7 +146,7 @@ async function compile(markdown: string, config: any = {}) {
 
     const options = {
         includer: (originalPath) => {
-            let name = originalPath.endsWith('.ejs') ? originalPath : originalPath + '.ejs';
+            const name = originalPath.endsWith('.ejs') ? originalPath : originalPath + '.ejs';
             if (templates[name]) return { template: templates[name] };
             return null;
         }

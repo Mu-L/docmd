@@ -100,7 +100,7 @@ const headingIdPlugin = (md) => {
 
         // 2. Inject Hover Anchor as an HTML Token (for H2, H3, H4)
         if (id && level >= 2 && level <= 4 && !inContainer) {
-          let existingClass = token.attrGet('class') || '';
+          const existingClass = token.attrGet('class') || '';
           token.attrSet('class', `${existingClass} docmd-heading`.trim());
 
           if (inlineToken && inlineToken.children) {

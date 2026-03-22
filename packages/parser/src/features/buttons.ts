@@ -34,7 +34,7 @@ function buttonRule(state, startLine, endLine, silent) {
   // Parse Link and Options
   // We look for the first string as the link, rest as options
   const parts = rest.split(/\s+/);
-  let rawLink = parts[0];
+  const rawLink = parts[0];
   let color = '';
 
   // Look for color option in remaining parts
