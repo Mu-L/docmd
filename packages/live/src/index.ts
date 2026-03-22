@@ -75,7 +75,7 @@ async function start() {
     }
 
     try {
-      let stats = await fs.stat(filePath);
+      const stats = await fs.stat(filePath);
 
       // If it's a directory, serve its index.html
       if (stats.isDirectory()) {
