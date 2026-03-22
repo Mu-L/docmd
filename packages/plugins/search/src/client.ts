@@ -117,8 +117,8 @@
                 const idx = text.toLowerCase().indexOf(term.toLowerCase());
                 if (idx >= 0) { bestIndex = idx; break; }
             }
-            let start = Math.max(0, bestIndex - 60);
-            let end = Math.min(text.length, bestIndex + 60);
+            const start = Math.max(0, bestIndex - 60);
+            const end = Math.min(text.length, bestIndex + 60);
             let snippet = text.substring(start, end);
             if (start > 0) snippet = '...' + snippet;
             if (end < text.length) snippet += '...';

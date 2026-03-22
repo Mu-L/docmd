@@ -47,7 +47,7 @@ export function generateMetaTags(config: any, pageData: any, relativePathToRoot:
 
   // Smart Fallback Description
   if (!description && pageData.searchData && pageData.searchData.content) {
-    let contentPrefix = pageData.searchData.content.substring(0, 150).trim();
+    const contentPrefix = pageData.searchData.content.substring(0, 150).trim();
     description = pageData.searchData.content.length > 150 ? contentPrefix + '...' : contentPrefix;
   }
 

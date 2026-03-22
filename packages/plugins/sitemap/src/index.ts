@@ -62,7 +62,7 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
     }
 
     // Metadata Logic
-    let priority = fm.priority || (pagePath === 'index.html' ? rootPriority : defaultPriority);
+    const priority = fm.priority || (pagePath === 'index.html' ? rootPriority : defaultPriority);
     const changefreq = fm.changefreq || defaultChangefreq;
 
     sitemapXml += '  <url>\n';

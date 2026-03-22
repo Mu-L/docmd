@@ -106,7 +106,7 @@ function injectPluginToConfig(configPath, meta) {
 function removePluginFromConfig(configPath, meta) {
   if (!fs.existsSync(configPath)) return false;
 
-  let content = fs.readFileSync(configPath, 'utf8');
+  const content = fs.readFileSync(configPath, 'utf8');
   const configKey = meta.configKey;
 
   if (!content.includes(configKey)) {
