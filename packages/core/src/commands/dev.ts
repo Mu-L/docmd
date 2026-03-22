@@ -13,7 +13,7 @@
  */
 
 import http from 'http';
-import { WebSocketServer } from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
 import chokidar from 'chokidar';
 import path from 'path';
 import fs from '../utils/fs-utils.js';

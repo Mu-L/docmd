@@ -142,7 +142,7 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
     ].join('\n');
 
     let editUrl = null;
-    let editLinkText = config.editLink?.text || 'Edit this page';
+    const editLinkText = config.editLink?.text || 'Edit this page';
 
     if (config.editLink && config.editLink.enabled && config.editLink.baseUrl) {
       const cleanBase = config.editLink.baseUrl.replace(/\/$/, '');

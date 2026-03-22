@@ -27,7 +27,7 @@ const pkg = JSON.parse(nativeFs.readFileSync(pkgUrl, 'utf8'));
 
 const COPYRIGHT_BANNER = `/*!
  * docmd (v${pkg.version})
- * Copyright (c) 2025-present-present docmd.io
+ * Copyright (c) 2025-present docmd.io
  * License: MIT
  */`;
 

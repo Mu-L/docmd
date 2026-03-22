@@ -31,7 +31,7 @@ function extractTitleFromFile(filePath: string, filename: string) {
     const h1Match = content.match(/^#\s+(.*)/m);
     if (h1Match) return h1Match[1].trim();
 
-  } catch (e) { }
+  } catch (e) { /* ignore parser errors */ }
 
   // 3. Fallback: Prettify Filename
   // "index copy.md" -> "Index Copy"

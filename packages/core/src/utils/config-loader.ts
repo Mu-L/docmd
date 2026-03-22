@@ -31,7 +31,7 @@ function hasMarkdownFiles(dir: string, maxDepth = 2, currentDepth = 0): boolean 
         if (hasMarkdownFiles(path.join(dir, entry.name), maxDepth, currentDepth + 1)) return true;
       }
     }
-  } catch (e) { }
+  } catch (e) { /* ignore */ }
   return false;
 }
 
@@ -88,7 +88,7 @@ async function buildZeroConfig(cwd: string, isDev = false, quiet = false) {
       }
       if (pkg.description) autoDesc = pkg.description;
     }
-  } catch (e) { }
+  } catch (e) { /* ignore */ }
 
   // Dynamically build the navigation tree
   const autoNav = buildAutoNav(absSrcDir);

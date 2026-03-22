@@ -55,10 +55,12 @@ const args = process.argv.slice(2);
 const skipSetup = args.includes('--skip-setup');
 
 try {
-    // 1. Install & Build Monorepo
+    // 1. Install, Lint & Build Monorepo
     if (!skipSetup) {
-        console.log('\n\x1b[2m📦 [1/10] Linking & Building Monorepo...\x1b[0m');
-        runCmd('pnpm install --silent && pnpm run build', CWD);
+        console.log('\n\x1b[2m📦 [1/10] Installing, Linting & Building Monorepo...\x1b[0m');
+        runCmd('pnpm install --silent', CWD);
+        runCmd('pnpm run lint', CWD);
+        runCmd('pnpm run build', CWD);
     } else {
         console.log('\n\x1b[2m⏩ [1/10] Skipping setup (CI mode)...\x1b[0m');
     }

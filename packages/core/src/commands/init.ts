@@ -316,7 +316,7 @@ export async function initProject() {
   }
 
   // Write index.md file if it doesn't exist or user confirmed override
-  if (!await fs.pathExists(indexMdFile) || shouldOverride) {
+  if (!await fs.pathExists(indexMdFile)) {
     await fs.writeFile(indexMdFile, defaultIndexMdContent, 'utf8');
     console.log('📄 Created `docs/index.md`');
   } else if (shouldOverride) {
