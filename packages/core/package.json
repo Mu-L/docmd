@@ -1,6 +1,6 @@
 {
   "name": "@docmd/core",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "description": "The minimalist, zero-config documentation generator.",
   "type": "module",
   "main": "dist/index.js",
