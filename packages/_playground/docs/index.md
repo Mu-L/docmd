@@ -16,13 +16,13 @@ Test your UI components and parser rules here to ensure visual consistency:
 ::: card "Container Test"
     Test nested callouts and containers.
 
-    ::: callout warning "Warning"
+    ::: callout warning "Warning :warning:"
     Ensure nested items render correctly.
     :::
 :::
 
 ::: tabs
-== tab "Feature A"
+== tab ":rocket: Feature A"
 ### Feature A
 Verification content.
 == tab "Feature B"
@@ -37,6 +37,6 @@ Verification content.
 - [Report an Issue](https://github.com/docmd-io/docmd/issues)
 
 ## 🧪 Developer Checklist
-- [ ] **Parser:** Does the Markdown output match the HTML in `packages/parser/src/html-renderer.js`?
+- [ ] **Parser:** Does the Markdown output match the HTML in `html-renderer.js`?
 - [ ] **UI:** Does the theme CSS apply to this page correctly?
 - [ ] **SPA:** Does navigation between pages work without a hard refresh?
