@@ -2562,3 +2562,33 @@ hr {
 code {
     padding: .15em .5em;
 }
+
+.docmd-container.grids {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+    margin: var(--space-4) 0;
+    width: 100%;
+}
+
+.docmd-container.grid-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 0;
+    background: transparent;
+}
+
+ul.contains-task-list {
+    list-style: none !important;
+    padding-left: 0.5em;
+}
+
+ul.contains-task-list > li::marker {
+    content: none !important;
+    display: none !important;
+}
+
+.task-list-item-checkbox {
+    margin-top: .25em;
+}

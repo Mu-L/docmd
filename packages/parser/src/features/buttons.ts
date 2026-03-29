@@ -69,7 +69,7 @@ function buttonRule(state, startLine, endLine, silent) {
 
   const targetAttr = isExternal ? ' target="_blank" rel="noopener noreferrer"' : '';
 
-  token.content = `<a href="${href}" class="docmd-button"${styleAttr}${targetAttr}>${text}</a>`;
+  token.content = `<a href="${href}" class="docmd-button"${styleAttr}${targetAttr}>${state.md.renderInline(text)}</a>`;
 
   state.line = startLine + 1;
   return true;

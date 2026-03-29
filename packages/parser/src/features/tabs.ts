@@ -104,7 +104,7 @@ function tabsRule(state, startLine, endLine, silent) {
   for (let i = 0; i < lines.length; i++) {
     const rawLine = lines[i];
     const trimmedLine = rawLine.trim();
-    const tabMatch = trimmedLine.match(/^==\s*tab\s+(?:"([^"]+)"|(\S+))$/);
+    const tabMatch = trimmedLine.match(/^==\s*tab\s+(?:"([^"]+)"|(\S+))/);
 
     if (tabMatch) {
       if (currentTab) {
@@ -169,7 +169,7 @@ export default {
     // Register Renderers
     md.renderer.rules.tabs_nav_open = () => '<div class="docmd-tabs-nav">';
     md.renderer.rules.tabs_nav_close = () => '</div>';
-    md.renderer.rules.tabs_nav_item = (tokens, idx) => `<div class="${tokens[idx].attrs[0][1]}">${tokens[idx].content}</div>`;
+    md.renderer.rules.tabs_nav_item = (tokens, idx) => `<div class="${tokens[idx].attrs[0][1]}">${md.renderInline(tokens[idx].content)}</div>`;
     md.renderer.rules.tabs_content_open = () => '<div class="docmd-tabs-content">';
     md.renderer.rules.tabs_content_close = () => '</div>';
     md.renderer.rules.tab_pane_open = (tokens, idx) => `<div class="${tokens[idx].attrs[0][1]}">`;

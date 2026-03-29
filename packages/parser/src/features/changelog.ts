@@ -24,6 +24,12 @@ function smartDedent(str) {
   return lines.map(line => line.trim().length ? line.substring(minIndent) : '').join('\n');
 }
 
+function parseQuotedTitle(info) {
+  if (!info) return '';
+  const match = info.match(/"([^"]*)"/);
+  return match ? match[1] : info.trim();
+}
+
 function changelogRule(state, startLine, endLine, silent) {
   const start = state.bMarks[startLine] + state.tShift[startLine];
   const max = state.eMarks[startLine];
@@ -91,7 +97,7 @@ function changelogRule(state, startLine, endLine, silent) {
         currentEntry.content = smartDedent(currentContentLines.join('\n'));
         entries.push(currentEntry);
       }
-      currentEntry = { meta: markerMatch[1], content: '' };
+      currentEntry = { meta: parseQuotedTitle(markerMatch[1]), content: '' };
       currentContentLines = [];
     } else if (currentEntry) {
       currentContentLines.push(rawLine);
@@ -108,7 +114,7 @@ function changelogRule(state, startLine, endLine, silent) {
     // We render HTML blocks directly for the timeline structure
     const entryOpen = state.push('html_block', '', 0);
     entryOpen.content = `<div class="changelog-entry">
-      <div class="changelog-meta"><span class="changelog-date">${entry.meta}</span></div>
+      <div class="changelog-meta"><span class="changelog-date">${state.md.renderInline(entry.meta)}</span></div>
       <div class="changelog-body">`;
 
     // Recurse render the markdown inside the entry
