@@ -989,6 +989,31 @@ body.has-menubar-header .docmd-menubar {
     width: 100%;
 }
 
+.docmd-embed {
+  margin: 1.5rem auto;
+  border-radius: var(--docmd-radius-lg, 12px);
+  max-width: 100%;
+  display: block;
+}
+iframe.docmd-embed {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: none !important;
+}
+iframe.docmd-embed[data-short="true"] { 
+  aspect-ratio: 9 / 16;
+  max-width: 400px;
+}
+blockquote.docmd-embed {
+  width: 100%;
+  border: none !important;
+  display: flex;
+  justify-content: center;
+}
+.docmd-embed-fallback {
+  margin: 1.5rem 0;
+  display: flex;
+}
 .version-dropdown-toggle {
     display: flex;
     align-items: center;
