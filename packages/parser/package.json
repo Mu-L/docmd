@@ -1,6 +1,6 @@
 {
   "name": "@docmd/parser",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "description": "Pure Markdown parsing engine for docmd.",
   "type": "module",
   "main": "dist/index.js",
@@ -13,6 +13,7 @@
   ],
   "dependencies": {
     "ejs": "^3.1.10",
+    "embed-lite": "^0.1.4",
     "gray-matter": "^4.0.3",
     "highlight.js": "^11.11.1",
     "lucide-static": "^0.577.0",
