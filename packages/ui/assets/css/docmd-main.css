@@ -1246,6 +1246,7 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
     background-color: var(--bg-color);
     box-shadow: var(--shadow-sm);
     overflow: hidden;
+
 }
 
 .callout {
@@ -2569,6 +2570,10 @@ code {
     gap: var(--space-6);
     margin: var(--space-4) 0;
     width: 100%;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+
 }
 
 .docmd-container.grid-item {
@@ -2577,6 +2582,11 @@ code {
     gap: var(--space-4);
     min-width: 0;
     background: transparent;
+    padding: var(--space-1);
+    border: 0;
+    box-shadow: none;
+    margin-bottom: 0;
+
 }
 
 ul.contains-task-list {
