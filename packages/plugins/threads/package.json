@@ -1,0 +1,50 @@
+{
+  "name": "@docmd/plugin-threads",
+  "version": "0.7.0-alpha.1",
+  "type": "module",
+  "description": "Inline discussion threads for docmd documentation sites.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc && node build.js",
+    "build:client": "node build.js",
+    "test": "echo 'TODO: migrate tests to vitest'"
+  },
+  "peerDependencies": {
+    "@docmd/core": "^0.6.5",
+    "@docmd/parser": "^0.6.5"
+  },
+  "dependencies": {
+    "@awesome.me/webawesome": "^3.3.1",
+    "lit": "^3.3.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "esbuild": "^0.27.3",
+    "markdown-it": "^14.1.1",
+    "typescript": "^5.7.0"
+  },
+  "keywords": [
+    "docmd",
+    "plugin",
+    "threads",
+    "discussions",
+    "comments",
+    "markdown",
+    "documentation"
+  ],
+  "author": {
+    "name": "Saulo Vallory"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/docmd-io/docmd.git"
+  },
+  "license": "MIT"
+}
