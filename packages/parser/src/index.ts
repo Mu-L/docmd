@@ -27,3 +27,5 @@ export {
   // Utils
   renderIcon
 };
+
+export { createDepthTrackingContainer } from './features/index.js';
