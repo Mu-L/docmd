@@ -153,7 +153,7 @@ title: "Stress Test"
     const notFoundHtml = fs.readFileSync(path.join(tempDir, 'site-modern/404.html'), 'utf8');
     const redirectHtml = fs.readFileSync(path.join(tempDir, 'site-modern/old-guide/index.html'), 'utf8');
     const zcHtml = fs.readFileSync(path.join(zeroConfigDir, 'site/index.html'), 'utf8');
-    const zcNestedHtml = fs.readFileSync(path.join(zeroConfigDir, 'site/nested/auto/index.html'), 'utf8');
+    const zcNestedHtml = fs.readFileSync(path.join(zeroConfigDir, 'site/nested/index.html'), 'utf8');
 
     assert(modernHtml.includes('docmd-options-menu'), "Options Menu missing in Modern Config");
     assert(modernHtml.includes('sponsor.com'), "Sponsor Link missing");
