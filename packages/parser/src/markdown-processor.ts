@@ -13,8 +13,8 @@
  */
 
 import MarkdownIt from 'markdown-it';
-import matter from 'gray-matter';
-import hljs from 'highlight.js';
+import matter from 'lite-matter';
+import { highlight } from 'lite-hl';
 
 // Standard Plugins
 import attrs from 'markdown-it-attrs';
@@ -130,13 +130,8 @@ function createMarkdownProcessor(config: any = {}, pluginsCallback: any) {
     if (lang === 'mermaid') {
       return `<pre class="mermaid">${new MarkdownIt().utils.escapeHtml(str)}</pre>`;
     }
-    if (lang && hljs.getLanguage(lang)) {
-      try {
-        const highlighted = hljs.highlight(str, { language: lang, ignoreIllegals: true }).value;
-        return `<pre class="hljs"><code>${highlighted}</code></pre>`;
-      } catch (e) { /* ignore */ }
-    }
-    return `<pre class="hljs"><code>${new MarkdownIt().utils.escapeHtml(str)}</code></pre>`;
+    const highlighted = highlight(str, { language: lang, mimicHljs: true }).value;
+    return `<pre class="hljs"><code>${highlighted}</code></pre>`;
   };
 
   mdOptions.highlight = config.theme?.codeHighlight !== false ? highlightFn : (str: any, lang: any) => {

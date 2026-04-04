@@ -1,6 +1,6 @@
 {
   "name": "@docmd/core",
-  "version": "0.6.5",
+  "version": "0.6.6",
   "description": "The minimalist, zero-config documentation generator.",
   "type": "module",
   "main": "dist/index.js",
@@ -29,8 +29,6 @@
     "@docmd/themes": "workspace:*",
     "@docmd/ui": "workspace:*",
     "chalk": "^4.1.2",
-    "chokidar": "^3.6.0",
-    "commander": "^11.1.0",
     "esbuild": "^0.27.4",
     "ws": "^8.20.0"
   },
