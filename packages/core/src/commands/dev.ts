@@ -14,7 +14,7 @@
 
 import http from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
-import chokidar from 'chokidar';
+import nativeFs from 'node:fs';
 import path from 'path';
 import fs from '../utils/fs-utils.js';
 import chalk from 'chalk';
@@ -263,61 +263,69 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
   }
   console.log('');
 
-  const watcher = chokidar.watch(watchedPaths, {
-    ignored: [/(^|[\/\\])\../, '**/.git/**', '**/node_modules/**', paths.outputDir],
-    persistent: true,
-    ignoreInitial: true,
-    awaitWriteFinish: { stabilityThreshold: 100, pollInterval: 100 }
-  });
-
+  const watchers: nativeFs.FSWatcher[] = [];
   let isRebuilding = false;
   let rebuildQueued = false;
   let configNeedsReload = false;
-  let rebuildTimeout = null;
+  let rebuildTimeout: any = null;
 
-  watcher.on('all', (event, filePath) => {
-    const relativeFilePath = path.relative(CWD, filePath);
-    // Ignore common system file noise from flooding terminals
-    if (relativeFilePath.includes('.DS_Store')) return;
+  for (const watchPath of watchedPaths) {
+    if (!nativeFs.existsSync(watchPath)) continue;
 
-    if (filePath === paths.configFileToWatch) {
-      configNeedsReload = true;
-    }
+    const watcher = nativeFs.watch(watchPath, { recursive: true }, (event, filename) => {
+      if (!filename) return;
+      const filePath = path.join(watchPath, filename);
+      const relativeFilePath = path.relative(CWD, filePath);
+      
+      // Ignore ignored paths
+      if (
+        relativeFilePath.startsWith(path.relative(CWD, paths.outputDir)) ||
+        filename.includes('.git') || 
+        filename.includes('node_modules') || 
+        filename.startsWith('.') ||
+        relativeFilePath.includes('.DS_Store')
+      ) return;
 
-    if (rebuildTimeout) clearTimeout(rebuildTimeout);
-    rebuildTimeout = setTimeout(() => {
-      const executeBuildFn = async () => {
-        if (isRebuilding) {
-          rebuildQueued = true;
-          return;
-        }
-        process.stdout.write(chalk.dim(`↻ Change in ${relativeFilePath}... `));
-        isRebuilding = true;
-        rebuildQueued = false;
+      if (filePath === paths.configFileToWatch) {
+        configNeedsReload = true;
+      }
 
-        try {
-          if (configNeedsReload) {
-            configNeedsReload = false;
-            config = await loadConfig(configPathOption, { zeroConfig: options.zeroConfig });
-            paths = resolveConfigPaths(config);
+      if (rebuildTimeout) clearTimeout(rebuildTimeout);
+      rebuildTimeout = setTimeout(() => {
+        const executeBuildFn = async () => {
+          if (isRebuilding) {
+            rebuildQueued = true;
+            return;
           }
+          process.stdout.write(chalk.dim(`↻ Change in ${relativeFilePath}... `));
+          isRebuilding = true;
+          rebuildQueued = false;
 
-          await buildSite(configPathOption, { isDev: true, preserve: options.preserve, zeroConfig: options.zeroConfig });
-          broadcastReload();
-          process.stdout.write(chalk.green('Done.\n'));
+          try {
+            if (configNeedsReload) {
+              configNeedsReload = false;
+              config = await loadConfig(configPathOption, { zeroConfig: options.zeroConfig });
+              paths = resolveConfigPaths(config);
+            }
 
-        } catch (error) {
-          console.error(chalk.red('\n❌ Rebuild failed:'), error.message);
-        } finally {
-          isRebuilding = false;
-          if (rebuildQueued) {
-            executeBuildFn();
+            await buildSite(configPathOption, { isDev: true, preserve: options.preserve, zeroConfig: options.zeroConfig });
+            broadcastReload();
+            process.stdout.write(chalk.green('Done.\n'));
+
+          } catch (error: any) {
+            console.error(chalk.red('\n❌ Rebuild failed:'), error.message);
+          } finally {
+            isRebuilding = false;
+            if (rebuildQueued) {
+              executeBuildFn();
+            }
           }
-        }
-      };
-      executeBuildFn();
-    }, 150);
-  });
+        };
+        executeBuildFn();
+      }, 150);
+    });
+    watchers.push(watcher);
+  }
 
   // Server Startup Logic
   const PORT = parseInt(options.port || process.env.PORT || 3000, 10);
@@ -398,8 +406,8 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
     forceExitTimeout.unref();
 
     try {
-      const closures = [];
-      if (watcher) closures.push(watcher.close());
+      const closures: any[] = [];
+      watchers.forEach(w => closures.push(new Promise<void>(resolve => { w.close(); resolve(); })));
       if (wss) closures.push(new Promise(resolve => wss.close(resolve)));
       if (server) closures.push(new Promise(resolve => server.close(resolve)));
 

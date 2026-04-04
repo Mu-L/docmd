@@ -35,7 +35,7 @@ function extractTitleFromFile(filePath: string, filename: string) {
 
   // 3. Fallback: Prettify Filename
   // "index copy.md" -> "Index Copy"
-  const cleanName = filename.replace(/\.md$/i, '');
+  const cleanName = filename.replace(/\.(md|ejs)$/i, '');
   // Capitalize first letter of each word
   return cleanName.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
@@ -47,8 +47,8 @@ export function buildAutoNav(dir: string, basePath = '/'): any[] { // Default ba
   const items = fs.readdirSync(dir, { withFileTypes: true });
   const nav: any[] = [];
 
-  // Handle index.md (or README.md if no index.md) -> maps to the folder root
-  const hasIndex = items.some(i => i.name.toLowerCase() === 'index.md');
+  // Handle index.md/index.ejs (or README.md if no index.md) -> maps to the folder root
+  const hasIndex = items.some(i => /^index\.(md|ejs)$/i.test(i.name));
   const hasReadme = items.some(i => i.name.toLowerCase() === 'readme.md');
   const indexExists = hasIndex || hasReadme;
 
@@ -91,19 +91,19 @@ export function buildAutoNav(dir: string, basePath = '/'): any[] { // Default ba
           children
         });
       }
-    } else if (item.isFile() && item.name.toLowerCase().endsWith('.md')) {
+    } else if (item.isFile() && /\.(md|ejs)$/i.test(item.name)) {
       const title = extractTitleFromFile(fullPath, item.name);
 
       let linkPath = relPath;
 
-      const isIndex = item.name.toLowerCase() === 'index.md';
+      const isIndex = /^index\.(md|ejs)$/i.test(item.name);
       const isReadme = item.name.toLowerCase() === 'readme.md';
 
       if (isIndex || (isReadme && !hasIndex)) {
         linkPath = basePath === '/' ? '/' : basePath;
       } else {
         // Strip extension for clean URLs
-        linkPath = linkPath.replace(/\.md$/i, '');
+        linkPath = linkPath.replace(/\.(md|ejs)$/i, '');
       }
 
       nav.push({ title, path: linkPath });
@@ -112,9 +112,13 @@ export function buildAutoNav(dir: string, basePath = '/'): any[] { // Default ba
 
   // If no index exists at this level, and we have files, designate the first one as index
   if (!indexExists && nav.length > 0) {
-    // Find first file (not a folder)
-    const firstFile = nav.find(n => !n.children);
-    if (firstFile) {
+    // Find first file (not a folder) — alphabetical after sorting (sorted below)
+    // But since sort hasn't happened yet, sort copies to pick the true first
+    const fileItems = nav.filter(n => !n.children).sort((a, b) => a.title.localeCompare(b.title));
+    if (fileItems.length > 0) {
+      const firstFile = fileItems[0];
+      // Store the original path before reassigning so the generator knows which file this is
+      firstFile._sourceFile = firstFile.path;
       firstFile.path = basePath === '/' ? '/' : basePath;
     }
   }
