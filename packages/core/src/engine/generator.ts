@@ -72,17 +72,81 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
   }
 
   // --- 2. Process Content ---
-  // Note: We use a passed-in file list or find them if not provided (future optimization)
-  // For now, assume findFilesRecursive is available via utils
-  const mdFiles = await findFilesRecursive(srcDir, ['.md', '.markdown']);
+  // Build a set of file paths that the auto-router designated as folder-level indexes
+  // These are files where _sourceFile was stored when the auto-router reassigned them to '/'
+  const navDesignatedIndexFiles = new Set<string>();
+  const extractNavIndexes = (items: any[]) => {
+    for (const item of items) {
+      if (item.children) {
+        extractNavIndexes(item.children);
+      } else if (item._sourceFile) {
+        // _sourceFile is the original path like '/highlighting' — normalize to relative path
+        navDesignatedIndexFiles.add(item._sourceFile.replace(/^\//, ''));
+      }
+    }
+  };
+  if (config.navigation) extractNavIndexes(config.navigation);
+
+  // Find both .md/.markdown files AND .ejs content files (EJS files are pre-rendered before markdown)
+  const mdFiles = await findFilesRecursive(srcDir, ['.md', '.markdown', '.ejs']);
 
   const pages = [];
   for (const filePath of mdFiles) {
-    const rawContent = await nativeFs.promises.readFile(filePath, 'utf8');
+    let rawContent = await nativeFs.promises.readFile(filePath, 'utf8');
     const relativePath = path.relative(srcDir, filePath);
     const filename = path.basename(relativePath).toLowerCase();
+    const ext = path.extname(filename);
     const isIndex = filename.startsWith('index.');
     const isReadme = filename === 'readme.md';
+
+    // Pre-render .ejs content files through lite-template before passing to markdown
+    // 1. Extract frontmatter first so variables like `depth` are available to the template
+    // 2. Render the EJS body with frontmatter data + helpers
+    // 3. Re-prepend frontmatter so processContent can parse it normally
+    if (ext === '.ejs') {
+      try {
+        // Inline frontmatter extraction (avoids dependency on lite-matter in core)
+        const fmRegex = /^(?:---[\r\n]+)([\s\S]*?)(?:[\r\n]+---(?:[\r\n]+|$))/;
+        const fmMatch = rawContent.match(fmRegex);
+        let ejsBody = rawContent;
+        const fmData: Record<string, any> = {};
+        let fmRaw = '';
+
+        if (fmMatch) {
+          fmRaw = fmMatch[0];
+          ejsBody = rawContent.slice(fmRaw.length);
+          // Parse simple YAML key-values for template variables
+          const yamlStr = fmMatch[1];
+          for (const line of yamlStr.split('\n')) {
+            const kv = line.match(/^(\w+)\s*:\s*(.+)$/);
+            if (kv) {
+              let val: any = kv[2].trim();
+              // Attempt to parse numbers and booleans
+              if (/^\d+$/.test(val)) val = parseInt(val, 10);
+              else if (val === 'true') val = true;
+              else if (val === 'false') val = false;
+              else val = val.replace(/^["']|["']$/g, ''); // strip quotes
+              fmData[kv[1]] = val;
+            }
+          }
+        }
+
+        // Render the EJS body with frontmatter data + core helpers (include, renderIcon)
+        const renderedBody = await parser.renderTemplateAsync(ejsBody, {
+          ...fmData
+        }, { filename: filePath });
+
+        // Re-prepend original frontmatter for processContent
+        if (fmRaw) {
+          rawContent = fmRaw + '\n' + renderedBody;
+        } else {
+          rawContent = renderedBody;
+        }
+      } catch (e) {
+        console.warn(`[docmd] Skipping EJS render error in ${relativePath}: ${e.message}`);
+        continue;
+      }
+    }
 
     // Treat README.md as index only if no index.md exists in the same folder
     const hasIndexInFolder = mdFiles.some(f => {
@@ -90,14 +154,21 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
       return b.startsWith('index.') && path.dirname(f) === path.dirname(filePath);
     });
 
-    const effectivelyIndex = isIndex || (isReadme && !hasIndexInFolder);
+    // Check if the auto-router designated this file as a folder-level index
+    // This handles zero-config's "first file becomes index" when no index.md exists
+    const relWithoutExt = relativePath.replace(/\.(md|markdown|ejs)$/i, '').replace(/\\/g, '/');
+    const isNavDesignatedIndex = navDesignatedIndexFiles.has(relWithoutExt);
+
+    const effectivelyIndex = isIndex || (isReadme && !hasIndexInFolder) || (isNavDesignatedIndex && !hasIndexInFolder);
 
     const processed = parser.processContent(rawContent, mdProcessor, config, { isIndex: effectivelyIndex });
     if (!processed) continue;
 
+    // Determine output path — .ejs files map like .md files
+    const withoutExt = relativePath.replace(/\.(md|markdown|ejs)$/, '');
     const htmlOutputPath = effectivelyIndex
       ? path.join(path.dirname(relativePath), 'index.html')
-      : relativePath.replace(/\.md$/, '/index.html');
+      : withoutExt + '/index.html';
     pages.push({ ...processed, sourcePath: filePath, outputPath: htmlOutputPath });
   }
 

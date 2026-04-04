@@ -43,8 +43,10 @@ code.hljs {
 .hljs-name,
 .hljs-section,
 .hljs-selector-tag,
-.hljs-subst {
-    color: #e45649
+.hljs-subst,
+.hljs-operator,
+.hljs-punctuation {
+    color: #a626a4
 }
 
 .hljs-literal {

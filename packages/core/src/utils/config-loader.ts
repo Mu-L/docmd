@@ -26,7 +26,7 @@ function hasMarkdownFiles(dir: string, maxDepth = 2, currentDepth = 0): boolean 
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
       if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
-      if (entry.isFile() && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown'))) return true;
+      if (entry.isFile() && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown') || entry.name.endsWith('.ejs'))) return true;
       if (entry.isDirectory()) {
         if (hasMarkdownFiles(path.join(dir, entry.name), maxDepth, currentDepth + 1)) return true;
       }
