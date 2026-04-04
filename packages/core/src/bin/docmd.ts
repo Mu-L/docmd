@@ -14,8 +14,8 @@
  * --------------------------------------------------------------------
  */
 
-import { program } from 'commander';
-import { readFileSync } from 'fs';
+import { parseArgs } from 'node:util';
+import { readFileSync } from 'node:fs';
 import { initProject } from '../commands/init.js';
 import { buildSite } from '../commands/build.js';
 import { startDevServer } from '../commands/dev.js';
@@ -28,92 +28,101 @@ import { installPlugin, removePlugin } from '@docmd/plugin-installer';
 const pkgUrl = new URL('../../package.json', import.meta.url);
 const { version } = JSON.parse(readFileSync(pkgUrl, 'utf-8'));
 
-program
-  .name('docmd')
-  .description('The minimalist, zero-config documentation generator.')
-  .version(version, '-v, --version')
-  .action(() => {
-    printBanner();
-    program.help();
-  });
+const args = process.argv.slice(2);
 
-program
-  .command('init')
-  .description('Initialize a new documentation project')
-  .action(() => {
-    printBanner();
-    initProject();
-  });
+const options = {
+  config: { type: 'string', short: 'c' },
+  'zero-config': { type: 'boolean', short: 'z' },
+  offline: { type: 'boolean' },
+  port: { type: 'string', short: 'p' },
+  'build-only': { type: 'boolean' },
+  verbose: { type: 'boolean', short: 'v' },
+  version: { type: 'boolean', short: 'V' },
+  help: { type: 'boolean', short: 'h' }
+} as const;
 
-program
-  .command('build')
-  .description('Build the static site for production')
-  .option('-c, --config <path>', 'Path to config', 'docmd.config.js')
-  .option('-z, --zero-config', 'Run in auto-detect mode without a config file')
-  .option('--offline', 'Optimize for file:// viewing')
-  .action((opts) => {
-    printBanner();
-    buildSite(opts.config, { isDev: false, offline: opts.offline, zeroConfig: opts.zeroConfig });
-  });
+let parsed;
+try {
+  parsed = parseArgs({ args, options, allowPositionals: true });
+} catch (e: any) {
+  console.error(`Error: ${e.message}`);
+  process.exit(1);
+}
 
-program
-  .command('dev')
-  .description('Start the development server')
-  .option('-c, --config <path>', 'Path to config', 'docmd.config.js')
-  .option('-p, --port <number>', 'Port to run server')
-  .option('-z, --zero-config', 'Run in auto-detect mode without a config file')
-  .action((opts) => {
-    printBanner();
-    startDevServer(opts.config, opts);
-  });
+const { values, positionals } = parsed;
+const command = positionals[0];
 
-program
-  .command('live')
-  .description('Launch the Live Editor')
-  .option('--build-only', 'Generate the dist/ folder without starting the server')
-  .action(async (opts) => {
-    printBanner();
-    try {
-      await buildLive({ serve: !opts.buildOnly });
-    } catch (e) {
-      console.error(e);
-      process.exit(1);
-    }
-  });
+if (values.version || (!command && args.includes('-v'))) {
+  console.log(version);
+  process.exit(0);
+}
 
-program
-  .command('migrate')
-  .description('Migrate legacy config to the new V2 structure')
-  .option('-c, --config <path>', 'Path to config', 'docmd.config.js')
-  .action((opts) => {
-    printBanner();
-    migrateProject(opts.config);
-  });
+if (!command || values.help) {
+  printBanner();
+  console.log(`docmd v${version}`);
+  console.log(`\nUsage: docmd <command> [options]\n`);
+  console.log(`Commands:`);
+  console.log(`  init            Initialize a new documentation project`);
+  console.log(`  build           Build the static site for production`);
+  console.log(`  dev             Start the development server`);
+  console.log(`  live            Launch the Live Editor`);
+  console.log(`  migrate         Migrate legacy config to the new V2 structure`);
+  console.log(`  stop            Kill all running background docmd dev servers`);
+  console.log(`  add <plugin>    Install and configure a docmd plugin`);
+  console.log(`  remove <plugin> Remove and unconfigure a docmd plugin`);
+  console.log(`\nOptions:`);
+  console.log(`  -c, --config <path>    Path to config (default: docmd.config.js)`);
+  console.log(`  -z, --zero-config      Run in auto-detect mode without a config file`);
+  console.log(`  -p, --port <number>    Port to run server`);
+  console.log(`  --offline              Optimize for file:// viewing`);
+  console.log(`  --build-only           Generate the dist/ folder without starting the server`);
+  console.log(`  -v, --verbose          Show detailed package manager logs`);
+  console.log(`  -V, --version          Output the version number`);
+  console.log(`  -h, --help             Display help for command`);
+  process.exit(0);
+}
 
-program
-  .command('stop')
-  .description('Kill all running background docmd dev servers')
-  .option('-p, --port <number>', 'Stop a specific docmd instance running on this port')
-  .action(async (opts: any) => {
-    await stopServer(opts.port);
-  });
+const opts = {
+  config: values.config || 'docmd.config.js',
+  zeroConfig: values['zero-config'],
+  offline: values.offline,
+  port: values.port,
+  buildOnly: values['build-only'],
+  verbose: values.verbose
+};
 
-program
-  .command('add <pluginName>')
-  .description('Install and configure a docmd plugin')
-  .option('-v, --verbose', 'Show detailed package manager logs')
-  .action((pluginName, opts) => {
-    printBanner();
-    installPlugin(pluginName, opts);
-  });
+if (command !== 'stop') {
+  printBanner();
+}
 
-program
-  .command('remove <pluginName>')
-  .description('Remove and unconfigure a docmd plugin')
-  .option('-v, --verbose', 'Show detailed package manager logs')
-  .action((pluginName, opts) => {
-    printBanner();
-    removePlugin(pluginName, opts);
+if (command === 'init') {
+  initProject();
+} else if (command === 'build') {
+  buildSite(opts.config, { isDev: false, offline: opts.offline, zeroConfig: opts.zeroConfig });
+} else if (command === 'dev') {
+  startDevServer(opts.config, opts);
+} else if (command === 'live') {
+  buildLive({ serve: !opts.buildOnly }).catch((e) => {
+    console.error(e);
+    process.exit(1);
   });
-
-program.parse();
+} else if (command === 'migrate') {
+  migrateProject(opts.config);
+} else if (command === 'stop') {
+  stopServer(opts.port);
+} else if (command === 'add') {
+  if (!positionals[1]) {
+    console.error('Error: missing plugin name.');
+    process.exit(1);
+  }
+  installPlugin(positionals[1], opts);
+} else if (command === 'remove') {
+  if (!positionals[1]) {
+    console.error('Error: missing plugin name.');
+    process.exit(1);
+  }
+  removePlugin(positionals[1], opts);
+} else {
+  console.error(`Unknown command: ${command}`);
+  process.exit(1);
+}
