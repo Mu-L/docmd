@@ -12,16 +12,19 @@
  * --------------------------------------------------------------------
  */
 
-import ejs from 'ejs';
+import tpl from 'lite-template';
 import { renderIcon } from './utils/icon-renderer.js';
 
 /**
  * Renders an EJS template string with provided data.
- * NOTE: The 'templateString' must be read by the CLI and passed here.
+ * 
+ * Injects docmd-specific context helpers (renderIcon, fixLink).
+ * Utilizes lite-template natively, while passing a preprocessor hook 
+ * to automatically strip YAML frontmatter out of any recursive file includes.
  */
-async function renderTemplateAsync(templateString, data, options = {}) {
+async function renderTemplateAsync(templateString, data, options: any = {}) {
   // Inject core helpers into every template
-  const fullData = {
+  const fullData: any = {
     ...data,
     renderIcon,
     // Helper to fix links relative to root
@@ -29,9 +32,25 @@ async function renderTemplateAsync(templateString, data, options = {}) {
   };
 
   try {
-    return await ejs.render(templateString, fullData, { ...options, async: true });
+    const finalOptions = {
+      ...options,
+      async: true,
+      preprocessor: (content) => {
+        // Strip frontmatter from included files — frontmatter is a docmd concern,
+        // not an EJS/template concern. The top-level page's frontmatter is handled
+        // by processContent/lite-matter, but recursive includes should not re-render it.
+        const fmRegex = /^(?:---[\r\n]+)([\s\S]*?)(?:[\r\n]+---(?:[\r\n]+|$))/;
+        const fmMatch = content.match(fmRegex);
+        if (fmMatch) {
+          return content.slice(fmMatch[0].length);
+        }
+        return content;
+      }
+    };
+    
+    return await tpl.render(templateString, fullData, finalOptions);
   } catch (e) {
-    throw new Error(`EJS Render Error: ${e.message}`);
+    throw new Error(`Template Render Error: ${e.message}`);
   }
 }
 
