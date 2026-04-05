@@ -40,12 +40,14 @@ const SOURCE_ASSETS_DIR = (async () => {
     }
 })();
 
-async function build() {
+async function build(outputPath?: string) {
     console.log('📦 Building Live Editor...');
 
+    const finalOutputDir = outputPath ? path.join(outputPath, 'dist') : PUBLIC_DIR;
+
     // 1. Prepare Dist
-    await fs.rm(PUBLIC_DIR, { recursive: true, force: true });
-    await fs.mkdir(PUBLIC_DIR, { recursive: true });
+    await fs.rm(finalOutputDir, { recursive: true, force: true });
+    await fs.mkdir(finalOutputDir, { recursive: true });
 
     // 2. Generate Shims (Write to dist/ as temporary build artifact)
     const assetsDir = await SOURCE_ASSETS_DIR;
@@ -127,7 +129,7 @@ async function build() {
         await esbuild.build({
             entryPoints: [path.join(assetsDir, 'browser-entry.ts')],
             bundle: true,
-            outfile: path.join(PUBLIC_DIR, 'docmd-live.js'),
+            outfile: path.join(finalOutputDir, 'docmd-live.js'),
             platform: 'browser',
             format: 'iife',
             globalName: 'docmd',
@@ -138,11 +140,11 @@ async function build() {
         });
 
         // 6. Copy Static Assets (Searching in assetsDir as resolved above)
-        await fs.copyFile(path.join(assetsDir, 'index.html'), path.join(PUBLIC_DIR, 'index.html'));
-        await fs.copyFile(path.join(assetsDir, 'docmd-live.css'), path.join(PUBLIC_DIR, 'docmd-live.css'));
+        await fs.copyFile(path.join(assetsDir, 'index.html'), path.join(finalOutputDir, 'index.html'));
+        await fs.copyFile(path.join(assetsDir, 'docmd-live.css'), path.join(finalOutputDir, 'docmd-live.css'));
 
-        const cssDest = path.join(PUBLIC_DIR, 'assets/css');
-        const jsDest = path.join(PUBLIC_DIR, 'assets/js');
+        const cssDest = path.join(finalOutputDir, 'assets/css');
+        const jsDest = path.join(finalOutputDir, 'assets/js');
         await fs.mkdir(cssDest, { recursive: true });
         await fs.mkdir(jsDest, { recursive: true });
         await fs.copyFile(path.join(assetsDir, 'docmd-live-preview.css'), path.join(cssDest, 'docmd-live-preview.css'));
@@ -184,10 +186,11 @@ async function build() {
 
         // Copy Favicon
         try {
-            await fs.copyFile(path.join(ui.getAssetsDir(), 'favicon.ico'), path.join(PUBLIC_DIR, 'favicon.ico'));
+            await fs.copyFile(path.join(ui.getAssetsDir(), 'favicon.ico'), path.join(finalOutputDir, 'favicon.ico'));
         } catch (e) { console.log('X Missing Fav'); }
 
-        console.log('✅ Live Editor built in ./dist/public');
+        const relPath = path.relative(process.cwd(), finalOutputDir);
+        console.log(`✅ Live Editor built in ./${relPath}`);
     } catch (e) {
         console.error('❌ Live build failed:', e);
         process.exit(1);
