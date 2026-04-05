@@ -1,3 +1,4 @@
+/* global WebSocket, sessionStorage, queueMicrotask */
 /**
  * --------------------------------------------------------------------
  * docmd : the minimalist, zero-config documentation generator.

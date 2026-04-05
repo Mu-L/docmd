@@ -80,8 +80,8 @@ function getNetworkIp() {
 function getGitDevInfo() {
   let name = '';
   let email = '';
-  try { name = execSync('git config user.name', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim(); } catch {}
-  try { email = execSync('git config user.email', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim(); } catch {}
+  try { name = execSync('git config user.name', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim(); } catch { /* git not configured */ }
+  try { email = execSync('git config user.email', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim(); } catch { /* git not configured */ }
   const gravatarUrl = email
     ? `https://gravatar.com/avatar/${crypto.createHash('md5').update(email.toLowerCase().trim()).digest('hex')}?s=80&d=mp`
     : '';
