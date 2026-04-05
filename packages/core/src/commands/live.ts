@@ -24,7 +24,7 @@ export async function buildLive(options: any = {}) {
   // If explicitly asked NOT to serve (for testing), just build
   if (options.serve === false) {
     console.log('🔨 Building Live Editor ...');
-    await livePkg.build();
+    await livePkg.build(process.cwd());
   } else {
     // Default behavior: Build + Serve
     await livePkg.start();
