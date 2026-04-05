@@ -28,7 +28,7 @@ const vm = require('vm');
 
 const CWD = process.cwd();
 const CLI_BIN = path.join(CWD, 'packages/core/dist/bin/docmd.js');
-const LIVE_PUBLIC = path.join(CWD, 'packages/live/public');
+const LIVE_PUBLIC = path.join(CWD, 'dist');
 const TEMP_SCRIPT = path.join(CWD, 'temp-live-test.mjs');
 
 console.log('🛡️  Running Universal Failsafe...');
