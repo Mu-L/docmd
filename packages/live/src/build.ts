@@ -26,8 +26,19 @@ const __dirname = path.dirname(__filename);
 
 // Path Constants
 const PKG_ROOT = path.resolve(__dirname, '..');
-const SRC_DIR = path.join(PKG_ROOT, 'src');
 const PUBLIC_DIR = path.join(PKG_ROOT, 'public');
+
+// Asset Discovery: Source assets (.html, .css) are in src/ during dev, 
+// but compiled into dist/ for the published NPM package.
+const SOURCE_ASSETS_DIR = (async () => {
+    const srcPath = path.join(PKG_ROOT, 'src');
+    try {
+        await fs.access(srcPath);
+        return srcPath;
+    } catch {
+        return __dirname; // Fallback to dist/ (where build.js lives)
+    }
+})();
 
 async function build() {
     console.log('📦 Building Live Editor...');
@@ -36,8 +47,9 @@ async function build() {
     await fs.rm(PUBLIC_DIR, { recursive: true, force: true });
     await fs.mkdir(PUBLIC_DIR, { recursive: true });
 
-    // 2. Generate Shims
-    const shimPath = path.join(SRC_DIR, 'shims.js');
+    // 2. Generate Shims (Write to dist/ as temporary build artifact)
+    const assetsDir = await SOURCE_ASSETS_DIR;
+    const shimPath = path.join(__dirname, 'shims.js');
     await fs.writeFile(shimPath, `import { Buffer } from 'buffer'; globalThis.Buffer = Buffer;`);
 
     // 3. Template Plugin (Same as before, keep your existing logic here)
@@ -113,7 +125,7 @@ async function build() {
     try {
         // 5. Bundle JS
         await esbuild.build({
-            entryPoints: [path.join(SRC_DIR, 'browser-entry.ts')],
+            entryPoints: [path.join(assetsDir, 'browser-entry.ts')],
             bundle: true,
             outfile: path.join(PUBLIC_DIR, 'docmd-live.js'),
             platform: 'browser',
@@ -125,15 +137,15 @@ async function build() {
             plugins: [templatePlugin, nodeShimPlugin]
         });
 
-        // 6. Copy Static Assets
-        await fs.copyFile(path.join(SRC_DIR, 'index.html'), path.join(PUBLIC_DIR, 'index.html'));
-        await fs.copyFile(path.join(SRC_DIR, 'docmd-live.css'), path.join(PUBLIC_DIR, 'docmd-live.css'));
+        // 6. Copy Static Assets (Searching in assetsDir as resolved above)
+        await fs.copyFile(path.join(assetsDir, 'index.html'), path.join(PUBLIC_DIR, 'index.html'));
+        await fs.copyFile(path.join(assetsDir, 'docmd-live.css'), path.join(PUBLIC_DIR, 'docmd-live.css'));
 
         const cssDest = path.join(PUBLIC_DIR, 'assets/css');
         const jsDest = path.join(PUBLIC_DIR, 'assets/js');
         await fs.mkdir(cssDest, { recursive: true });
         await fs.mkdir(jsDest, { recursive: true });
-        await fs.copyFile(path.join(SRC_DIR, 'docmd-live-preview.css'), path.join(cssDest, 'docmd-live-preview.css'));
+        await fs.copyFile(path.join(assetsDir, 'docmd-live-preview.css'), path.join(cssDest, 'docmd-live-preview.css'));
 
         // Helper copy function
         const copy = async (src, destName) => {
