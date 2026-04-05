@@ -92,7 +92,11 @@
 </head>
 <body<% if (frontmatter.components?.theme !==false) { %> data-theme="<%= defaultMode %>"<% } %>
   <% if (frontmatter.bodyClass) { %> class="<%= frontmatter.bodyClass %>"<% } %> data-copy-code-enabled="<%=
-    config.copyCode===true %>">
+    config.copyCode===true %>" data-spa-enabled="<%= frontmatter.components?.spa === true %>">
+  <% if (frontmatter.components?.menubar === true && (locals.menubarConfig && menubarConfig?.enabled !== false)) { %>
+    <%- await include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu: locals.optionsMenu }) %>
+  <% } %>
+
     <% if (frontmatter.components?.layout===true || frontmatter.components?.layout==='full' ) { %>
       <div class="main-content-wrapper">
         <% if (frontmatter.components?.header !==false) { %>

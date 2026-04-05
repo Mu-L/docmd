@@ -132,6 +132,32 @@
         });
       }
     }
+    // Hero Slider
+    const sliderBtn = e.target.closest('.hero-slider-btn, .hero-slider-dot');
+    if (sliderBtn) {
+      const hero = sliderBtn.closest('.docmd-hero.hero-slider');
+      if (!hero) return;
+      const track = hero.querySelector('.hero-slider-track');
+      const slides = hero.querySelectorAll('.hero-slide');
+      const dots = hero.querySelectorAll('.hero-slider-dot');
+      if (!track || !slides.length) return;
+
+      const slideWidth = slides[0].offsetWidth;
+      const currentIndex = Math.round(track.scrollLeft / slideWidth);
+      let targetIndex = currentIndex;
+
+      if (sliderBtn.classList.contains('hero-slider-prev')) {
+        targetIndex = (currentIndex - 1 + slides.length) % slides.length;
+      } else if (sliderBtn.classList.contains('hero-slider-next')) {
+        targetIndex = (currentIndex + 1) % slides.length;
+      } else if (sliderBtn.classList.contains('hero-slider-dot')) {
+        targetIndex = parseInt(sliderBtn.dataset.slide, 10);
+      }
+
+      track.scrollTo({ left: targetIndex * slideWidth, behavior: 'smooth' });
+      dots.forEach((d, i) => d.classList.toggle('active', i === targetIndex));
+    }
+
   });
 
   // 2. COMPONENT INITIALIZERS
@@ -151,6 +177,22 @@
       copyButton.className = 'copy-code-button';
       copyButton.innerHTML = svg;
       wrapper.appendChild(copyButton);
+    });
+  }
+
+  function initializeHeroSliders() {
+    document.querySelectorAll('.docmd-hero.hero-slider').forEach(hero => {
+      const track = hero.querySelector('.hero-slider-track');
+      const dots = hero.querySelectorAll('.hero-slider-dot');
+      if (!track || !dots.length) return;
+
+      // Sync dots on scroll (handles touch/swipe)
+      track.addEventListener('scroll', () => {
+        const slides = hero.querySelectorAll('.hero-slide');
+        if (!slides.length) return;
+        const idx = Math.round(track.scrollLeft / slides[0].offsetWidth);
+        dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+      }, { passive: true });
     });
   }
 
@@ -342,6 +384,7 @@
 
         injectCopyButtons();
         initializeScrollSpy();
+        initializeHeroSliders();
         const newMainContent = document.querySelector('.main-content');
         if (newMainContent) executeScripts(newMainContent);
 
@@ -384,6 +427,7 @@
 
     injectCopyButtons();
     initializeScrollSpy();
+    initializeHeroSliders();
     initializeSPA();
 
     setTimeout(() => {
