@@ -6,6 +6,8 @@ Adds inline discussion threads to **docmd** sites.
 - **Collaborative:** Highlights text, supports replies, resolving threads, and emoji reactions.
 - **Version Control Friendly:** Since threads are in Markdown, they sync seamlessly with Git and your PR workflows.
 
+Original Author: [@svallory](https://github.com/svallory)
+
 ## The `docmd` Ecosystem
 
 `docmd` is a modular system. Here are the official packages:
