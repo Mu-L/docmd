@@ -24,6 +24,10 @@ import { buildSite } from './build.js';
 import { loadConfig } from '../utils/config-loader.js';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
+import crypto from 'crypto';
+import { execSync } from 'child_process';
+import { createActionDispatcher } from '../utils/action-dispatcher.js';
+import { loadPlugins, hooks } from '../utils/plugin-loader.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -69,9 +73,44 @@ function getNetworkIp() {
   return null;
 }
 
+/**
+ * Read git user.name and user.email, compute Gravatar URL.
+ * Returns a JSON-safe object for injection into the client.
+ */
+function getGitDevInfo() {
+  let name = '';
+  let email = '';
+  try { name = execSync('git config user.name', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim(); } catch { /* git not configured */ }
+  try { email = execSync('git config user.email', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim(); } catch { /* git not configured */ }
+  const gravatarUrl = email
+    ? `https://gravatar.com/avatar/${crypto.createHash('md5').update(email.toLowerCase().trim()).digest('hex')}?s=80&d=mp`
+    : '';
+  return { name, email, gravatarUrl };
+}
+
+const _gitDevInfo = getGitDevInfo();
+const _devInfoScript = `<script>window.__docmd_dev=${JSON.stringify(_gitDevInfo)}</script>`;
+
 // Static Server Logic
 
 async function serveStatic(req, res, rootDir) {
+  // Serve dev-only API script
+  if (req.url === '/__dev/docmd-api.js') {
+    try {
+      const apiScriptPath = path.resolve(
+        fileURLToPath(import.meta.url),
+        '../../../../ui/assets/js/docmd-api.js'
+      );
+      const apiScript = await fs.readFile(apiScriptPath, 'utf-8');
+      res.writeHead(200, { 'Content-Type': 'text/javascript' });
+      res.end(apiScript);
+    } catch (err) {
+      res.writeHead(404);
+      res.end('Not found');
+    }
+    return;
+  }
+
   let safePath = path.normalize(req.url).replace(/^(\.\.[\/\\])+/, '').split('?')[0].split('#')[0];
   if (safePath === '/' || safePath === '\\') safePath = 'index.html';
 
@@ -109,27 +148,7 @@ async function serveStatic(req, res, rootDir) {
 
     if (contentType === 'text/html') {
       const htmlStr = content.toString('utf-8');
-      const liveReloadScript = `
-        <script>
-          (function() {
-            let socket;
-            let retryCount = 0;
-            const maxRetries = 50;
-            function connect() {
-              if (socket && (socket.readyState === 0 || socket.readyState === 1)) return;
-              socket = new WebSocket('ws://' + window.location.host);
-              socket.onopen = () => { console.log('⚡ docmd connected'); retryCount = 0; };
-              socket.onmessage = (e) => { if(e.data === 'reload') window.location.reload(); };
-              socket.onclose = () => {
-                if (retryCount < maxRetries) {
-                    retryCount++;
-                    setTimeout(connect, Math.min(1000 * (1.5 ** retryCount), 5000));
-                }
-              };
-            }
-            setTimeout(connect, 500);
-          })();
-        </script></body>`;
+      const liveReloadScript = `${_devInfoScript}<script src="/__dev/docmd-api.js"></script></body>`;
       res.end(htmlStr.replace('</body>', liveReloadScript));
     } else {
       res.end(content);
@@ -146,18 +165,7 @@ async function serveStatic(req, res, rootDir) {
 
         // Inject Live Reload into 404 page too so development continues smoothly
         const htmlStr = content.toString('utf-8');
-        const liveReloadScript = `
-        <script>
-          (function() {
-            let socket;
-            function connect() {
-              socket = new WebSocket('ws://' + window.location.host);
-              socket.onmessage = (e) => { if(e.data === 'reload') window.location.reload(); };
-              socket.onclose = () => setTimeout(connect, 1000);
-            }
-            setTimeout(connect, 500);
-          })();
-        </script></body>`;
+        const liveReloadScript = `${_devInfoScript}<script src="/__dev/docmd-api.js"></script></body>`;
         res.end(htmlStr.replace('</body>', liveReloadScript));
       } catch (e2) {
         // 2. Fallback if 404.html doesn't exist (e.g. build failed)
@@ -352,6 +360,40 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
       .once('listening', async () => {
         wss = new WebSocketServer({ server });
         wss.on('error', (e: any) => console.error('WebSocket Error:', e.message));
+
+        // Action dispatcher for plugin actions/events
+        await loadPlugins(config);
+        const dispatcher = createActionDispatcher(hooks, {
+          projectRoot: CWD,
+          config,
+          broadcast: (event: string, data: any) => {
+            wss.clients.forEach((client: any) => {
+              if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({ type: 'event', name: event, data }));
+              }
+            });
+          }
+        });
+
+        wss.on('connection', (ws: any) => {
+          ws.on('message', async (raw: any) => {
+            let msg: any;
+            try { msg = JSON.parse(raw.toString()); } catch { return; }
+
+            if (msg.type === 'call') {
+              try {
+                const { result, reload } = await dispatcher.handleCall(msg.action, msg.payload);
+                // Don't send reload flag to client — let the file watcher detect
+                // the change, rebuild, and send the reload via broadcastReload()
+                ws.send(JSON.stringify({ id: msg.id, type: 'response', result, reload: false }));
+              } catch (e: any) {
+                ws.send(JSON.stringify({ id: msg.id, type: 'response', error: e.message }));
+              }
+            } else if (msg.type === 'event') {
+              dispatcher.handleEvent(msg.name, msg.data);
+            }
+          });
+        });
 
         const indexHtmlPath = path.join(paths.outputDir, 'index.html');
         const networkIp = getNetworkIp();
