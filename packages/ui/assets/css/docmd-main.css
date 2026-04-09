@@ -990,30 +990,35 @@ body.has-menubar-header .docmd-menubar {
 }
 
 .docmd-embed {
-  margin: 1.5rem auto;
-  border-radius: var(--docmd-radius-lg, 12px);
-  max-width: 100%;
-  display: block;
+    margin: 1.5rem auto;
+    border-radius: var(--docmd-radius-lg, 12px);
+    max-width: 100%;
+    display: block;
 }
+
 iframe.docmd-embed {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border: none !important;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: none !important;
 }
-iframe.docmd-embed[data-short="true"] { 
-  aspect-ratio: 9 / 16;
-  max-width: 400px;
+
+iframe.docmd-embed[data-short="true"] {
+    aspect-ratio: 9 / 16;
+    max-width: 400px;
 }
+
 blockquote.docmd-embed {
-  width: 100%;
-  border: none !important;
-  display: flex;
-  justify-content: center;
+    width: 100%;
+    border: none !important;
+    display: flex;
+    justify-content: center;
 }
+
 .docmd-embed-fallback {
-  margin: 1.5rem 0;
-  display: flex;
+    margin: 1.5rem 0;
+    display: flex;
 }
+
 .version-dropdown-toggle {
     display: flex;
     align-items: center;
@@ -2619,7 +2624,7 @@ ul.contains-task-list {
     padding-left: 0.5em;
 }
 
-ul.contains-task-list > li::marker {
+ul.contains-task-list>li::marker {
     content: none !important;
     display: none !important;
 }
@@ -2627,6 +2632,7 @@ ul.contains-task-list > li::marker {
 .task-list-item-checkbox {
     margin-top: .25em;
 }
+
 /**
  * Hero Container (2.0)
  * Handles basic, split, and slider layouts.
@@ -2781,7 +2787,9 @@ ul.contains-task-list > li::marker {
     margin-bottom: var(--space-6);
 }
 
-.hero-side img, .hero-side video, .hero-side .docmd-embed {
+.hero-side img,
+.hero-side video,
+.hero-side .docmd-embed {
     width: 100%;
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-lg);
@@ -2793,6 +2801,7 @@ ul.contains-task-list > li::marker {
         text-align: center;
         gap: var(--space-8);
     }
+
     .hero-content h1 {
         font-size: 3rem;
     }

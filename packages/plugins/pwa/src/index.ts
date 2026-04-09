@@ -176,5 +176,3 @@ export function generateScripts(config: any) {
 
   return { headScriptsHtml: swRegistration };
 }
-
-

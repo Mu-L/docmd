@@ -44,7 +44,7 @@ Please update your scripts to use `@docmd/core`.
 *   [**@docmd/plugin-llms**](https://www.npmjs.com/package/@docmd/plugin-llms) - AI context generation.
 *   [**@docmd/plugin-analytics**](https://www.npmjs.com/package/@docmd/plugin-analytics) - Google Analytics integration.
 
-**Optional Plugins**
+**Additional Plugins**
 *   [**@docmd/plugin-threads**](https://www.npmjs.com/package/@docmd/plugin-threads) - Inline discussion threads.
 
 ## License
