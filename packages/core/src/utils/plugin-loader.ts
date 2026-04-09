@@ -37,7 +37,8 @@ const ALIASES: Record<string, string> = {
   'analytics': '@docmd/plugin-analytics',
   'mermaid': '@docmd/plugin-mermaid',
   'llms': '@docmd/plugin-llms',
-  'pwa': '@docmd/plugin-pwa'
+  'pwa': '@docmd/plugin-pwa',
+  'threads': '@docmd/plugin-threads'
 };
 
 export async function loadPlugins(config: any) {
@@ -89,9 +90,15 @@ export async function loadPlugins(config: any) {
       }
 
       const pluginModule = rawModule.default || rawModule;
-      registerPlugin(name, pluginModule, options);
+
+      try {
+        registerPlugin(name, pluginModule, options);
+      } catch (regError: any) {
+        console.warn(chalk.yellow(`⚠️  Plugin loaded but failed to register: ${name}`));
+        console.warn(chalk.dim(`   > ${regError.message}`));
+      }
     } catch (e: any) {
-      console.warn(chalk.yellow(`⚠️  Could not load plugin: ${name}`));
+      console.warn(chalk.yellow(`⚠️  Could not load plugin: ${name} (missing or misconfigured)`));
       // Only log full error in verbose/debug mode to reduce noise
       // console.error(e.message); 
     }

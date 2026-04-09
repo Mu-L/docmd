@@ -40,5 +40,11 @@
     "description": "Progressive Web App support for docmd",
     "configKey": "pwa",
     "defaultConfig": "{}"
+  },
+  "threads": {
+    "package": "@docmd/plugin-threads",
+    "description": "Inline discussion threads for docmd documentation",
+    "configKey": "threads",
+    "defaultConfig": "{}"
   }
 }

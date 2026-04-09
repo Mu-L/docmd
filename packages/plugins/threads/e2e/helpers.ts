@@ -111,11 +111,11 @@ export async function seedThread(
 
   // Step 3: Resolve if requested
   if (resolved) {
-    if (replies.length > 0 || true) {
-      await page.waitForTimeout(500);
-      await page.reload({ waitUntil: "domcontentloaded" });
-      await page.waitForSelector("threads-app", { state: "attached", timeout: 10_000 });
-    }
+    // Always reload before resolving to ensure the DOM is fresh after the last write
+    // and avoid execution context destruction during the resolve-thread call.
+    await page.waitForTimeout(500);
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForSelector("threads-app", { state: "attached", timeout: 10_000 });
 
     await page.evaluate(
       async ({ threadId, resolvedBy }) => {

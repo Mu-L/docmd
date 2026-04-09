@@ -208,11 +208,11 @@ importers:
         specifier: ^3.3.1
         version: 3.5.0(@floating-ui/utils@0.2.11)(@types/react@19.2.14)
       '@docmd/core':
-        specifier: ^0.6.7
-        version: 0.6.7
+        specifier: workspace:^
+        version: link:../../core
       '@docmd/parser':
-        specifier: ^0.6.7
-        version: 0.6.7
+        specifier: workspace:^
+        version: link:../../parser
       lit:
         specifier: ^3.3.2
         version: 3.3.2
@@ -243,47 +243,6 @@ packages:
   '@ctrl/tinycolor@4.1.0':
     resolution: {integrity: sha512-WyOx8cJQ+FQus4Mm4uPIZA64gbk3Wxh0so5Lcii0aJifqwoVOlfFtorjLE0Hen4OYyHZMXDWqMmaQemBhgxFRQ==}
     engines: {node: '>=14'}
-
-  '@docmd/core@0.6.7':
-    resolution: {integrity: sha512-u70o8yjjMviqoQtTNnbSBjThU/dVx56YEX84lxgu4zwRCLinTAH/n3Wflj5rek1dmPUTp1MSDGeItpbcgmdZNQ==}
-    hasBin: true
-
-  '@docmd/live@0.6.7':
-    resolution: {integrity: sha512-XeXJJgU0Wp8Tj1+WF2m+0CBICAsj707OpjZFEl8Y3p4VmZLoA89m5gdYjJIjBsIOBPxP1X1RFuRPHHrKsa7j7A==}
-    hasBin: true
-
-  '@docmd/parser@0.6.7':
-    resolution: {integrity: sha512-Alh7AKF3+wY/Y/17Ps2LRxPuiDF59g6JQD7kbfHDhGtHwABHTCJ4P+Dc4+b09ZTlaxynZGfiJT14Y0XTQ1PQug==}
-
-  '@docmd/plugin-analytics@0.6.7':
-    resolution: {integrity: sha512-Z7GisrZ9MXbWRWAMfyUWqoGxIYYfysQUTVRkBphNjTBokM1FQlBq7mEHPanJFIAJFDY7rafFsv7ZgwXWqIVDVw==}
-
-  '@docmd/plugin-installer@0.6.7':
-    resolution: {integrity: sha512-g+Zc320obfdXcPRgoWFm1uLTqDxVqsUCK1G3M0In1eFJKEe7qHXmMGv+HE5hILnhKM6E+YeSzN0l9t/ZyN7Syg==}
-
-  '@docmd/plugin-llms@0.6.7':
-    resolution: {integrity: sha512-x6LwFokt5zUvd/tEF8HlI1vSs1bN+ZU0noth46QVx+iczUUP8pcO1aSk1UcAeWK2SI8XiyOwvyfu5/YrGJAAgg==}
-
-  '@docmd/plugin-mermaid@0.6.7':
-    resolution: {integrity: sha512-lZyUWJ4De5bJumkPzKt4R58IY7no606DnBgwPNFGCsrNDnsZp5gd954xJXbPerhNtPRZclNA8/bhaxHC0MIbGQ==}
-
-  '@docmd/plugin-pwa@0.6.7':
-    resolution: {integrity: sha512-qIu6Hl2BNAfFc3D++ZBs0YYynFiCya3B6bQ9xE178PJg2Y0P2ljBxpmNncMyIDjTThd9sRpSRkAKC/nRV0MJzg==}
-
-  '@docmd/plugin-search@0.6.7':
-    resolution: {integrity: sha512-NZyuxKl4QnNfnZGJOokvmBciqNRlMfT9f1MIlRitXxnYa8o1yKdYpSw/SHYt6nIi+/AE2fdZlqbfjDk4c6ZRZA==}
-
-  '@docmd/plugin-seo@0.6.7':
-    resolution: {integrity: sha512-+NXnFSkKrVC1QOO+f4d1sG/AidUm4DS6Jghwy/PkiwZrsLGJnTl9VYWArnZHyRHFg7MJmokXDmlIf0H+CNYKkg==}
-
-  '@docmd/plugin-sitemap@0.6.7':
-    resolution: {integrity: sha512-yk/GjDjtkYK/vW0MLfjoY5XEmx9LOR2h9W2ViUHCn2685qULPYh60uKZ8I/YwWk00IEKw94TvGFT+l3qYJ7uQw==}
-
-  '@docmd/themes@0.6.7':
-    resolution: {integrity: sha512-Sxb/eGmkAywLBoN3ralQ7rgTPYI80kvmx6Oyo2HOBaY1HvKP4RKsAGUnZHECtz5L+MFPKjsNEGcVJNZ4vsOskA==}
-
-  '@docmd/ui@0.6.7':
-    resolution: {integrity: sha512-25dfJYaYYxDyFdVCnvxc/4CgVyaGvYV5Wl6CS9zwKu03wEVWfrtZq6xb7RXOZuWaT62XAsQfNAliN+mpabMfAA==}
 
   '@esbuild/aix-ppc64@0.27.7':
     resolution: {integrity: sha512-EKX3Qwmhz1eMdEJokhALr0YiD0lhQNwDqkPYyPhiSwKrh7/4KRjQc04sZ8db+5DVVnZ1LmbNDI1uAMPEUBnQPg==}
@@ -1541,75 +1500,6 @@ snapshots:
       - '@types/react'
 
   '@ctrl/tinycolor@4.1.0': {}
-
-  '@docmd/core@0.6.7':
-    dependencies:
-      '@docmd/live': 0.6.7
-      '@docmd/parser': 0.6.7
-      '@docmd/plugin-analytics': 0.6.7
-      '@docmd/plugin-installer': 0.6.7
-      '@docmd/plugin-llms': 0.6.7
-      '@docmd/plugin-mermaid': 0.6.7
-      '@docmd/plugin-pwa': 0.6.7
-      '@docmd/plugin-search': 0.6.7
-      '@docmd/plugin-seo': 0.6.7
-      '@docmd/plugin-sitemap': 0.6.7
-      '@docmd/themes': 0.6.7
-      '@docmd/ui': 0.6.7
-      chalk: 4.1.2
-      esbuild: 0.28.0
-      ws: 8.20.0
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-
-  '@docmd/live@0.6.7':
-    dependencies:
-      '@docmd/parser': 0.6.7
-      '@docmd/plugin-mermaid': 0.6.7
-      '@docmd/themes': 0.6.7
-      '@docmd/ui': 0.6.7
-      buffer: 6.0.3
-      esbuild: 0.28.0
-
-  '@docmd/parser@0.6.7':
-    dependencies:
-      embed-lite: 0.1.4
-      lite-hl: 0.1.2
-      lite-matter: 0.1.1
-      lite-template: 0.1.2
-      lucide-static: 0.577.0
-      markdown-it: 14.1.1
-      markdown-it-abbr: 1.0.4
-      markdown-it-attrs: 4.3.1(markdown-it@14.1.1)
-      markdown-it-deflist: 2.1.0
-      markdown-it-emoji: 2.0.2
-      markdown-it-footnote: 3.0.3
-      markdown-it-task-lists: 2.1.1
-
-  '@docmd/plugin-analytics@0.6.7': {}
-
-  '@docmd/plugin-installer@0.6.7':
-    dependencies:
-      chalk: 4.1.2
-
-  '@docmd/plugin-llms@0.6.7': {}
-
-  '@docmd/plugin-mermaid@0.6.7': {}
-
-  '@docmd/plugin-pwa@0.6.7': {}
-
-  '@docmd/plugin-search@0.6.7':
-    dependencies:
-      minisearch: 7.2.0
-
-  '@docmd/plugin-seo@0.6.7': {}
-
-  '@docmd/plugin-sitemap@0.6.7': {}
-
-  '@docmd/themes@0.6.7': {}
-
-  '@docmd/ui@0.6.7': {}
 
   '@esbuild/aix-ppc64@0.27.7':
     optional: true
