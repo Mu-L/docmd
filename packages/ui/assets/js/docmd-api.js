@@ -1,4 +1,3 @@
-/* global WebSocket, sessionStorage, queueMicrotask */
 /**
  * --------------------------------------------------------------------
  * docmd : the minimalist, zero-config documentation generator.
@@ -20,6 +19,9 @@
  * and docmd.scheduleReload() over a WebSocket connection.
  * Injected automatically by the dev server.
  */
+
+/* global WebSocket, sessionStorage, queueMicrotask, requestAnimationFrame */
+
 (function() {
   if (typeof window === 'undefined') return;
   if (window.docmd && window.docmd.call) return; // already initialized
