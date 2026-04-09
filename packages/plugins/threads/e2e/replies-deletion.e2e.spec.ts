@@ -48,7 +48,7 @@ test.describe("reply to thread", () => {
     const threadEl = user.page.locator(`.threads-thread[data-thread-id="${threadId}"]`);
     await expect(threadEl).toBeVisible({ timeout: 5_000 });
 
-    const replyBtn = threadEl.locator(".threads-reply-btn");
+    const replyBtn = threadEl.locator(".threads-comment-reply-btn").first();
     await expect(replyBtn).toBeVisible({ timeout: 5_000 });
     await replyBtn.click();
 

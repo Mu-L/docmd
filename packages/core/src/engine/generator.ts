@@ -212,13 +212,16 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
       hooks.injectBody.map((fn: any) => fn(config, pageContext)).join('\n')
     ].join('\n');
 
+    // Source file path relative to srcDir — used by plugins (e.g. threads) to identify the file
+    const sourceRelative = path.relative(process.cwd(), page.sourcePath).replace(/\\/g, '/');
+
     let editUrl = null;
     const editLinkText = config.editLink?.text || 'Edit this page';
 
     if (config.editLink && config.editLink.enabled && config.editLink.baseUrl) {
       const cleanBase = config.editLink.baseUrl.replace(/\/$/, '');
-      const sourceRelative = path.relative(srcDir, page.sourcePath).replace(/\\/g, '/');
-      editUrl = `${cleanBase}/${sourceRelative}`;
+      const editRelative = path.relative(srcDir, page.sourcePath).replace(/\\/g, '/');
+      editUrl = `${cleanBase}/${editRelative}`;
     }
 
     // Navigation HTML
@@ -270,6 +273,9 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
       editUrl,
       editLinkText,
       breadcrumbs,
+
+      // Source file path for plugin use (e.g. threads RPC)
+      sourceFile: sourceRelative,
 
       // Placeholders for template compatibility
       themeCssLinkHtml: '',

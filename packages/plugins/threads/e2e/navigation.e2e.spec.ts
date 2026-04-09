@@ -34,7 +34,7 @@ test.describe("SPA navigation", () => {
   test("New Thread button is reinjected after SPA navigation", async () => {
     await user.perform(NavigateTo.path("/"));
 
-    const btn = user.page.locator(".threads-new-thread-btn");
+    const btn = user.page.locator(".threads-new-thread-btn").first();
     await expect(btn).toBeVisible({ timeout: 5_000 });
   });
 
