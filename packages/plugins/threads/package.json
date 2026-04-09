@@ -5,6 +5,9 @@
   "description": "Inline discussion threads for docmd documentation sites.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
