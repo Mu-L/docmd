@@ -1,4 +1,18 @@
 /**
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
+ *
+ * @package     @docmd/plugin-threads
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2026 Saulo Vallory
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+/**
  * Emoji reaction tests — adapted from old reactions.e2e.spec.ts.
  *
  * Changes from old plugin:

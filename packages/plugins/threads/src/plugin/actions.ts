@@ -1,8 +1,15 @@
 /**
- * Thread action handlers — server-side read/write operations on ::: threads blocks
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
  *
- * @copyright Copyright (c) 2026 Saulo Vallory
- * @license MIT
+ * @package     @docmd/plugin-threads
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2026 Saulo Vallory
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
  */
 
 import crypto from 'crypto';

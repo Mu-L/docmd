@@ -1,4 +1,18 @@
 /**
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
+ *
+ * @package     @docmd/plugin-threads
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2026 Saulo Vallory
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+/**
  * Inline editor tests — adapted from old inline-editor.e2e.spec.ts.
  *
  * Changes from old plugin:

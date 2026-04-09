@@ -1,3 +1,17 @@
+/**
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
+ *
+ * @package     @docmd/plugin-threads
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2026 Saulo Vallory
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
 import { LitElement, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import type { Thread, Anchor, AuthorsMap } from '../../types.ts';
