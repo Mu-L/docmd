@@ -32,7 +32,26 @@ function smartDedent(str) {
   ).join('\n');
 }
 
-function createDepthTrackingContainer(md, name, renderOpen, renderClose) {
+/**
+ * Creates a depth-tracking container block rule for markdown-it.
+ * Handles arbitrary nesting of `:::` containers by tracking open/close depth.
+ *
+ * @example
+ * ```ts
+ * import { createDepthTrackingContainer } from '@docmd/parser';
+ *
+ * createDepthTrackingContainer(md, 'note',
+ *   (tokens, idx) => `<div class="note">\n`,
+ *   () => '</div>\n'
+ * );
+ * ```
+ *
+ * @param md - The markdown-it instance
+ * @param name - Container name (matched after `:::`)
+ * @param renderOpen - Renderer for the opening token
+ * @param renderClose - Renderer for the closing token
+ */
+export function createDepthTrackingContainer(md, name, renderOpen, renderClose) {
   md.block.ruler.before('fence', `custom_${name}`, (state, startLine, endLine, silent) => {
     const start = state.bMarks[startLine] + state.tShift[startLine];
     const max = state.eMarks[startLine];

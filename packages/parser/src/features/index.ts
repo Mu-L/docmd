@@ -13,6 +13,7 @@
  */
 
 import common from './common-containers.js';
+export { createDepthTrackingContainer } from './common-containers.js';
 import tabs from './tabs.js';
 import steps from './steps.js';
 import changelog from './changelog.js';
