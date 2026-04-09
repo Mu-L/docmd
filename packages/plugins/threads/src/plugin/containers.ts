@@ -1,12 +1,15 @@
 /**
- * Thread container rules — markdown-it rendering of ::: threads blocks
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
  *
- * Registers custom block rules for: threads, thread, comment, reactions.
- * Uses the same depth-tracking container pattern as common-containers.js
- * in @docmd/parser.
+ * @package     @docmd/plugin-threads
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2026 Saulo Vallory
  *
- * @copyright Copyright (c) 2026 Saulo Vallory
- * @license MIT
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
  */
 
 // Import createDepthTrackingContainer from the parser package

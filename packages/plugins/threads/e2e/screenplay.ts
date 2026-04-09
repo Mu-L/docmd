@@ -1,4 +1,18 @@
 /**
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
+ *
+ * @package     @docmd/plugin-threads
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2026 Saulo Vallory
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+/**
  * Playwright Screenplay primitives for e2e testing the threads plugin.
  *
  * Adapted from old-discussions-plugin/src/e2e/screenplay.ts for the new

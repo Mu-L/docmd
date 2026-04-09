@@ -61,14 +61,6 @@ Here is another paragraph with a ==different highlight=={t-thread3} to test mult
     ::: comment c2-1 "Charlie" "2026-03-03"
       Highlighting text makes it easy to reference specific parts.
     :::
-
-    ::: comment c-f76b5f0c "Ghazi" "2026-04-09"
-      sure.
-    :::
-
-    ::: comment c-f3584db8 "Ghazi" "2026-04-09" reply-to c-f76b5f0c
-      alright.
-    :::
   :::
   ::: thread t-thread3 resolved "Alice" "2026-03-05"
     ::: comment c3-1 "Alice" "2026-03-04"

@@ -1,10 +1,15 @@
 /**
- * markdown-it inline rule for ==text=={thread-id} highlight syntax.
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
  *
- * Renders as: <mark class="threads-highlight" data-thread-id="thread-id">text</mark>
- * Without thread ID: <mark class="threads-highlight">text</mark>
+ * @package     @docmd/plugin-threads
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2026 Saulo Vallory
  *
- * Copyright (c) 2026 Saulo Vallory. MIT License.
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
  */
 
 const MARKER_CHAR = 0x3D; // '='

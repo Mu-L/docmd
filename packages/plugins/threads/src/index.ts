@@ -1,8 +1,15 @@
 /**
- * @docmd/plugin-threads — inline discussion threads stored in markdown.
+ * --------------------------------------------------------------------
+ * docmd : the minimalist, zero-config documentation generator.
  *
- * @copyright Copyright (c) 2026 Saulo Vallory
- * @license MIT
+ * @package     @docmd/plugin-threads
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2026 Saulo Vallory
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
  */
 
 import path from 'path';
