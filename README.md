@@ -13,7 +13,6 @@
   <!-- BADGES -->
   <p>
     <a href="https://www.npmjs.com/package/@docmd/core"><img src="https://img.shields.io/npm/v/@docmd/core.svg?style=flat-square&color=CB3837" alt="npm version"></a>
-    <a href="https://www.npmjs.com/package/@docmd/core?activeTab=versions"><img src="https://img.shields.io/npm/d18m/%40mgks%2Fdocmd?style=flat&label=%40mgks%2Fdocmd%20(legacy)" alt="downloads"></a>
     <a href="https://www.npmjs.com/package/@docmd/core?activeTab=versions"><img src="https://img.shields.io/npm/dt/@docmd/core.svg?style=flat-square&color=38bd24" alt="downloads"></a>
     <a href="https://github.com/docmd-io/docmd/stargazers"><img src="https://img.shields.io/github/stars/docmd-io/docmd?style=flat-square&logo=github" alt="stars"></a>
     <a href="https://github.com/docmd-io/docmd/blob/main/LICENSE"><img src="https://img.shields.io/github/license/docmd-io/docmd.svg?style=flat-square&color=A31F34" alt="license"></a>
@@ -103,6 +102,23 @@ my-docs/
 ├── docmd.config.js        # The docmd Configuration
 └── package.json           # Node.js Dependencies
 ```
+
+## Plugin Ecosystem
+
+`docmd` features a powerful, zero-config plugin system. Core plugins are included right out of the box, offering massive out-of-the-box value, while optional plugins can be installed to add specific features.
+
+| Plugin | Type | Status | Features |
+| :--- | :--- | :--- | :--- |
+| **`search`** | Core | **Included** | Instant, offline full-text search with fuzzy matching. |
+| **`pwa`** | Core | **Included** | Progressive Web App support for offline navigation. |
+| **`seo`** | Core | **Included** | Auto-generates SEO tags and Open Graph data. |
+| **`sitemap`** | Core | **Included** | Builds a standard `sitemap.xml` for search engines. |
+| **`analytics`** | Core | **Included** | Zero-bloat Google Analytics tracking. |
+| **`llms`** | Core | **Included** | Generates `llms.txt` context files for AI agents. |
+| **`mermaid`** | Core | **Included** | Native support for Mermaid diagrams in your Markdown. |
+| **`threads`** | Optional | Installable | Adds collaborative, inline discussion threads to your pages.<br/>*Built by [@svallory](https://github.com/svallory).* |
+
+> **Tip:** To install an optional plugin like threads, you don't use `npm install`. Instead, use the `docmd` built-in installer: `npx docmd plugin add <plugin-name>`.
 
 ## Configuration
 `docmd` provides a highly flexible API. Customize your site in seconds via `docmd.config.js`. Here is a robust example showing off our most powerful features:
