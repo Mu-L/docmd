@@ -12,17 +12,29 @@
  * --------------------------------------------------------------------
  */
 
+export {};
+
+declare global {
+    interface Window {
+        DOCMD_SITE_ROOT?: string;
+        DOCMD_ROOT?: string;
+        lastFocusedElement?: HTMLElement | null;
+        closeDocmdSearch?: () => void;
+    }
+}
+declare const MiniSearch: any;
+
 (function () {
-    let miniSearch = null;
+    let miniSearch: any = null;
     let isIndexLoaded = false;
     let selectedIndex = -1;
 
     function initSearch() {
-        const searchModal = document.getElementById('docmd-search-modal');
-        const searchInput = document.getElementById('docmd-search-input');
-        const searchResults = document.getElementById('docmd-search-results');
+        const searchModal = document.getElementById('docmd-search-modal') as HTMLElement;
+        const searchInput = document.getElementById('docmd-search-input') as HTMLInputElement;
+        const searchResults = document.getElementById('docmd-search-results') as HTMLElement;
 
-        if (!searchModal) return;
+        if (!searchModal || !searchInput || !searchResults) return;
 
         // Use Site Root if available (for versioning), fallback to Context Root
         const rawRoot = window.DOCMD_SITE_ROOT || window.DOCMD_ROOT || './';
@@ -34,7 +46,7 @@
         // 1. Open/Close Logic
         function openSearch() {
             searchModal.style.display = 'flex';
-            window.lastFocusedElement = document.activeElement;
+            window.lastFocusedElement = document.activeElement as HTMLElement | null;
             setTimeout(() => searchInput.focus(), 50);
 
             if (!searchInput.value.trim()) {
@@ -52,11 +64,12 @@
 
         // --- Event Delegation for Triggers (Survives SPA) ---
         document.addEventListener('click', (e) => {
-            if (e.target.closest('.docmd-search-trigger')) {
+            const target = e.target as HTMLElement | null;
+            if (target?.closest('.docmd-search-trigger')) {
                 e.preventDefault();
                 openSearch();
             }
-            if (e.target === searchModal || e.target.closest('.docmd-search-close')) {
+            if (target === searchModal || target?.closest('.docmd-search-close')) {
                 closeSearch();
             }
         });
@@ -69,7 +82,7 @@
             }
 
             if (searchModal.style.display === 'flex') {
-                const items = searchResults.querySelectorAll('.search-result-item');
+                const items = searchResults.querySelectorAll('.search-result-item') as NodeListOf<HTMLElement>;
                 if (e.key === 'Escape') { e.preventDefault(); closeSearch(); }
                 else if (e.key === 'ArrowDown') { e.preventDefault(); if (items.length) { selectedIndex = (selectedIndex + 1) % items.length; updateSelection(items); } }
                 else if (e.key === 'ArrowUp') { e.preventDefault(); if (items.length) { selectedIndex = (selectedIndex - 1 + items.length) % items.length; updateSelection(items); } }
@@ -81,7 +94,7 @@
             }
         });
 
-        function updateSelection(items) {
+        function updateSelection(items: NodeListOf<HTMLElement>) {
             items.forEach((item, idx) => {
                 item.classList.toggle('selected', idx === selectedIndex);
                 if (idx === selectedIndex) item.scrollIntoView({ block: 'nearest' });
@@ -94,7 +107,7 @@
                 const indexUrl = `${ROOT_PATH}search-index.json`;
                 const response = await fetch(indexUrl);
                 if (response.headers.get("content-type")?.includes("text/html")) throw new Error("Invalid content type");
-                if (!response.ok) throw new Error(response.status);
+                if (!response.ok) throw new Error(String(response.status));
 
                 const jsonString = await response.text();
                 miniSearch = MiniSearch.loadJSON(jsonString, {
@@ -109,7 +122,7 @@
             }
         }
 
-        function getSnippet(text, query) {
+        function getSnippet(text: string | undefined, query: string): string {
             if (!text) return '';
             const terms = query.split(/\s+/).filter(t => t.length > 2);
             let bestIndex = -1;
@@ -131,7 +144,7 @@
         }
 
         searchInput.addEventListener('input', (e) => {
-            const query = e.target.value.trim();
+            const query = (e.target as HTMLInputElement).value.trim();
             selectedIndex = -1;
             if (!query) { searchResults.innerHTML = emptyStateHtml; return; }
             if (!isIndexLoaded) return;
@@ -142,7 +155,7 @@
                 return;
             }
 
-            searchResults.innerHTML = results.slice(0, 10).map((result, index) => {
+            searchResults.innerHTML = results.slice(0, 10).map((result: any, index: number) => {
                 const snippet = getSnippet(result.text, query);
                 const linkHref = `${ROOT_PATH}${result.id}`;
                 return `
@@ -153,13 +166,13 @@
             }).join('');
 
             searchResults.querySelectorAll('.search-result-item').forEach((item, idx) => {
-                item.addEventListener('mouseenter', () => { selectedIndex = idx; updateSelection(searchResults.querySelectorAll('.search-result-item')); });
+                item.addEventListener('mouseenter', () => { selectedIndex = idx; updateSelection(searchResults.querySelectorAll('.search-result-item') as NodeListOf<HTMLElement>); });
             });
         });
 
         // Close search when clicking a link (Important for SPA!)
         searchResults.addEventListener('click', (e) => {
-            if (e.target.closest('.search-result-item')) closeSearch();
+            if ((e.target as HTMLElement).closest('.search-result-item')) closeSearch();
         });
 
         window.closeDocmdSearch = closeSearch;
