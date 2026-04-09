@@ -358,6 +358,12 @@ export function injectComponentStyles(): void {
       margin-top: 8px;
       justify-content: flex-end;
     }
+    .tc-compose wa-textarea,
+    .tc-thread__reply wa-textarea,
+    .threads-thread wa-textarea {
+      width: 100%;
+      display: block;
+    }
 
     /* ========= New thread compose ========= */
     .tc-new-thread {
@@ -867,9 +873,51 @@ export function injectComponentStyles(): void {
       opacity: 0.85;
     }
 
-    /* ========= Hide sidebar (disabled for now) ========= */
+    /* ========= Sidebar column (disabled — not wired into app) ========= */
     .tc-sidebar-column { display: none !important; }
     .tc-has-sidebar { padding-right: 0 !important; }
+
+    /* ========= Floating threads toggle ========= */
+    .threads-fab {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 999;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--tc-border);
+      background: var(--tc-card);
+      color: var(--tc-muted-fg);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgb(0 0 0 / 0.12), 0 1px 3px rgb(0 0 0 / 0.08);
+      transition: color 0.15s, border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+    }
+    .threads-fab:hover {
+      color: var(--tc-fg);
+      border-color: var(--tc-ring);
+      transform: scale(1.08);
+      box-shadow: 0 4px 16px rgb(0 0 0 / 0.16), 0 2px 4px rgb(0 0 0 / 0.1);
+    }
+    .threads-fab__badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: hsl(210 100% 55%);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 18px;
+      text-align: center;
+      font-family: var(--tc-font);
+    }
   `;
   document.head.appendChild(style);
 }

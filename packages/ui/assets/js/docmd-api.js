@@ -27,6 +27,15 @@
   const docmd = window.docmd || {};
   window.docmd = docmd;
 
+  // Restore scroll position after reload
+  const savedScroll = sessionStorage.getItem('docmd:scrollY');
+  if (savedScroll) {
+    sessionStorage.removeItem('docmd:scrollY');
+    requestAnimationFrame(() => {
+      window.scrollTo(0, parseInt(savedScroll, 10));
+    });
+  }
+
   let socket = null;
   let messageId = 0;
   const pendingCalls = new Map(); // id → { resolve, reject }
@@ -45,6 +54,7 @@
 
     socket.onmessage = (e) => {
       if (e.data === 'reload') {
+        sessionStorage.setItem('docmd:scrollY', String(window.scrollY));
         window.location.reload();
         return;
       }
@@ -106,6 +116,7 @@
         resolve: ({ result, reload }) => {
           resolve(result);
           if (reload) {
+            sessionStorage.setItem('docmd:scrollY', String(window.scrollY));
             queueMicrotask(() => window.location.reload());
           }
         },
