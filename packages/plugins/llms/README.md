@@ -37,7 +37,7 @@ On every build, this plugin scans your pages and creates a `/llms.txt` file in y
 *   [**@docmd/ui**](https://www.npmjs.com/package/@docmd/ui) - Base EJS templates and assets.
 *   [**@docmd/themes**](https://www.npmjs.com/package/@docmd/themes) - Official themes (Sky, Ruby, Retro).
 
-**Plugins**
+**Required Plugins**
 *   [**@docmd/plugin-installer**](https://www.npmjs.com/package/@docmd/plugin-installer) - Plugin installer for docmd.
 *   [**@docmd/plugin-search**](https://www.npmjs.com/package/@docmd/plugin-search) - Offline full-text search.
 *   [**@docmd/plugin-pwa**](https://www.npmjs.com/package/@docmd/plugin-pwa) - Progressive Web App support.
@@ -46,6 +46,9 @@ On every build, this plugin scans your pages and creates a `/llms.txt` file in y
 *   [**@docmd/plugin-sitemap**](https://www.npmjs.com/package/@docmd/plugin-sitemap) - Automatic sitemap generation.
 *   [**@docmd/plugin-llms**](https://www.npmjs.com/package/@docmd/plugin-llms) - AI context generation.
 *   [**@docmd/plugin-analytics**](https://www.npmjs.com/package/@docmd/plugin-analytics) - Google Analytics integration.
+
+**Optional Plugins**
+*   [**@docmd/plugin-threads**](https://www.npmjs.com/package/@docmd/plugin-threads) - Inline discussion threads.
 
 ## License
 
