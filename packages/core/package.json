@@ -3,6 +3,7 @@
   "version": "0.6.8",
   "description": "The minimalist, zero-config documentation generator.",
   "type": "module",
+  "browser": false,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
