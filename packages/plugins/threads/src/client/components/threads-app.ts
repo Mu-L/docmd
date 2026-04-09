@@ -597,7 +597,12 @@ export class ThreadsApp extends LitElement {
         if (repliesContainer) {
           repliesContainer.appendChild(editor);
         } else {
-          parentComment.appendChild(editor);
+          const bodyEl = parentComment.querySelector('.threads-comment__body');
+          if (bodyEl) {
+            bodyEl.appendChild(editor);
+          } else {
+            parentComment.appendChild(editor);
+          }
         }
       } else {
         threadEl.appendChild(editor);
