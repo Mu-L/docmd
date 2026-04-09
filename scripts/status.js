@@ -29,7 +29,7 @@ if (IS_START) {
 }
 
 if (TYPE === 'start:onboard') {
-    process.stdout.write('🚀 \x1b[1mOnboarding docmd...\x1b[0m \x1b[2m(this may take a minute)\x1b[0m');
+    process.stdout.write('🚀 \x1b[1mOnboarding docmd...\x1b[0m \x1b[2m(this may take a few moments)\x1b[0m');
 } else if (TYPE === 'start:reset') {
     process.stdout.write('🫧  \x1b[1mResetting docmd...\x1b[0m \x1b[2m(cleaning up)\x1b[0m');
 } else if (TYPE === 'start:verify') {
