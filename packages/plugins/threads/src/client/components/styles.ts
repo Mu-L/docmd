@@ -432,14 +432,13 @@ export function injectComponentStyles(): void {
     /* ========= Server-rendered comment ========= */
     .threads-comment {
       display: grid;
-      grid-template-columns: 28px 1fr;
+      grid-template-columns: 35px 1fr;
       grid-template-rows: 28px auto auto;
-      padding: 10px 14px;
+      padding: 10px;
       font-size: 14px;
     }
     @media (max-width: 768px) {
       .threads-comment {
-        padding: 8px 10px;
         column-gap: 8px;
       }
     }
@@ -471,6 +470,7 @@ export function injectComponentStyles(): void {
       align-items: center;
       font-size: 12px;
       color: var(--tc-muted-fg);
+      gap: 5px;
     }
     .threads-comment__meta strong {
       color: var(--tc-fg);
@@ -902,9 +902,11 @@ export function injectComponentStyles(): void {
       opacity: 0.85;
     }
 
-    /* ========= Sidebar column (disabled — not wired into app) ========= */
-    .tc-sidebar-column { display: none !important; }
-    .tc-has-sidebar { padding-right: 0 !important; }
+    /* ========= Sidebar column: hidden by default, shown via body.tc-sidebar-active ========= */
+    .tc-sidebar-column { display: none; }
+    body.tc-sidebar-active .tc-sidebar-column { display: flex; }
+    body.tc-sidebar-active .threads-sidebar { display: none !important; }
+    body.tc-sidebar-active .tc-has-sidebar { padding-right: 40px; }
 
     /* ========= Floating threads toggle ========= */
     .threads-fab {
