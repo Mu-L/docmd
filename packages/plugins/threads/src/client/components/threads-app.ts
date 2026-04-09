@@ -47,12 +47,14 @@ export class ThreadsApp extends LitElement {
 
     this.loadThreads();
     this.injectNewThreadButton();
+    this.injectFab();
 
     // Register afterReload handler for post-mutation continuity
     if (typeof docmd !== 'undefined' && docmd.afterReload) {
       docmd.afterReload('threads', () => {
         this.loadThreads();
         this.injectNewThreadButton();
+        this.updateFabBadge();
       });
     }
   }
@@ -268,6 +270,7 @@ export class ThreadsApp extends LitElement {
       this.threads = [];
     }
     this.scanRenderedHighlights();
+    this.updateFabBadge();
   }
 
   // Color palette for highlights — cycles through these
@@ -622,6 +625,47 @@ export class ThreadsApp extends LitElement {
   private removeInlineEditor(): void {
     this.inlineEditorEl?.remove();
     this.inlineEditorEl = null;
+  }
+
+  // ─── Floating action button ──────────────────────────────────────
+
+  private injectFab(): void {
+    if (document.querySelector('.threads-fab')) return;
+
+    const fab = document.createElement('button');
+    fab.className = 'threads-fab';
+    fab.title = 'Jump to threads';
+    fab.innerHTML = `<wa-icon name="comments" variant="regular" style="font-size:20px;"></wa-icon>`;
+
+    const badge = document.createElement('span');
+    badge.className = 'threads-fab__badge';
+    badge.style.display = 'none';
+    fab.appendChild(badge);
+
+    fab.addEventListener('click', () => {
+      const firstThread = document.querySelector('.threads-thread, .threads-sidebar');
+      if (firstThread) {
+        firstThread.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (firstThread.classList.contains('threads-thread')) {
+          firstThread.classList.add('threads-thread--flash');
+          setTimeout(() => firstThread.classList.remove('threads-thread--flash'), 2000);
+        }
+      }
+    });
+
+    document.body.appendChild(fab);
+  }
+
+  private updateFabBadge(): void {
+    const badge = document.querySelector('.threads-fab__badge') as HTMLElement | null;
+    if (!badge) return;
+    const count = this.threads.filter(t => !t.resolved).length;
+    if (count > 0) {
+      badge.textContent = String(count);
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
   }
 
   // ─── Delete confirmation ──────────────────────────────────────────
