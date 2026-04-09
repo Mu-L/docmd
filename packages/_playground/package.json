@@ -3,7 +3,8 @@
   "version": "0.6.8",
   "private": true,
   "dependencies": {
-    "@docmd/core": "workspace:*"
+    "@docmd/core": "workspace:*",
+    "@docmd/plugin-threads": "workspace:*"
   },
   "scripts": {
     "dev": "node ../core/dist/bin/docmd.js dev",
