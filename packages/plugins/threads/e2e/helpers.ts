@@ -7,7 +7,11 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Page } from "@playwright/test";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /** Path to the playground index.md used by the dev server. */
 const PLAYGROUND_INDEX = path.resolve(

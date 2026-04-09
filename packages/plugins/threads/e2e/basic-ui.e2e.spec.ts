@@ -36,7 +36,7 @@ test.describe("threads plugin - basic UI", () => {
 
   test("New Thread button is injected into the content area", async () => {
     await user.perform(NavigateTo.path("/"));
-    const btn = user.page.locator(".threads-new-thread-btn");
+    const btn = user.page.locator(".threads-new-thread-btn").first();
     await expect(btn).toBeVisible({ timeout: 5_000 });
     await expect(btn).toContainText("New Thread");
   });
@@ -198,7 +198,7 @@ test.describe("threads plugin - basic UI", () => {
     // Each thread should have a Reply button
     for (let i = 0; i < count; i++) {
       const thread = threads.nth(i);
-      const replyBtn = thread.locator(".threads-reply-btn");
+      const replyBtn = thread.locator(".threads-comment-reply-btn").first();
       await expect(replyBtn).toBeAttached();
       await expect(replyBtn).toContainText("Reply");
     }

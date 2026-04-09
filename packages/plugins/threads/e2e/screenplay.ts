@@ -177,7 +177,7 @@ export class AddNewThread implements Task<void> {
   constructor(private body: string) {}
 
   async performAs(actor: Actor): Promise<void> {
-    const newThreadBtn = actor.page.locator(".threads-new-thread-btn");
+    const newThreadBtn = actor.page.locator(".threads-new-thread-btn").first();
     await newThreadBtn.click();
 
     const editor = actor.page.locator("threads-inline-editor");
@@ -209,7 +209,7 @@ export class ReplyToThread implements Task<void> {
 
   async performAs(actor: Actor): Promise<void> {
     const threadEl = actor.page.locator(this.threadSelector);
-    const replyBtn = threadEl.locator(".threads-reply-btn");
+    const replyBtn = threadEl.locator(".threads-comment-reply-btn").first();
     await replyBtn.click();
 
     const editor = actor.page.locator("threads-inline-editor");

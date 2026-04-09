@@ -113,7 +113,7 @@ test.describe("creating general (unanchored) threads", () => {
   test("clicking New Thread opens inline editor", async () => {
     await user.perform(NavigateTo.path("/"));
 
-    const newThreadBtn = user.page.locator(".threads-new-thread-btn");
+    const newThreadBtn = user.page.locator(".threads-new-thread-btn").first();
     await newThreadBtn.click();
 
     const editor = user.page.locator("threads-inline-editor");
