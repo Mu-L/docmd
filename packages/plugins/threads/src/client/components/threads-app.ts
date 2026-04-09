@@ -50,6 +50,11 @@ export class ThreadsApp extends LitElement {
     document.addEventListener('mousedown', this.handleOutsidePopoverClick);
     document.addEventListener('docmd:page-mounted', this.handlePageMounted as EventListener);
 
+    // Activate sidebar mode if configured
+    if (this.sidebarEnabled) {
+      this.initSidebarColumn();
+    }
+
     this.loadThreads();
     this.injectNewThreadButton();
     this.injectFab();
@@ -354,14 +359,8 @@ export class ThreadsApp extends LitElement {
         }
       }
     } else {
-      // Sidebar mode: add heading label if not already present
-      if (sidebar instanceof HTMLElement && !sidebar.querySelector('.threads-sidebar__heading')) {
-        sidebar.classList.add('threads-sidebar--labeled');
-        const heading = document.createElement('div');
-        heading.className = 'threads-sidebar__heading';
-        heading.textContent = 'Discussion Threads';
-        sidebar.insertBefore(heading, sidebar.firstChild);
-      }
+      // Sidebar mode: move thread cards into the right panel
+      this.populateSidebarPanel();
     }
   }
 
@@ -643,6 +642,91 @@ export class ThreadsApp extends LitElement {
   private removeInlineEditor(): void {
     this.inlineEditorEl?.remove();
     this.inlineEditorEl = null;
+  }
+
+  // ─── Sidebar column ──────────────────────────────────────────────
+
+  /**
+   * Create the fixed right sidebar column with toggle strip + panel.
+   * Only called when sidebar config is enabled.
+   */
+  private initSidebarColumn(): void {
+    if (document.querySelector('.tc-sidebar-column')) return;
+
+    // Activate sidebar mode via body class
+    document.body.classList.add('tc-sidebar-active', 'tc-has-sidebar');
+
+    // Create sidebar column
+    const column = document.createElement('div');
+    column.className = 'tc-sidebar-column';
+
+    // Toggle strip (collapsed state)
+    const toggle = document.createElement('button');
+    toggle.className = 'tc-sidebar-toggle';
+    toggle.title = 'Open threads panel';
+    toggle.innerHTML = '<wa-icon name="comments" variant="regular" style="font-size:16px;"></wa-icon>';
+    toggle.addEventListener('click', () => {
+      document.body.classList.add('tc-panel-open');
+    });
+    column.appendChild(toggle);
+
+    // Panel (expanded state)
+    const panel = document.createElement('div');
+    panel.className = 'tc-panel';
+
+    // Panel header
+    const header = document.createElement('div');
+    header.className = 'tc-panel__header';
+    header.innerHTML = `
+      <div class="tc-panel__title">
+        <span>Threads</span>
+        <span class="tc-panel__count"></span>
+      </div>
+      <div class="tc-panel__header-actions">
+        <button class="tc-panel__close-btn" title="Close panel" style="background:none;border:none;cursor:pointer;color:var(--tc-muted-fg);padding:4px;">
+          <wa-icon name="xmark" variant="solid" style="font-size:16px;"></wa-icon>
+        </button>
+      </div>
+    `;
+    const closeBtn = header.querySelector('.tc-panel__close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        document.body.classList.remove('tc-panel-open');
+      });
+    }
+    panel.appendChild(header);
+
+    // Panel body (thread cards go here)
+    const body = document.createElement('div');
+    body.className = 'tc-panel__body';
+    panel.appendChild(body);
+
+    column.appendChild(panel);
+    document.body.appendChild(column);
+  }
+
+  /**
+   * Move thread cards from the bottom .threads-sidebar into the sidebar panel body.
+   */
+  private populateSidebarPanel(): void {
+    const panelBody = document.querySelector('.tc-panel__body');
+    if (!panelBody) return;
+
+    // Clear existing panel threads
+    panelBody.innerHTML = '';
+
+    // Move all thread cards into the panel
+    const threadCards = document.querySelectorAll('.threads-sidebar .threads-thread');
+    for (const card of threadCards) {
+      panelBody.appendChild(card);
+    }
+
+    // Update count
+    const countEl = document.querySelector('.tc-panel__count');
+    if (countEl) {
+      const openCount = this.threads.filter(t => !t.resolved).length;
+      countEl.textContent = openCount > 0 ? `(${openCount} open)` : '';
+    }
   }
 
   // ─── Floating action button ──────────────────────────────────────
