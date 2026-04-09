@@ -76,8 +76,11 @@ function getNetworkIp() {
 /**
  * Read git user.name and user.email, compute Gravatar URL.
  * Returns a JSON-safe object for injection into the client.
+ * Lazy-initialized on first call to avoid execSync at module load.
  */
+let _gitDevInfoCache: { name: string; email: string; gravatarUrl: string } | null = null;
 function getGitDevInfo() {
+  if (_gitDevInfoCache) return _gitDevInfoCache;
   let name = '';
   let email = '';
   try { name = execSync('git config user.name', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim(); } catch { /* git not configured */ }
@@ -85,11 +88,13 @@ function getGitDevInfo() {
   const gravatarUrl = email
     ? `https://gravatar.com/avatar/${crypto.createHash('md5').update(email.toLowerCase().trim()).digest('hex')}?s=80&d=mp`
     : '';
-  return { name, email, gravatarUrl };
+  _gitDevInfoCache = { name, email, gravatarUrl };
+  return _gitDevInfoCache;
 }
 
-const _gitDevInfo = getGitDevInfo();
-const _devInfoScript = `<script>window.__docmd_dev=${JSON.stringify(_gitDevInfo)}</script>`;
+function getDevInfoScript() {
+  return `<script>window.__docmd_dev=${JSON.stringify(getGitDevInfo())}</script>`;
+}
 
 // Static Server Logic
 
@@ -148,7 +153,7 @@ async function serveStatic(req, res, rootDir) {
 
     if (contentType === 'text/html') {
       const htmlStr = content.toString('utf-8');
-      const liveReloadScript = `${_devInfoScript}<script src="/__dev/docmd-api.js"></script></body>`;
+      const liveReloadScript = `${getDevInfoScript()}<script src="/__dev/docmd-api.js"></script></body>`;
       res.end(htmlStr.replace('</body>', liveReloadScript));
     } else {
       res.end(content);
@@ -165,7 +170,7 @@ async function serveStatic(req, res, rootDir) {
 
         // Inject Live Reload into 404 page too so development continues smoothly
         const htmlStr = content.toString('utf-8');
-        const liveReloadScript = `${_devInfoScript}<script src="/__dev/docmd-api.js"></script></body>`;
+        const liveReloadScript = `${getDevInfoScript()}<script src="/__dev/docmd-api.js"></script></body>`;
         res.end(htmlStr.replace('</body>', liveReloadScript));
       } catch (e2) {
         // 2. Fallback if 404.html doesn't exist (e.g. build failed)

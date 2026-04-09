@@ -261,7 +261,13 @@ export function createSourceTools({ projectRoot }: { projectRoot: string }): Sou
       let accumulated = 0;
       for (const seg of block.segments) {
         const idx = seg.text.indexOf(text);
-        if (idx !== -1 && accumulated + idx >= (textOffset != null ? textOffset : 0) - seg.text.length) {
+        if (idx !== -1) {
+          const matchPos = accumulated + idx;
+          // If textOffset is specified, ensure the match overlaps with the target position
+          if (textOffset != null && (matchPos + text.length <= textOffset || matchPos > textOffset + text.length)) {
+            accumulated += seg.text.length;
+            continue;
+          }
           const rawStartInBlock = seg.rawOffset + idx;
           const rawEndInBlock = rawStartInBlock + text.length;
 

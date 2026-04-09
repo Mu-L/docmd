@@ -11,7 +11,7 @@ import fs from 'fs';
 import * as parser from './parser.js';
 import type { Thread, Comment, Reaction } from '../types.js';
 
-// Use ActionContext from @docmd/core when available
+// TODO(0.7.0): Import ActionContext from @docmd/api once types package is extracted
 interface ActionContext {
   projectRoot: string;
   config: any;
@@ -309,7 +309,9 @@ export const actions: Record<string, (payload: any, ctx: ActionContext) => Promi
   'threads:delete-thread': async (payload: any, ctx: ActionContext): Promise<{ deleted: boolean }> => {
     requireFields('threads:delete-thread', payload, ['file', 'threadId']);
     const { file, threadId } = payload;
-    let { content, threads } = await readAndParse(file, ctx);
+    const parsed = await readAndParse(file, ctx);
+    const { threads } = parsed;
+    let { content } = parsed;
 
     const idx = threads.findIndex((t) => t.id === threadId);
     if (idx === -1) throw new Error(`Thread not found: ${threadId}`);

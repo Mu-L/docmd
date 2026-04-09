@@ -105,7 +105,27 @@ export function createActionDispatcher(hooks: DispatcherHooks, options: Dispatch
     handleEvent(name: string, data: any): void {
       const handler = hooks.events[name];
       if (!handler) return;
-      const ctx = { projectRoot, config, broadcast } as ActionContext;
+
+      const sourceTools = createSourceTools({ projectRoot });
+      const ctx: ActionContext = {
+        projectRoot,
+        config,
+        broadcast,
+        source: sourceTools,
+        async readFile(relativePath: string): Promise<string> {
+          const resolved = safePath(projectRoot, relativePath);
+          return fs.promises.readFile(resolved, 'utf8');
+        },
+        async writeFile(relativePath: string, content: string): Promise<void> {
+          const resolved = safePath(projectRoot, relativePath);
+          await fs.promises.writeFile(resolved, content);
+        },
+        async readFileLines(relativePath: string): Promise<string[]> {
+          const content = await ctx.readFile(relativePath);
+          return content.split('\n');
+        },
+      };
+
       try {
         handler(data, ctx);
       } catch (e: any) {
