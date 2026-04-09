@@ -85,7 +85,6 @@ export async function loadPlugins(config: any) {
         rawModule = await import(name);
       } catch (e) {
         // Fallback for local development or misnamed packages
-        console.warn(chalk.dim(`   > Debug: Could not import '${name}', checking alternatives...`));
         rawModule = await import(require.resolve(name, { paths: [process.cwd(), import.meta.dirname] }));
       }
 

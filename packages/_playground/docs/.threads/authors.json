@@ -2,5 +2,9 @@
   "testuser": {
     "name": "TestUser",
     "avatarUrl": "https://gravatar.com/avatar/3d5ff960d1bb8dd8c99ef041d5ed5f21?s=80&d=mp"
+  },
+  "ghazi": {
+    "name": "Ghazi",
+    "avatarUrl": "https://gravatar.com/avatar/3d5ff960d1bb8dd8c99ef041d5ed5f21?s=80&d=mp"
   }
 }

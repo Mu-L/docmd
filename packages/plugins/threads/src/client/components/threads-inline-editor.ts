@@ -22,6 +22,9 @@ export class ThreadsInlineEditor extends LitElement {
     .editor-body {
       padding: 12px;
     }
+    wa-textarea {
+      width: 100%;
+    }
     .editor-footer {
       display: flex;
       justify-content: space-between;

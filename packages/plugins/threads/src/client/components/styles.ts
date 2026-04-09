@@ -399,9 +399,14 @@ export function injectComponentStyles(): void {
       display: grid;
       grid-template-columns: 28px 1fr;
       grid-template-rows: 28px auto auto;
-      column-gap: 10px;
       padding: 10px 14px;
       font-size: 14px;
+    }
+    @media (max-width: 768px) {
+      .threads-comment {
+        padding: 8px 10px;
+        column-gap: 8px;
+      }
     }
 
     /** .threads-comment + .threads-comment {

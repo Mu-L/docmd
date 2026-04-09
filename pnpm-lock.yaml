@@ -49,6 +49,9 @@ importers:
       '@docmd/core':
         specifier: workspace:*
         version: link:../core
+      '@docmd/plugin-threads':
+        specifier: workspace:*
+        version: link:../plugins/threads
 
   packages/core:
     dependencies:
