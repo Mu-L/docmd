@@ -12,6 +12,7 @@
  * --------------------------------------------------------------------
  */
 
+// @ts-ignore: Deno/Browser compatible CDN import that TypeScript cannot natively resolve
 import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
 
 (async function () {
@@ -25,10 +26,10 @@ import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.mi
   async function renderAll() {
     mermaid.initialize({ startOnLoad: false, theme: getTheme(), securityLevel: 'loose' });
 
-    const elements = document.querySelectorAll('.mermaid:not([data-processed="true"])');
+    const elements = document.querySelectorAll('.mermaid:not([data-processed="true"])') as NodeListOf<HTMLElement>;
 
     for (const el of elements) {
-      if (!el.dataset.original) el.dataset.original = el.textContent;
+      if (!el.dataset.original) el.dataset.original = el.textContent || '';
       const code = el.dataset.original;
 
       // Skip elements that are strictly display:none (Wait for tab click)
@@ -58,7 +59,8 @@ import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.mi
 
   // 3. Render when a hidden Tab or Collapsible is opened
   document.addEventListener('click', (e) => {
-    if (e.target.closest('.docmd-tabs-nav-item, .collapsible-summary')) {
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('.docmd-tabs-nav-item, .collapsible-summary')) {
       setTimeout(renderAll, 50); // Small delay to let CSS apply display:block
     }
   });
