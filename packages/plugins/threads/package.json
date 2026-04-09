@@ -36,8 +36,15 @@
     "threads",
     "discussions",
     "comments",
+    "editor",
+    "collaboration",
     "markdown",
-    "documentation"
+    "documentation",
+    "minimalist",
+    "zero-config",
+    "site-generator",
+    "static-site-generator",
+    "docs"
   ],
   "author": {
     "name": "Saulo Vallory"
