@@ -29,17 +29,16 @@ export const hooks: any = {
   events: {}           // event name → handler function (fire-and-forget)
 };
 
-// Map short names to package names
-const ALIASES: Record<string, string> = {
-  'search': '@docmd/plugin-search',
-  'seo': '@docmd/plugin-seo',
-  'sitemap': '@docmd/plugin-sitemap',
-  'analytics': '@docmd/plugin-analytics',
-  'mermaid': '@docmd/plugin-mermaid',
-  'llms': '@docmd/plugin-llms',
-  'pwa': '@docmd/plugin-pwa',
-  'threads': '@docmd/plugin-threads'
-};
+// Dynamic resolution replaces hardcoded aliases.
+// We automatically scope shorts to official docmd namespace.
+function resolvePluginName(key: string): string {
+  // If it's fully qualified (scoped, or custom convention), pass as-is
+  if (key.includes('/') || key.startsWith('docmd-plugin-')) {
+    return key;
+  }
+  // Convert shorts directly to official namespace.
+  return `@docmd/plugin-${key}`;
+}
 
 export async function loadPlugins(config: any) {
   // 1. Reset hooks
@@ -65,8 +64,8 @@ export async function loadPlugins(config: any) {
   // B. Add/Override from Config
   if (config.plugins) {
     Object.keys(config.plugins).forEach(key => {
-      // Resolve Alias (e.g., 'mermaid' -> '@docmd/plugin-mermaid')
-      const resolvedName = ALIASES[key] || key;
+      // Resolve dynamically instead of hardcoded aliases
+      const resolvedName = resolvePluginName(key);
       const options = config.plugins[key];
 
       // Update map (Override default if exists)
@@ -79,13 +78,42 @@ export async function loadPlugins(config: any) {
     if (options === false) continue; // Skip disabled
 
     try {
-      // Try resolving standard package
       let rawModule;
-      try {
-        rawModule = await import(name);
-      } catch (e) {
-        // Fallback for local development or misnamed packages
-        rawModule = await import(require.resolve(name, { paths: [process.cwd(), import.meta.dirname] }));
+
+      // Determine resolution cascade for security and convenience
+      const loadAttempts = [name];
+      const baseName = name.startsWith('@docmd/plugin-') ? name.replace('@docmd/plugin-', '') : null;
+
+      // If it's a dynamic official short, append community & exact fallbacks
+      // This guarantees official plugins load FIRST, protecting against malicious injections.
+      if (baseName) {
+        loadAttempts.push(`docmd-plugin-${baseName}`);
+        loadAttempts.push(baseName);
+      }
+
+      let loaded = false;
+      let lastError = null;
+
+      for (const attempt of loadAttempts) {
+        try {
+          rawModule = await import(attempt);
+          loaded = true;
+          break; // Stop at first successful namespace load
+        } catch (e: any) {
+          // If standard module resolution fails, try local CWD resolution
+          try {
+            rawModule = await import(require.resolve(attempt, { paths: [process.cwd(), import.meta.dirname] }));
+            loaded = true;
+            break;
+          } catch (localError: any) {
+            lastError = localError;
+            continue; // Try next scope
+          }
+        }
+      }
+
+      if (!loaded) {
+        throw lastError; // Exhausted all attempts
       }
 
       const pluginModule = rawModule.default || rawModule;
