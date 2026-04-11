@@ -29,7 +29,7 @@ Adds offline, full-text search to **docmd** sites.
 *   [**@docmd/plugin-llms**](https://www.npmjs.com/package/@docmd/plugin-llms) - AI context generation.
 *   [**@docmd/plugin-analytics**](https://www.npmjs.com/package/@docmd/plugin-analytics) - Google Analytics integration.
 
-**Additional Plugins**
+**Optional Plugins**
 *   [**@docmd/plugin-threads**](https://www.npmjs.com/package/@docmd/plugin-threads) - Inline discussion threads.
 *   [**@docmd/plugin-math**](https://www.npmjs.com/package/@docmd/plugin-math) - Mathematics (KaTeX/LaTeX) support.
 
