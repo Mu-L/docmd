@@ -313,6 +313,12 @@
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
 
+        // If target page is not SPA-compatible (e.g. noStyle), do a full redirect
+        if (doc.body.dataset.spaEnabled === 'false') {
+          window.location.assign(url);
+          return;
+        }
+
         if (pushHistory) history.pushState({}, '', finalUrl);
         currentPath = new URL(finalUrl).pathname;
         document.title = doc.title;
@@ -350,7 +356,18 @@
             const oldA = oldLi.querySelector('a');
             const newA = newLi.querySelector('a');
             if (oldA && newA) {
-              oldA.setAttribute('href', newA.getAttribute('href'));
+              // Resolve new href to absolute URL to prevent relative path nesting issues
+              const newHref = newA.getAttribute('href');
+              if (newHref && newHref !== '#') {
+                try {
+                  const absoluteUrl = new URL(newHref, data.finalUrl || window.location.href);
+                  oldA.setAttribute('href', absoluteUrl.pathname + absoluteUrl.hash);
+                } catch(e) {
+                  oldA.setAttribute('href', newHref);
+                }
+              } else {
+                oldA.setAttribute('href', newHref || '#');
+              }
               oldA.classList.toggle('active', newA.classList.contains('active'));
             }
           }

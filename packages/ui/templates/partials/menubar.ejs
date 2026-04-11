@@ -6,11 +6,12 @@
 %>
 
 <% 
+const menubarBase = (config.base || '/').replace(/\/$/, '') + '/';
 function menubarHref(item) { 
   if (!item.url) return '#' ; 
   if (item.external || item.url.startsWith('http')) return item.url; 
   let clean=item.url.replace(/^\//, '' );
-  return relativePathToRoot + clean; 
+  return menubarBase + clean; 
 }
 function menubarTarget(item) { 
   return (item.external || (item.url && item.url.startsWith('http'))) ? ' target="_blank" rel="noopener noreferrer"' : '' ; 
