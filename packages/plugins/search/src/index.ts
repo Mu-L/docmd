@@ -28,6 +28,7 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
   if (log) log('🔍 Generating search index...');
 
   const searchData = [];
+  const seenIds = new Set();
   pages.forEach(page => {
     if (page.searchData) {
       let pageId = page.outputPath.replace(/\\/g, '/');
@@ -35,24 +36,31 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
       if (pageId.endsWith('.html')) pageId = pageId.slice(0, -5);
 
       // 1. Add the main page record
-      searchData.push({
-        id: pageId,
-        title: page.searchData.title,
-        text: page.searchData.content,
-        // We can keep page-level headings as a string block for general page matching
-        headings: (page.searchData.headings || []).map(h => h.text).join(' ')
-      });
+      if (!seenIds.has(pageId)) {
+        seenIds.add(pageId);
+        searchData.push({
+          id: pageId,
+          title: page.searchData.title,
+          text: page.searchData.content,
+          // We can keep page-level headings as a string block for general page matching
+          headings: (page.searchData.headings || []).map(h => h.text).join(' ')
+        });
+      }
 
       // 2. Add individual heading records for deep linking
       if (page.searchData.headings && Array.isArray(page.searchData.headings)) {
         page.searchData.headings.forEach(heading => {
           if (heading.id && heading.text) {
-            searchData.push({
-              id: `${pageId}#${heading.id}`,
-              title: `${page.searchData.title} > ${heading.text}`,
-              text: '', // The content under the heading could go here if we extracted it, but for now empty or short
-              headings: heading.text
-            });
+            const hId = `${pageId}#${heading.id}`;
+            if (!seenIds.has(hId)) {
+              seenIds.add(hId);
+              searchData.push({
+                id: hId,
+                title: `${page.searchData.title} > ${heading.text}`,
+                text: '',
+                headings: heading.text
+              });
+            }
           }
         });
       }
