@@ -62,9 +62,15 @@ export async function prepareAssets(config: any, outputDir: string, options: any
   const themesDir = themes.getThemesDir();
   if (await fs.exists(themesDir)) await fs.copy(themesDir, path.join(outputDir, 'assets/css'));
 
-  // 3. User Assets
+  // 3. User Assets (Root)
   const userAssets = path.resolve(CWD, 'assets');
   if (await fs.exists(userAssets)) await fs.copy(userAssets, path.join(outputDir, 'assets'));
+
+  // 3.5. User Assets (Docs Dir)
+  if (config.src) {
+    const srcAssets = path.resolve(CWD, config.src, 'assets');
+    if (await fs.exists(srcAssets)) await fs.copy(srcAssets, path.join(outputDir, 'assets'));
+  }
 
   // 4. Minification (Production only)
   if (config.minify !== false && !options.isDev) {
