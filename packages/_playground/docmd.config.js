@@ -59,14 +59,14 @@ module.exports = defineConfig({
 
   // --- Plugins ---
   plugins: {
-    threads: {},
     math: {},
     // pwa: {},
     // seo: {},
     // analytics: {},
     // sitemap: {},
     // mermaid: {},
-    // llms: {}
+    // llms: {},
+    // threads: {}
   },
 
   versions: {
