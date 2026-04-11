@@ -85,6 +85,5 @@ module.exports = defineConfig({
   navigation: [
     { title: 'Latest Home', path: '/', icon: 'home' },
     { title: 'Nostyle', path: '/nostyle', icon: 'file' },
-    { title: 'Nostyle 2', path: '/nostyle.md', icon: 'file' }
   ]
 });
