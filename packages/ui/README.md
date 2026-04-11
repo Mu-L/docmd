@@ -32,6 +32,7 @@ Contains:
 
 **Additional Plugins**
 *   [**@docmd/plugin-threads**](https://www.npmjs.com/package/@docmd/plugin-threads) - Inline discussion threads.
+*   [**@docmd/plugin-math**](https://www.npmjs.com/package/@docmd/plugin-math) - Mathematics (KaTeX/LaTeX) support.
 
 ## License
 

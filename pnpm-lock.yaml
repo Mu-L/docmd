@@ -52,9 +52,6 @@ importers:
       '@docmd/plugin-math':
         specifier: workspace:*
         version: link:../plugins/math
-      '@docmd/plugin-threads':
-        specifier: workspace:*
-        version: link:../plugins/threads
 
   packages/core:
     dependencies:

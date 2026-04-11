@@ -15,8 +15,10 @@
 import chalk from 'chalk';
 import path from 'path';
 import { createRequire } from 'module';
+import { fileURLToPath } from 'url';
 
 const require = createRequire(import.meta.url);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const hooks: any = {
   markdownSetup: [],
@@ -29,14 +31,14 @@ export const hooks: any = {
   events: {}           // event name → handler function (fire-and-forget)
 };
 
-// Dynamic resolution replaces hardcoded aliases.
-// We automatically scope shorts to official docmd namespace.
+// Shorthand resolution — only bare names (no `/` or scope) expand to @docmd/plugin-*.
+// Third-party plugins must use their full package name in config.
 function resolvePluginName(key: string): string {
-  // If it's fully qualified (scoped, or custom convention), pass as-is
-  if (key.includes('/') || key.startsWith('docmd-plugin-')) {
+  // Already fully qualified (scoped or pathed) — pass through
+  if (key.includes('/')) {
     return key;
   }
-  // Convert shorts directly to official namespace.
+  // Bare name = official shorthand → @docmd/plugin-<name>
   return `@docmd/plugin-${key}`;
 }
 
@@ -80,40 +82,13 @@ export async function loadPlugins(config: any) {
     try {
       let rawModule;
 
-      // Determine resolution cascade for security and convenience
-      const loadAttempts = [name];
-      const baseName = name.startsWith('@docmd/plugin-') ? name.replace('@docmd/plugin-', '') : null;
-
-      // If it's a dynamic official short, append community & exact fallbacks
-      // This guarantees official plugins load FIRST, protecting against malicious injections.
-      if (baseName) {
-        loadAttempts.push(`docmd-plugin-${baseName}`);
-        loadAttempts.push(baseName);
-      }
-
-      let loaded = false;
-      let lastError = null;
-
-      for (const attempt of loadAttempts) {
-        try {
-          rawModule = await import(attempt);
-          loaded = true;
-          break; // Stop at first successful namespace load
-        } catch (e: any) {
-          // If standard module resolution fails, try local CWD resolution
-          try {
-            rawModule = await import(require.resolve(attempt, { paths: [process.cwd(), import.meta.dirname] }));
-            loaded = true;
-            break;
-          } catch (localError: any) {
-            lastError = localError;
-            continue; // Try next scope
-          }
-        }
-      }
-
-      if (!loaded) {
-        throw lastError; // Exhausted all attempts
+      // Single-target resolution — no fallback cascade.
+      // Official plugins resolve via @docmd/plugin-*, third-party must be fully qualified.
+      try {
+        rawModule = await import(name);
+      } catch (e: any) {
+        // Fallback: local CWD / workspace resolution for dev or file-path plugins
+        rawModule = await import(require.resolve(name, { paths: [process.cwd(), __dirname] }));
       }
 
       const pluginModule = rawModule.default || rawModule;
@@ -135,7 +110,7 @@ export async function loadPlugins(config: any) {
 }
 
 function registerPlugin(name: string, plugin: any, options: any) {
-  const shortName = name.replace(/^(@docmd\/plugin-|docmd-plugin-)/, '');
+  const shortName = name.replace(/^@docmd\/plugin-/, '');
 
   const shouldExecute = (pageContext: any) => {
     if (!pageContext || !pageContext.frontmatter) return true;

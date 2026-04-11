@@ -46,5 +46,11 @@
     "description": "Inline discussion threads for docmd documentation",
     "configKey": "threads",
     "defaultConfig": "{}"
+  },
+  "math": {
+    "package": "@docmd/plugin-math",
+    "description": "Math rendering support for docmd using KaTeX",
+    "configKey": "math",
+    "defaultConfig": "{}"
   }
 }
