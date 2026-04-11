@@ -146,6 +146,26 @@ export function normalizeConfig(userConfig: any) {
     // Normalize Navigation
     config.navigation = Array.isArray(config.navigation) ? config.navigation : [];
 
+    // URL Sanitization Helper
+    const sanitizeUrls = (items: any[]) => {
+        if (!Array.isArray(items)) return;
+        for (const item of items) {
+            if (typeof item.url === 'string' && !item.url.includes('assets/')) {
+                item.url = item.url.replace(/\.md$/, '');
+            }
+            if (typeof item.path === 'string' && !item.path.includes('assets/')) {
+                item.path = item.path.replace(/\.md$/, '');
+            }
+            if (item.children) sanitizeUrls(item.children);
+        }
+    };
+
+    sanitizeUrls(config.navigation);
+    if (config.menubar) {
+        if (config.menubar.left) sanitizeUrls(config.menubar.left);
+        if (config.menubar.right) sanitizeUrls(config.menubar.right);
+    }
+
     // --- 5. Plugins ---
     config.hasExplicitPlugins = 'plugins' in userConfig;
     config.plugins = config.plugins || {};
@@ -156,12 +176,16 @@ export function normalizeConfig(userConfig: any) {
             config.versions.current = config.versions.all[0]?.id || 'main';
         }
         config.versions.position = config.versions.position || 'sidebar-top';
-        config.versions.all = config.versions.all.map((v: any) => ({
-            id: v.id,
-            dir: v.dir || `docs-${v.id}`,
-            label: v.label || v.id,
-            navigation: v.navigation || null
-        }));
+        config.versions.all = config.versions.all.map((v: any) => {
+            const nav = v.navigation || null;
+            if (nav) sanitizeUrls(nav);
+            return {
+                id: v.id,
+                dir: v.dir || `docs-${v.id}`,
+                label: v.label || v.id,
+                navigation: nav
+            };
+        });
     } else {
         config.versions = false;
     }

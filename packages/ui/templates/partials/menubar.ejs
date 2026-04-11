@@ -9,7 +9,7 @@
 function menubarHref(item) { 
   if (!item.url) return '#' ; 
   if (item.external || item.url.startsWith('http')) return item.url; 
-  let clean=item.url.replace(/^\//, '' ).replace(/\.md$/, ''); 
+  let clean=item.url.replace(/^\//, '' );
   return relativePathToRoot + clean; 
 }
 function menubarTarget(item) { 

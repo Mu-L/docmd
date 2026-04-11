@@ -135,15 +135,44 @@ export async function loadPlugins(config: any) {
 }
 
 function registerPlugin(name: string, plugin: any, options: any) {
+  const shortName = name.replace(/^(@docmd\/plugin-|docmd-plugin-)/, '');
+
+  const shouldExecute = (pageContext: any) => {
+    if (!pageContext || !pageContext.frontmatter) return true;
+    const fmPlugins = pageContext.frontmatter.plugins || {};
+    
+    // 1. Frontmatter explicit override (Highest priority)
+    if (fmPlugins[shortName] === false) return false;
+    if (fmPlugins[shortName] === true) return true;
+
+    // 2. noStyle page conditional
+    if (pageContext.frontmatter.noStyle) {
+      if (options && options.noStyle !== undefined) return options.noStyle;
+      if (plugin.noStyle !== undefined) return plugin.noStyle;
+      return true; // Default behavior
+    }
+    
+    return true;
+  };
+
   if (typeof plugin.markdownSetup === 'function') hooks.markdownSetup.push((md: any) => plugin.markdownSetup(md, options));
 
   if (typeof plugin.generateMetaTags === 'function') {
-    hooks.injectHead.push((config: any, page: any, root: any) => plugin.generateMetaTags(config, page, root));
+    hooks.injectHead.push((config: any, pageContext: any, root: any) => {
+      if (!shouldExecute(pageContext)) return '';
+      return plugin.generateMetaTags(config, pageContext, root);
+    });
   }
 
   if (typeof plugin.generateScripts === 'function') {
-    hooks.injectHead.push((c: any) => plugin.generateScripts(c, options).headScriptsHtml || '');
-    hooks.injectBody.push((c: any) => plugin.generateScripts(c, options).bodyScriptsHtml || '');
+    hooks.injectHead.push((config: any, pageContext: any) => {
+      if (!shouldExecute(pageContext)) return '';
+      return plugin.generateScripts(config, options).headScriptsHtml || '';
+    });
+    hooks.injectBody.push((config: any, pageContext: any) => {
+      if (!shouldExecute(pageContext)) return '';
+      return plugin.generateScripts(config, options).bodyScriptsHtml || '';
+    });
   }
 
   if (typeof plugin.onPostBuild === 'function') hooks.onPostBuild.push((ctx: any) => plugin.onPostBuild({ ...ctx, options }));
