@@ -63,6 +63,7 @@
                     <button onclick="loadPreset('tabs')">Tabs</button>
                     <button onclick="loadPreset('steps')">Steps</button>
                     <button onclick="loadPreset('mermaid')">Diagrams</button>
+                    <button onclick="loadPreset('math')">Math</button>
                 </div>
             </div>
             <textarea id="input" spellcheck="false"></textarea>
@@ -94,7 +95,9 @@
 
             steps: `---\ntitle: Steps\n---\n\n# How to Install\n\n::: steps\n\n1. **Download**\n   Get the CLI tool.\n\n2. **Initialize**\n   Run \`docmd init\`.\n\n3. **Build**\n   Run \`docmd build\`.\n\n:::`,
 
-            mermaid: `---\ntitle: Diagrams\n---\n\n# Mermaid.js Support\n\n\`\`\`mermaid\ngraph TD\n  A[Start] --> B{Is it working?}\n  B -->|Yes| C[Nice!]\n  B -->|No| D[Debug]\n\`\`\``
+            mermaid: `---\ntitle: Diagrams\n---\n\n# Mermaid.js Support\n\n\`\`\`mermaid\ngraph TD\n  A[Start] --> B{Is it working?}\n  B -->|Yes| C[Nice!]\n  B -->|No| D[Debug]\n\`\`\``,
+
+            math: `---\ntitle: Math\n---\n\n# KaTeX Math Support\n\nWrite inline math with single dollar signs: $E = mc^2$\n\nOr use double dollar signs for block equations:\n\n$$\n\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}\n$$\n\n$$\n\\sum_{i=1}^n i^2 = \\frac{n(n+1)(2n+1)}{6}\n$$\n\nThe quadratic formula: $x = \\dfrac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$`
         };
 
         const input = document.getElementById('input');

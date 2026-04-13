@@ -14,6 +14,8 @@
 
 import { createMarkdownProcessor, processContent } from '@docmd/parser/dist/markdown-processor.js';
 import { renderTemplateAsync } from '@docmd/parser/dist/html-renderer.js';
+import texmath from 'markdown-it-texmath';
+import katex from 'katex';
 // @ts-ignore
 import templates from 'virtual:docmd-templates';
 
@@ -28,6 +30,10 @@ async function compile(markdown: string, config: any = {}) {
 
     // 1. Process Markdown with Plugin Support
     const md = createMarkdownProcessor(defaults, (parser) => {
+        // Math (KaTeX)
+        parser.use(texmath, { engine: katex, delimiters: 'dollars' });
+
+        // Mermaid fence override
         const defaultFence = parser.renderer.rules.fence;
         parser.renderer.rules.fence = (tokens, idx, options, env, self) => {
             const info = tokens[idx].info.trim();
@@ -59,6 +65,8 @@ async function compile(markdown: string, config: any = {}) {
     }
 
     cssTags.push(`<link rel="stylesheet" href="${assetsRoot}/css/docmd-live-preview.css">`);
+    cssTags.push(`<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">`);
+
 
     // 2. JS Injection
     const mermaidScript = `
