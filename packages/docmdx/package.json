@@ -14,13 +14,8 @@
     "build": "tsc",
     "postbuild": "chmod +x bin/docmdx.js"
   },
-  "peerDependencies": {
-    "@docmd/core": "*"
-  },
-  "peerDependenciesMeta": {
-    "@docmd/core": {
-      "optional": true
-    }
+  "dependencies": {
+    "@docmd/core": "workspace:*"
   },
   "keywords": [
     "docmd",

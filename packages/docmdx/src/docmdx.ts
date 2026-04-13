@@ -67,7 +67,6 @@ function printHelp(): void {
   console.log(`${bold('Options:')}`);
   console.log(`  -p, --port <n>     Dev server port ${dim('(default: 3000)')}`);
   console.log(`  -c, --config <f>   Path to config file`);
-  console.log(`  -z, --zero-config  Force zero-config mode`);
   console.log(`  -V, --version      Show version`);
   console.log(`  -h, --help         Show this help\n`);
   console.log(`${bold('Full install for permanent local use:')}`);
@@ -106,16 +105,6 @@ function resolveDocmdBin(): string | null {
   return null;
 }
 
-// ── Detect whether a config file exists in CWD ────────────────────
-function hasLocalConfig(): boolean {
-  const cwd = process.cwd();
-  return (
-    existsSync(resolve(cwd, 'docmd.config.js')) ||
-    existsSync(resolve(cwd, 'docmd.config.ts')) ||
-    existsSync(resolve(cwd, 'config.js'))
-  );
-}
-
 // ── Main ───────────────────────────────────────────────────────────
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -134,18 +123,11 @@ async function main(): Promise<void> {
   let docmdArgs: string[] = [];
 
   if (!command || command.startsWith('-')) {
-    // No command → dev server; auto zero-config when no config file exists
-    docmdArgs = ['dev'];
-    if (!hasLocalConfig() && !args.includes('-c') && !args.includes('--config')) {
-      docmdArgs.push('-z');
-    }
-    docmdArgs.push(...args);
+    // No command → dev server; zero-config is the default in core when no config exists
+    docmdArgs = ['dev', ...args];
 
   } else if (command === 'build') {
     docmdArgs = ['build', ...args.slice(1)];
-    if (!hasLocalConfig() && !args.includes('-c') && !args.includes('--config')) {
-      docmdArgs.push('-z');
-    }
 
   } else if (command === 'plugin') {
     const subCmd = args[1];
