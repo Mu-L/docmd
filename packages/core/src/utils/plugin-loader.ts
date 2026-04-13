@@ -27,6 +27,7 @@ export const hooks: any = {
   onPostBuild: [],
   assets: [],
   getClientAssets: [], // Legacy support
+  translations: [],    // (localeId) => {key: value} — plugin UI string overrides
   actions: {},         // action name → handler function (for WebSocket RPC)
   events: {}           // event name → handler function (fire-and-forget)
 };
@@ -53,21 +54,38 @@ export async function loadPlugins(config: any) {
   const pluginMap = new Map();
   const searchEnabled = config.optionsMenu ? config.optionsMenu.components.search !== false : config.search !== false;
 
-  // A. Add Defaults
-  pluginMap.set('@docmd/plugin-search', searchEnabled ? {} : false);
+  // A. Core Plugins — always loaded by default.
+  //    Users disable with: plugins: { search: { enabled: false } }
+  //    or plugins: { search: false }
+  const corePlugins = ['search', 'seo', 'sitemap', 'analytics', 'pwa', 'llms', 'mermaid'];
 
-  if (!config.hasExplicitPlugins) {
-    pluginMap.set('@docmd/plugin-seo', config.plugins?.seo || {});
-    pluginMap.set('@docmd/plugin-sitemap', config.plugins?.sitemap || {});
-    pluginMap.set('@docmd/plugin-analytics', config.plugins?.analytics || {});
-    pluginMap.set('@docmd/plugin-pwa', config.plugins?.pwa || {});
+  for (const name of corePlugins) {
+    const resolved = `@docmd/plugin-${name}`;
+    const userOpts = config.plugins?.[name];
+
+    // Explicit disable via `false` or `{ enabled: false }`
+    if (userOpts === false || (userOpts && userOpts.enabled === false)) {
+      pluginMap.set(resolved, false);
+      continue;
+    }
+
+    // Search respects the optionsMenu/search toggle
+    if (name === 'search' && !searchEnabled) {
+      pluginMap.set(resolved, false);
+      continue;
+    }
+
+    pluginMap.set(resolved, userOpts || {});
   }
 
-  // B. Add/Override from Config
+  // B. Add/Override from Config (non-core / optional / third-party plugins)
   if (config.plugins) {
     Object.keys(config.plugins).forEach(key => {
-      // Resolve dynamically instead of hardcoded aliases
       const resolvedName = resolvePluginName(key);
+
+      // Core plugins are already handled above — skip to avoid double-loading
+      if (corePlugins.includes(key)) return;
+
       const options = config.plugins[key];
 
       // Update map (Override default if exists)
@@ -153,6 +171,9 @@ function registerPlugin(name: string, plugin: any, options: any) {
   if (typeof plugin.onPostBuild === 'function') hooks.onPostBuild.push((ctx: any) => plugin.onPostBuild({ ...ctx, options }));
 
   if (typeof plugin.getAssets === 'function') hooks.assets.push(() => plugin.getAssets(options));
+
+  // Plugin translations (locale-specific UI strings)
+  if (typeof plugin.translations === 'function') hooks.translations.push((localeId: string) => plugin.translations(localeId, options));
 
   // Plugin actions (WebSocket RPC handlers)
   if (plugin.actions && typeof plugin.actions === 'object') {
