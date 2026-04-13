@@ -3,6 +3,7 @@
   "version": "0.6.9",
   "description": "Run docmd instantly. Zero setup, zero config.",
   "type": "module",
+  "type": "module",
   "main": "bin/docmdx.js",
   "bin": {
     "docmdx": "bin/docmdx.js"
@@ -11,7 +12,8 @@
     "bin"
   ],
   "scripts": {
-    "build": "mkdir -p bin && cp src/docmdx.js bin/docmdx.js && chmod +x bin/docmdx.js"
+    "build": "tsc && chmod +x bin/docmdx.js",
+    "dev": "tsc --watch"
   },
   "dependencies": {
     "@docmd/core": "workspace:*"

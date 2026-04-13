@@ -336,7 +336,7 @@ title: "Stress Test"
     assert(docmdxPkg.bin && docmdxPkg.bin.docmdx, 'docmdx has bin entry');
     assert(docmdxPkg.dependencies && docmdxPkg.dependencies['@docmd/core'], 'docmdx depends on @docmd/core');
 
-    const docmdxSrc = path.join(CWD, 'packages/docmdx/src/docmdx.js');
+    const docmdxSrc = path.join(CWD, 'packages/docmdx/src/docmdx.ts');
     assert(fs.existsSync(docmdxSrc), 'docmdx source file exists');
 
     const docmdxContent = fs.readFileSync(docmdxSrc, 'utf8');

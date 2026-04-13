@@ -90,8 +90,8 @@ module.exports = defineConfig({
     default: 'en',
     locales: [
       { id: 'en', label: 'English', dir: 'ltr' },
-      // { id: 'hi', label: 'हिन्दी', dir: 'ltr' },
-      // { id: 'zh', label: '中文', dir: 'ltr' },
+      { id: 'hi', label: 'हिन्दी', dir: 'ltr' },
+      { id: 'zh', label: '中文', dir: 'ltr' },
       // { id: 'ar', label: 'العربية', dir: 'rtl' },
     ]
   },
