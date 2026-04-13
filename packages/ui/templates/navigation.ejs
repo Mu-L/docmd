@@ -5,7 +5,7 @@
   # ---------------------------------------------------------------
 %>
 
-<nav class="sidebar-nav" aria-label="Main Navigation">
+<nav class="sidebar-nav" aria-label="<%= typeof t === 'function' ? t('mainNavigation') : 'Main Navigation' %>">
   <ul>
     <% function normalizePath(p) { if (!p || p==='#' ) return '#' ; if (p.startsWith('http')) return p; let
       path=p.replace(/^(\.\/|\/)+/, '' ); path=path.replace(/(\/index\.html|index\.html|\.html|\.md)$/, '' );

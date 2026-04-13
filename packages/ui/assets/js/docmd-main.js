@@ -117,6 +117,37 @@
       });
     }
 
+    // Language Switcher Toggle
+    const langToggle = e.target.closest('.language-switcher-toggle');
+    if (langToggle) {
+      e.preventDefault();
+      const dropdown = langToggle.closest('.docmd-language-switcher');
+      dropdown.classList.toggle('open');
+      langToggle.setAttribute('aria-expanded', dropdown.classList.contains('open'));
+      return;
+    }
+
+    // Language Switcher Navigation (with localStorage persistence)
+    const langLink = e.target.closest('.language-switcher-item');
+    if (langLink) {
+      e.preventDefault();
+      var localeId = langLink.dataset.localeId;
+      if (localeId) {
+        try { localStorage.setItem('docmd-locale', localeId); } catch(ex) { /* localStorage unavailable */ }
+      }
+      // Full page load to the target locale root (SPA does not cross locales)
+      window.location.href = langLink.href;
+      return;
+    }
+
+    // Close Language Switcher if clicked outside
+    if (!e.target.closest('.docmd-language-switcher')) {
+      document.querySelectorAll('.docmd-language-switcher.open').forEach(d => {
+        d.classList.remove('open');
+        d.querySelector('.language-switcher-toggle').setAttribute('aria-expanded', 'false');
+      });
+    }
+
     // Copy Code Button
     const copyBtn = e.target.closest('.copy-code-button');
     if (copyBtn) {

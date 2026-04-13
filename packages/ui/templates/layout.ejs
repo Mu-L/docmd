@@ -7,7 +7,7 @@
 -->
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<%= (locals.activeLocale && locals.activeLocale.id) ? locals.activeLocale.id : 'en' %>"<%= (locals.activeLocale && locals.activeLocale.dir && locals.activeLocale.dir !== 'ltr') ? ' dir="' + locals.activeLocale.dir + '"' : '' %>>
 
 <head>
   <meta charset="UTF-8">
@@ -62,13 +62,12 @@
   data-default-collapsed="<%= sidebarConfig?.defaultCollapsed %>"
   data-copy-code-enabled="<%= config.copyCode === true %>" data-spa-enabled="<%= config.layout?.spa !== false %>"<% if (locals.sourceFile) { %> data-source-file="<%= sourceFile %>"<% } %>>
 
-  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <a href="#main-content" class="skip-link"><%= typeof t === 'function' ? t('skipToContent') : 'Skip to content' %></a>
 
   <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position !=='header' ) { %>
     <%- await include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu: locals.optionsMenu })
       %>
-      <% } %>
-
+  <% } %>
         <% if (sidebarConfig?.enabled !==false) { %>
           <aside class="sidebar">
             <div class="sidebar-header">
@@ -105,6 +104,11 @@
                         config._activeVersion, relativePathToRoot }) %>
                     </div>
                     <% } %>
+                  <% if (locals.allLocales && allLocales && allLocales.length > 1) { %>
+                    <div class="sidebar-language-wrapper">
+                      <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon }) %>
+                    </div>
+                  <% } %>
             </div>
 
             <%- navigationHtml %>
@@ -115,6 +119,11 @@
                     <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion:
                       config._activeVersion, relativePathToRoot }) %>
                   </div>
+                  <% } %>
+                  <% if (locals.allLocales && allLocales && allLocales.length > 1) { %>
+                    <div class="sidebar-language-wrapper">
+                      <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon }) %>
+                    </div>
                   <% } %>
                     <% if (locals.optionsMenu && optionsMenu.position==='sidebar-bottom' ) { %>
                       <div class="sidebar-options-wrapper">
@@ -134,7 +143,7 @@
                         <div class="header-left">
                           <% if (sidebarConfig?.collapsible) { %>
                             <button id="sidebar-toggle-button" class="sidebar-toggle-button"
-                              aria-label="Toggle Sidebar">
+                              aria-label="<%= typeof t === 'function' ? t('toggleSidebar') : 'Toggle sidebar' %>">
                               <%- renderIcon('panel-left-close') %>
                             </button>
                             <% } %>
@@ -157,7 +166,7 @@
                             <div class="content-layout">
                               <div class="main-content">
                                 <% if (config.layout?.breadcrumbs !== false && locals.breadcrumbs && breadcrumbs.length > 0) { %>
-                                  <nav aria-label="breadcrumb" class="docmd-breadcrumbs">
+                                  <nav aria-label="<%= typeof t === 'function' ? t('breadcrumb') : 'Breadcrumb' %>" class="docmd-breadcrumbs">
                                     <ol>
                                       <% breadcrumbs.forEach((crumb, index) => { %>
                                         <li class="breadcrumb-item <%= index === breadcrumbs.length - 1 ? 'active' : '' %>" <%= index === breadcrumbs.length - 1 ? 'aria-current="page"' : '' %>>
@@ -185,7 +194,7 @@
                                           <% if (prevPage) { %>
                                             <a href="<%= prevPage.url %>" class="prev-page">
                                               <%- renderIcon('arrow-left', { class: 'page-nav-icon' }) %>
-                                                <span><small>Previous</small><strong>
+                                                <span><small><%= typeof t === 'function' ? t('previous') : 'Previous' %></small><strong>
                                                     <%= prevPage.title %>
                                                   </strong></span>
                                             </a>
@@ -195,7 +204,7 @@
                                               <% } %>
                                                 <% if (nextPage) { %>
                                                   <a href="<%= nextPage.url %>" class="next-page">
-                                                    <span><small>Next</small>
+                                                    <span><small><%= typeof t === 'function' ? t('next') : 'Next' %></small>
                                                       <strong>
                                                         <%= nextPage.title %>
                                                       </strong></span>
@@ -233,5 +242,4 @@
                   src="<%= relativePathToRoot %><%- jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>?v=<%= buildHash %>"></script>
                 <% } }); %>
 </body>
-
 </html>

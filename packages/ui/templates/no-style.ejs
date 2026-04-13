@@ -156,7 +156,7 @@
           <%- navigationHtml %>
         <% } %>
         <% if (frontmatter.components?.themeToggle !==false && theme && theme.enableModeToggle) { %>
-          <button id="theme-toggle-button" aria-label="Toggle theme" class="theme-toggle-button">
+          <button id="theme-toggle-button" aria-label="<%= typeof t === 'function' ? t('toggleTheme') : 'Toggle theme' %>" class="theme-toggle-button">
             <%- renderIcon('sun', { class: 'icon-sun' }) %> <%- renderIcon('moon', { class: 'icon-moon' }) %>
           </button>
         <% } %>

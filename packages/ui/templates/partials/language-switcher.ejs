@@ -1,0 +1,41 @@
+<%# ---------------------------------------------------------------
+  # docmd : the minimalist, zero-config documentation generator.
+  # @website https://docmd.io
+  # [docmd-source] - Please do not remove this header.
+  # ---------------------------------------------------------------
+%>
+
+<% if (allLocales && allLocales.length > 1) { 
+    const current = activeLocale || allLocales.find(l => l.id === defaultLocale);
+%>
+<div class="docmd-language-switcher">
+    <button class="language-switcher-toggle" aria-expanded="false" aria-label="<%= typeof t === 'function' ? t('selectLanguage') : 'Select Language' %>">
+        <%- renderIcon('globe', { class: 'language-icon' }) %>
+        <span class="language-label"><%= current ? current.label : (typeof t === 'function' ? t('language') : 'Language') %></span>
+        <%- renderIcon('chevron-down', { class: 'language-chevron' }) %>
+    </button>
+    <ul class="language-switcher-menu">
+        <% allLocales.forEach(loc => { 
+            const isCurrentActive = current && loc.id === current.id;
+            
+            const base = config.base || '/';
+            const normalizedBase = base.endsWith('/') ? base : base + '/';
+            const absoluteHref = normalizedBase + loc.id + '/';
+        %>
+        <li>
+            <a href="<%= absoluteHref %>" 
+               class="language-switcher-item <%= isCurrentActive ? 'active' : '' %>" 
+               data-spa-ignore
+               data-locale-id="<%= loc.id %>"
+               lang="<%= loc.id %>"
+               dir="<%= loc.dir || 'ltr' %>">
+                <%= loc.label %>
+                <% if (isCurrentActive) { %>
+                    <%- renderIcon('check', { class: 'language-check' }) %>
+                <% } %>
+            </a>
+        </li>
+        <% }) %>
+    </ul>
+</div>
+<% } %>

@@ -13,8 +13,8 @@
     const upOneLevel = isCurrentSubVersion ? '../' : '';
 %>
 <div class="docmd-version-dropdown">
-    <button class="version-dropdown-toggle" aria-expanded="false" aria-label="Select Version">
-        <span class="version-label"><%= current ? current.label : 'Version' %></span>
+    <button class="version-dropdown-toggle" aria-expanded="false" aria-label="<%= typeof t === 'function' ? t('selectVersion') : 'Select Version' %>">
+        <span class="version-label"><%= current ? current.label : (typeof t === 'function' ? t('version') : 'Version') %></span>
         <%- renderIcon('chevron-down', { class: 'version-chevron' }) %>
     </button>
     <ul class="version-dropdown-menu">
