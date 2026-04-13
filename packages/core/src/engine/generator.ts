@@ -16,6 +16,7 @@ import path from 'path';
 import fs from '../utils/fs-utils.js';
 import { createRequire } from 'module';
 import { generateAssetTag, findFilesRecursive } from './assets.js';
+import { generateHreflangTags } from './i18n.js';
 import nativeFs from 'fs';
 
 const require = createRequire(import.meta.url);
@@ -24,7 +25,17 @@ import * as ui from '@docmd/ui';
 import { findPageNeighbors, findBreadcrumbs } from '@docmd/parser/dist/utils/navigation-helper.js';
 
 export async function renderPages({ config, srcDir, outputDir, hooks, buildHash, options }: any) {
-  const mdProcessor = parser.createMarkdownProcessor(config, (md: any) => hooks.markdownSetup.forEach((hook: any) => hook(md)));
+  // Load Translations for the active locale
+  const localeId = config._activeLocale?.id || null;
+  const pluginTranslations = hooks.translations
+    ? hooks.translations.reduce((acc: any, fn: any) => ({ ...acc, ...fn(localeId) }), {})
+    : {};
+  const strings = ui.loadTranslations(localeId, pluginTranslations);
+  const t = ui.createT(strings);
+
+  // Pass UI strings to the markdown processor (for locale-aware aria-labels etc.)
+  const configWithStrings = { ...config, _uiStrings: strings };
+  const mdProcessor = parser.createMarkdownProcessor(configWithStrings, (md: any) => hooks.markdownSetup.forEach((hook: any) => hook(md)));
 
   // Load Layout Templates
   const templates = {
@@ -204,7 +215,8 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
 
     const fullHeadHtml = [
       hooks.injectHead.map((fn: any) => fn(config, pageContext, relativePathToRoot)).join('\n'),
-      assetHeadHtml
+      assetHeadHtml,
+      generateHreflangTags(config, page.outputPath)
     ].join('\n');
 
     const fullBodyHtml = [
@@ -216,7 +228,7 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
     const sourceRelative = path.relative(process.cwd(), page.sourcePath).replace(/\\/g, '/');
 
     let editUrl = null;
-    const editLinkText = config.editLink?.text || 'Edit this page';
+    const editLinkText = config.editLink?.text || t('editThisPage');
 
     if (config.editLink && config.editLink.enabled && config.editLink.baseUrl) {
       const cleanBase = config.editLink.baseUrl.replace(/\/$/, '');
@@ -230,7 +242,8 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
       navItems: config.navigation,
       currentPagePath: navPath,
       relativePathToRoot,
-      isOfflineMode: options.offline
+      isOfflineMode: options.offline,
+      t
     }, { filename: ui.getTemplatePath('navigation') });
 
     // Render Full Page
@@ -276,6 +289,14 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
 
       // Source file path for plugin use (e.g. threads RPC)
       sourceFile: sourceRelative,
+
+      // i18n locale context
+      activeLocale: config._activeLocale || null,
+      allLocales: config._allLocales || null,
+      defaultLocale: config._defaultLocale || null,
+
+      // Translation function
+      t,
 
       // Placeholders for template compatibility
       themeCssLinkHtml: '',

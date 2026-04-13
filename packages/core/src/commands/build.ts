@@ -14,15 +14,11 @@
 
 import path from 'path';
 import fs from '../utils/fs-utils.js';
-import nodeFs from 'fs';
 import chalk from 'chalk';
 import { loadConfig } from '../utils/config-loader.js';
 import { loadPlugins } from '../utils/plugin-loader.js';
 import { prepareAssets } from '../engine/assets.js';
-import { renderPages } from '../engine/generator.js';
-import { createRequire } from 'module';
-
-const require = createRequire(import.meta.url);
+import { buildLocales, generateLocaleRedirect } from '../engine/i18n.js';
 
 export async function buildSite(configPath: string, opts: any = {}) {
 
@@ -64,139 +60,30 @@ export async function buildSite(configPath: string, opts: any = {}) {
       }
     };
 
-    let allGeneratedPages = [];
+    // --- BUILD ALL LOCALES + VERSIONS ---
+    // i18n.buildLocales handles the outer locale loop, inner version loop,
+    // ghost version filtering, and standard (non-versioned) builds.
+    const allGeneratedPages = await buildLocales({
+      config,
+      rootOutputDir,
+      hooks,
+      buildHash,
+      options,
+      buildAssetsForDir,
+      CWD
+    });
 
-    // Filter out Ghost Versions (folders that don't exist)
-    if (config.versions && config.versions.all) {
-      const validVersions = [];
-      for (const v of config.versions.all) {
-        const vSrcDir = path.resolve(CWD, v.dir);
-        if (await fs.exists(vSrcDir)) {
-          validVersions.push(v);
-        } else {
-          if (!options.isDev) console.log(chalk.yellow(`⚠️  Skipping missing version: ${v.id} (${v.dir})`));
-        }
-      }
-      config.versions.all = validVersions;
-    }
-
-    // --- 1. THE VERSIONING LOOP ---
-    if (config.versions && config.versions.all && config.versions.all.length > 0) {
-      for (const v of config.versions.all) {
-        const isCurrent = v.id === config.versions.current;
-        const vSrcDir = path.resolve(CWD, v.dir);
-
-        // Failsafe: Skip if version directory doesn't exist
-        if (!await fs.exists(vSrcDir)) {
-          if (!options.isDev) console.log(chalk.yellow(`⚠️  Version directory missing: ${v.dir}. Skipping ${v.id}...`));
-          continue;
-        }
-
-        // Current version goes to root, others go to subfolders (e.g., site/v1/)
-        const vOutputDir = isCurrent ? rootOutputDir : path.join(rootOutputDir, v.id);
-        await fs.ensureDir(vOutputDir);
-        await buildAssetsForDir(vOutputDir);
-
-        // Inject current version data into config for the generator to use
-        // 1. Navigation Override: Check for navigation.json (Nav V2), then config override, then default
-        let activeNav = config.navigation;
-        
-        try {
-          const navJsonPath = path.join(vSrcDir, 'navigation.json');
-          if (nodeFs.existsSync(navJsonPath)) {
-            const rawNav = nodeFs.readFileSync(navJsonPath, 'utf-8');
-            activeNav = JSON.parse(rawNav);
-          } else if (v.navigation) {
-             activeNav = v.navigation;
-          }
-        } catch (err) {
-          console.warn(`[WARNING] Failed to parse navigation.json in ${vSrcDir}:`, err.message);
-          activeNav = v.navigation || config.navigation;
-        }
-
-        // 2. Smart Filter: Remove dead links for this specific version directory
-        // This ensures if 'advanced.md' was added in v2, it won't show in v1 nav
-        const filterNav = (items) => {
-          return items.reduce((acc, item) => {
-            const newItem = { ...item };
-
-            // If it has children, filter them recursively
-            if (newItem.children) {
-              newItem.children = filterNav(newItem.children);
-              // If it was a group and now has no children, remove the group? 
-              // Optional: keeping empty groups might be confusing. Let's keep for now.
-            }
-
-            // If it's a link to a file (not external)
-            if (newItem.path && !newItem.path.startsWith('http') && !newItem.external) {
-              // Normalize path: /guide/intro -> guide/intro.md
-              let relativeFilePath = newItem.path.replace(/^\//, '');
-              if (!relativeFilePath.endsWith('.md')) relativeFilePath += '.md';
-              // Handle index case
-              if (relativeFilePath.endsWith('/.md')) relativeFilePath = relativeFilePath.replace('/.md', '/index.md');
-              if (relativeFilePath === '.md') relativeFilePath = 'index.md';
-
-              const absoluteFilePath = path.join(vSrcDir, relativeFilePath);
-
-              // Check existence synchronously (fast enough for build time)
-              // We use try-catch because fs.statSync throws if missing
-              try {
-                if (!nodeFs.existsSync(absoluteFilePath)) {
-                  // File doesn't exist in this version -> Skip this item
-                  return acc;
-                }
-              } catch (e) { return acc; }
-            }
-
-            acc.push(newItem);
-            return acc;
-          }, []);
-        };
-
-        const cleanedNav = filterNav(activeNav);
-
-        // Inject filtered nav into a temporary config for this build run
-        const versionedConfig = {
-          ...config,
-          _activeVersion: v,
-          navigation: cleanedNav
-        };
-
-        const pages = await renderPages({
-          config: versionedConfig,
-          srcDir: vSrcDir,
-          outputDir: vOutputDir,
-          hooks,
-          buildHash,
-          options // <-- This is where 'options' is needed!
-        });
-
-        // Adjust output paths for plugins (Sitemap/Search) to include the subfolder
-        if (!isCurrent) {
-          pages.forEach(p => p.outputPath = `${v.id}/${p.outputPath}`);
-        }
-        allGeneratedPages.push(...pages);
-      }
-    } else {
-      // --- STANDARD BUILD (No Versioning) ---
-      const srcDir = path.resolve(CWD, config.src);
-
-      // Zero-Config Failsafe: Create src dir if missing
-      if (options.zeroConfig && !await fs.exists(srcDir)) {
-        await fs.ensureDir(srcDir);
-      }
-
-      if (!await fs.exists(srcDir)) throw new Error(`Source directory not found: ${srcDir}`);
-
-      await buildAssetsForDir(rootOutputDir);
-      allGeneratedPages = await renderPages({
-        config, srcDir, outputDir: rootOutputDir, hooks, buildHash, options
-      });
-    }
+    // --- i18n ROOT REDIRECT ---
+    await generateLocaleRedirect(config, rootOutputDir);
 
     // --- 3. GENERATE CUSTOM 404 PAGE ---
     const { renderTemplateAsync } = await import('@docmd/parser/dist/html-renderer.js');
     const ui = await import('@docmd/ui');
+
+    // Load translations for the default locale (404 is a global page)
+    const defaultLocaleId = config.i18n?.default || null;
+    const notFoundStrings = ui.loadTranslations(defaultLocaleId);
+    const t = ui.createT(notFoundStrings);
 
     const notFoundTemplatePath = path.join(ui.getTemplatesDir(), '404.ejs');
     let notFoundTemplateStr = '';
@@ -213,10 +100,11 @@ export async function buildSite(configPath: string, opts: any = {}) {
     const absoluteRoot = config.base && config.base !== '/' ? config.base.replace(/\/$/, '') + '/' : '/';
 
     const full404Html = await renderTemplateAsync(notFoundTemplateStr, {
-      pageTitle: config.notFound.title || 'Page Not Found',
-      title: config.notFound.title || 'Page Not Found',
+      pageTitle: config.notFound.title || t('pageNotFound'),
+      title: config.notFound.title || t('pageNotFound'),
       content: config.notFound.content || 'The page you are looking for does not exist.',
       logo: config.logo,
+      t,
 
       // Context for Assets
       relativePathToRoot: absoluteRoot,

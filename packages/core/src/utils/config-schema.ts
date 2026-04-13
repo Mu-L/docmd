@@ -175,7 +175,21 @@ export function normalizeConfig(userConfig: any) {
         content: 'The page you are looking for does not exist or has been moved.'
     };
 
-    // --- 8. OptionsMenu Fallbacks ---
+    // --- 8. Internationalisation (i18n) ---
+    if (config.i18n && config.i18n.locales && Array.isArray(config.i18n.locales) && config.i18n.locales.length > 0) {
+        config.i18n = {
+            default: config.i18n.default || config.i18n.locales[0].id || 'en',
+            locales: config.i18n.locales.map((loc: any) => ({
+                id: loc.id,
+                label: loc.label || loc.id,
+                dir: loc.dir || 'ltr'
+            }))
+        };
+    } else {
+        config.i18n = false;
+    }
+
+    // --- 9. OptionsMenu Fallbacks ---
     if (config.optionsMenu.position === 'menubar' && (!config.menubar || config.menubar.enabled === false)) {
         config.optionsMenu.position = 'sidebar-top';
     } else if (config.optionsMenu.position === 'header' && (!config.header || config.header.enabled === false)) {
