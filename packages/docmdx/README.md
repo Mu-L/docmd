@@ -20,8 +20,6 @@
 
 </div>
 
----
-
 ## What is docmdx?
 
 A lightweight launcher for [`@docmd/core`](https://www.npmjs.com/package/@docmd/core). Drop it into any folder with Markdown files and get a production-ready documentation site with no setup.
@@ -60,8 +58,7 @@ All commands are forwarded to the underlying `@docmd/core` CLI. The `dev` and `b
 ```
 -p, --port <n>     Dev server port (default: 3000)
 -c, --config <f>   Path to a config file
--z, --zero-config  Force zero-config mode
--V, --version      Show version
+-v, --version      Show version
 -h, --help         Show help
 ```
 
