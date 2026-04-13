@@ -3,7 +3,6 @@
   "version": "0.6.9",
   "description": "Run docmd instantly. Zero setup, zero config.",
   "type": "module",
-  "type": "module",
   "main": "bin/docmdx.js",
   "bin": {
     "docmdx": "bin/docmdx.js"
@@ -12,14 +11,20 @@
     "bin"
   ],
   "scripts": {
-    "build": "tsc && chmod +x bin/docmdx.js",
-    "dev": "tsc --watch"
+    "build": "tsc",
+    "postbuild": "chmod +x bin/docmdx.js"
   },
-  "dependencies": {
-    "@docmd/core": "workspace:*"
+  "peerDependencies": {
+    "@docmd/core": "*"
+  },
+  "peerDependenciesMeta": {
+    "@docmd/core": {
+      "optional": true
+    }
   },
   "keywords": [
     "docmd",
+    "docmdx",
     "documentation",
     "markdown",
     "zero-config",
