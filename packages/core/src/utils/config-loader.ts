@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -109,10 +109,6 @@ async function buildZeroConfig(cwd: string, isDev = false, quiet = false) {
 export async function loadConfig(configPath: string, options: any = {}) {
   const cwd = process.cwd();
 
-  if (options.zeroConfig) {
-    return await buildZeroConfig(cwd, options.isDev, options.quiet);
-  }
-
   let absoluteConfigPath = path.resolve(cwd, configPath);
 
   if (!fs.existsSync(absoluteConfigPath) && configPath === 'docmd.config.js') {
@@ -121,7 +117,7 @@ export async function loadConfig(configPath: string, options: any = {}) {
     else {
       // Fallback to Zero-Config if nothing is found to prevent crashing!
       if (!(global as any).__DOCMD_NO_CONFIG_LOGGED && !options.quiet) {
-        console.log(chalk.yellow('⚠️  ') + chalk.dim('No config file found. Falling back to Zero-Config mode...'));
+        console.log(chalk.yellow('⚠️  ') + chalk.dim('No config found — running in auto mode. Run `docmd init` to create one.'));
         (global as any).__DOCMD_NO_CONFIG_LOGGED = true;
       }
       return await buildZeroConfig(cwd, options.isDev, options.quiet);

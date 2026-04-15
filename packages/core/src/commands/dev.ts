@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -196,12 +196,11 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
   const options = {
     preserve: opts.preserve || false,
     port: opts.port || undefined,
-    zeroConfig: opts.zeroConfig || false
   };
 
   let config;
   try {
-    config = await loadConfig(configPathOption, { zeroConfig: options.zeroConfig, isDev: true, quiet: true });
+    config = await loadConfig(configPathOption, { isDev: true, quiet: true });
   } catch (e) {
     if (e.silent) {
       process.exit(0); // Exit gracefully if it's a known non-project folder error
@@ -249,7 +248,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
   // Watcher Setup
   const userAssetsDirExists = await fs.pathExists(paths.userAssetsDir);
   const watchedPaths = [paths.srcDirToWatch];
-  if (!options.zeroConfig && await fs.pathExists(paths.configFileToWatch)) {
+  if (await fs.pathExists(paths.configFileToWatch)) {
     watchedPaths.push(paths.configFileToWatch);
   }
   if (userAssetsDirExists) watchedPaths.push(paths.userAssetsDir);
@@ -268,7 +267,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
 
   console.log(chalk.dim('\n👀 Watching for changes in:'));
   console.log(chalk.dim(`   - Source: ${chalk.cyan(formatPathForDisplay(paths.srcDirToWatch, CWD))}`));
-  if (!options.zeroConfig && await fs.pathExists(paths.configFileToWatch)) {
+  if (await fs.pathExists(paths.configFileToWatch)) {
     console.log(chalk.dim(`   - Config: ${chalk.cyan(formatPathForDisplay(paths.configFileToWatch, CWD))}`));
   }
   if (userAssetsDirExists) {
