@@ -183,19 +183,43 @@ export async function loadConfig(configPath: string, options: any = {}) {
 
     // Ensure we have a navigation array, fallback to Auto-Router if empty (unless explicitly set to empty)
     if (!normalized.navigation || (normalized.navigation.length === 0 && !hasExplicitNav)) {
-      if (!options.quiet && !(global as any).__DOCMD_ZERO_NAV_LOGGED) {
-        console.log(chalk.dim('   ➖ No navigation settings found in config!'));
-        console.log(chalk.dim('   ✨ Auto-generating navigation with Zero-Config...'));
-        if (options.isDev) (global as any).__DOCMD_ZERO_NAV_LOGGED = true;
-      }
-      // When i18n is enabled, scan the default locale directory for auto-nav
+      // When i18n or versioning is enabled, check if navigation.json exists
+      // in locale/version dirs before warning — it will be loaded later per-locale/version
       let navScanDir = path.resolve(cwd, normalized.srcDir);
+      let hasNavInSubdirs = false;
+
       if (normalized.i18n?.default) {
         const localeScanDir = path.join(navScanDir, normalized.i18n.default);
         if (fs.existsSync(localeScanDir)) {
           navScanDir = localeScanDir;
         }
+        // Check if any locale dir has navigation.json
+        hasNavInSubdirs = (normalized.i18n.locales || []).some((l: any) =>
+          fs.existsSync(path.join(path.resolve(cwd, normalized.srcDir), l.id, 'navigation.json'))
+        );
       }
+
+      // Check if any version dir has navigation.json
+      if (!hasNavInSubdirs && normalized.versions?.all?.length > 0) {
+        hasNavInSubdirs = normalized.versions.all.some((v: any) => {
+          const vDir = path.resolve(cwd, v.dir);
+          // Check base dir and locale subdirs
+          if (fs.existsSync(path.join(vDir, 'navigation.json'))) return true;
+          if (normalized.i18n?.default) {
+            return fs.existsSync(path.join(vDir, normalized.i18n.default, 'navigation.json'));
+          }
+          return false;
+        });
+      }
+
+      if (!hasNavInSubdirs) {
+        if (!options.quiet && !(global as any).__DOCMD_ZERO_NAV_LOGGED) {
+          console.log(chalk.dim('   ➖ No navigation settings found in config!'));
+          console.log(chalk.dim('   ✨ Auto-generating navigation with Zero-Config...'));
+          if (options.isDev) (global as any).__DOCMD_ZERO_NAV_LOGGED = true;
+        }
+      }
+
       normalized.navigation = buildAutoNav(navScanDir);
     }
 
