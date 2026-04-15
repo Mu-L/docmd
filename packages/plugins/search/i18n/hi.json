@@ -1,0 +1,10 @@
+{
+  "searchPlaceholder": "दस्तावेज़ खोजें...",
+  "searchNoResults": "कोई परिणाम नहीं मिला।",
+  "searchError": "खोज अनुक्रमणिका लोड करने में विफल।",
+  "searchInitial": "खोजने के लिए टाइप करें...",
+  "searchClose": "खोज बंद करें",
+  "searchNavigate": "नेविगेट करें",
+  "searchEscape": "बंद करें",
+  "searchVersionBadge": "v{version}"
+}

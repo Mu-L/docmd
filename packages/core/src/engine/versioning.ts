@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -100,16 +100,14 @@ export async function buildVersions({
   hooks,
   buildHash,
   options,
-  buildAssetsForDir,
   CWD,
-  pathPrefix
+  pathPrefix = ''
 }: {
   config: any;
   outputDir: string;
   hooks: any;
   buildHash: string;
   options: any;
-  buildAssetsForDir: (dir: string) => Promise<void>;
   CWD: string;
   pathPrefix?: string;
 }): Promise<any[]> {
@@ -124,9 +122,10 @@ export async function buildVersions({
       continue;
     }
 
-    const vOutputDir = isCurrent ? outputDir : path.join(outputDir, v.id);
-    await fs.ensureDir(vOutputDir);
-    await buildAssetsForDir(vOutputDir);
+    // Determine the full output prefix for this version combining locale prefix + version prefix
+    // Only non-current versions get a version prefix.
+    const versionPrefixSegment = isCurrent ? '' : v.id + '/';
+    const combinedOutputPrefix = pathPrefix + versionPrefixSegment;
 
     const activeNav = resolveVersionNav(v, vSrcDir, config.navigation);
     const cleanedNav = filterNavForVersion(activeNav, vSrcDir);
@@ -140,21 +139,12 @@ export async function buildVersions({
     const pages = await renderPages({
       config: versionedConfig,
       srcDir: vSrcDir,
-      outputDir: vOutputDir,
+      outputDir, // We always pass root outputDir so relativePathToRoot computes perfectly
       hooks,
       buildHash,
-      options
+      options,
+      outputPrefix: combinedOutputPrefix
     });
-
-    // Prefix output paths for non-current versions (used by sitemap, search, etc.)
-    if (!isCurrent) {
-      pages.forEach(p => p.outputPath = `${v.id}/${p.outputPath}`);
-    }
-
-    // Apply any additional path prefix (e.g. locale prefix)
-    if (pathPrefix) {
-      pages.forEach(p => p.outputPath = `${pathPrefix}${p.outputPath}`);
-    }
 
     allPages.push(...pages);
   }

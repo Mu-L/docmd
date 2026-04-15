@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -20,15 +20,20 @@ import { buildVersions, filterGhostVersions } from './versioning.js';
 /**
  * Prepare locale context to inject into config for a build pass.
  * When locale is null (i18n disabled), returns the config unchanged.
+ *
+ * Design: the default locale renders at root (no URL prefix),
+ * non-default locales render at /{locale}/ — mirroring how
+ * versioning treats the current version vs. old versions.
  */
 export function createLocaleConfig(config: any, locale: any): any {
   if (!locale) return config;
+  const isDefault = locale.id === config.i18n.default;
   return {
     ...config,
     _activeLocale: locale,
     _allLocales: config.i18n.locales,
     _defaultLocale: config.i18n.default,
-    _localeOutputPrefix: locale.id + '/'
+    _localeOutputPrefix: isDefault ? '' : locale.id + '/'
   };
 }
 
@@ -43,7 +48,9 @@ export function getLocales(config: any): any[] {
 /**
  * Build all locales — the outer loop of the build pipeline.
  * For each locale, runs the versioning loop (or standard build) inside it.
- * Returns all generated pages across all locales/versions.
+ *
+ * The default locale builds directly into rootOutputDir (no prefix).
+ * Non-default locales build into rootOutputDir/{locale}/.
  */
 export async function buildLocales({
   config,
@@ -51,7 +58,6 @@ export async function buildLocales({
   hooks,
   buildHash,
   options,
-  buildAssetsForDir,
   CWD
 }: {
   config: any;
@@ -59,7 +65,6 @@ export async function buildLocales({
   hooks: any;
   buildHash: string;
   options: any;
-  buildAssetsForDir: (dir: string) => Promise<void>;
   CWD: string;
 }): Promise<any[]> {
   const allGeneratedPages = [];
@@ -71,20 +76,23 @@ export async function buildLocales({
 
   for (const locale of locales) {
     const localeId = locale ? locale.id : null;
-    const localeOutputDir = localeId ? path.join(rootOutputDir, localeId) : rootOutputDir;
+    const isDefault = localeId ? localeId === config.i18n.default : false;
     const localeConfig = createLocaleConfig(config, locale);
+    
+    // We pass the rootOutputDir so that path.rel() accurately maps back to root.
+    // The nesting is handled purely by the string pathPrefix.
+    const pathPrefix = (localeId && !isDefault) ? localeId + '/' : '';
 
     if (localeConfig.versions?.all?.length > 0) {
       // Versioned build within this locale
       const pages = await buildVersions({
         config: localeConfig,
-        outputDir: localeOutputDir,
+        outputDir: rootOutputDir,
         hooks,
         buildHash,
         options,
-        buildAssetsForDir,
         CWD,
-        pathPrefix: localeId ? localeId + '/' : undefined
+        pathPrefix
       });
       allGeneratedPages.push(...pages);
 
@@ -97,14 +105,15 @@ export async function buildLocales({
       }
       if (!await fs.exists(srcDir)) throw new Error(`Source directory not found: ${srcDir}`);
 
-      await buildAssetsForDir(localeOutputDir);
       const pages = await renderPages({
-        config: localeConfig, srcDir, outputDir: localeOutputDir, hooks, buildHash, options
+        config: localeConfig, 
+        srcDir, 
+        outputDir: rootOutputDir, 
+        hooks, 
+        buildHash, 
+        options,
+        outputPrefix: pathPrefix
       });
-
-      if (localeId) {
-        pages.forEach(p => p.outputPath = `${localeId}/${p.outputPath}`);
-      }
       allGeneratedPages.push(...pages);
     }
   }
@@ -114,42 +123,30 @@ export async function buildLocales({
 
 /**
  * Generate the root redirect page for i18n sites.
- * Redirects to the user's preferred locale via localStorage → navigator.language → default.
+ *
+ * Since the default locale now renders at root, the redirect is only needed
+ * if the user's browser locale matches a non-default locale. The redirect
+ * page is written as a lightweight JS snippet that checks localStorage →
+ * navigator.language; if it matches a non-default locale, it redirects.
+ * Otherwise, the root content (default locale) is already there.
+ *
+ * Note: This is now a no-op because the default locale is at root.
+ * Users browsing to / get the default locale directly. The language
+ * switcher handles navigation to non-default locales.
  */
-export async function generateLocaleRedirect(config: any, rootOutputDir: string): Promise<void> {
+export async function generateLocaleRedirect(config: any, _rootOutputDir: string): Promise<void> {
+  // Default locale is at root — no redirect needed.
+  // The language switcher provides navigation to /hi/, /zh/, etc.
   if (!config.i18n?.locales) return;
-
-  const defaultLocale = config.i18n.default;
-  const allLocaleIds = config.i18n.locales.map((l: any) => l.id);
-  const base = config.base && config.base !== '/' ? config.base.replace(/\/$/, '') : '';
-
-  const redirectHtml = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Redirecting...</title>
-<script>
-(function() {
-  var defined = ${JSON.stringify(allLocaleIds)};
-  var fallback = ${JSON.stringify(defaultLocale)};
-  var stored = null;
-  try { stored = localStorage.getItem('docmd-locale'); } catch(e) {}
-  var nav = (navigator.language || navigator.userLanguage || '').split('-')[0].toLowerCase();
-  var locale = (stored && defined.indexOf(stored) !== -1) ? stored : (defined.indexOf(nav) !== -1 ? nav : fallback);
-  window.location.replace('${base}/' + locale + '/');
-})();
-</script>
-<noscript><meta http-equiv="refresh" content="0;url=${base}/${defaultLocale}/"></noscript>
-</head>
-<body></body>
-</html>`;
-
-  await fs.writeFile(path.join(rootOutputDir, 'index.html'), redirectHtml);
+  return;
 }
 
 /**
  * Generate hreflang link tags for a page across all locales.
  * Used by the generator to inject into <head>.
+ *
+ * Default locale pages are at root (no prefix).
+ * Non-default locale pages are at /{locale}/path.
  */
 export function generateHreflangTags(config: any, pageOutputPath: string): string {
   if (!config._allLocales) return '';
@@ -159,9 +156,13 @@ export function generateHreflangTags(config: any, pageOutputPath: string): strin
 
   return config._allLocales.map((loc: any) => {
     const isDefault = loc.id === config._defaultLocale;
-    let tags = `<link rel="alternate" hreflang="${loc.id}" href="${base}/${loc.id}/${pagePath}">`;
+    // Default locale → root path, non-default → /{locale}/path
+    const href = isDefault
+      ? `${base}/${pagePath}`
+      : `${base}/${loc.id}/${pagePath}`;
+    let tags = `<link rel="alternate" hreflang="${loc.id}" href="${href}">`;
     if (isDefault) {
-      tags += `\n<link rel="alternate" hreflang="x-default" href="${base}/${loc.id}/${pagePath}">`;
+      tags += `\n<link rel="alternate" hreflang="x-default" href="${href}">`;
     }
     return tags;
   }).join('\n');

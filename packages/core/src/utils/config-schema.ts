@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -179,10 +179,12 @@ export function normalizeConfig(userConfig: any) {
     if (config.i18n && config.i18n.locales && Array.isArray(config.i18n.locales) && config.i18n.locales.length > 0) {
         config.i18n = {
             default: config.i18n.default || config.i18n.locales[0].id || 'en',
+            position: config.i18n.position || 'options-menu',
             locales: config.i18n.locales.map((loc: any) => ({
                 id: loc.id,
                 label: loc.label || loc.id,
-                dir: loc.dir || 'ltr'
+                dir: loc.dir || 'ltr',
+                translations: loc.translations || {}
             }))
         };
     } else {

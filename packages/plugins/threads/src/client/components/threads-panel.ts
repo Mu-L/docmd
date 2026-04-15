@@ -1,5 +1,6 @@
 import { LitElement, html, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { t } from '../lib/i18n';
 import type { Thread, Anchor } from '../../types';
 
 import '@awesome.me/webawesome/dist/components/button/button.js';
@@ -95,23 +96,23 @@ export class ThreadsPanel extends LitElement {
       <div class="tc-panel">
         <div class="tc-panel__header">
           <div class="tc-panel__title">
-            <span>Threads</span>
+            <span>${t('threads')}</span>
             <wa-badge variant="neutral" pill>${this.threads.filter(t => !t.resolved).length}</wa-badge>
           </div>
           <div class="tc-panel__header-actions">
-            <wa-button size="small" appearance="plain" title="Add general comment" @click=${this.handleAddGeneralComment}>
+            <wa-button size="small" appearance="plain" title=${t('addGeneralComment')} @click=${this.handleAddGeneralComment}>
               <wa-icon name="plus" variant="solid"></wa-icon>
             </wa-button>
-            <wa-button size="small" appearance="plain" title="Collapse sidebar" @click=${this.handleClose}>
+            <wa-button size="small" appearance="plain" title=${t('collapseSidebar')} @click=${this.handleClose}>
               <wa-icon name="angles-right" variant="solid"></wa-icon>
             </wa-button>
           </div>
         </div>
 
         <div class="tc-panel__filters">
-          ${filterBtn('all', 'All')}
-          ${filterBtn('open', 'Open')}
-          ${filterBtn('resolved', 'Resolved')}
+          ${filterBtn('all', t('all'))}
+          ${filterBtn('open', t('open'))}
+          ${filterBtn('resolved', t('resolved'))}
         </div>
 
         <div class="tc-panel__body">
@@ -131,7 +132,7 @@ export class ThreadsPanel extends LitElement {
           ${filtered.length === 0 && !this.composing ? html`
             <div class="tc-empty">
               <wa-icon name="comments" variant="regular" style="font-size:32px; opacity:0.4; margin-bottom:8px;"></wa-icon>
-              No threads on this page yet.<br>Select text to start one.
+              ${t('noThreads')}<br>${t('selectTextToStart')}
             </div>
           ` : nothing}
 

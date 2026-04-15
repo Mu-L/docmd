@@ -6,7 +6,9 @@
 
   <!-- 项目标题 -->
   <h3>
-    <img src="https://github.com/docmd-io/docmd/blob/main/packages/ui/assets/images/docmd-logo-dark.png?raw=true" alt="docmd 标志" width="210" />
+    <a href="https://docmd.io">
+      <img src="https://github.com/docmd-io/docmd/blob/main/packages/ui/assets/images/docmd-logo-dark.png?raw=true" alt="docmd logo" width="210" />
+    </a>
   </h3>
   
   <!-- 一行摘要 -->
@@ -19,8 +21,8 @@
   <!-- 徽章 -->
   <p>
     <a href="https://www.npmjs.com/package/@docmd/core"><img src="https://img.shields.io/npm/v/@docmd/core.svg?style=flat-square&color=CB3837" alt="npm 版本"></a>
-    <a href="https://www.npmjs.com/package/@docmd/core?activeTab=versions"><img src="https://img.shields.io/npm/dt/@docmd/core.svg?style=flat-square&color=38bd24" alt="下载量"></a>
-    <a href="https://github.com/docmd-io/docmd/stargazers"><img src="https://img.shields.io/github/stars/docmd-io/docmd?style=flat-square&logo=github" alt="星标"></a>
+    <a href="https://www.npmjs.com/package/@docmd/core?activeTab=versions"><img src="https://img.shields.io/npm/dm/@docmd/core.svg?style=flat-square&color=38bd24" alt="下载量"></a>
+    <a href="https://github.com/docmd-io/docmd"><img src="https://img.shields.io/github/stars/docmd-io/docmd?style=flat-square&logo=github" alt="星标"></a>
     <a href="https://github.com/docmd-io/docmd/blob/main/LICENSE"><img src="https://img.shields.io/github/license/docmd-io/docmd.svg?style=flat-square&color=A31F34" alt="许可证"></a>
   </p>
 
@@ -49,7 +51,7 @@
 **在任意含有 Markdown 文件的目录中立即运行 docmd：**
 
 ```bash
-npx docmdx
+npx @docmd/core dev
 ```
 启动地址：`http://localhost:3000`
 
@@ -62,7 +64,7 @@ npx docmdx
 构建站点：
 
 ```bash
-npx docmdx build
+npx @docmd/core build
 ```
 
 ### 常规安装
@@ -207,7 +209,7 @@ await buildLive();
 安装可选插件：
 
 ```bash
-npx docmdx plugin add <plugin-name>
+docmd plugin add <plugin-name>
 ```
 
 ## 为什么选择 docmd？

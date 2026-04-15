@@ -15,6 +15,12 @@
     </button>
     <% } %>
 
+    <% if (locals.allLocales && allLocales && allLocales.length > 1 && locals.config && config.i18n && config.i18n.position === 'options-menu') { %>
+    <div class="options-menu-language">
+        <%- await include('language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: true, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
+    </div>
+    <% } %>
+
     <% if (optionsMenu.components.themeSwitch !== false) { %>
     <button class="theme-toggle-button" aria-label="<%= typeof t === 'function' ? t('toggleTheme') : 'Toggle theme' %>">
         <%- renderIcon('sun', { class: 'icon-sun' }) %> <%- renderIcon('moon', { class: 'icon-moon' }) %>

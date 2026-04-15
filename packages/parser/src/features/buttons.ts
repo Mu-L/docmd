@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -11,6 +11,8 @@
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
+
+import { renderIcon } from '../utils/icon-renderer.js';
 
 function buttonRule(state, startLine, endLine, silent) {
   const start = state.bMarks[startLine] + state.tShift[startLine];
@@ -36,11 +38,14 @@ function buttonRule(state, startLine, endLine, silent) {
   const parts = rest.split(/\s+/);
   const rawLink = parts[0];
   let color = '';
+  let icon = '';
 
-  // Look for color option in remaining parts
+  // Look for options in remaining parts
   for (let i = 1; i < parts.length; i++) {
     if (parts[i].startsWith('color:')) {
       color = parts[i].replace('color:', '');
+    } else if (parts[i].startsWith('icon:')) {
+      icon = parts[i].replace('icon:', '');
     }
   }
 
@@ -69,7 +74,12 @@ function buttonRule(state, startLine, endLine, silent) {
 
   const targetAttr = isExternal ? ' target="_blank" rel="noopener noreferrer"' : '';
 
-  token.content = `<a href="${href}" class="docmd-button"${styleAttr}${targetAttr}>${state.md.renderInline(text)}</a>`;
+  let iconHtml = '';
+  if (icon) {
+    iconHtml = renderIcon(icon, { class: 'button-icon' }) + ' ';
+  }
+
+  token.content = `<a href="${href}" class="docmd-button"${styleAttr}${targetAttr}>${iconHtml}${state.md.renderInline(text)}</a>`;
 
   state.line = startLine + 1;
   return true;

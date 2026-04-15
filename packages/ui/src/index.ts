@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -67,9 +67,18 @@ export function loadTranslations(localeId?: string | null, overrides?: Record<st
 /**
  * Create a `t()` function for use in templates.
  * Returns the translated string for a key, falling back to the key itself.
+ * Supports simple interpolation: t('key', { name: 'value' }) replaces {name} in the string.
  */
-export function createT(strings: Record<string, string>): (key: string) => string {
-    return (key: string) => strings[key] || key;
+export function createT(strings: Record<string, string>): (key: string, params?: Record<string, string>) => string {
+    return (key: string, params?: Record<string, string>) => {
+        let str = strings[key] || key;
+        if (params) {
+            for (const [k, v] of Object.entries(params)) {
+                str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), v);
+            }
+        }
+        return str;
+    };
 }
 
 /**

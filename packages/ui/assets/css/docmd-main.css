@@ -1235,6 +1235,50 @@ blockquote.docmd-embed {
     transform: rotate(180deg);
 }
 
+/* Language Compact Mode (Options Menu) */
+.language-compact {
+    width: auto;
+    margin-top: 0;
+}
+
+.language-compact .language-switcher-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ui-element-size);
+    height: var(--ui-element-size);
+    padding: 0;
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.language-compact .language-switcher-toggle:hover {
+    background-color: var(--sidebar-link-active-bg);
+    color: var(--text-heading);
+    border-color: var(--border-color-hover);
+}
+
+.language-compact .language-icon {
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.language-compact .language-switcher-menu {
+    min-width: 140px;
+    right: 0;
+    left: auto;
+}
+
+.options-menu-language {
+    position: relative;
+    display: inline-flex;
+}
+
 .card .card-title {
     border-bottom: 1px solid var(--border-color)
 }

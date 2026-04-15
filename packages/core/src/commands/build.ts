@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -42,7 +42,7 @@ export async function buildSite(configPath: string, opts: any = {}) {
     await fs.ensureDir(rootOutputDir);
 
     // Helper: Build Assets for a specific output directory
-    const buildAssetsForDir = async (targetOutDir) => {
+    const buildAssetsForDir = async (targetOutDir: string) => {
       await prepareAssets(config, targetOutDir, options);
       if (hooks.assets) {
         for (const getAssetsFn of hooks.assets) {
@@ -60,6 +60,9 @@ export async function buildSite(configPath: string, opts: any = {}) {
       }
     };
 
+    // Build assets ONCE for the root site
+    await buildAssetsForDir(rootOutputDir);
+
     // --- BUILD ALL LOCALES + VERSIONS ---
     // i18n.buildLocales handles the outer locale loop, inner version loop,
     // ghost version filtering, and standard (non-versioned) builds.
@@ -69,7 +72,6 @@ export async function buildSite(configPath: string, opts: any = {}) {
       hooks,
       buildHash,
       options,
-      buildAssetsForDir,
       CWD
     });
 

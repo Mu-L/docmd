@@ -20,5 +20,6 @@
   "permalinkToSection": "Permalink to this section",
   "copiedToClipboard": "Copied!",
   "copyCode": "Copy code",
-  "mainNavigation": "Main Navigation"
+  "mainNavigation": "Main Navigation",
+  "fallbackMessage": "This page is not yet available in {active}. Showing default language ({default})."
 }

@@ -20,5 +20,6 @@
   "permalinkToSection": "इस अनुभाग का स्थायी लिंक",
   "copiedToClipboard": "कॉपी हो गया!",
   "copyCode": "कोड कॉपी करें",
-  "mainNavigation": "मुख्य नेविगेशन"
+  "mainNavigation": "मुख्य नेविगेशन",
+  "fallbackMessage": "यह पृष्ठ अभी {active} में उपलब्ध नहीं है। डिफ़ॉल्ट भाषा ({default}) दिखा रहा है।"
 }

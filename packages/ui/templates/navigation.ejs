@@ -45,14 +45,16 @@
 
         let href = item.path || '#';
         if (!isExternal && !isDummyLink && !href.startsWith('http')) {
-        let cleanPath = href.replace(/^(\.\/|\/)+/, '');
-        href = relativePathToRoot + cleanPath;
-        if (isOfflineMode) {
-        if (href.endsWith('/')) href += 'index.html';
-        else if (!href.endsWith('.html')) href += '/index.html';
-        } else {
-        if (href.endsWith('/index.html')) href = href.slice(0, -10);
-        }
+          let cleanPath = href.replace(/^(\.\/|\/)+/, '');
+          // Apply locale + version namespace prefix safely
+          const prefix = (typeof outputPrefix !== 'undefined') ? outputPrefix : '';
+          href = relativePathToRoot + prefix + cleanPath;
+          if (isOfflineMode) {
+            if (href.endsWith('/')) href += 'index.html';
+            else if (!href.endsWith('.html')) href += '/index.html';
+          } else {
+            if (href.endsWith('/index.html')) href = href.slice(0, -10);
+          }
       }
       %>
       <li class="<%= liClasses.join(' ') %>" <% if(isInteractive) { %> aria-expanded="<%= isOpen %>" <% } %>>

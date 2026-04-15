@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -36,12 +36,51 @@ declare const MiniSearch: any;
 
         if (!searchModal || !searchInput || !searchResults) return;
 
+        // Read translated strings from data attributes (injected server-side per locale)
+        const strings = {
+            initial: searchModal.dataset.searchInitial || 'Type to start searching...',
+            noResults: searchModal.dataset.searchNoResults || 'No results found.',
+            error: searchModal.dataset.searchError || 'Failed to load search index.'
+        };
+
         // Use Site Root if available (for versioning), fallback to Context Root
         const rawRoot = window.DOCMD_SITE_ROOT || window.DOCMD_ROOT || './';
         let ROOT_PATH = new URL(rawRoot, window.location.href).href;
         if (!ROOT_PATH.endsWith('/')) ROOT_PATH += '/';
 
-        const emptyStateHtml = '<div class="search-initial">Type to start searching...</div>';
+        // Determine the locale-specific search index path.
+        // The index lives alongside the locale's HTML files:
+        //   default locale: /search-index.json
+        //   non-default:    /hi/search-index.json
+        // Since ROOT_PATH already resolves to the correct locale root
+        // (e.g. https://docs.example.com/ or https://docs.example.com/hi/),
+        // we can simply append search-index.json to it.
+        // However, we need to detect our locale prefix from the current URL
+        // and build the fetch path relative to the site base.
+        const siteBase = (window.DOCMD_SITE_ROOT || window.DOCMD_ROOT || '/').replace(/\/$/, '') + '/';
+        const currentPath = window.location.pathname;
+        
+        // Extract locale prefix from current URL path
+        // If URL is /hi/content/steps and base is /, locale prefix is "hi/"
+        const pathAfterBase = currentPath.startsWith(siteBase) 
+            ? currentPath.slice(siteBase.length) 
+            : currentPath.replace(/^\//, '');
+        const firstSegment = pathAfterBase.split('/')[0];
+        
+        // Check if the first segment looks like a locale (2-3 letter code)
+        // by checking the meta tag that the engine injects
+        const hreflangLinks = document.querySelectorAll('link[hreflang]');
+        const knownLocales = new Set<string>();
+        hreflangLinks.forEach(link => {
+            const lang = link.getAttribute('hreflang');
+            if (lang && lang !== 'x-default') knownLocales.add(lang);
+        });
+        
+        const localePrefix = knownLocales.has(firstSegment) ? firstSegment + '/' : '';
+        const baseUrl = new URL(siteBase, window.location.href).href;
+        const searchIndexUrl = baseUrl + localePrefix + 'search-index.json';
+
+        const emptyStateHtml = `<div class="search-initial">${strings.initial}</div>`;
 
         // 1. Open/Close Logic
         function openSearch() {
@@ -101,24 +140,23 @@ declare const MiniSearch: any;
             });
         }
 
-        // 3. Index Loading
+        // 3. Index Loading — fetches locale-specific index
         async function loadIndex() {
             try {
-                const indexUrl = `${ROOT_PATH}search-index.json`;
-                const response = await fetch(indexUrl);
+                const response = await fetch(searchIndexUrl);
                 if (response.headers.get("content-type")?.includes("text/html")) throw new Error("Invalid content type");
                 if (!response.ok) throw new Error(String(response.status));
 
                 const jsonString = await response.text();
                 miniSearch = MiniSearch.loadJSON(jsonString, {
                     fields: ['title', 'headings', 'text'],
-                    storeFields: ['title', 'id', 'text'],
+                    storeFields: ['title', 'id', 'text', 'version'],
                     searchOptions: { fuzzy: 0.2, prefix: true, boost: { title: 2, headings: 1.5 } }
                 });
                 isIndexLoaded = true;
                 if (searchInput.value.trim()) searchInput.dispatchEvent(new Event('input'));
             } catch (e) {
-                searchResults.innerHTML = '<div class="search-error">Failed to load search index.</div>';
+                searchResults.innerHTML = `<div class="search-error">${strings.error}</div>`;
             }
         }
 
@@ -151,16 +189,19 @@ declare const MiniSearch: any;
 
             const results = miniSearch.search(query);
             if (results.length === 0) {
-                searchResults.innerHTML = '<div class="search-no-results">No results found.</div>';
+                searchResults.innerHTML = `<div class="search-no-results">${strings.noResults}</div>`;
                 return;
             }
 
             searchResults.innerHTML = results.slice(0, 10).map((result: any, index: number) => {
                 const snippet = getSnippet(result.text, query);
                 const linkHref = `${ROOT_PATH}${result.id}`;
+                const versionBadge = result.version
+                    ? `<span class="search-result-version">${result.version}</span>`
+                    : '';
                 return `
                     <a href="${linkHref}" class="search-result-item" data-index="${index}">
-                        <div class="search-result-title">${result.title}</div>
+                        <div class="search-result-title">${result.title}${versionBadge}</div>
                         <div class="search-result-preview">${snippet}</div>
                     </a>`;
             }).join('');

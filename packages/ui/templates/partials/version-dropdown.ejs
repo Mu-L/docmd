@@ -27,8 +27,10 @@
             const base = config.base || '/';
             const normalizedBase = base.endsWith('/') ? base : base + '/';
             
+            // Include locale prefix for non-default locales
+            const locPrefix = (typeof localePrefix !== 'undefined' && localePrefix) ? localePrefix : '';
             const targetSuffix = isTargetRootVersion ? '' : v.id + '/';
-            const absoluteHref = normalizedBase + targetSuffix;
+            const absoluteHref = normalizedBase + locPrefix + targetSuffix;
             
             // Data Root for JS Sticky Logic
             const dataRoot = absoluteHref;

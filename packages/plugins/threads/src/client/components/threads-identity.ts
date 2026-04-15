@@ -1,5 +1,6 @@
 import { LitElement, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { t } from '../lib/i18n';
 import {
   getAuthor, setAuthor,
   getEmail, setEmail,
@@ -105,7 +106,7 @@ export class ThreadsIdentity extends LitElement {
     return html`
       <button
         class="threads-identity-btn"
-        title="Discussion identity"
+        title=${t('discussionIdentity')}
         @click=${this.togglePanel}
       >
         ${this.avatarUrl
@@ -123,17 +124,17 @@ export class ThreadsIdentity extends LitElement {
             }
           </div>
           <label class="threads-identity-label">
-            Display Name
+            ${t('displayName')}
             <input
               id="identity-name"
               class="threads-identity-input"
               type="text"
               .value=${this.name}
-              placeholder="Your name"
+              placeholder=${t('yourName')}
             />
           </label>
           <label class="threads-identity-label">
-            GitHub Username
+            ${t('githubUsername')}
             <input
               id="identity-github"
               class="threads-identity-input"
@@ -143,7 +144,7 @@ export class ThreadsIdentity extends LitElement {
             />
           </label>
           <label class="threads-identity-label">
-            Gravatar Email
+            ${t('gravatarEmail')}
             <input
               id="identity-email"
               class="threads-identity-input"
@@ -153,12 +154,11 @@ export class ThreadsIdentity extends LitElement {
             />
           </label>
           <p class="threads-identity-hint">
-            Avatar: <a href="https://gravatar.com" target="_blank" rel="noopener">Gravatar</a> &gt; GitHub &gt; random.
-            Stored in your browser only.
+            ${t('avatarHint')}
           </p>
           <div class="threads-identity-actions">
-            <button class="threads-identity-cancel" @click=${this.handleCancel}>Cancel</button>
-            <button class="threads-identity-save" @click=${this.handleSave}>Save</button>
+            <button class="threads-identity-cancel" @click=${this.handleCancel}>${t('cancel')}</button>
+            <button class="threads-identity-save" @click=${this.handleSave}>${t('save')}</button>
           </div>
         </div>
       ` : ''}

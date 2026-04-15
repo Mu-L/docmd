@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -11,6 +11,8 @@
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  */
+
+import { renderIcon } from '../utils/icon-renderer.js';
 
 function smartDedent(str) {
   const lines = str.split('\n');
@@ -138,13 +140,21 @@ export function createDepthTrackingContainer(md, name, renderOpen, renderClose) 
 }
 
 /**
- * Extracts a quoted title (e.g., "My Title") from the info string.
- * Falls back to the raw info if no quotes are found.
+ * Extracts a quoted title (e.g., "My Title") and an optional icon (e.g., icon:rocket) from the info string.
  */
-function parseQuotedTitle(info) {
-  if (!info) return '';
-  const match = info.match(/"([^"]*)"/);
-  return match ? match[1] : info.trim();
+function parseTitleAndIcon(info) {
+  if (!info) return { title: '', icon: '' };
+  let icon = '';
+  const iconMatch = info.match(/icon:([a-zA-Z0-9-]+)/);
+  if (iconMatch) {
+    icon = iconMatch[1];
+    info = info.replace(iconMatch[0], '');
+  }
+  
+  const titleMatch = info.match(/"([^"]*)"/);
+  const title = titleMatch ? titleMatch[1] : info.trim();
+  
+  return { title, icon };
 }
 
 export default {
@@ -159,35 +169,41 @@ export default {
 
       // Support ::: callout type "Title" or ::: callout type Title
       let title = '';
+      let icon = '';
       const remaining = parts.slice(1).join(' ').trim();
       if (remaining) {
-        title = parseQuotedTitle(remaining);
+        const parsed = parseTitleAndIcon(remaining);
+        title = parsed.title;
+        icon = parsed.icon;
       }
       
       const renderedTitle = title ? md.renderInline(title) : '';
+      const iconHtml = icon ? renderIcon(icon, { class: 'callout-icon-heading' }) + ' ' : '';
 
-      return `<div class="docmd-container callout callout-${type}">${renderedTitle ? `<div class="callout-title">${renderedTitle}</div>` : ''}<div class="callout-content">\n`;
+      return `<div class="docmd-container callout callout-${type}">${renderedTitle || iconHtml ? `<div class="callout-title">${iconHtml}${renderedTitle}</div>` : ''}<div class="callout-content">\n`;
     }, () => '</div></div>\n');
 
     // 2. Card
     createDepthTrackingContainer(md, 'card', (tokens, idx) => {
-      const title = parseQuotedTitle(tokens[idx].info);
+      const { title, icon } = parseTitleAndIcon(tokens[idx].info);
       const renderedTitle = title ? md.renderInline(title) : '';
-      return `<div class="docmd-container card">${renderedTitle ? `<div class="card-title">${renderedTitle}</div>` : ''}<div class="card-content">\n`;
+      const iconHtml = icon ? renderIcon(icon, { class: 'card-icon-heading' }) + ' ' : '';
+      return `<div class="docmd-container card">${renderedTitle || iconHtml ? `<div class="card-title">${iconHtml}${renderedTitle}</div>` : ''}<div class="card-content">\n`;
     }, () => '</div></div>\n');
 
     // 3. Collapsible
     createDepthTrackingContainer(md, 'collapsible', (tokens, idx) => {
       const info = tokens[idx].info.trim();
       const isOpen = info.startsWith('open ') || info === 'open';
-      const rawTitle = isOpen ? info.replace('open', '').trim() : info;
-      const title = parseQuotedTitle(rawTitle);
+      const rawInfo = isOpen ? info.replace('open', '').trim() : info;
+      const { title, icon } = parseTitleAndIcon(rawInfo);
       const displayTitle = title || 'Click to expand';
       const renderedTitle = md.renderInline(displayTitle);
+      const iconHtml = icon ? renderIcon(icon, { class: 'collapsible-icon-heading' }) + ' ' : '';
 
       return `<details class="docmd-container collapsible" ${isOpen ? 'open' : ''}>
         <summary class="collapsible-summary">
-            <span class="collapsible-title">${renderedTitle}</span>
+            <span class="collapsible-title">${iconHtml}${renderedTitle}</span>
             <span class="collapsible-arrow"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
         </summary>
         <div class="collapsible-content">\n`;

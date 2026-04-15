@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-seo",
-  "version": "0.6.9",
+  "version": "0.7.0",
   "description": "SEO meta tag generator for docmd.",
   "type": "module",
   "main": "dist/index.js",

@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/plugin-math
  * @website     https://docmd.io
@@ -16,7 +16,14 @@ import texmath from 'markdown-it-texmath';
 import katex from 'katex';
 
 export function markdownSetup(md: any) {
+  // Suppress KaTeX's "quirks mode" warning — irrelevant in Node.js
+  const origWarn = console.warn;
+  console.warn = (...args: any[]) => {
+    if (typeof args[0] === 'string' && args[0].includes('quirks mode')) return;
+    origWarn.apply(console, args);
+  };
   md.use(texmath, { engine: katex, delimiters: 'dollars', katexOptions: { macros: { "\\RR": "\\mathbb{R}" } } });
+  console.warn = origWarn;
 }
 
 export function getAssets() {

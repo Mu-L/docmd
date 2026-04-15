@@ -6,7 +6,9 @@
 
   <!-- प्रोजेक्ट शीर्षक -->
   <h3>
-    <img src="https://github.com/docmd-io/docmd/blob/main/packages/ui/assets/images/docmd-logo-dark.png?raw=true" alt="docmd लोगो" width="210" />
+    <a href="https://docmd.io">
+      <img src="https://github.com/docmd-io/docmd/blob/main/packages/ui/assets/images/docmd-logo-dark.png?raw=true" alt="docmd logo" width="210" />
+    </a>
   </h3>
   
   <!-- एक-लाइन सारांश -->
@@ -19,8 +21,8 @@
   <!-- बैजेज़ -->
   <p>
     <a href="https://www.npmjs.com/package/@docmd/core"><img src="https://img.shields.io/npm/v/@docmd/core.svg?style=flat-square&color=CB3837" alt="npm संस्करण"></a>
-    <a href="https://www.npmjs.com/package/@docmd/core?activeTab=versions"><img src="https://img.shields.io/npm/dt/@docmd/core.svg?style=flat-square&color=38bd24" alt="डाउनलोड"></a>
-    <a href="https://github.com/docmd-io/docmd/stargazers"><img src="https://img.shields.io/github/stars/docmd-io/docmd?style=flat-square&logo=github" alt="स्टार्स"></a>
+    <a href="https://www.npmjs.com/package/@docmd/core?activeTab=versions"><img src="https://img.shields.io/npm/dm/@docmd/core.svg?style=flat-square&color=38bd24" alt="डाउनलोड"></a>
+    <a href="https://github.com/docmd-io/docmd"><img src="https://img.shields.io/github/stars/docmd-io/docmd?style=flat-square&logo=github" alt="स्टार्स"></a>
     <a href="https://github.com/docmd-io/docmd/blob/main/LICENSE"><img src="https://img.shields.io/github/license/docmd-io/docmd.svg?style=flat-square&color=A31F34" alt="लाइसेंस"></a>
   </p>
 
@@ -49,7 +51,7 @@
 **किसी भी Markdown फ़ाइलों वाले फ़ोल्डर में docmd तुरंत चलाएँ:**
 
 ```bash
-npx docmdx
+npx @docmd/core dev
 ```
 शुरू होता है: `http://localhost:3000`
 
@@ -62,7 +64,7 @@ npx docmdx
 साइट बनाएँ:
 
 ```bash
-npx docmdx build
+npx @docmd/core build
 ```
 
 ### नियमित उपयोग के लिए इंस्टॉल करें
@@ -207,7 +209,7 @@ await buildLive();
 ऑप्शनल प्लगइन इंस्टॉल करें:
 
 ```bash
-npx docmdx plugin add <plugin-name>
+docmd plugin add <plugin-name>
 ```
 
 ## docmd क्यों?

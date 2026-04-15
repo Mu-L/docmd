@@ -6,7 +6,9 @@
 
   <!-- PROJECT TITLE -->
   <h3>
-    <img src="https://github.com/docmd-io/docmd/blob/main/packages/ui/assets/images/docmd-logo-dark.png?raw=true" alt="docmd logo" width="210" />
+    <a href="https://docmd.io">
+      <img src="https://github.com/docmd-io/docmd/blob/main/packages/ui/assets/images/docmd-logo-dark.png?raw=true" alt="docmd logo" width="210" />
+    </a>
   </h3>
   
   <!-- ONE LINE SUMMARY -->
@@ -19,8 +21,8 @@
   <!-- BADGES -->
   <p>
     <a href="https://www.npmjs.com/package/@docmd/core"><img src="https://img.shields.io/npm/v/@docmd/core.svg?style=flat-square&color=CB3837" alt="npm version"></a>
-    <a href="https://www.npmjs.com/package/@docmd/core?activeTab=versions"><img src="https://img.shields.io/npm/dt/@docmd/core.svg?style=flat-square&color=38bd24" alt="downloads"></a>
-    <a href="https://github.com/docmd-io/docmd/stargazers"><img src="https://img.shields.io/github/stars/docmd-io/docmd?style=flat-square&logo=github" alt="stars"></a>
+    <a href="https://www.npmjs.com/package/@docmd/core?activeTab=versions"><img src="https://img.shields.io/npm/dm/@docmd/core.svg?style=flat-square&color=38bd24" alt="downloads"></a>
+    <a href="https://github.com/docmd-io/docmd"><img src="https://img.shields.io/github/stars/docmd-io/docmd?style=flat-square&logo=github" alt="stars"></a>
     <a href="https://github.com/docmd-io/docmd/blob/main/LICENSE"><img src="https://img.shields.io/github/license/docmd-io/docmd.svg?style=flat-square&color=A31F34" alt="license"></a>
   </p>
 
@@ -49,7 +51,7 @@
 **Run docmd instantly in any folder with Markdown files:**
 
 ```bash
-npx docmdx
+npx @docmd/core dev
 ```
 Starts: `http://localhost:3000`
 
@@ -62,7 +64,7 @@ Starts: `http://localhost:3000`
 Build your site:
 
 ```bash
-npx docmdx build
+npx @docmd/core build
 ```
 
 ### Install for regular usage
@@ -207,7 +209,7 @@ Plugins are only needed when you want to extend functionality.
 Install optional plugins:
 
 ```bash
-npx docmdx plugin add <plugin-name>
+docmd plugin add <plugin-name>
 ```
 
 ## Why docmd?
@@ -243,10 +245,4 @@ No configuration overhead. No framework complexity. Just docs.
 
 ## License
 
-MIT License. See `LICENSE` for details.NG.md).
-- **Support**: If you find `docmd` useful, please consider [sponsoring the project](https://github.com/sponsors/mgks) or giving it a star ⭐.
-
-## License
-Distributed under the MIT License. See `LICENSE` for more information.
-
-![Website Badge](https://img.shields.io/badge/.*%20mgks.dev-blue?style=flat&link=https%3A%2F%2Fmgks.dev) ![Sponsor Badge](https://img.shields.io/badge/%20%20Become%20a%20Sponsor%20%20-red?style=flat&logo=github&link=https%3A%2F%2Fgithub.com%2Fsponsors%2Fmgks)
+MIT License. See `LICENSE` for details.

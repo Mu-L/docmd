@@ -7,20 +7,40 @@
 
 <% if (allLocales && allLocales.length > 1) { 
     const current = activeLocale || allLocales.find(l => l.id === defaultLocale);
+    const isCompact = typeof compact !== 'undefined' && compact;
+    
+    // Compute current page path relative to locale root
+    // Strip the active locale prefix if present (outputPrefix bakes it into navPath now)
+    let pagePath = (typeof currentPagePath !== 'undefined' && currentPagePath) ? currentPagePath.replace(/^\//, '') : '';
+    const activeLocaleId = activeLocale ? activeLocale.id : null;
+    if (activeLocaleId && activeLocaleId !== defaultLocale && pagePath.startsWith(activeLocaleId + '/')) {
+        pagePath = pagePath.slice(activeLocaleId.length + 1);
+    }
+
+    // Get the active version prefix if versioning is active
+    const activeVersion = config._activeVersion;
+    const currentVersionId = config.versions && config.versions.current;
+    const versionPrefix = (activeVersion && currentVersionId && activeVersion.id !== currentVersionId) ? activeVersion.id + '/' : '';
 %>
-<div class="docmd-language-switcher">
+<div class="docmd-language-switcher<%= isCompact ? ' language-compact' : '' %>">
     <button class="language-switcher-toggle" aria-expanded="false" aria-label="<%= typeof t === 'function' ? t('selectLanguage') : 'Select Language' %>">
         <%- renderIcon('globe', { class: 'language-icon' }) %>
+        <% if (!isCompact) { %>
         <span class="language-label"><%= current ? current.label : (typeof t === 'function' ? t('language') : 'Language') %></span>
         <%- renderIcon('chevron-down', { class: 'language-chevron' }) %>
+        <% } %>
     </button>
     <ul class="language-switcher-menu">
         <% allLocales.forEach(loc => { 
             const isCurrentActive = current && loc.id === current.id;
+            const isLocDefault = loc.id === defaultLocale;
             
             const base = config.base || '/';
             const normalizedBase = base.endsWith('/') ? base : base + '/';
-            const absoluteHref = normalizedBase + loc.id + '/';
+            
+            // Build locale-aware URL preserving version and page path
+            const locPrefix = isLocDefault ? '' : loc.id + '/';
+            const absoluteHref = normalizedBase + locPrefix + versionPrefix + pagePath;
         %>
         <li>
             <a href="<%= absoluteHref %>" 

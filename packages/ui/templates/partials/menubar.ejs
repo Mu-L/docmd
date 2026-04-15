@@ -7,11 +7,12 @@
 
 <% 
 const menubarBase = (config.base || '/').replace(/\/$/, '') + '/';
+const menuLocPrefix = (typeof localePrefix !== 'undefined' && localePrefix) ? localePrefix : '';
 function menubarHref(item) { 
   if (!item.url) return '#' ; 
   if (item.external || item.url.startsWith('http')) return item.url; 
   let clean=item.url.replace(/^\//, '' );
-  return menubarBase + clean; 
+  return menubarBase + menuLocPrefix + clean; 
 }
 function menubarTarget(item) { 
   return (item.external || (item.url && item.url.startsWith('http'))) ? ' target="_blank" rel="noopener noreferrer"' : '' ; 
@@ -128,7 +129,7 @@ function menubarTarget(item) {
         <% } %>
         <% if (optionsMenu && optionsMenu.position==='menubar' ) { %>
           <div class="menubar-options">
-            <%- await include('options-menu', { optionsMenu }) %>
+            <%- await include('options-menu', { optionsMenu, allLocales: locals.allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config: locals.config, renderIcon, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
           </div>
         <% } %>
     </div>
