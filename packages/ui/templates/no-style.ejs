@@ -27,7 +27,7 @@
     <%- metaTagsHtml || '' %>
       <title>
         <%= pageTitle %>
-        <% if (frontmatter.components?.siteTitle !==false) { %> : <%= siteTitle %>
+        <% if (frontmatter.components?.siteTitle !==false && siteTitle && pageTitle !== siteTitle) { %> — <%= siteTitle %>
         <% } %>
       </title>
       <% if (description && !(metaTagsHtml && metaTagsHtml.includes('name="description"'))) { %>

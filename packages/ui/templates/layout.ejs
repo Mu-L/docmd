@@ -8,66 +8,62 @@
 
 <!DOCTYPE html>
 <html lang="<%= (locals.activeLocale && locals.activeLocale.id) ? locals.activeLocale.id : 'en' %>"<%= (locals.activeLocale && locals.activeLocale.dir && locals.activeLocale.dir !== 'ltr') ? ' dir="' + locals.activeLocale.dir + '"' : '' %>>
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="generator" content="docmd v0.5.x">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <%- themeInitScript %>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="generator" content="docmd v0.5.x">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <%- themeInitScript %>
     <style>
       html {
         visibility: hidden;
       }
     </style>
-    <% let versionRoot='/' ; let siteRoot=relativePathToRoot; if (config.versions?.current && config._activeVersion?.id)
-      { const isSubVersion=config.versions.current !==config._activeVersion.id; versionRoot=isSubVersion ? '/' +
-      config._activeVersion.id + '/' : '/' ; if (isSubVersion) { siteRoot=(relativePathToRoot==='./' ? '' :
-      relativePathToRoot) + '../' ; } } if (locals.isOfflineMode) { versionRoot='' ; } %>
-      <script>
-        var root = "<%= relativePathToRoot %>";
-        if (root && !root.endsWith('/')) root += '/';
-        if (root === '') root = './';
-        window.DOCMD_ROOT = root;
+    <% let versionRoot='/' ; let siteRoot=relativePathToRoot; if (config.versions?.current && config._activeVersion?.id) {
+      const isSubVersion=config.versions.current !==config._activeVersion.id; versionRoot=isSubVersion ? '/' +
+        config._activeVersion.id + '/' : '/' ; if (isSubVersion) { siteRoot=(relativePathToRoot==='./' ? '' :
+        relativePathToRoot) + '../' ; } } if (locals.isOfflineMode) { versionRoot='' ;
+      }
+    %>
+    <script>
+      var root = "<%= relativePathToRoot %>";
+      if (root && !root.endsWith('/')) root += '/';
+      if (root === '') root = './';
+      window.DOCMD_ROOT = root;
 
-        var siteRoot = "<%= siteRoot %>";
-        if (siteRoot && !siteRoot.endsWith('/')) siteRoot += '/';
-        if (siteRoot === '') siteRoot = './';
-        window.DOCMD_SITE_ROOT = siteRoot;
+      var siteRoot = "<%= siteRoot %>";
+      if (siteRoot && !siteRoot.endsWith('/')) siteRoot += '/';
+      if (siteRoot === '') siteRoot = './';
+      window.DOCMD_SITE_ROOT = siteRoot;
 
-        window.DOCMD_APPEARANCE = "<%= appearance %>";
-        window.DOCMD_VERSION_ROOT = "<%- versionRoot %>";
-      </script>
-      <title>
-        <%= pageTitle %>
-      </title>
-      <%- faviconLinkHtml || '' %>
-        <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-main.css?v=<%= buildHash %>">
-        <% if (config.theme?.codeHighlight !==false) { const isDarkDefault=appearance==='dark' ; %>
-          <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-light.css?v=<%= buildHash %>"
-            id="hljs-light" <%=isDarkDefault ? 'disabled' : '' %>>
+      window.DOCMD_APPEARANCE = "<%= appearance %>";
+      window.DOCMD_VERSION_ROOT = "<%- versionRoot %>";
+    </script>
+    <title>
+      <%= pageTitle %><% if (siteTitle && pageTitle !== siteTitle) { %> — <%= siteTitle %><% } %>
+    </title>
+    <%- faviconLinkHtml || '' %>
+      <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-main.css?v=<%= buildHash %>">
+      <% if (config.theme?.codeHighlight !==false) { const isDarkDefault=appearance==='dark' ; %>
+        <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-light.css?v=<%= buildHash %>" id="hljs-light" <%=isDarkDefault ? 'disabled' : '' %>>
+        <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-dark.css?v=<%= buildHash %>" id="hljs-dark" <%=isDarkDefault ? '' : 'disabled' %>>
+      <% } %>
+      <%- pluginHeadScriptsHtml || '' %>
+      <% (customCssFiles || []).forEach(cssFile=> { %>
+        <link rel="stylesheet" href="<%= relativePathToRoot %><%- cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
+      <% }); %>
+      <%- themeInitScript %>
+  </head>
+  <body
+    class="<%= sidebarConfig?.enabled === false ? 'no-sidebar' : (sidebarConfig?.collapsible ? 'sidebar-collapsible' : 'sidebar-not-collapsible') %><%= (locals.menubarConfig && menubarConfig?.enabled !== false) ? ' has-menubar has-menubar-' + (menubarConfig.position || 'top') : '' %><%= headerConfig?.enabled === false ? ' no-header' : '' %>"
+    data-default-collapsed="<%= sidebarConfig?.defaultCollapsed %>"
+    data-copy-code-enabled="<%= config.copyCode === true %>" data-spa-enabled="<%= config.layout?.spa !== false %>"<% if (locals.sourceFile) { %> data-source-file="<%= sourceFile %>"<% } %>>
 
-          <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-dark.css?v=<%= buildHash %>"
-            id="hljs-dark" <%=isDarkDefault ? '' : 'disabled' %>>
-          <% } %>
-            <%- pluginHeadScriptsHtml || '' %>
-              <% (customCssFiles || []).forEach(cssFile=> { %>
-                <link rel="stylesheet"
-                  href="<%= relativePathToRoot %><%- cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
-                <% }); %>
-                  <%- themeInitScript %>
-</head>
+    <a href="#main-content" class="skip-link"><%= typeof t === 'function' ? t('skipToContent') : 'Skip to content' %></a>
 
-<body
-  class="<%= sidebarConfig?.enabled === false ? 'no-sidebar' : (sidebarConfig?.collapsible ? 'sidebar-collapsible' : 'sidebar-not-collapsible') %><%= (locals.menubarConfig && menubarConfig?.enabled !== false) ? ' has-menubar has-menubar-' + (menubarConfig.position || 'top') : '' %><%= headerConfig?.enabled === false ? ' no-header' : '' %>"
-  data-default-collapsed="<%= sidebarConfig?.defaultCollapsed %>"
-  data-copy-code-enabled="<%= config.copyCode === true %>" data-spa-enabled="<%= config.layout?.spa !== false %>"<% if (locals.sourceFile) { %> data-source-file="<%= sourceFile %>"<% } %>>
-
-  <a href="#main-content" class="skip-link"><%= typeof t === 'function' ? t('skipToContent') : 'Skip to content' %></a>
-
-  <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position !=='header' ) { %>
-    <%- await include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu: locals.optionsMenu })
+    <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position !=='header' ) { %>
+      <%- await include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu: locals.optionsMenu })
       %>
-  <% } %>
+    <% } %>
         <% if (sidebarConfig?.enabled !==false) { %>
           <aside class="sidebar">
             <div class="sidebar-header">
@@ -95,18 +91,18 @@
             <div class="sidebar-top-group">
               <% if (locals.optionsMenu && optionsMenu.position==='sidebar-top' ) { %>
                 <div class="sidebar-options-wrapper">
-                  <%- await include('partials/options-menu', { optionsMenu }) %>
+                  <%- await include('partials/options-menu', { optionsMenu, allLocales: locals.allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config: locals.config, renderIcon, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
                 </div>
                 <% } %>
                   <% if (config.versions && config.versions.position==='sidebar-top' ) { %>
                     <div class="sidebar-version-wrapper">
                       <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion:
-                        config._activeVersion, relativePathToRoot }) %>
+                        config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config }) %>
                     </div>
                     <% } %>
-                  <% if (locals.allLocales && allLocales && allLocales.length > 1) { %>
+                  <% if (locals.allLocales && allLocales && allLocales.length > 1 && config.i18n && config.i18n.position === 'sidebar-top') { %>
                     <div class="sidebar-language-wrapper">
-                      <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon }) %>
+                      <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: false, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
                     </div>
                   <% } %>
             </div>
@@ -117,17 +113,17 @@
                 <% if (config.versions && config.versions.position==='sidebar-bottom' ) { %>
                   <div class="sidebar-version-wrapper">
                     <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion:
-                      config._activeVersion, relativePathToRoot }) %>
+                      config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config }) %>
                   </div>
                   <% } %>
-                  <% if (locals.allLocales && allLocales && allLocales.length > 1) { %>
+                  <% if (locals.allLocales && allLocales && allLocales.length > 1 && config.i18n && config.i18n.position === 'sidebar-bottom') { %>
                     <div class="sidebar-language-wrapper">
-                      <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon }) %>
+                      <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: false, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
                     </div>
                   <% } %>
                     <% if (locals.optionsMenu && optionsMenu.position==='sidebar-bottom' ) { %>
                       <div class="sidebar-options-wrapper">
-                        <%- await include('partials/options-menu', { optionsMenu }) %>
+                        <%- await include('partials/options-menu', { optionsMenu, allLocales: locals.allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config: locals.config, renderIcon, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
                       </div>
                       <% } %>
               </div>
@@ -156,7 +152,7 @@
 
                         <div class="header-right">
                           <% if (optionsMenu?.position==='header' ) { %>
-                            <%- await include('partials/options-menu', { optionsMenu }) %>
+                            <%- await include('partials/options-menu', { optionsMenu, allLocales: locals.allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config: locals.config, renderIcon, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
                               <% } %>
                         </div>
                       </header>
