@@ -13,6 +13,7 @@
  */
 
 import path from 'path';
+import chalk from 'chalk';
 import fs from '../utils/fs-utils.js';
 import { renderPages } from './generator.js';
 import { buildVersions, filterGhostVersions } from './versioning.js';
@@ -21,9 +22,13 @@ import { buildVersions, filterGhostVersions } from './versioning.js';
  * Prepare locale context to inject into config for a build pass.
  * When locale is null (i18n disabled), returns the config unchanged.
  *
- * Design: the default locale renders at root (no URL prefix),
- * non-default locales render at /{locale}/ — mirroring how
- * versioning treats the current version vs. old versions.
+ * Design: every locale lives in its own subdirectory inside the src dir:
+ *   docs/en/   docs/hi/   docs/zh/
+ *
+ * The default locale renders at root (no URL prefix),
+ * non-default locales render at /{locale}/.
+ * Fallback: if a page doesn't exist in a non-default locale dir,
+ * the engine falls back to the default locale's version of that page.
  */
 export function createLocaleConfig(config: any, locale: any): any {
   if (!locale) return config;
@@ -35,6 +40,27 @@ export function createLocaleConfig(config: any, locale: any): any {
     _defaultLocale: config.i18n.default,
     _localeOutputPrefix: isDefault ? '' : locale.id + '/'
   };
+}
+
+/**
+ * Resolve the source directory for a given locale.
+ * When i18n is enabled, each locale gets its own subdirectory: {baseSrcDir}/{localeId}/
+ * When i18n is disabled, returns baseSrcDir unchanged.
+ */
+export function resolveLocaleSrcDir(baseSrcDir: string, config: any): string {
+  if (!config._activeLocale) return baseSrcDir;
+  return path.join(baseSrcDir, config._activeLocale.id);
+}
+
+/**
+ * Resolve the fallback source directory (the default locale's dir).
+ * Used when a non-default locale is missing a page — falls back to the default locale.
+ * Returns null if current locale IS the default (no fallback needed).
+ */
+export function resolveFallbackSrcDir(baseSrcDir: string, config: any): string | null {
+  if (!config._activeLocale || !config._defaultLocale) return null;
+  if (config._activeLocale.id === config._defaultLocale) return null;
+  return path.join(baseSrcDir, config._defaultLocale);
 }
 
 /**
@@ -98,13 +124,23 @@ export async function buildLocales({
 
     } else {
       // Standard build (no versioning) within this locale
-      const srcDir = path.resolve(CWD, localeConfig.src);
+      const baseSrcDir = path.resolve(CWD, localeConfig.src);
+      const localeSrcDir = resolveLocaleSrcDir(baseSrcDir, localeConfig);
+      const fallbackSrcDir = resolveFallbackSrcDir(baseSrcDir, localeConfig);
 
-      if (!await fs.exists(srcDir)) throw new Error(`Source directory not found: ${srcDir}`);
+      // The locale dir must exist (or fall back to base when no i18n)
+      if (!await fs.exists(localeSrcDir)) {
+        if (localeConfig._activeLocale) {
+          console.log(chalk.yellow(`⚠️  Locale directory missing: ${localeSrcDir}. Skipping ${localeConfig._activeLocale.id}...`));
+          continue;
+        }
+        throw new Error(`Source directory not found: ${localeSrcDir}`);
+      }
 
       const pages = await renderPages({
         config: localeConfig, 
-        srcDir, 
+        srcDir: localeSrcDir,
+        fallbackSrcDir,
         outputDir: rootOutputDir, 
         hooks, 
         buildHash, 

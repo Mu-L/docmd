@@ -24,7 +24,7 @@ import * as parser from '@docmd/parser';
 import * as ui from '@docmd/ui';
 import { findPageNeighbors, findBreadcrumbs } from '@docmd/parser/dist/utils/navigation-helper.js';
 
-export async function renderPages({ config, srcDir, outputDir, hooks, buildHash, options, outputPrefix = '' }: any) {
+export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, hooks, buildHash, options, outputPrefix = '' }: any) {
   // Load Translations for the active locale
   const localeId = config._activeLocale?.id || null;
   const pluginTranslations = hooks.translations
@@ -36,14 +36,21 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
   const strings = ui.loadTranslations(localeId, { ...pluginTranslations, ...userLocaleTranslations });
   const t = ui.createT(strings);
 
-  // Resolve locale-specific navigation.json override
-  // If docs/{locale}/navigation.json exists, use it instead of the global navigation
-  if (config.i18n && config._activeLocale && config._activeLocale.id !== config._defaultLocale) {
-    const localeNavPath = path.join(srcDir, config._activeLocale.id, 'navigation.json');
+  // Resolve locale-specific navigation.json
+  // Each locale dir has its own navigation.json; fall back to default locale's navigation
+  if (config.i18n && config._activeLocale) {
+    const localeNavPath = path.join(srcDir, 'navigation.json');
     try {
       if (nativeFs.existsSync(localeNavPath)) {
         const rawNav = await nativeFs.promises.readFile(localeNavPath, 'utf8');
         config = { ...config, navigation: JSON.parse(rawNav) };
+      } else if (fallbackSrcDir) {
+        // Fall back to default locale's navigation.json
+        const fallbackNavPath = path.join(fallbackSrcDir, 'navigation.json');
+        if (nativeFs.existsSync(fallbackNavPath)) {
+          const rawNav = await nativeFs.promises.readFile(fallbackNavPath, 'utf8');
+          config = { ...config, navigation: JSON.parse(rawNav) };
+        }
       }
     } catch (err) {
       console.warn(`[docmd] Failed to parse locale navigation: ${localeNavPath}`);
@@ -116,30 +123,37 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
   if (config.navigation) extractNavIndexes(config.navigation);
 
   // Find both .md/.markdown files AND .ejs content files (EJS files are pre-rendered before markdown)
-  const mdFiles = await findFilesRecursive(srcDir, ['.md', '.markdown', '.ejs']);
+  // When fallbackSrcDir is set (non-default locale), scan the fallback dir as the canonical
+  // file list, then check the locale dir for overrides per file.
+  const scanDir = fallbackSrcDir || srcDir;
+  const mdFiles = await findFilesRecursive(scanDir, ['.md', '.markdown', '.ejs']);
 
-  // Build set of locale directory names to skip during the main scan
+  // Build set of locale directory names to skip when scanning a non-locale-specific dir
+  // This prevents locale subdirs inside old version dirs from being rendered as regular pages
   const localeIds = new Set((config._allLocales || []).map((l: any) => l.id));
 
   const pages = [];
   for (const filePath of mdFiles) {
-    const relativePath = path.relative(srcDir, filePath);
+    const relativePath = path.relative(scanDir, filePath);
 
-    // Skip files inside locale subdirectories (they're overrides, not primary content)
-    const topDir = relativePath.split(path.sep)[0];
-    if (localeIds.has(topDir)) continue;
+    // Skip files inside locale subdirectories when scanning a non-locale dir
+    // e.g., docs-v1/hi/index.md should not be rendered during the main EN pass
+    if (localeIds.size > 0 && !fallbackSrcDir) {
+      const topDir = relativePath.split(path.sep)[0];
+      if (localeIds.has(topDir)) continue;
+    }
 
     let targetFilePath = filePath;
     let isFallback = false;
 
-    // For non-default locales, check for a locale-specific override file
-    if (config.i18n && config._activeLocale && config._activeLocale.id !== config._defaultLocale) {
-        const localizedPath = path.join(srcDir, config._activeLocale.id, relativePath);
-        if (nativeFs.existsSync(localizedPath)) {
-            targetFilePath = localizedPath;
-        } else {
-            isFallback = true;
-        }
+    // For non-default locales: check if the locale dir has this file
+    if (fallbackSrcDir) {
+      const localizedPath = path.join(srcDir, relativePath);
+      if (nativeFs.existsSync(localizedPath)) {
+        targetFilePath = localizedPath;
+      } else {
+        isFallback = true;
+      }
     }
 
     let rawContent = await nativeFs.promises.readFile(targetFilePath, 'utf8');
@@ -235,7 +249,70 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
     const htmlOutputPath = effectivelyIndex
       ? path.posix.join(outputPrefix, path.dirname(relativePath), 'index.html').replace(/^\/?/, '')
       : path.posix.join(outputPrefix, withoutExt, 'index.html').replace(/^\/?/, '');
-    pages.push({ ...processed, sourcePath: filePath, outputPath: htmlOutputPath });
+    pages.push({ ...processed, sourcePath: targetFilePath, outputPath: htmlOutputPath });
+  }
+
+  // Scan for locale-exclusive pages (exist only in the locale dir, not in fallback)
+  if (fallbackSrcDir && nativeFs.existsSync(srcDir)) {
+    const localeFiles = await findFilesRecursive(srcDir, ['.md', '.markdown', '.ejs']);
+    const fallbackRelPaths = new Set(mdFiles.map(f => path.relative(scanDir, f)));
+    
+    for (const filePath of localeFiles) {
+      const relativePath = path.relative(srcDir, filePath);
+      if (fallbackRelPaths.has(relativePath)) continue; // Already handled above
+
+      let rawContent = await nativeFs.promises.readFile(filePath, 'utf8');
+      const filename = path.basename(relativePath).toLowerCase();
+      const ext = path.extname(filename);
+      const isIndex = filename.startsWith('index.');
+      const isReadme = filename === 'readme.md';
+
+      if (ext === '.ejs') {
+        try {
+          const fmRegex = /^(?:---[\r\n]+)([\s\S]*?)(?:[\r\n]+---(?:[\r\n]+|$))/;
+          const fmMatch = rawContent.match(fmRegex);
+          let ejsBody = rawContent;
+          const fmData: Record<string, any> = {};
+          let fmRaw = '';
+          if (fmMatch) {
+            fmRaw = fmMatch[0];
+            ejsBody = rawContent.slice(fmRaw.length);
+            const yamlStr = fmMatch[1];
+            for (const line of yamlStr.split('\n')) {
+              const kv = line.match(/^(\w+)\s*:\s*(.+)$/);
+              if (kv) {
+                let val: any = kv[2].trim();
+                if (/^\d+$/.test(val)) val = parseInt(val, 10);
+                else if (val === 'true') val = true;
+                else if (val === 'false') val = false;
+                else val = val.replace(/^["']|["']$/g, '');
+                fmData[kv[1]] = val;
+              }
+            }
+          }
+          const renderedBody = await parser.renderTemplateAsync(ejsBody, { ...fmData }, { filename: filePath });
+          rawContent = fmRaw ? fmRaw + '\n' + renderedBody : renderedBody;
+        } catch (e) {
+          console.warn(`[docmd] Skipping EJS render error in ${relativePath}: ${e.message}`);
+          continue;
+        }
+      }
+
+      const hasIndexInFolder = localeFiles.some(f => {
+        const b = path.basename(f).toLowerCase();
+        return b.startsWith('index.') && path.dirname(f) === path.dirname(filePath);
+      });
+
+      const effectivelyIndex = isIndex || (isReadme && !hasIndexInFolder);
+      const processed = parser.processContent(rawContent, mdProcessor, config, { isIndex: effectivelyIndex });
+      if (!processed) continue;
+
+      const withoutExt = relativePath.replace(/\.(md|markdown|ejs)$/, '');
+      const htmlOutputPath = effectivelyIndex
+        ? path.posix.join(outputPrefix, path.dirname(relativePath), 'index.html').replace(/^\/?/, '')
+        : path.posix.join(outputPrefix, withoutExt, 'index.html').replace(/^\/?/, '');
+      pages.push({ ...processed, sourcePath: filePath, outputPath: htmlOutputPath });
+    }
   }
 
   // --- 3. Render HTML ---
@@ -287,7 +364,8 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
 
     if (config.editLink && config.editLink.enabled && config.editLink.baseUrl) {
       const cleanBase = config.editLink.baseUrl.replace(/\/$/, '');
-      const editRelative = path.relative(srcDir, page.sourcePath).replace(/\\/g, '/');
+      // For locale-aware edits, resolve relative to the actual file that was used
+      const editRelative = path.relative(path.resolve(process.cwd(), config.src || '.'), page.sourcePath).replace(/\\/g, '/');
       editUrl = `${cleanBase}/${editRelative}`;
     }
 

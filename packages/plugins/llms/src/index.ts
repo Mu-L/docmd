@@ -18,7 +18,7 @@ import fs from 'fs/promises';
 export async function onPostBuild({ config, pages, outputDir, log }: any) {
   // Validation
   if (!config.siteUrl) {
-    if (log) log('⚠️  Skipping llms.txt: "siteUrl" is missing in config.');
+    if (log) log('⚠️  Skipping llms.txt: "url" is missing in config.');
     return;
   }
 

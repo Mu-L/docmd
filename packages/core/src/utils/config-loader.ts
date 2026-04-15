@@ -188,7 +188,15 @@ export async function loadConfig(configPath: string, options: any = {}) {
         console.log(chalk.dim('   ✨ Auto-generating navigation with Zero-Config...'));
         if (options.isDev) (global as any).__DOCMD_ZERO_NAV_LOGGED = true;
       }
-      normalized.navigation = buildAutoNav(path.resolve(cwd, normalized.srcDir));
+      // When i18n is enabled, scan the default locale directory for auto-nav
+      let navScanDir = path.resolve(cwd, normalized.srcDir);
+      if (normalized.i18n?.default) {
+        const localeScanDir = path.join(navScanDir, normalized.i18n.default);
+        if (fs.existsSync(localeScanDir)) {
+          navScanDir = localeScanDir;
+        }
+      }
+      normalized.navigation = buildAutoNav(navScanDir);
     }
 
     return normalized;

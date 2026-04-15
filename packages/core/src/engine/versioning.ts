@@ -17,6 +17,7 @@ import nodeFs from 'fs';
 import fs from '../utils/fs-utils.js';
 import chalk from 'chalk';
 import { renderPages } from './generator.js';
+import { resolveLocaleSrcDir, resolveFallbackSrcDir } from './i18n.js';
 
 /**
  * Filter out "ghost" versions — configured versions whose source directories
@@ -115,7 +116,25 @@ export async function buildVersions({
 
   for (const v of config.versions.all) {
     const isCurrent = v.id === config.versions.current;
-    const vSrcDir = path.resolve(CWD, v.dir);
+    const baseSrcDir = path.resolve(CWD, v.dir);
+
+    // When i18n is enabled, resolve to the locale-specific subdirectory
+    // e.g., docs/ → docs/en/ for English locale
+    // Graceful fallback: if the locale subdir doesn't exist but the base dir does,
+    // use the base dir directly (supports old versions without locale dirs)
+    let vSrcDir = resolveLocaleSrcDir(baseSrcDir, config);
+    let fallbackSrcDir = resolveFallbackSrcDir(baseSrcDir, config);
+
+    if (!await fs.exists(vSrcDir) && await fs.exists(baseSrcDir)) {
+      // Locale subdir doesn't exist but base dir does — this version has no i18n structure
+      if (config._activeLocale && config._activeLocale.id !== config._defaultLocale) {
+        // Non-default locale: skip entirely (no translations for this version)
+        continue;
+      }
+      // Default locale: use the base dir directly (backward compat for old versions)
+      vSrcDir = baseSrcDir;
+      fallbackSrcDir = null;
+    }
 
     if (!await fs.exists(vSrcDir)) {
       if (!options.isDev) console.log(chalk.yellow(`⚠️  Version directory missing: ${v.dir}. Skipping ${v.id}...`));
@@ -139,6 +158,7 @@ export async function buildVersions({
     const pages = await renderPages({
       config: versionedConfig,
       srcDir: vSrcDir,
+      fallbackSrcDir,
       outputDir, // We always pass root outputDir so relativePathToRoot computes perfectly
       hooks,
       buildHash,

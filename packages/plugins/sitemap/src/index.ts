@@ -27,7 +27,7 @@ import fs from 'fs/promises';
 export async function onPostBuild({ config, pages, outputDir, log }: any) {
   // 1. Check if enabled
   if (config.plugins?.sitemap === false || !config.siteUrl) {
-    if (!config.siteUrl && log) log('⚠️  Skipping sitemap: "siteUrl" is missing in config.');
+    if (!config.siteUrl && log) log('⚠️  Skipping sitemap: "url" is missing in config.');
     return;
   }
 
