@@ -26,14 +26,13 @@ export async function buildSite(configPath: string, opts: any = {}) {
   const options = {
     isDev: opts.isDev || false,
     offline: opts.offline || false,
-    zeroConfig: opts.zeroConfig || false
   };
 
   const CWD = process.cwd();
 
   // 1. Load Config (Zero-Config aware)
   try {
-    const config = await loadConfig(configPath, { zeroConfig: options.zeroConfig, isDev: options.isDev });
+    const config = await loadConfig(configPath, { isDev: options.isDev });
     const hooks = await loadPlugins(config);
     const buildHash = Date.now().toString(36);
 

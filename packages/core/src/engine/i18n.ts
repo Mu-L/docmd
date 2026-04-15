@@ -100,9 +100,6 @@ export async function buildLocales({
       // Standard build (no versioning) within this locale
       const srcDir = path.resolve(CWD, localeConfig.src);
 
-      if (options.zeroConfig && !await fs.exists(srcDir)) {
-        await fs.ensureDir(srcDir);
-      }
       if (!await fs.exists(srcDir)) throw new Error(`Source directory not found: ${srcDir}`);
 
       const pages = await renderPages({

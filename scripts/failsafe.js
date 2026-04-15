@@ -141,7 +141,7 @@ title: "Stress Test"
     console.log('\x1b[2m🔨 [5/13] Executing Engine Builds (Legacy, Modern, Zero-Config)...\x1b[0m');
     runCmd(`node "${CLI_BIN}" build -c legacy.config.cjs`, tempDir);
     runCmd(`node "${CLI_BIN}" build -c modern.config.js`, tempDir);
-    runCmd(`node "${CLI_BIN}" build -z`, zeroConfigDir); // Zero config test
+    runCmd(`node "${CLI_BIN}" build`, zeroConfigDir); // Zero config test (auto-detected, no config file)
 
     console.log('\x1b[2m🔍 [6/13] Verifying Static Outputs...\x1b[0m');
 
@@ -324,7 +324,7 @@ title: "Stress Test"
     // Snapshot the directory before build
     const beforeFiles = new Set(fs.readdirSync(zcSideEffectDir));
 
-    runCmd(`node "${CLI_BIN}" build -z`, zcSideEffectDir);
+    runCmd(`node "${CLI_BIN}" build`, zcSideEffectDir);
 
     const afterFiles = new Set(fs.readdirSync(zcSideEffectDir));
     // Only 'site' directory should be added
@@ -337,7 +337,7 @@ title: "Stress Test"
     assert(!fs.existsSync(path.join(zcSideEffectDir, 'navigation.json')), 'Zero-Config must NOT create a navigation.json');
 
     // Run twice — second run should be idempotent
-    runCmd(`node "${CLI_BIN}" build -z`, zcSideEffectDir);
+    runCmd(`node "${CLI_BIN}" build`, zcSideEffectDir);
     assert(!fs.existsSync(path.join(zcSideEffectDir, 'docmd.config.js')), 'Zero-Config still clean after second run');
 
     // 12. Navigation JSON Validation

@@ -240,7 +240,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
   // Initial Build
   console.log(chalk.blue('🚀 Performing initial build...'));
   try {
-    await buildSite(configPathOption, { isDev: true, preserve: options.preserve, zeroConfig: options.zeroConfig });
+    await buildSite(configPathOption, { isDev: true, preserve: options.preserve });
   } catch (error) {
     console.error(chalk.red('❌ Initial build failed:'), error.message);
   }
@@ -316,11 +316,11 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
           try {
             if (configNeedsReload) {
               configNeedsReload = false;
-              config = await loadConfig(configPathOption, { zeroConfig: options.zeroConfig });
+              config = await loadConfig(configPathOption);
               paths = resolveConfigPaths(config);
             }
 
-            await buildSite(configPathOption, { isDev: true, preserve: options.preserve, zeroConfig: options.zeroConfig });
+            await buildSite(configPathOption, { isDev: true, preserve: options.preserve });
             broadcastReload();
             process.stdout.write(chalk.green('Done.\n'));
 
