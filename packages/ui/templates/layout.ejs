@@ -39,7 +39,7 @@
       window.DOCMD_VERSION_ROOT = "<%- versionRoot %>";
     </script>
     <title>
-      <%= pageTitle %><% if (siteTitle && pageTitle !== siteTitle) { %> — <%= siteTitle %><% } %>
+      <%= pageTitle %><% if (siteTitle && pageTitle !== siteTitle && !(frontmatter && frontmatter.titleAppend === false)) { %> - <%= siteTitle %><% } %>
     </title>
     <%- faviconLinkHtml || '' %>
       <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-main.css?v=<%= buildHash %>">

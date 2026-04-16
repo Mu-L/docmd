@@ -28,20 +28,10 @@ if (IS_START) {
     console.log('\x1b[2m Dev Environment \x1b[0m\n\n');
 }
 
-if (TYPE === 'start:onboard') {
-    process.stdout.write('🚀 \x1b[1mOnboarding docmd...\x1b[0m \x1b[2m(this may take a few moments)\x1b[0m');
-} else if (TYPE === 'start:reset') {
+if (TYPE === 'start:reset') {
     process.stdout.write('🫧  \x1b[1mResetting docmd...\x1b[0m \x1b[2m(cleaning up)\x1b[0m');
 } else if (TYPE === 'start:verify') {
     process.stdout.write('🛡️  \x1b[1mVerifying docmd...\x1b[0m \x1b[2m(running intensive failsafe checks)\x1b[0m');
-} else if (TYPE === 'onboard') {
-    const isLinked = process.argv[3] === '--linked';
-    console.log('\n\x1b[32m✅ Onboarding complete!\x1b[0m\n');
-    console.log('\x1b[34m📦 Dependencies installed.\x1b[0m');
-    console.log('\x1b[34m🔨 Monorepo built successfully.\x1b[0m');
-    if (isLinked) console.log('\x1b[34m🔗 Linked docmd globally.\x1b[0m');
-    console.log('\x1b[32m\n✨ Welcome to docmd dev environment!\x1b[0m');
-
 } else if (TYPE === 'reset') {
     console.log('\n\x1b[32m✅ Reset complete!\x1b[0m\n');
     console.log('\x1b[34m🛑 Any running servers stopped.\x1b[0m');
@@ -50,12 +40,14 @@ if (TYPE === 'start:onboard') {
     console.log('\x1b[32m\n⚡️ You can start fresh now.\x1b[0m');
 
 } else if (TYPE === 'verify') {
+    const isLinked = process.argv[3] === '--linked';
     console.log('\n\x1b[32m✨ Failsafe verification passed!\x1b[0m\n');
     console.log('\x1b[34m✅ Dependencies & monorepo links verified.\x1b[0m');
     console.log('\x1b[34m✅ Stress tests & E2E builds passed.\x1b[0m');
     console.log('\x1b[34m✅ Live Editor runtime execution verified.\x1b[0m');
     console.log('\x1b[34m✅ Plugin installer lifecycle verified.\x1b[0m');
     console.log('\x1b[34m✅ Security audit & publish dry-run passed.\x1b[0m');
+    if (isLinked) console.log('\x1b[34m🔗 Linked docmd globally.\x1b[0m');
     console.log('\x1b[32m\n🛡️  docmd is ready for production!\x1b[0m');
 }
 

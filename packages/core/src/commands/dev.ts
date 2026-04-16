@@ -18,181 +18,20 @@ import nativeFs from 'node:fs';
 import path from 'path';
 import fs from '../utils/fs-utils.js';
 import chalk from 'chalk';
-import os from 'os';
-import readline from 'readline';
 import { buildSite } from './build.js';
 import { loadConfig } from '../utils/config-loader.js';
-import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
-import crypto from 'crypto';
-import { execSync } from 'child_process';
 import { createActionDispatcher } from '../utils/action-dispatcher.js';
 import { loadPlugins, hooks } from '../utils/plugin-loader.js';
+import {
+  formatPathForDisplay, getNetworkIp, serveStatic, findAvailablePort,
+} from '../utils/dev-utils.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const require = createRequire(import.meta.url);
-
-// Helper Utilities
-
-const MIME_TYPES = {
-  '.html': 'text/html',
-  '.js': 'text/javascript',
-  '.css': 'text/css',
-  '.json': 'application/json',
-  '.png': 'image/png',
-  '.jpg': 'image/jpg',
-  '.jpeg': 'image/jpg',
-  '.gif': 'image/gif',
-  '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon',
-  '.woff': 'application/font-woff',
-  '.woff2': 'font/woff2',
-  '.ttf': 'application/font-ttf',
-  '.txt': 'text/plain',
-};
-
-function formatPathForDisplay(absolutePath, cwd) {
-  const relativePath = path.relative(cwd, absolutePath);
-  if (!relativePath.startsWith('..') && !path.isAbsolute(relativePath)) {
-    return `./${relativePath}`;
-  }
-  return relativePath;
-}
-
-function getNetworkIp() {
-  const interfaces = os.networkInterfaces();
-  for (const name of Object.keys(interfaces)) {
-    for (const iface of interfaces[name]) {
-      if (iface.family === 'IPv4' && !iface.internal) {
-        return iface.address;
-      }
-    }
-  }
-  return null;
-}
-
-/**
- * Read git user.name and user.email, compute Gravatar URL.
- * Returns a JSON-safe object for injection into the client.
- * Lazy-initialized on first call to avoid execSync at module load.
- */
-let _gitDevInfoCache: { name: string; email: string; gravatarUrl: string } | null = null;
-function getGitDevInfo() {
-  if (_gitDevInfoCache) return _gitDevInfoCache;
-  let name = '';
-  let email = '';
-  try { name = execSync('git config user.name', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim(); } catch { /* git not configured */ }
-  try { email = execSync('git config user.email', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim(); } catch { /* git not configured */ }
-  const gravatarUrl = email
-    ? `https://gravatar.com/avatar/${crypto.createHash('md5').update(email.toLowerCase().trim()).digest('hex')}?s=80&d=mp`
-    : '';
-  _gitDevInfoCache = { name, email, gravatarUrl };
-  return _gitDevInfoCache;
-}
-
-function getDevInfoScript() {
-  return `<script>window.__docmd_dev=${JSON.stringify(getGitDevInfo())}</script>`;
-}
-
-// Static Server Logic
-
-async function serveStatic(req, res, rootDir) {
-  // Serve dev-only API script
-  if (req.url === '/__dev/docmd-api.js') {
-    try {
-      const apiScriptPath = path.resolve(
-        fileURLToPath(import.meta.url),
-        '../../../../ui/assets/js/docmd-api.js'
-      );
-      const apiScript = await fs.readFile(apiScriptPath, 'utf-8');
-      res.writeHead(200, { 'Content-Type': 'text/javascript' });
-      res.end(apiScript);
-    } catch (err) {
-      res.writeHead(404);
-      res.end('Not found');
-    }
-    return;
-  }
-
-  let safePath = path.normalize(req.url).replace(/^(\.\.[\/\\])+/, '').split('?')[0].split('#')[0];
-  if (safePath === '/' || safePath === '\\') safePath = 'index.html';
-
-  let filePath = path.join(rootDir, safePath);
-
-  try {
-    let stats;
-    try {
-      stats = await fs.stat(filePath);
-    } catch (e) {
-      if (path.extname(filePath) === '') {
-        filePath += '.html';
-        stats = await fs.stat(filePath);
-      } else {
-        throw e;
-      }
-    }
-
-    if (stats.isDirectory()) {
-      if (!req.url.split('?')[0].endsWith('/')) {
-        res.writeHead(301, { 'Location': req.url + '/' });
-        res.end();
-        return;
-      }
-
-      filePath = path.join(filePath, 'index.html');
-      await fs.stat(filePath);
-    }
-
-    const ext = path.extname(filePath).toLowerCase();
-    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-    const content = await fs.readFile(filePath);
-
-    res.writeHead(200, { 'Content-Type': contentType });
-
-    if (contentType === 'text/html') {
-      const htmlStr = content.toString('utf-8');
-      const liveReloadScript = `${getDevInfoScript()}<script src="/__dev/docmd-api.js"></script></body>`;
-      res.end(htmlStr.replace('</body>', liveReloadScript));
-    } else {
-      res.end(content);
-    }
-
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      // console.log(chalk.yellow(`⚠️  404 Not Found: ${req.url}`)); // Optional: Keep log quiet for 404s to avoid noise
-      // 1. Try to serve the generated custom 404 page
-      const custom404Path = path.join(rootDir, '404.html');
-      try {
-        const content = await fs.readFile(custom404Path);
-        res.writeHead(404, { 'Content-Type': 'text/html' });
-
-        // Inject Live Reload into 404 page too so development continues smoothly
-        const htmlStr = content.toString('utf-8');
-        const liveReloadScript = `${getDevInfoScript()}<script src="/__dev/docmd-api.js"></script></body>`;
-        res.end(htmlStr.replace('</body>', liveReloadScript));
-      } catch (e2) {
-        // 2. Fallback if 404.html doesn't exist (e.g. build failed)
-        res.writeHead(404, { 'Content-Type': 'text/html' });
-        res.end(`
-          <div style="font-family:system-ui;text-align:center;padding:50px;">
-            <h1>404 Not Found</h1>
-            <p>The requested URL <code>${req.url}</code> was not found.</p>
-            <p style="color:#666;font-size:0.9em;">(docmd dev server)</p>
-          </div>
-        `);
-      }
-    } else {
-      res.writeHead(500);
-      res.end(`Server Error: ${err.code}`);
-    }
-  }
-}
 
 // Main Dev Function
 export async function startDevServer(configPathOption: string, opts: any = {}) {
-  // Bulletproof defaults
   const options = {
     preserve: opts.preserve || false,
     port: opts.port || undefined,
@@ -225,8 +64,9 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
 
   let paths = resolveConfigPaths(config);
 
-  // Create Server
-  const server = http.createServer((req, res) => serveStatic(req, res, paths.outputDir));
+  // Create Server — uses a mutable reference so config restarts update the output dir
+  const state = { outputDir: paths.outputDir };
+  const server = http.createServer((req, res) => serveStatic(req, res, state.outputDir));
   let wss;
 
   function broadcastReload() {
@@ -247,28 +87,13 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
 
   // Watcher Setup
   const userAssetsDirExists = await fs.pathExists(paths.userAssetsDir);
-  const watchedPaths = [paths.srcDirToWatch];
-  if (await fs.pathExists(paths.configFileToWatch)) {
-    watchedPaths.push(paths.configFileToWatch);
-  }
-  if (userAssetsDirExists) watchedPaths.push(paths.userAssetsDir);
-
-  // Internal development watch logic
-  if (process.env.DOCMD_DEV === 'true') {
-    const DOCMD_ROOT = path.resolve(__dirname, '..');
-    watchedPaths.push(
-      path.join(DOCMD_ROOT, 'templates'),
-      path.join(DOCMD_ROOT, 'assets'),
-      path.join(DOCMD_ROOT, 'engine'),
-      path.join(DOCMD_ROOT, 'plugins'),
-      path.join(DOCMD_ROOT, 'utils')
-    );
-  }
+  const configWatchPath = paths.configFileToWatch;
+  const hasConfigFile = await fs.pathExists(configWatchPath);
 
   console.log(chalk.dim('\n👀 Watching for changes in:'));
   console.log(chalk.dim(`   - Source: ${chalk.cyan(formatPathForDisplay(paths.srcDirToWatch, CWD))}`));
-  if (await fs.pathExists(paths.configFileToWatch)) {
-    console.log(chalk.dim(`   - Config: ${chalk.cyan(formatPathForDisplay(paths.configFileToWatch, CWD))}`));
+  if (hasConfigFile) {
+    console.log(chalk.dim(`   - Config: ${chalk.cyan(formatPathForDisplay(configWatchPath, CWD))}`));
   }
   if (userAssetsDirExists) {
     console.log(chalk.dim(`   - Assets: ${chalk.cyan(formatPathForDisplay(paths.userAssetsDir, CWD))}`));
@@ -278,86 +103,116 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
   const watchers: nativeFs.FSWatcher[] = [];
   let isRebuilding = false;
   let rebuildQueued = false;
-  let configNeedsReload = false;
   let rebuildTimeout: any = null;
 
-  for (const watchPath of watchedPaths) {
-    if (!nativeFs.existsSync(watchPath)) continue;
+  function setupContentWatchers() {
+    const contentPaths = [paths.srcDirToWatch];
+    if (nativeFs.existsSync(paths.userAssetsDir)) contentPaths.push(paths.userAssetsDir);
 
-    const watcher = nativeFs.watch(watchPath, { recursive: true }, (event, filename) => {
-      if (!filename) return;
-      const filePath = path.join(watchPath, filename);
-      const relativeFilePath = path.relative(CWD, filePath);
-      
-      // Ignore ignored paths
-      if (
-        relativeFilePath.startsWith(path.relative(CWD, paths.outputDir)) ||
-        filename.includes('.git') || 
-        filename.includes('node_modules') || 
-        filename.startsWith('.') ||
-        relativeFilePath.includes('.DS_Store')
-      ) return;
+    if (process.env.DOCMD_DEV === 'true') {
+      const DOCMD_ROOT = path.resolve(__dirname, '..');
+      contentPaths.push(
+        path.join(DOCMD_ROOT, 'templates'),
+        path.join(DOCMD_ROOT, 'assets'),
+        path.join(DOCMD_ROOT, 'engine'),
+        path.join(DOCMD_ROOT, 'plugins'),
+        path.join(DOCMD_ROOT, 'utils')
+      );
+    }
 
-      if (filePath === paths.configFileToWatch) {
-        configNeedsReload = true;
-      }
+    for (const watchPath of contentPaths) {
+      if (!nativeFs.existsSync(watchPath)) continue;
 
-      if (rebuildTimeout) clearTimeout(rebuildTimeout);
-      rebuildTimeout = setTimeout(() => {
-        const executeBuildFn = async () => {
-          if (isRebuilding) {
-            rebuildQueued = true;
-            return;
-          }
-          process.stdout.write(chalk.dim(`↻ Change in ${relativeFilePath}... `));
-          isRebuilding = true;
-          rebuildQueued = false;
+      const watcher = nativeFs.watch(watchPath, { recursive: true }, (event, filename) => {
+        if (!filename) return;
+        
+        const filePath = path.join(watchPath, filename);
+        const relativeFilePath = path.relative(CWD, filePath);
+        
+        if (
+          relativeFilePath.startsWith(path.relative(CWD, paths.outputDir)) ||
+          filename.includes('.git') || 
+          filename.includes('node_modules') || 
+          filename.startsWith('.') ||
+          relativeFilePath.includes('.DS_Store')
+        ) return;
 
-          try {
-            if (configNeedsReload) {
-              configNeedsReload = false;
-              config = await loadConfig(configPathOption);
-              paths = resolveConfigPaths(config);
+        if (rebuildTimeout) clearTimeout(rebuildTimeout);
+        rebuildTimeout = setTimeout(() => {
+          const executeBuildFn = async () => {
+            if (isRebuilding) { rebuildQueued = true; return; }
+            process.stdout.write(chalk.dim(`↻ Change in ${relativeFilePath}... `));
+            isRebuilding = true;
+            rebuildQueued = false;
+            try {
+              await buildSite(configPathOption, { isDev: true, preserve: options.preserve });
+              broadcastReload();
+              process.stdout.write(chalk.green('Done.\n'));
+            } catch (error: any) {
+              console.error(chalk.red('\n❌ Rebuild failed:'), error.message);
+            } finally {
+              isRebuilding = false;
+              if (rebuildQueued) executeBuildFn();
             }
+          };
+          executeBuildFn();
+        }, 150);
+      });
+      watchers.push(watcher);
+    }
+  }
 
+  setupContentWatchers();
+
+  // Config file watcher — reload config, rebuild, re-setup watchers
+  if (hasConfigFile) {
+    let configLock = false;
+    const setupConfigWatcher = () => {
+      const configWatcher = nativeFs.watch(configWatchPath, () => {
+        if (configLock) return;
+        configLock = true;
+
+        setTimeout(async () => {
+          process.stdout.write(chalk.yellow('⚙  Config changed. Reloading... '));
+          try {
+            // Tear down all watchers (including this config watcher)
+            watchers.forEach(w => w.close());
+            watchers.length = 0;
+            if (rebuildTimeout) { clearTimeout(rebuildTimeout); rebuildTimeout = null; }
+            isRebuilding = false;
+            rebuildQueued = false;
+
+            // Reload config, update paths
+            config = await loadConfig(configPathOption, { isDev: true, quiet: true });
+            paths = resolveConfigPaths(config);
+            state.outputDir = paths.outputDir;
+
+            // Full rebuild with fresh config
             await buildSite(configPathOption, { isDev: true, preserve: options.preserve });
+
+            // Re-setup all watchers
+            setupContentWatchers();
+            setupConfigWatcher();
+
             broadcastReload();
             process.stdout.write(chalk.green('Done.\n'));
-
           } catch (error: any) {
-            console.error(chalk.red('\n❌ Rebuild failed:'), error.message);
+            console.error(chalk.red('\n❌ Config reload failed:'), error.message);
+            // Recover
+            setupContentWatchers();
+            setupConfigWatcher();
           } finally {
-            isRebuilding = false;
-            if (rebuildQueued) {
-              executeBuildFn();
-            }
+            configLock = false;
           }
-        };
-        executeBuildFn();
-      }, 150);
-    });
-    watchers.push(watcher);
+        }, 300);
+      });
+      watchers.push(configWatcher);
+    };
+    setupConfigWatcher();
   }
 
   // Server Startup Logic
   const PORT = parseInt(options.port || process.env.PORT || 3000, 10);
-
-  function checkPortInUse(port) {
-    return new Promise((resolve) => {
-      const tester = http.createServer()
-        .once('error', (err: any) => resolve(err.code === 'EADDRINUSE'))
-        .once('listening', () => tester.close(() => resolve(false)))
-        .listen(port, '0.0.0.0');
-    });
-  }
-
-  async function findAvailablePort(startPort) {
-    let port = startPort;
-    while (await checkPortInUse(port)) {
-      port++;
-    }
-    return port;
-  }
 
   function tryStartServer(port) {
     server.listen(port, '0.0.0.0')
@@ -439,11 +294,26 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
   })();
 
   let isShuttingDown = false;
+
+  // Suppress ^C display and handle graceful shutdown
+  if (process.stdin.isTTY) {
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    process.stdin.on('data', (data) => {
+      // Ctrl+C = 0x03
+      if (data[0] === 0x03) {
+        process.emit('SIGINT' as any);
+      }
+    });
+  }
+
   process.on('SIGINT', async () => {
     if (isShuttingDown) return;
     isShuttingDown = true;
 
-    process.stdout.write(chalk.yellow('\n🛑 Shutting down... '));
+    if (process.stdin.isTTY) process.stdin.setRawMode(false);
+
+    process.stdout.write(chalk.yellow('\n🛑 Shutting down...\n'));
 
     // Force exit after a shorter timeout if graceful shutdown hangs
     const forceExitTimeout = setTimeout(() => {
@@ -459,9 +329,10 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
 
       await Promise.all(closures);
       clearTimeout(forceExitTimeout);
-      process.stdout.write(chalk.green('Done.\n'));
+      console.log(chalk.green('Done.'));
       process.exit(0);
     } catch (e) {
+      console.log('');
       process.exit(0);
     }
   });

@@ -21,5 +21,8 @@
   "copiedToClipboard": "कॉपी हो गया!",
   "copyCode": "कोड कॉपी करें",
   "mainNavigation": "मुख्य नेविगेशन",
+  "latest": "नवीनतम",
+  "translationUnavailable": "इस संस्करण के लिए अनुवाद उपलब्ध नहीं",
+  "unavailable": "N/A",
   "fallbackMessage": "यह पृष्ठ अभी {active} में उपलब्ध नहीं है। डिफ़ॉल्ट भाषा ({default}) दिखा रहा है।"
 }

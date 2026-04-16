@@ -66,9 +66,15 @@
     const versionToggle = e.target.closest('.version-dropdown-toggle');
     if (versionToggle) {
       e.preventDefault();
+      e.stopPropagation();
       const dropdown = versionToggle.closest('.docmd-version-dropdown');
       dropdown.classList.toggle('open');
       versionToggle.setAttribute('aria-expanded', dropdown.classList.contains('open'));
+      // Close language switcher when opening version dropdown
+      document.querySelectorAll('.docmd-language-switcher.open').forEach(d => {
+        d.classList.remove('open');
+        d.querySelector('.language-switcher-toggle').setAttribute('aria-expanded', 'false');
+      });
       return;
     }
 
@@ -116,14 +122,24 @@
         d.querySelector('.version-dropdown-toggle').setAttribute('aria-expanded', 'false');
       });
     }
-
-    // Language Switcher Toggle
+    if (!e.target.closest('.docmd-language-switcher')) {
+      document.querySelectorAll('.docmd-language-switcher.open').forEach(d => {
+        d.classList.remove('open');
+        d.querySelector('.language-switcher-toggle').setAttribute('aria-expanded', 'false');
+      });
+    }
     const langToggle = e.target.closest('.language-switcher-toggle');
     if (langToggle) {
       e.preventDefault();
+      e.stopPropagation();
       const dropdown = langToggle.closest('.docmd-language-switcher');
       dropdown.classList.toggle('open');
       langToggle.setAttribute('aria-expanded', dropdown.classList.contains('open'));
+      // Close version dropdown when opening language switcher
+      document.querySelectorAll('.docmd-version-dropdown.open').forEach(d => {
+        d.classList.remove('open');
+        d.querySelector('.version-dropdown-toggle').setAttribute('aria-expanded', 'false');
+      });
       return;
     }
 
@@ -138,14 +154,6 @@
       // Full page load to the target locale root (SPA does not cross locales)
       window.location.href = langLink.href;
       return;
-    }
-
-    // Close Language Switcher if clicked outside
-    if (!e.target.closest('.docmd-language-switcher')) {
-      document.querySelectorAll('.docmd-language-switcher.open').forEach(d => {
-        d.classList.remove('open');
-        d.querySelector('.language-switcher-toggle').setAttribute('aria-expanded', 'false');
-      });
     }
 
     // Copy Code Button

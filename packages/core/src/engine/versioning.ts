@@ -124,9 +124,11 @@ export async function buildVersions({
     // use the base dir directly (supports old versions without locale dirs)
     let vSrcDir = resolveLocaleSrcDir(baseSrcDir, config);
     let fallbackSrcDir = resolveFallbackSrcDir(baseSrcDir, config);
+    let versionHasI18n = true;
 
     if (!await fs.exists(vSrcDir) && await fs.exists(baseSrcDir)) {
       // Locale subdir doesn't exist but base dir does — this version has no i18n structure
+      versionHasI18n = false;
       if (config._activeLocale && config._activeLocale.id !== config._defaultLocale) {
         // Non-default locale: skip entirely (no translations for this version)
         continue;
@@ -152,6 +154,7 @@ export async function buildVersions({
     const versionedConfig = {
       ...config,
       _activeVersion: v,
+      _versionHasI18n: versionHasI18n,
       navigation: cleanedNav
     };
 

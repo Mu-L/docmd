@@ -20,7 +20,17 @@
     // Get the active version prefix if versioning is active
     const activeVersion = config._activeVersion;
     const currentVersionId = config.versions && config.versions.current;
-    const versionPrefix = (activeVersion && currentVersionId && activeVersion.id !== currentVersionId) ? activeVersion.id + '/' : '';
+    const isOldVersion = activeVersion && currentVersionId && activeVersion.id !== currentVersionId;
+    const versionPrefix = isOldVersion ? activeVersion.id + '/' : '';
+
+    // Strip version prefix from pagePath if it's already baked in (avoids duplication)
+    if (versionPrefix && pagePath.startsWith(versionPrefix)) {
+        pagePath = pagePath.slice(versionPrefix.length);
+    }
+
+    // Determine which locales are available for this version
+    // Old versions without locale subdirectories only support the default locale
+    const versionHasI18n = !isOldVersion || (typeof config._versionHasI18n !== 'undefined' ? config._versionHasI18n : !isOldVersion);
 %>
 <div class="docmd-language-switcher<%= isCompact ? ' language-compact' : '' %>">
     <button class="language-switcher-toggle" aria-expanded="false" aria-label="<%= typeof t === 'function' ? t('selectLanguage') : 'Select Language' %>">
@@ -35,23 +45,30 @@
             const isCurrentActive = current && loc.id === current.id;
             const isLocDefault = loc.id === defaultLocale;
             
+            // Non-default locales are disabled when this version doesn't have i18n
+            const isDisabled = !isLocDefault && !versionHasI18n;
+            
             const base = config.base || '/';
             const normalizedBase = base.endsWith('/') ? base : base + '/';
             
             // Build locale-aware URL preserving version and page path
             const locPrefix = isLocDefault ? '' : loc.id + '/';
-            const absoluteHref = normalizedBase + locPrefix + versionPrefix + pagePath;
+            const absoluteHref = isDisabled ? '#' : (normalizedBase + locPrefix + versionPrefix + pagePath);
         %>
         <li>
             <a href="<%= absoluteHref %>" 
-               class="language-switcher-item <%= isCurrentActive ? 'active' : '' %>" 
+               class="language-switcher-item <%= isCurrentActive ? 'active' : '' %><%= isDisabled ? ' disabled' : '' %>" 
                data-spa-ignore
                data-locale-id="<%= loc.id %>"
                lang="<%= loc.id %>"
-               dir="<%= loc.dir || 'ltr' %>">
+               dir="<%= loc.dir || 'ltr' %>"
+               <% if (isDisabled) { %>aria-disabled="true" title="<%= typeof t === 'function' ? t('translationUnavailable') : 'Translation not available for this version' %>"<% } %>>
                 <%= loc.label %>
                 <% if (isCurrentActive) { %>
                     <%- renderIcon('check', { class: 'language-check' }) %>
+                <% } %>
+                <% if (isDisabled) { %>
+                    <span class="language-unavailable-badge"><%= typeof t === 'function' ? t('unavailable') : 'N/A' %></span>
                 <% } %>
             </a>
         </li>

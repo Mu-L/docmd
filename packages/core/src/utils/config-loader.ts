@@ -147,6 +147,13 @@ export async function loadConfig(configPath: string, options: any = {}) {
             target: 'node18'
         });
         configUrl = pathToFileURL(tempConfigPath).href;
+    } else if (absoluteConfigPath.endsWith('.js') || absoluteConfigPath.endsWith('.mjs')) {
+        // Copy to a temp file to guarantee cache bypass (query strings
+        // are not always reliable for ESM cache busting in all Node versions)
+        const ext = path.extname(absoluteConfigPath);
+        tempConfigPath = absoluteConfigPath.replace(new RegExp(`\\${ext}$`), `-${ts}${ext}`);
+        fs.copyFileSync(absoluteConfigPath, tempConfigPath);
+        configUrl = pathToFileURL(tempConfigPath).href;
     }
 
     const rawModule = await import(configUrl);

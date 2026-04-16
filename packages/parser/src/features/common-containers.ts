@@ -178,7 +178,7 @@ export default {
       }
       
       const renderedTitle = title ? md.renderInline(title) : '';
-      const iconHtml = icon ? renderIcon(icon, { class: 'callout-icon-heading' }) + ' ' : '';
+      const iconHtml = icon ? renderIcon(icon, { class: 'callout-icon-heading' }) : '';
 
       return `<div class="docmd-container callout callout-${type}">${renderedTitle || iconHtml ? `<div class="callout-title">${iconHtml}${renderedTitle}</div>` : ''}<div class="callout-content">\n`;
     }, () => '</div></div>\n');
@@ -187,7 +187,7 @@ export default {
     createDepthTrackingContainer(md, 'card', (tokens, idx) => {
       const { title, icon } = parseTitleAndIcon(tokens[idx].info);
       const renderedTitle = title ? md.renderInline(title) : '';
-      const iconHtml = icon ? renderIcon(icon, { class: 'card-icon-heading' }) + ' ' : '';
+      const iconHtml = icon ? renderIcon(icon, { class: 'card-icon-heading' }) : '';
       return `<div class="docmd-container card">${renderedTitle || iconHtml ? `<div class="card-title">${iconHtml}${renderedTitle}</div>` : ''}<div class="card-content">\n`;
     }, () => '</div></div>\n');
 
@@ -199,7 +199,7 @@ export default {
       const { title, icon } = parseTitleAndIcon(rawInfo);
       const displayTitle = title || 'Click to expand';
       const renderedTitle = md.renderInline(displayTitle);
-      const iconHtml = icon ? renderIcon(icon, { class: 'collapsible-icon-heading' }) + ' ' : '';
+      const iconHtml = icon ? renderIcon(icon, { class: 'collapsible-icon-heading' }) : '';
 
       return `<details class="docmd-container collapsible" ${isOpen ? 'open' : ''}>
         <summary class="collapsible-summary">

@@ -13,9 +13,11 @@
  */
 
 const { execSync } = require('child_process');
+const path = require('path');
 
 const args = process.argv.slice(2);
 const isCI = process.env.CI === 'true' || args.includes('--skip-setup');
+const shouldLink = args.includes('--link');
 
 function run(cmd, silent = true) {
     try {
@@ -33,12 +35,24 @@ if (!isCI) {
 
 // 2. Run the actual failsafe check
 // Forwarding arguments to failsafe.js
-const failsafeArgs = args.join(' ');
+const failsafeArgs = args.filter(a => a !== '--link').join(' ');
 run(`node scripts/failsafe.js ${failsafeArgs}`, false);
 
-// 3. Show final completion status
+// 3. Handle global linking if requested
+if (shouldLink) {
+    process.stdout.write('\x1b[2m🔗 Linking docmd globally...\x1b[0m');
+    try {
+        execSync('npm link --silent', { cwd: path.join(process.cwd(), 'packages/core'), stdio: 'ignore' });
+        console.log(' \x1b[32mDone!\x1b[0m');
+    } catch (e) {
+        console.log(' \x1b[31mFailed (requires sudo?)\x1b[0m');
+    }
+}
+
+// 4. Show final completion status
 if (!isCI) {
-    run('node scripts/status.js verify', false);
+    const statusCmd = shouldLink ? 'node scripts/status.js verify --linked' : 'node scripts/status.js verify';
+    run(statusCmd, false);
 } else {
     console.log('\n🛡️  \x1b[32m\x1b[1mdocmd verification passed!\x1b[0m');
 }

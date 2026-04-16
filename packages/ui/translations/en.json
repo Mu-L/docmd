@@ -21,5 +21,8 @@
   "copiedToClipboard": "Copied!",
   "copyCode": "Copy code",
   "mainNavigation": "Main Navigation",
+  "latest": "Latest",
+  "translationUnavailable": "Translation not available for this version",
+  "unavailable": "N/A",
   "fallbackMessage": "This page is not yet available in {active}. Showing default language ({default})."
 }

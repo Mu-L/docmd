@@ -14,7 +14,7 @@
 %>
 <div class="docmd-version-dropdown">
     <button class="version-dropdown-toggle" aria-expanded="false" aria-label="<%= typeof t === 'function' ? t('selectVersion') : 'Select Version' %>">
-        <span class="version-label"><%= current ? current.label : (typeof t === 'function' ? t('version') : 'Version') %></span>
+        <span class="version-label"><%= current ? current.label : (typeof t === 'function' ? t('version') : 'Version') %></span><% if (current && current.id === versions.current) { %><span class="version-latest-badge"><%= typeof t === 'function' ? t('latest') : 'Latest' %></span><% } %>
         <%- renderIcon('chevron-down', { class: 'version-chevron' }) %>
     </button>
     <ul class="version-dropdown-menu">
@@ -40,7 +40,7 @@
                class="version-dropdown-item <%= isCurrentActive ? 'active' : '' %>" 
                data-spa-ignore
                data-version-root="<%= dataRoot %>">
-                <%= v.label %>
+                <%= v.label %><% if (v.id === versions.current) { %> <span class="version-latest-badge"><%= typeof t === 'function' ? t('latest') : 'Latest' %></span><% } %>
                 <% if (isCurrentActive) { %>
                     <%- renderIcon('check', { class: 'version-check' }) %>
                 <% } %>

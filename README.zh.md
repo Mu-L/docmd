@@ -1,5 +1,5 @@
 <div align="right">
-  <a href="./README.md">English</a> &nbsp;|&nbsp; <b>中文</b> &nbsp;|&nbsp; <a href="./README.hi.md">हिन्दी</a>
+  <a href="./README.md">English</a> &nbsp;|&nbsp; <b>中文</b><!-- &nbsp;|&nbsp; <a href="./README.hi.md">हिन्दी</a>-->
 </div>
 
 <div align="center">
@@ -214,19 +214,20 @@ docmd plugin add <plugin-name>
 
 ## 为什么选择 docmd？
 
-| 特性 | docmd | Docusaurus | MkDocs | Mintlify |
-| :--------------- | :------------------------ | :------------------- | :-------------- | :--------------- |
-| **语言** | **Node.js** | React.js | Python | 专有 |
-| **导航** | **即时 SPA** | React SPA | 页面刷新 | 托管 SPA |
-| **输出** | **静态 HTML** | React Hydration | 静态 HTML | 托管 |
-| **JS 负载** | **< 20kb** | > 200kb | 极小 | 中等 |
-| **版本管理** | **内置** | 基于文件（复杂） | 基于插件 | 原生 |
-| **i18n** | **内置** | 原生 | 基于主题 | Beta |
-| **搜索** | **内置（离线）** | Algolia（云端） | Lunr（内置） | 云端 |
-| **PWA** | **内置** | 插件 | 无 | 托管 |
-| **AI 上下文** | **内置（`llms.txt`）** | 插件 | 无 | 专有 |
-| **配置** | **即时** | ~15 分钟 | ~10 分钟 | ~5 分钟 |
-| **费用** | **免费（OSS）** | 免费（OSS） | 免费（OSS） | 免费增值 |
+| 特性 | docmd | Docusaurus | MkDocs Material | VitePress | Mintlify |
+| :--------------- | :------------------------ | :------------------- | :-------------- | :--------------- | :--------------- |
+| **语言** | **Node.js** | React.js | Python | Vue | SaaS |
+| **配置要求** | **无** | `docusaurus.config.js` | `mkdocs.yml` | `config.mts` | `mint.json` |
+| **初始负载** | **~18kb** | ~250kb | ~40kb | ~50kb | ~120kb |
+| **导航** | **即时 SPA** | React SPA | 页面刷新 | Vue SPA | 托管 SPA |
+| **版本管理** | **内置** | 原生（复杂） | mike 插件 | 手动 | 原生 |
+| **i18n** | **内置** | 原生（复杂） | 基于插件 | 手动 | 原生 |
+| **搜索** | **内置（离线）** | Algolia（云端） | 内置 | MiniSearch | 云端 |
+| **PWA** | **内置** | 社区插件 | 无 | 无 | 托管 |
+| **AI 上下文** | **内置（`llms.txt`）** | 手动 | 无 | 无 | 专有 |
+| **自托管** | **是** | 是 | 是 | 是 | 否 |
+| **零配置** | **`npx @docmd/core dev`** | 否 | 否 | 否 | 否 |
+| **费用** | **免费（OSS）** | 免费（OSS） | 免费（OSS） | 免费（OSS） | 免费增值 |
 
 简单起步，无缝扩展。
 

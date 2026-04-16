@@ -1,5 +1,5 @@
 <div align="right">
-  <b>English<b> &nbsp;|&nbsp; <a href="./README.zh.md">中文</a> &nbsp;|&nbsp; <a href="./README.hi.md">हिन्दी</a>
+  <b>English<b> &nbsp;|&nbsp; <a href="./README.zh.md">中文</a><!-- &nbsp;|&nbsp; <a href="./README.hi.md">हिन्दी</a>-->
 </div>
 
 <div align="center">
@@ -214,19 +214,20 @@ docmd plugin add <plugin-name>
 
 ## Why docmd?
 
-| Feature          | docmd                     | Docusaurus           | MkDocs          | Mintlify         |
-| :--------------- | :------------------------ | :------------------- | :-------------- | :--------------- |
-| **Language**     | **Node.js**               | React.js             | Python          | Proprietary      |
-| **Navigation**   | **Instant SPA**           | React SPA            | Page Reloads    | Hosted SPA       |
-| **Output**       | **Static HTML**           | React Hydration      | Static HTML     | Hosted           |
-| **JS Payload**   | **Minimal (< 20kb)**      | Heavy (> 200kb)      | Minimal         | Medium           |
-| **Versioning**   | **Built-in**              | File-based (complex) | Plugin-based    | Native           |
-| **i18n Support** | **Built-in**              | Native               | Theme-based     | Beta             |
-| **Search**       | **Built-in (offline)**    | Algolia (cloud)      | Built-in (Lunr) | Built-in (cloud) |
-| **PWA**          | **Built-in**              | Plugin               | None            | Hosted           |
-| **AI Context**   | **Built-in (`llms.txt`)** | Plugin               | None            | Proprietary      |
-| **Setup**        | **Instant**               | ~15 min              | ~10 min         | ~5 min           |
-| **Cost**         | **Free (OSS)**            | Free (OSS)           | Free (OSS)      | Freemium         |
+| Feature          | docmd                     | Docusaurus           | MkDocs Material | VitePress        | Mintlify         |
+| :--------------- | :------------------------ | :------------------- | :-------------- | :--------------- | :--------------- |
+| **Language**     | **Node.js**               | React.js             | Python          | Vue              | SaaS             |
+| **Config required** | **None**               | `docusaurus.config.js` | `mkdocs.yml`  | `config.mts`     | `mint.json`      |
+| **Initial payload** | **~18kb**              | ~250kb               | ~40kb           | ~50kb            | ~120kb           |
+| **Navigation**   | **Instant SPA**           | React SPA            | Full reloads    | Vue SPA          | Hosted SPA       |
+| **Versioning**   | **Built-in**              | Native (complex)     | mike plugin     | Manual           | Native           |
+| **i18n**         | **Built-in**              | Native (complex)     | Plugin-based    | Manual           | Native           |
+| **Search**       | **Built-in (offline)**    | Algolia (cloud)      | Built-in        | MiniSearch        | Cloud            |
+| **PWA**          | **Built-in**              | Community plugin     | None            | None             | Hosted           |
+| **AI Context**   | **Built-in (`llms.txt`)** | Manual               | None            | None             | Proprietary      |
+| **Self-hosted**  | **Yes**                   | Yes                  | Yes             | Yes              | No               |
+| **Zero-config**  | **`npx @docmd/core dev`** | No                   | No              | No               | No               |
+| **Cost**         | **Free (OSS)**            | Free (OSS)           | Free (OSS)      | Free (OSS)       | Freemium         |
 
 Starts simple. Scales without friction.
 

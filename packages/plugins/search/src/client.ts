@@ -193,11 +193,21 @@ declare const MiniSearch: any;
                 return;
             }
 
+            // Generate deterministic colors for version badges
+            const versionColors: Record<string, {bg: string, fg: string}> = {};
+            const huePresets = [210, 150, 30, 330, 270, 60, 180, 0];
+            const allVersions: string[] = [...new Set(results.map((r: any) => r.version).filter(Boolean))] as string[];
+            allVersions.forEach((v, i) => {
+                const hue = huePresets[i % huePresets.length];
+                versionColors[v] = { bg: `hsl(${hue}, 55%, 92%)`, fg: `hsl(${hue}, 60%, 35%)` };
+            });
+
             searchResults.innerHTML = results.slice(0, 10).map((result: any, index: number) => {
                 const snippet = getSnippet(result.text, query);
                 const linkHref = `${ROOT_PATH}${result.id}`;
+                const vc = result.version ? versionColors[result.version] : null;
                 const versionBadge = result.version
-                    ? `<span class="search-result-version">${result.version}</span>`
+                    ? `<span class="search-result-version" style="background:${vc!.bg};color:${vc!.fg}">${result.version}</span>`
                     : '';
                 return `
                     <a href="${linkHref}" class="search-result-item" data-index="${index}">

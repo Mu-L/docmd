@@ -76,7 +76,7 @@ function buttonRule(state, startLine, endLine, silent) {
 
   let iconHtml = '';
   if (icon) {
-    iconHtml = renderIcon(icon, { class: 'button-icon' }) + ' ';
+    iconHtml = renderIcon(icon, { class: 'button-icon' });
   }
 
   token.content = `<a href="${href}" class="docmd-button"${styleAttr}${targetAttr}>${iconHtml}${state.md.renderInline(text)}</a>`;

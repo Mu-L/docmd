@@ -21,5 +21,8 @@
   "copiedToClipboard": "已复制！",
   "copyCode": "复制代码",
   "mainNavigation": "主导航",
+  "latest": "最新",
+  "translationUnavailable": "此版本暂无翻译",
+  "unavailable": "N/A",
   "fallbackMessage": "此页面暂无{active}版本。显示默认语言（{default}）。"
 }
