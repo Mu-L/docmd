@@ -114,6 +114,15 @@ export async function buildVersions({
 }): Promise<any[]> {
   const allPages = [];
 
+  // Pre-scan: determine which versions have i18n support for the current locale
+  const versionI18nMap: Record<string, boolean> = {};
+  for (const v of config.versions.all) {
+    const baseSrcDir = path.resolve(CWD, v.dir);
+    const localeSrcDir = resolveLocaleSrcDir(baseSrcDir, config);
+    versionI18nMap[v.id] = await fs.exists(localeSrcDir);
+  }
+  config._versionI18nMap = versionI18nMap;
+
   for (const v of config.versions.all) {
     const isCurrent = v.id === config.versions.current;
     const baseSrcDir = path.resolve(CWD, v.dir);

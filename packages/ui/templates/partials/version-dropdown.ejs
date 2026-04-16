@@ -28,9 +28,15 @@
             const normalizedBase = base.endsWith('/') ? base : base + '/';
             
             // Include locale prefix for non-default locales
+            // Include locale prefix for non-default locales
             const locPrefix = (typeof localePrefix !== 'undefined' && localePrefix) ? localePrefix : '';
+            
+            // Include locale prefix only if the target version has i18n for this locale
+            const versionI18nMap = config._versionI18nMap || {};
+            const targetHasLocale = locPrefix ? versionI18nMap[v.id] !== false : true;
+            const effectiveLocPrefix = targetHasLocale ? locPrefix : '';
             const targetSuffix = isTargetRootVersion ? '' : v.id + '/';
-            const absoluteHref = normalizedBase + locPrefix + targetSuffix;
+            const absoluteHref = normalizedBase + effectiveLocPrefix + targetSuffix;
             
             // Data Root for JS Sticky Logic
             const dataRoot = absoluteHref;

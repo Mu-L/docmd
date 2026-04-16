@@ -40,7 +40,7 @@ run(`node scripts/failsafe.js ${failsafeArgs}`, false);
 
 // 3. Handle global linking if requested
 if (shouldLink) {
-    process.stdout.write('\x1b[2m🔗 Linking docmd globally...\x1b[0m');
+    process.stdout.write('\n\x1b[2m🔗 Linking docmd globally...\x1b[0m');
     try {
         execSync('npm link --silent', { cwd: path.join(process.cwd(), 'packages/core'), stdio: 'ignore' });
         console.log(' \x1b[32mDone!\x1b[0m');
