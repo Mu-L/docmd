@@ -30,7 +30,7 @@
   <p>
     <h4>
       <a href="https://docmd.io">Website</a> • 
-      <a href="https://docs.docmd.io/getting-started/installation/">Documentation (Preview)</a> • 
+      <a href="https://docs.docmd.io">Documentation</a> • 
       <a href="https://live.docmd.io">Live Editor</a> •
       <a href="https://github.com/docmd-io/docmd/issues">Report Bug</a>
     </h4>
@@ -128,7 +128,7 @@ my-docs/
 
 A browser-based editor for writing and previewing docs instantly. No setup required.
 
-**Try it: https://live.docmd.io**
+**Try it: [live.docmd.io](https://live.docmd.io)**
 
 ## Configuration (optional)
 
@@ -162,8 +162,8 @@ module.exports = defineConfig({
   i18n: {
     default: 'en',
     locales: [
-      { id: 'en', label: 'English', dir: 'ltr' },
-      { id: 'zh', label: '中文', dir: 'ltr' },
+      { id: 'en', label: 'English' },
+      { id: 'zh', label: '中文' },
     ]
   }
 });
@@ -197,12 +197,12 @@ Plugins are only needed when you want to extend functionality.
 | Plugin      | Included | Description                                        |
 | :---------- | :------- | :------------------------------------------------- |
 | `search`    | ✓        | Offline full-text search with fuzzy matching       |
-| `pwa`       | ✓        | Progressive Web App support for offline navigation |
 | `seo`       | ✓        | SEO tags and Open Graph metadata                   |
 | `sitemap`   | ✓        | Generates `sitemap.xml`                            |
 | `analytics` | ✓        | Lightweight analytics integration                  |
 | `llms`      | ✓        | AI context generation (`llms.txt`)                 |
 | `mermaid`   | ✓        | Mermaid diagrams in Markdown                       |
+| `pwa`       | Optional | Progressive Web App support for offline navigation |
 | `threads`   | Optional | Inline discussion threads *(by @svallory)*         |
 | `math`      | Optional | KaTeX/LaTeX math rendering                         |
 
@@ -223,8 +223,8 @@ docmd plugin add <plugin-name>
 | **Versioning**   | **Built-in**              | Native (complex)     | mike plugin     | Manual           | Native           |
 | **i18n**         | **Built-in**              | Native (complex)     | Plugin-based    | Manual           | Native           |
 | **Search**       | **Built-in (offline)**    | Algolia (cloud)      | Built-in        | MiniSearch        | Cloud            |
-| **PWA**          | **Built-in**              | Community plugin     | None            | None             | Hosted           |
 | **AI Context**   | **Built-in (`llms.txt`)** | Manual               | None            | None             | Proprietary      |
+| **PWA**          | **Official Plugin**       | Community plugin     | None            | None             | Hosted           |
 | **Self-hosted**  | **Yes**                   | Yes                  | Yes             | Yes              | No               |
 | **Zero-config**  | **`npx @docmd/core dev`** | No                   | No              | No               | No               |
 | **Cost**         | **Free (OSS)**            | Free (OSS)           | Free (OSS)      | Free (OSS)       | Freemium         |
