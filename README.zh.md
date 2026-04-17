@@ -39,9 +39,9 @@
   <!-- 预览 -->
   <p>
     <br/>
-    <img width="800" alt="docmd preview" src="https://github.com/user-attachments/assets/755ebd1f-72e4-4404-a65d-b47326179e9e" />
+    <img width="800" alt="docmd preview" src="https://github.com/user-attachments/assets/b65782ee-01e5-4f82-a204-4965a8f12402" />
     <br/>
-    <sup><i>docmd `default` 主题 — 浅色外观</i></sup>
+    <sup><i>docmd `default` 主题 — 浅色和深色模式预览</i></sup>
   </p>
 
 </div>
