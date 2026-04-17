@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -28,7 +28,8 @@ import emoji from 'markdown-it-emoji';
 import { registerFeatures } from './features/index.js';
 
 // Custom Heading ID & Anchor Logic
-const headingIdPlugin = (md) => {
+const headingIdPlugin = (md, options: any = {}) => {
+  const uiStrings = options.uiStrings || {};
   md.core.ruler.push('heading_anchors', function (state) {
     let containerDepth = 0;
     const lastHeadingIds = new Array(7).fill(null);
@@ -105,7 +106,8 @@ const headingIdPlugin = (md) => {
 
           if (inlineToken && inlineToken.children) {
             const anchorToken = new state.Token('html_inline', '', 0);
-            anchorToken.content = `<a href="#${id}" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>`;
+            const anchorLabel = uiStrings.permalinkToSection || 'Permalink to this section';
+            anchorToken.content = `<a href="#${id}" class="heading-anchor" aria-label="${anchorLabel}"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>`;
 
             // Insert the anchor at the beginning of the heading text
             inlineToken.children.unshift(anchorToken);
@@ -148,7 +150,7 @@ function createMarkdownProcessor(config: any = {}, pluginsCallback: any) {
   md.use(abbr);
   md.use(deflist);
   md.use(emoji);
-  md.use(headingIdPlugin);
+  md.use(headingIdPlugin, { uiStrings: config._uiStrings || {} });
 
   // Register Built-in Features
   registerFeatures(md);

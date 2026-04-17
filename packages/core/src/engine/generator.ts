@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -16,15 +16,50 @@ import path from 'path';
 import fs from '../utils/fs-utils.js';
 import { createRequire } from 'module';
 import { generateAssetTag, findFilesRecursive } from './assets.js';
+import { generateHreflangTags } from './i18n.js';
 import nativeFs from 'fs';
 
-const require = createRequire(import.meta.url);
+const _require = createRequire(import.meta.url);
 import * as parser from '@docmd/parser';
+import { findPageNeighbors, findBreadcrumbs } from '@docmd/parser';
 import * as ui from '@docmd/ui';
-import { findPageNeighbors, findBreadcrumbs } from '@docmd/parser/dist/utils/navigation-helper.js';
 
-export async function renderPages({ config, srcDir, outputDir, hooks, buildHash, options }: any) {
-  const mdProcessor = parser.createMarkdownProcessor(config, (md: any) => hooks.markdownSetup.forEach((hook: any) => hook(md)));
+export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, hooks, buildHash, options, outputPrefix = '' }: any) {
+  // Load Translations for the active locale
+  const localeId = config._activeLocale?.id || null;
+  const pluginTranslations = hooks.translations
+    ? hooks.translations.reduce((acc: any, fn: any) => ({ ...acc, ...fn(localeId) }), {})
+    : {};
+
+  // Merge: system translations → plugin translations → user-provided locale translations
+  const userLocaleTranslations = config._activeLocale?.translations || {};
+  const strings = ui.loadTranslations(localeId, { ...pluginTranslations, ...userLocaleTranslations });
+  const t = ui.createT(strings);
+
+  // Resolve locale-specific navigation.json
+  // Each locale dir has its own navigation.json; fall back to default locale's navigation
+  if (config.i18n && config._activeLocale) {
+    const localeNavPath = path.join(srcDir, 'navigation.json');
+    try {
+      if (nativeFs.existsSync(localeNavPath)) {
+        const rawNav = await nativeFs.promises.readFile(localeNavPath, 'utf8');
+        config = { ...config, navigation: JSON.parse(rawNav) };
+      } else if (fallbackSrcDir) {
+        // Fall back to default locale's navigation.json
+        const fallbackNavPath = path.join(fallbackSrcDir, 'navigation.json');
+        if (nativeFs.existsSync(fallbackNavPath)) {
+          const rawNav = await nativeFs.promises.readFile(fallbackNavPath, 'utf8');
+          config = { ...config, navigation: JSON.parse(rawNav) };
+        }
+      }
+    } catch {
+      console.warn(`[docmd] Failed to parse locale navigation: ${localeNavPath}`);
+    }
+  }
+
+  // Pass UI strings to the markdown processor (for locale-aware aria-labels etc.)
+  const configWithStrings = { ...config, _uiStrings: strings };
+  const mdProcessor = parser.createMarkdownProcessor(configWithStrings, (md: any) => hooks.markdownSetup.forEach((hook: any) => hook(md)));
 
   // Load Layout Templates
   const templates = {
@@ -88,12 +123,57 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
   if (config.navigation) extractNavIndexes(config.navigation);
 
   // Find both .md/.markdown files AND .ejs content files (EJS files are pre-rendered before markdown)
-  const mdFiles = await findFilesRecursive(srcDir, ['.md', '.markdown', '.ejs']);
+  // When fallbackSrcDir is set (non-default locale), scan the fallback dir as the canonical
+  // file list, then check the locale dir for overrides per file.
+  const scanDir = fallbackSrcDir || srcDir;
+  const mdFiles = await findFilesRecursive(scanDir, ['.md', '.markdown', '.ejs']);
+
+  // Build set of locale directory names to skip when scanning a non-locale-specific dir
+  // This prevents locale subdirs inside old version dirs from being rendered as regular pages
+  const localeIds = new Set((config._allLocales || []).map((l: any) => l.id));
 
   const pages = [];
   for (const filePath of mdFiles) {
-    let rawContent = await nativeFs.promises.readFile(filePath, 'utf8');
-    const relativePath = path.relative(srcDir, filePath);
+    const relativePath = path.relative(scanDir, filePath);
+
+    // Skip files inside locale subdirectories when scanning a non-locale dir
+    // e.g., docs-v1/hi/index.md should not be rendered during the main EN pass
+    if (localeIds.size > 0 && !fallbackSrcDir) {
+      const topDir = relativePath.split(path.sep)[0];
+      if (localeIds.has(topDir)) continue;
+    }
+
+    let targetFilePath = filePath;
+    let isFallback = false;
+
+    // For non-default locales: check if the locale dir has this file
+    if (fallbackSrcDir) {
+      const localizedPath = path.join(srcDir, relativePath);
+      if (nativeFs.existsSync(localizedPath)) {
+        targetFilePath = localizedPath;
+      } else {
+        isFallback = true;
+      }
+    }
+
+    let rawContent = await nativeFs.promises.readFile(targetFilePath, 'utf8');
+
+    // Prepend a warning callout when falling back to default language
+    if (isFallback) {
+        const defaultLabel = config._allLocales?.find((l: any) => l.id === config._defaultLocale)?.label || config._defaultLocale;
+        const activeLabel = config._activeLocale.label;
+        const fallbackMsg = t('fallbackMessage', { active: activeLabel, default: defaultLabel });
+        const callout = `\n::: callout warning\n${fallbackMsg}\n:::\n\n`;
+        // Insert after frontmatter if present, otherwise prepend
+        const fmEnd = rawContent.indexOf('\n---', 1);
+        if (rawContent.startsWith('---') && fmEnd > 0) {
+            const afterFm = fmEnd + 4; // skip \n---
+            rawContent = rawContent.slice(0, afterFm) + '\n' + callout + rawContent.slice(afterFm);
+        } else {
+            rawContent = callout + rawContent;
+        }
+    }
+
     const filename = path.basename(relativePath).toLowerCase();
     const ext = path.extname(filename);
     const isIndex = filename.startsWith('index.');
@@ -167,9 +247,72 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
     // Determine output path — .ejs files map like .md files
     const withoutExt = relativePath.replace(/\.(md|markdown|ejs)$/, '');
     const htmlOutputPath = effectivelyIndex
-      ? path.join(path.dirname(relativePath), 'index.html')
-      : withoutExt + '/index.html';
-    pages.push({ ...processed, sourcePath: filePath, outputPath: htmlOutputPath });
+      ? path.posix.join(outputPrefix, path.dirname(relativePath), 'index.html').replace(/^\/?/, '')
+      : path.posix.join(outputPrefix, withoutExt, 'index.html').replace(/^\/?/, '');
+    pages.push({ ...processed, sourcePath: targetFilePath, outputPath: htmlOutputPath });
+  }
+
+  // Scan for locale-exclusive pages (exist only in the locale dir, not in fallback)
+  if (fallbackSrcDir && nativeFs.existsSync(srcDir)) {
+    const localeFiles = await findFilesRecursive(srcDir, ['.md', '.markdown', '.ejs']);
+    const fallbackRelPaths = new Set(mdFiles.map(f => path.relative(scanDir, f)));
+    
+    for (const filePath of localeFiles) {
+      const relativePath = path.relative(srcDir, filePath);
+      if (fallbackRelPaths.has(relativePath)) continue; // Already handled above
+
+      let rawContent = await nativeFs.promises.readFile(filePath, 'utf8');
+      const filename = path.basename(relativePath).toLowerCase();
+      const ext = path.extname(filename);
+      const isIndex = filename.startsWith('index.');
+      const isReadme = filename === 'readme.md';
+
+      if (ext === '.ejs') {
+        try {
+          const fmRegex = /^(?:---[\r\n]+)([\s\S]*?)(?:[\r\n]+---(?:[\r\n]+|$))/;
+          const fmMatch = rawContent.match(fmRegex);
+          let ejsBody = rawContent;
+          const fmData: Record<string, any> = {};
+          let fmRaw = '';
+          if (fmMatch) {
+            fmRaw = fmMatch[0];
+            ejsBody = rawContent.slice(fmRaw.length);
+            const yamlStr = fmMatch[1];
+            for (const line of yamlStr.split('\n')) {
+              const kv = line.match(/^(\w+)\s*:\s*(.+)$/);
+              if (kv) {
+                let val: any = kv[2].trim();
+                if (/^\d+$/.test(val)) val = parseInt(val, 10);
+                else if (val === 'true') val = true;
+                else if (val === 'false') val = false;
+                else val = val.replace(/^["']|["']$/g, '');
+                fmData[kv[1]] = val;
+              }
+            }
+          }
+          const renderedBody = await parser.renderTemplateAsync(ejsBody, { ...fmData }, { filename: filePath });
+          rawContent = fmRaw ? fmRaw + '\n' + renderedBody : renderedBody;
+        } catch (e) {
+          console.warn(`[docmd] Skipping EJS render error in ${relativePath}: ${e.message}`);
+          continue;
+        }
+      }
+
+      const hasIndexInFolder = localeFiles.some(f => {
+        const b = path.basename(f).toLowerCase();
+        return b.startsWith('index.') && path.dirname(f) === path.dirname(filePath);
+      });
+
+      const effectivelyIndex = isIndex || (isReadme && !hasIndexInFolder);
+      const processed = parser.processContent(rawContent, mdProcessor, config, { isIndex: effectivelyIndex });
+      if (!processed) continue;
+
+      const withoutExt = relativePath.replace(/\.(md|markdown|ejs)$/, '');
+      const htmlOutputPath = effectivelyIndex
+        ? path.posix.join(outputPrefix, path.dirname(relativePath), 'index.html').replace(/^\/?/, '')
+        : path.posix.join(outputPrefix, withoutExt, 'index.html').replace(/^\/?/, '');
+      pages.push({ ...processed, sourcePath: filePath, outputPath: htmlOutputPath });
+    }
   }
 
   // --- 3. Render HTML ---
@@ -184,6 +327,15 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
     // Navigation Context
     let navPath = '/' + page.outputPath.replace(/\\/g, '/').replace(/\/index\.html$/, '').replace(/^index\.html$/, '');
     if (navPath === '/.') navPath = '/';
+    
+    // Strip outputPrefix (locale + version) from navPath so it matches navigation.json paths
+    if (outputPrefix) {
+      const prefixStr = '/' + outputPrefix.replace(/\/$/, '');
+      if (navPath.startsWith(prefixStr + '/') || navPath === prefixStr) {
+        navPath = navPath.substring(prefixStr.length) || '/';
+      }
+    }
+    
     const { prevPage, nextPage } = findPageNeighbors(config.navigation, navPath);
     const breadcrumbs = config.layout?.breadcrumbs !== false ? findBreadcrumbs(config.navigation, navPath) : [];
 
@@ -204,7 +356,8 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
 
     const fullHeadHtml = [
       hooks.injectHead.map((fn: any) => fn(config, pageContext, relativePathToRoot)).join('\n'),
-      assetHeadHtml
+      assetHeadHtml,
+      generateHreflangTags(config, page.outputPath)
     ].join('\n');
 
     const fullBodyHtml = [
@@ -216,11 +369,12 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
     const sourceRelative = path.relative(process.cwd(), page.sourcePath).replace(/\\/g, '/');
 
     let editUrl = null;
-    const editLinkText = config.editLink?.text || 'Edit this page';
+    const editLinkText = config.editLink?.text || t('editThisPage');
 
     if (config.editLink && config.editLink.enabled && config.editLink.baseUrl) {
       const cleanBase = config.editLink.baseUrl.replace(/\/$/, '');
-      const editRelative = path.relative(srcDir, page.sourcePath).replace(/\\/g, '/');
+      // For locale-aware edits, resolve relative to the actual file that was used
+      const editRelative = path.relative(path.resolve(process.cwd(), config.src || '.'), page.sourcePath).replace(/\\/g, '/');
       editUrl = `${cleanBase}/${editRelative}`;
     }
 
@@ -230,7 +384,9 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
       navItems: config.navigation,
       currentPagePath: navPath,
       relativePathToRoot,
-      isOfflineMode: options.offline
+      outputPrefix,
+      isOfflineMode: options.offline,
+      t
     }, { filename: ui.getTemplatePath('navigation') });
 
     // Render Full Page
@@ -276,6 +432,18 @@ export async function renderPages({ config, srcDir, outputDir, hooks, buildHash,
 
       // Source file path for plugin use (e.g. threads RPC)
       sourceFile: sourceRelative,
+
+      // i18n locale context
+      activeLocale: config._activeLocale || null,
+      allLocales: config._allLocales || null,
+      defaultLocale: config._defaultLocale || null,
+      i18nInPlace: config.i18n?.inPlace || false,
+      localePrefix: config._localeOutputPrefix || '',
+      currentPagePath: navPath,
+      outputPrefix,
+
+      // Translation function
+      t,
 
       // Placeholders for template compatibility
       themeCssLinkHtml: '',

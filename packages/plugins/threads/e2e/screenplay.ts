@@ -6,7 +6,7 @@
  * WebSocket actions instead of HTTP API).
  */
 
-import { expect } from "@playwright/test";
+
 import type { Page } from "@playwright/test";
 
 // ---------------------------------------------------------------------------

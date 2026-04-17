@@ -1,5 +1,6 @@
 import { LitElement, html, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { t } from '../lib/i18n';
 
 import '@awesome.me/webawesome/dist/components/button/button.js';
 import '@awesome.me/webawesome/dist/components/textarea/textarea.js';
@@ -8,9 +9,9 @@ import '@awesome.me/webawesome/dist/components/textarea/textarea.js';
 export class ThreadsCompose extends LitElement {
   override createRenderRoot() { return this; }
 
-  @property({ type: String }) placeholder = 'Add a comment...';
+  @property({ type: String }) placeholder = '';
   @property({ type: String }) quote: string | null = null;
-  @property({ type: String, attribute: 'submit-label' }) submitLabel = 'Comment';
+  @property({ type: String, attribute: 'submit-label' }) submitLabel = '';
   @property({ type: Boolean }) cancellable = false;
 
   private submit(): void {
@@ -37,16 +38,16 @@ export class ThreadsCompose extends LitElement {
           <div class="tc-compose__quote">${this.quote}</div>
         ` : nothing}
         <wa-textarea
-          placeholder=${this.placeholder}
+          placeholder=${this.placeholder || t('addComment')}
           rows="2"
           resize="vertical"
           size="small"
         ></wa-textarea>
         <div class="tc-compose__actions">
           ${this.cancellable ? html`
-            <wa-button size="small" appearance="plain" @click=${this.cancel}>Cancel</wa-button>
+            <wa-button size="small" appearance="plain" @click=${this.cancel}>${t('cancel')}</wa-button>
           ` : nothing}
-          <wa-button size="small" variant="brand" @click=${this.submit}>${this.submitLabel}</wa-button>
+          <wa-button size="small" variant="brand" @click=${this.submit}>${this.submitLabel || t('comment')}</wa-button>
         </div>
       </div>
     `;

@@ -1,41 +1,13 @@
 # @docmd/parser
 
-The pure logic engine for **docmd**.
+The isomorphic Markdown engine that powers docmd — parses Markdown to HTML with support for callouts, tabs, steps, and changelogs, and runs identically in Node.js and the browser.
 
-This package handles:
-- Markdown parsing (via `markdown-it`)
-- Custom features (Callouts, Tabs, Steps, Changelogs)
-- HTML template rendering (EJS)
+Part of the **[docmd](https://github.com/docmd-io/docmd)** documentation engine.
 
-It is environment-agnostic (Node.js & Browser).
+## Documentation
 
-## The `docmd` Ecosystem
-
-`docmd` is a modular system. Here are the official packages:
-
-**The Engine**
-*   [**@docmd/core**](https://www.npmjs.com/package/@docmd/core) - The CLI runner and build orchestrator.
-*   [**@docmd/parser**](https://www.npmjs.com/package/@docmd/parser) - The pure Markdown-to-HTML logic.
-*   [**@docmd/live**](https://www.npmjs.com/package/@docmd/live) - The browser-based Live Editor bundle.
-
-**Interface & Design**
-*   [**@docmd/ui**](https://www.npmjs.com/package/@docmd/ui) - Base EJS templates and assets.
-*   [**@docmd/themes**](https://www.npmjs.com/package/@docmd/themes) - Official themes (Sky, Ruby, Retro).
-
-**Required Plugins**
-*   [**@docmd/plugin-installer**](https://www.npmjs.com/package/@docmd/plugin-installer) - Plugin installer for docmd.
-*   [**@docmd/plugin-search**](https://www.npmjs.com/package/@docmd/plugin-search) - Offline full-text search.
-*   [**@docmd/plugin-pwa**](https://www.npmjs.com/package/@docmd/plugin-pwa) - Progressive Web App support.
-*   [**@docmd/plugin-mermaid**](https://www.npmjs.com/package/@docmd/plugin-mermaid) - Diagrams and flowcharts.
-*   [**@docmd/plugin-seo**](https://www.npmjs.com/package/@docmd/plugin-seo) - Meta tags and Open Graph data.
-*   [**@docmd/plugin-sitemap**](https://www.npmjs.com/package/@docmd/plugin-sitemap) - Automatic sitemap generation.
-*   [**@docmd/plugin-llms**](https://www.npmjs.com/package/@docmd/plugin-llms) - AI context generation.
-*   [**@docmd/plugin-analytics**](https://www.npmjs.com/package/@docmd/plugin-analytics) - Google Analytics integration.
-
-**Optional Plugins**
-*   [**@docmd/plugin-threads**](https://www.npmjs.com/package/@docmd/plugin-threads) - Inline discussion threads.
-*   [**@docmd/plugin-math**](https://www.npmjs.com/package/@docmd/plugin-math) - Mathematics (KaTeX/LaTeX) support.
+See **[docs.docmd.io](https://docs.docmd.io)** for full usage and API reference.
 
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+MIT

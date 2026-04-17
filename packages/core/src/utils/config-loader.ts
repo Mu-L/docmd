@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -31,7 +31,7 @@ function hasMarkdownFiles(dir: string, maxDepth = 2, currentDepth = 0): boolean 
         if (hasMarkdownFiles(path.join(dir, entry.name), maxDepth, currentDepth + 1)) return true;
       }
     }
-  } catch (e) { /* ignore */ }
+  } catch { /* ignore */ }
   return false;
 }
 
@@ -88,7 +88,7 @@ async function buildZeroConfig(cwd: string, isDev = false, quiet = false) {
       }
       if (pkg.description) autoDesc = pkg.description;
     }
-  } catch (e) { /* ignore */ }
+  } catch { /* ignore */ }
 
   // Dynamically build the navigation tree
   const autoNav = buildAutoNav(absSrcDir);
@@ -109,10 +109,6 @@ async function buildZeroConfig(cwd: string, isDev = false, quiet = false) {
 export async function loadConfig(configPath: string, options: any = {}) {
   const cwd = process.cwd();
 
-  if (options.zeroConfig) {
-    return await buildZeroConfig(cwd, options.isDev, options.quiet);
-  }
-
   let absoluteConfigPath = path.resolve(cwd, configPath);
 
   if (!fs.existsSync(absoluteConfigPath) && configPath === 'docmd.config.js') {
@@ -121,7 +117,7 @@ export async function loadConfig(configPath: string, options: any = {}) {
     else {
       // Fallback to Zero-Config if nothing is found to prevent crashing!
       if (!(global as any).__DOCMD_NO_CONFIG_LOGGED && !options.quiet) {
-        console.log(chalk.yellow('⚠️  ') + chalk.dim('No config file found. Falling back to Zero-Config mode...'));
+        console.log(chalk.yellow('⚠️  ') + chalk.dim('No config found — running in auto mode. Run `docmd init` to create one.'));
         (global as any).__DOCMD_NO_CONFIG_LOGGED = true;
       }
       return await buildZeroConfig(cwd, options.isDev, options.quiet);
@@ -150,6 +146,13 @@ export async function loadConfig(configPath: string, options: any = {}) {
             platform: 'node',
             target: 'node18'
         });
+        configUrl = pathToFileURL(tempConfigPath).href;
+    } else if (absoluteConfigPath.endsWith('.js') || absoluteConfigPath.endsWith('.mjs')) {
+        // Copy to a temp file to guarantee cache bypass (query strings
+        // are not always reliable for ESM cache busting in all Node versions)
+        const ext = path.extname(absoluteConfigPath);
+        tempConfigPath = absoluteConfigPath.replace(new RegExp(`\\${ext}$`), `-${ts}${ext}`);
+        fs.copyFileSync(absoluteConfigPath, tempConfigPath);
         configUrl = pathToFileURL(tempConfigPath).href;
     }
 
@@ -187,12 +190,44 @@ export async function loadConfig(configPath: string, options: any = {}) {
 
     // Ensure we have a navigation array, fallback to Auto-Router if empty (unless explicitly set to empty)
     if (!normalized.navigation || (normalized.navigation.length === 0 && !hasExplicitNav)) {
-      if (!options.quiet && !(global as any).__DOCMD_ZERO_NAV_LOGGED) {
-        console.log(chalk.dim('   ➖ No navigation settings found in config!'));
-        console.log(chalk.dim('   ✨ Auto-generating navigation with Zero-Config...'));
-        if (options.isDev) (global as any).__DOCMD_ZERO_NAV_LOGGED = true;
+      // When i18n or versioning is enabled, check if navigation.json exists
+      // in locale/version dirs before warning — it will be loaded later per-locale/version
+      let navScanDir = path.resolve(cwd, normalized.srcDir);
+      let hasNavInSubdirs = false;
+
+      if (normalized.i18n?.default) {
+        const localeScanDir = path.join(navScanDir, normalized.i18n.default);
+        if (fs.existsSync(localeScanDir)) {
+          navScanDir = localeScanDir;
+        }
+        // Check if any locale dir has navigation.json
+        hasNavInSubdirs = (normalized.i18n.locales || []).some((l: any) =>
+          fs.existsSync(path.join(path.resolve(cwd, normalized.srcDir), l.id, 'navigation.json'))
+        );
       }
-      normalized.navigation = buildAutoNav(path.resolve(cwd, normalized.srcDir));
+
+      // Check if any version dir has navigation.json
+      if (!hasNavInSubdirs && normalized.versions?.all?.length > 0) {
+        hasNavInSubdirs = normalized.versions.all.some((v: any) => {
+          const vDir = path.resolve(cwd, v.dir);
+          // Check base dir and locale subdirs
+          if (fs.existsSync(path.join(vDir, 'navigation.json'))) return true;
+          if (normalized.i18n?.default) {
+            return fs.existsSync(path.join(vDir, normalized.i18n.default, 'navigation.json'));
+          }
+          return false;
+        });
+      }
+
+      if (!hasNavInSubdirs) {
+        if (!options.quiet && !(global as any).__DOCMD_ZERO_NAV_LOGGED) {
+          console.log(chalk.dim('   ➖ No navigation settings found in config!'));
+          console.log(chalk.dim('   ✨ Auto-generating navigation with Zero-Config...'));
+          if (options.isDev) (global as any).__DOCMD_ZERO_NAV_LOGGED = true;
+        }
+      }
+
+      normalized.navigation = buildAutoNav(navScanDir);
     }
 
     return normalized;

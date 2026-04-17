@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -20,7 +20,7 @@
  * @returns {string} HTML string of meta tags
  */
 
-export function generateMetaTags(config: any, pageData: any, relativePathToRoot: string) {
+export function generateMetaTags(config: any, pageData: any, _relativePathToRoot: string) {
   let html = '';
   const { frontmatter, outputPath } = pageData;
   const seo = frontmatter.seo || {}; // Page-specific SEO overrides
@@ -65,7 +65,7 @@ export function generateMetaTags(config: any, pageData: any, relativePathToRoot:
   }
 
   // 4. Open Graph (Facebook/LinkedIn)
-  html += `<meta property="og:title" content="${pageTitle} : ${siteTitle}">\n`;
+  html += `<meta property="og:title" content="${pageTitle} — ${siteTitle}">\n`;
   html += `<meta property="og:description" content="${description}">\n`;
   html += `<meta property="og:url" content="${pageUrl}">\n`;
   html += `<meta property="og:type" content="${seo.ogType || frontmatter.ogType || 'website'}">\n`;

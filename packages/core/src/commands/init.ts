@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -123,11 +123,8 @@ export default defineConfig({
     },
     sitemap: { defaultChangefreq: 'weekly' },
     analytics: { 
-      googleV4: { measurementId: 'G-X9WTDL262N' } // Example Google Analytics ID, replace with your own
-    },
-    search: {},
-    mermaid: {},
-    llms: {}
+      googleV4: { measurementId: 'G-X9WTDL262N' } // Change the example GA ID with your own
+    }
   },
   
   // --- Edit Link ---
@@ -165,7 +162,7 @@ You can nest containers, add custom titles, and use emojis! :tada:
 :::
 
 ::: card "Flexible Structure"
-Organize your content with cards.
+Organise your content with cards.
 ::: button "View Documentation" https://docs.docmd.io
 :::
 
@@ -185,14 +182,14 @@ print('Hello World')
 ### 3. Plugins (Enabled by Default)
 - **Search**
 - **Sitemap**
-- **SEO Optimization**
+- **SEO Optimisation**
 - **Analytics**
 - **Mermaid Diagrams**
 - **LLMs (AI Integration)**
 
 ## Next Steps
 - **[Official Documentation](https://docs.docmd.io)**
-- **[Customize Theme](https://docs.docmd.io/theming/available-themes)**
+- **[Customise Theme](https://docs.docmd.io/theming/available-themes)**
 - **[Deploy Site](https://docs.docmd.io/deployment)**
 
 Happy documenting! 🎉`;

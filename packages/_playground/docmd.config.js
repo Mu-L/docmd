@@ -82,6 +82,20 @@ module.exports = defineConfig({
       }
     ]
   },
+
+  // --- i18n (Internationalisation) ---
+  // Enables multi-language static generation with locale-first URL routing.
+  // Each locale gets its own complete site at /{locale}/ with its own search index.
+  i18n: {
+    default: 'en',
+    locales: [
+      { id: 'en', label: 'English', dir: 'ltr' },
+      { id: 'hi', label: 'हिन्दी', dir: 'ltr' },
+      { id: 'zh', label: '中文', dir: 'ltr' },
+      // { id: 'ar', label: 'العربية', dir: 'rtl' },
+    ]
+  },
+
   navigation: [
     { title: 'Latest Home', path: '/', icon: 'home' },
     { title: 'Nostyle', path: '/nostyle', icon: 'file' },

@@ -1,7 +1,7 @@
 {
   "name": "@docmd/core",
-  "version": "0.6.9",
-  "description": "The minimalist, zero-config documentation generator.",
+  "version": "0.7.0",
+  "description": "The zero-config documentation engine. Markdown to production docs in one command.",
   "type": "module",
   "browser": false,
   "main": "dist/index.js",

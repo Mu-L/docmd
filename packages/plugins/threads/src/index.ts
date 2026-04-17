@@ -6,8 +6,29 @@ import { setup as setupHighlightRule } from './plugin/highlight-rule.js';
 import { actions } from './plugin/actions.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const i18nDir = path.resolve(__dirname, '..', 'i18n');
 
-export function markdownSetup(md: any, options?: any): void {
+function loadPluginStrings(localeId: string): Record<string, string> {
+  try {
+    const localePath = path.join(i18nDir, `${localeId}.json`);
+    if (fs.existsSync(localePath)) {
+      return JSON.parse(fs.readFileSync(localePath, 'utf8'));
+    }
+  } catch { /* fallback below */ }
+  try {
+    const enPath = path.join(i18nDir, 'en.json');
+    if (fs.existsSync(enPath)) {
+      return JSON.parse(fs.readFileSync(enPath, 'utf8'));
+    }
+  } catch { /* silent */ }
+  return {};
+}
+
+export function translations(localeId: string): Record<string, string> {
+  return loadPluginStrings(localeId || 'en');
+}
+
+export function markdownSetup(md: any, _options?: any): void {
   setupContainers(md);
   setupHighlightRule(md);
 }
@@ -26,13 +47,17 @@ export function generateScripts(config: any, options?: any): { headScriptsHtml: 
     sidebar: options?.sidebar === true,
   });
 
+  // Load i18n strings for the active locale
+  const localeId = config._activeLocale?.id || 'en';
+  const i18nStrings = JSON.stringify(loadPluginStrings(localeId));
+
   return {
     headScriptsHtml: '',
-    bodyScriptsHtml: `<script>window.__threads_authors=${authorsJson};window.__threads_config=${clientConfig}</script>`
+    bodyScriptsHtml: `<script>window.__threads_authors=${authorsJson};window.__threads_config=${clientConfig};window.__threads_i18n=${i18nStrings}</script>`
   };
 }
 
-export function getAssets(options?: any): any[] {
+export function getAssets(_options?: any): any[] {
   // Resolve relative to the compiled output location
   const distDir = path.resolve(__dirname, '..', 'dist', 'client');
   return [

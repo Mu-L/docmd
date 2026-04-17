@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -12,7 +12,7 @@
  * --------------------------------------------------------------------
  */
 
-import chalk from 'chalk';
+
 
 /**
  * Normalizes user config to ensure all required nested objects exist.
@@ -175,7 +175,25 @@ export function normalizeConfig(userConfig: any) {
         content: 'The page you are looking for does not exist or has been moved.'
     };
 
-    // --- 8. OptionsMenu Fallbacks ---
+    // --- 8. Internationalisation (i18n) ---
+    if (config.i18n && config.i18n.locales && Array.isArray(config.i18n.locales) && config.i18n.locales.length > 0) {
+        config.i18n = {
+            default: config.i18n.default || config.i18n.locales[0].id || 'en',
+            position: config.i18n.position || 'options-menu',
+            stringMode: config.i18n.stringMode || false,
+            inPlace: config.i18n.inPlace || false,
+            locales: config.i18n.locales.map((loc: any) => ({
+                id: loc.id,
+                label: loc.label || loc.id,
+                dir: loc.dir || 'ltr',
+                translations: loc.translations || {}
+            }))
+        };
+    } else {
+        config.i18n = false;
+    }
+
+    // --- 9. OptionsMenu Fallbacks ---
     if (config.optionsMenu.position === 'menubar' && (!config.menubar || config.menubar.enabled === false)) {
         config.optionsMenu.position = 'sidebar-top';
     } else if (config.optionsMenu.position === 'header' && (!config.header || config.header.enabled === false)) {

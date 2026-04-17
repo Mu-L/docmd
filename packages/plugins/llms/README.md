@@ -1,56 +1,25 @@
 # @docmd/plugin-llms
 
-Automatically generate an `llms.txt` file for your documentation site to provide context for AI agents (ChatGPT, Claude, Cursor, etc.).
+Generates `llms.txt` and `llms-full.txt` at build time so your documentation is immediately accessible to AI agents — ChatGPT, Claude, Cursor, and any tool that follows the [llmstxt.org](https://llmstxt.org/) standard.
 
-This plugin follows the standard defined at [llmstxt.org](https://llmstxt.org/).
+Bundled with `@docmd/core`. Requires `siteUrl` in your config to produce valid absolute links.
 
-## Installation
-
-This plugin is bundled with `@docmd/core`.
-
-## Usage
-
-Enable the plugin in your `docmd.config.js`. **Note:** A `siteUrl` is required to generate valid absolute links for AI tools.
-
-```javascript
+```js
+// docmd.config.js
 module.exports = {
   siteUrl: 'https://your-site.com',
   plugins: {
-    llms: {} // Enables llms.txt generation
+    llms: {}
   }
-}
+};
 ```
 
-## How it works
-On every build, this plugin scans your pages and creates a `/llms.txt` file in your output directory. AI tools use this file to understand the structure of your documentation and find relevant information more efficiently.
+Part of the **[docmd](https://github.com/docmd-io/docmd)** documentation engine.
 
-## The `docmd` Ecosystem
+## Documentation
 
-`docmd` is a modular system. Here are the official packages:
-
-**The Engine**
-*   [**@docmd/core**](https://www.npmjs.com/package/@docmd/core) - The CLI runner and build orchestrator.
-*   [**@docmd/parser**](https://www.npmjs.com/package/@docmd/parser) - The pure Markdown-to-HTML logic.
-*   [**@docmd/live**](https://www.npmjs.com/package/@docmd/live) - The browser-based Live Editor bundle.
-
-**Interface & Design**
-*   [**@docmd/ui**](https://www.npmjs.com/package/@docmd/ui) - Base EJS templates and assets.
-*   [**@docmd/themes**](https://www.npmjs.com/package/@docmd/themes) - Official themes (Sky, Ruby, Retro).
-
-**Required Plugins**
-*   [**@docmd/plugin-installer**](https://www.npmjs.com/package/@docmd/plugin-installer) - Plugin installer for docmd.
-*   [**@docmd/plugin-search**](https://www.npmjs.com/package/@docmd/plugin-search) - Offline full-text search.
-*   [**@docmd/plugin-pwa**](https://www.npmjs.com/package/@docmd/plugin-pwa) - Progressive Web App support.
-*   [**@docmd/plugin-mermaid**](https://www.npmjs.com/package/@docmd/plugin-mermaid) - Diagrams and flowcharts.
-*   [**@docmd/plugin-seo**](https://www.npmjs.com/package/@docmd/plugin-seo) - Meta tags and Open Graph data.
-*   [**@docmd/plugin-sitemap**](https://www.npmjs.com/package/@docmd/plugin-sitemap) - Automatic sitemap generation.
-*   [**@docmd/plugin-llms**](https://www.npmjs.com/package/@docmd/plugin-llms) - AI context generation.
-*   [**@docmd/plugin-analytics**](https://www.npmjs.com/package/@docmd/plugin-analytics) - Google Analytics integration.
-
-**Optional Plugins**
-*   [**@docmd/plugin-threads**](https://www.npmjs.com/package/@docmd/plugin-threads) - Inline discussion threads.
-*   [**@docmd/plugin-math**](https://www.npmjs.com/package/@docmd/plugin-math) - Mathematics (KaTeX/LaTeX) support.
+See **[docs.docmd.io](https://docs.docmd.io)** for full usage and API reference.
 
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+MIT

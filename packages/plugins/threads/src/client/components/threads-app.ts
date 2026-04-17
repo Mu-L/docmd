@@ -5,6 +5,7 @@ import * as api from '../lib/api';
 import { initIdentity, getIdentityPayload } from '../lib/identity';
 import { computeAnchor, getSelectionPosition, isWithinContent } from '../lib/selection';
 import { initThemeBridge } from '../lib/theme';
+import { t } from '../lib/i18n';
 
 import './threads-popover';
 import './threads-inline-editor';
@@ -123,8 +124,8 @@ export class ThreadsApp extends LitElement {
 
       const btn = document.createElement('button');
       btn.className = 'threads-new-thread-btn';
-      btn.innerHTML = `<wa-icon name="plus" style="font-size:14px;"></wa-icon> New Thread`;
-      btn.title = 'Start a new discussion thread';
+      btn.innerHTML = `<wa-icon name="plus" style="font-size:14px;"></wa-icon> ${t('newThread')}`;
+      btn.title = t('startThread');
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -414,8 +415,8 @@ export class ThreadsApp extends LitElement {
         // Reply button
         const replyBtn = document.createElement('button');
         replyBtn.className = 'threads-comment-reply-btn';
-        replyBtn.innerHTML = `<wa-icon name="reply" style="font-size:13px;"></wa-icon> Reply`;
-        replyBtn.title = 'Reply to this comment';
+        replyBtn.innerHTML = `<wa-icon name="reply" style="font-size:13px;"></wa-icon> ${t('reply')}`;
+        replyBtn.title = t('replyToComment');
         replyBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           this.openReplyEditor(threadEl, threadId, commentId);
@@ -426,7 +427,7 @@ export class ThreadsApp extends LitElement {
         const delBtn = document.createElement('button');
         delBtn.className = 'threads-delete-btn';
         delBtn.innerHTML = `<wa-icon name="trash" style="font-size:13px;"></wa-icon>`;
-        delBtn.title = 'Delete comment';
+        delBtn.title = t('deleteComment');
         delBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           if (totalComments === 1) {
@@ -458,7 +459,7 @@ export class ThreadsApp extends LitElement {
 
       const btn = document.createElement('button');
       btn.className = 'threads-new-comment-btn';
-      btn.innerHTML = `<wa-icon name="plus" style="font-size:13px;"></wa-icon> New Comment`;
+      btn.innerHTML = `<wa-icon name="plus" style="font-size:13px;"></wa-icon> ${t('newComment')}`;
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         this.openReplyEditor(threadEl, threadId, null);
@@ -469,14 +470,14 @@ export class ThreadsApp extends LitElement {
       const toggleBtn = document.createElement('button');
       toggleBtn.className = 'threads-collapse-btn';
       toggleBtn.innerHTML = `<wa-icon name="chevron-up" style="font-size:14px;"></wa-icon>`;
-      toggleBtn.title = 'Collapse thread';
+      toggleBtn.title = t('collapseThread');
       toggleBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const isCollapsed = threadEl.classList.toggle('threads-thread--collapsed');
         toggleBtn.innerHTML = isCollapsed
           ? `<wa-icon name="chevron-down" style="font-size:14px;"></wa-icon>`
           : `<wa-icon name="chevron-up" style="font-size:14px;"></wa-icon>`;
-        toggleBtn.title = isCollapsed ? 'Expand thread' : 'Collapse thread';
+        toggleBtn.title = isCollapsed ? t('expandThread') : t('collapseThread');
       });
       footer.appendChild(toggleBtn);
 
@@ -507,19 +508,19 @@ export class ThreadsApp extends LitElement {
       byPart = '';
     } else if (uniqueNames.length <= MAX_SHOWN) {
       if (uniqueNames.length === 1) {
-        byPart = ` by ${uniqueNames[0]}`;
+        byPart = ` ${t('by')} ${uniqueNames[0]}`;
       } else if (uniqueNames.length === 2) {
-        byPart = ` by ${uniqueNames[0]} and ${uniqueNames[1]}`;
+        byPart = ` ${t('by')} ${uniqueNames[0]} ${t('and')} ${uniqueNames[1]}`;
       } else {
-        byPart = ` by ${uniqueNames.slice(0, -1).join(', ')}, and ${uniqueNames[uniqueNames.length - 1]}`;
+        byPart = ` ${t('by')} ${uniqueNames.slice(0, -1).join(', ')}, ${t('and')} ${uniqueNames[uniqueNames.length - 1]}`;
       }
     } else {
       const shown = uniqueNames.slice(0, MAX_SHOWN);
       const remaining = uniqueNames.length - MAX_SHOWN;
-      byPart = ` by ${shown.join(', ')}, and ${remaining} more`;
+      byPart = ` ${t('by')} ${shown.join(', ')}, ${t('and')} ${remaining} ${t('more')}`;
     }
 
-    return `${count} comment${count === 1 ? '' : 's'}${byPart}`;
+    return `${count} ${count === 1 ? t('commentCount') : t('commentsCount')}${byPart}`;
   }
 
   /**
@@ -668,7 +669,7 @@ export class ThreadsApp extends LitElement {
     // Toggle strip (collapsed state)
     const toggle = document.createElement('button');
     toggle.className = 'tc-sidebar-toggle';
-    toggle.title = 'Open threads panel';
+    toggle.title = t('openThreadsPanel');
     toggle.innerHTML = '<wa-icon name="comments" variant="regular" style="font-size:16px;"></wa-icon>';
     toggle.addEventListener('click', () => {
       document.body.classList.add('tc-panel-open');
@@ -684,11 +685,11 @@ export class ThreadsApp extends LitElement {
     header.className = 'tc-panel__header';
     header.innerHTML = `
       <div class="tc-panel__title">
-        <span>Threads</span>
+        <span>${t('threads')}</span>
         <span class="tc-panel__count"></span>
       </div>
       <div class="tc-panel__header-actions">
-        <button class="tc-panel__close-btn" title="Close panel" style="background:none;border:none;cursor:pointer;color:var(--tc-muted-fg);padding:4px;">
+         <button class="tc-panel__close-btn" title="${t('closePanel')}" style="background:none;border:none;cursor:pointer;color:var(--tc-muted-fg);padding:4px;">
           <wa-icon name="xmark" variant="solid" style="font-size:16px;"></wa-icon>
         </button>
       </div>
@@ -730,7 +731,7 @@ export class ThreadsApp extends LitElement {
     const countEl = document.querySelector('.tc-panel__count');
     if (countEl) {
       const openCount = this.threads.filter(t => !t.resolved).length;
-      countEl.textContent = openCount > 0 ? `(${openCount} open)` : '';
+      countEl.textContent = openCount > 0 ? `(${openCount} ${t('openCount')})` : '';
     }
   }
 
@@ -741,7 +742,7 @@ export class ThreadsApp extends LitElement {
 
     const fab = document.createElement('button');
     fab.className = 'threads-fab';
-    fab.title = 'Jump to threads';
+    fab.title = t('jumpToThreads');
     fab.innerHTML = `<wa-icon name="comments" variant="regular" style="font-size:20px;"></wa-icon>`;
 
     const badge = document.createElement('span');
@@ -818,10 +819,10 @@ export class ThreadsApp extends LitElement {
         @add-comment=${this.handleAddComment}
       ></threads-popover>
 
-      <wa-dialog id="delete-dialog" label="Confirm Delete" light-dismiss>
-        Are you sure you want to delete this ${this.deleteTarget?.type ?? 'item'}?
-        <wa-button slot="footer" appearance="outlined" @click=${this.cancelDelete}>Cancel</wa-button>
-        <wa-button slot="footer" variant="danger" @click=${this.confirmDelete}>Delete</wa-button>
+      <wa-dialog id="delete-dialog" label=${t('confirmDelete')} light-dismiss>
+        ${t('confirmDeleteMessage')} ${this.deleteTarget?.type ?? 'item'}?
+        <wa-button slot="footer" appearance="outlined" @click=${this.cancelDelete}>${t('cancel')}</wa-button>
+        <wa-button slot="footer" variant="danger" @click=${this.confirmDelete}>${t('delete')}</wa-button>
       </wa-dialog>
     `;
   }

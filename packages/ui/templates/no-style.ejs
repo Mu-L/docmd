@@ -1,33 +1,48 @@
 <!--
   ---------------------------------------------------------------
-  docmd : the minimalist, zero-config documentation generator.
+  docmd : the zero-config documentation engine.
   @website https://docmd.io
   [docmd-source] - Please do not remove this header.
   ---------------------------------------------------------------
 -->
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<%= (locals.activeLocale && locals.activeLocale.id) ? locals.activeLocale.id : 'en' %>"<%= (locals.activeLocale && locals.activeLocale.dir && locals.activeLocale.dir !== 'ltr') ? ' dir="' + locals.activeLocale.dir + '"' : '' %>>
 
 <head>
   <meta charset="UTF-8">
   <meta name="generator" content="docmd v0.5.x">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <script>
+  <%- '<script>' %>
     var root = "<%= relativePathToRoot %>";
     if (root && !root.endsWith('/')) root += '/';
     if (root === '') root = './';
     window.DOCMD_ROOT = root;
     window.DOCMD_APPEARANCE = "<%= appearance %>";
-  </script>
+    window.DOCMD_LOCALE = "<%= (locals.activeLocale && locals.activeLocale.id) ? locals.activeLocale.id : '' %>";
+  <%- '</script>' %>
+
+  <% if (locals.allLocales && locals.allLocales.length > 1) { %>
+  <%
+    var i18nData = {
+      default: locals.defaultLocale || "",
+      locales: (locals.allLocales || []).map(function(l) {
+        return { id: l.id, label: l.label || l.id, dir: l.dir || "ltr" };
+      }),
+      inPlace: locals.i18nInPlace || false
+    };
+  %>
+  <!-- i18n String Replacement Config -->
+  <%- '<script>window.DOCMD_I18N = ' + JSON.stringify(i18nData) + ';</script>' %>
+  <% } %>
 
   <!-- 2. META & TITLE -->
   <% if (frontmatter.components?.meta !==false) { %>
     <%- metaTagsHtml || '' %>
       <title>
         <%= pageTitle %>
-        <% if (frontmatter.components?.siteTitle !==false) { %> : <%= siteTitle %>
+        <% if (frontmatter.components?.siteTitle !==false && siteTitle && pageTitle !== siteTitle) { %> — <%= siteTitle %>
         <% } %>
       </title>
       <% if (description && !(metaTagsHtml && metaTagsHtml.includes('name="description"'))) { %>
@@ -156,7 +171,7 @@
           <%- navigationHtml %>
         <% } %>
         <% if (frontmatter.components?.themeToggle !==false && theme && theme.enableModeToggle) { %>
-          <button id="theme-toggle-button" aria-label="Toggle theme" class="theme-toggle-button">
+          <button id="theme-toggle-button" aria-label="<%= typeof t === 'function' ? t('toggleTheme') : 'Toggle theme' %>" class="theme-toggle-button">
             <%- renderIcon('sun', { class: 'icon-sun' }) %> <%- renderIcon('moon', { class: 'icon-moon' }) %>
           </button>
         <% } %>
@@ -205,7 +220,7 @@
 
     <% if (frontmatter.components?.scripts===true) { %>
       <% if (frontmatter.components?.mainScripts===true) { %>
-        <script>window.DOCMD_ROOT = "<%= relativePathToRoot %>";</script>
+        <%- '<script>window.DOCMD_ROOT = "' + relativePathToRoot + '";</script>' %>
         <script src="<%= relativePathToRoot %>assets/js/docmd-main.js"></script>
       <% } %>
 
@@ -226,6 +241,10 @@
 
     <% if (frontmatter.customScripts) { %>
       <%- frontmatter.customScripts %>
+    <% } %>
+
+    <% if (locals.allLocales && locals.allLocales.length > 1) { %>
+    <script src="<%= relativePathToRoot %>assets/js/docmd-i18n-strings.js?v=<%= buildHash %>"></script>
     <% } %>
   </body>
 </html>

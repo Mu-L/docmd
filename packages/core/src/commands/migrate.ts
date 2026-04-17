@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -15,7 +15,7 @@
 import fs from '../utils/fs-utils.js';
 import path from 'path';
 import chalk from 'chalk';
-import { loadConfig } from '../utils/config-loader.js';
+
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
@@ -46,7 +46,7 @@ export async function migrateProject(configPathOption = 'docmd.config.js') {
     const rawPath = require.resolve(configPath);
     delete require.cache[rawPath];
     oldConfig = require(rawPath);
-  } catch (e) {
+  } catch {
     console.error(chalk.red('❌ Could not read config file.'));
     return;
   }

@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -14,94 +14,211 @@
 
 import path from 'path';
 import fs from 'fs/promises';
+import nativeFs from 'fs';
 import MiniSearch from 'minisearch';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Resolve i18n directory (sibling to dist/ in the package)
+const i18nDir = path.resolve(__dirname, '..', 'i18n');
+
+/**
+ * Load translation strings for a given locale.
+ * Falls back to English if the locale file doesn't exist.
+ */
+function loadPluginStrings(localeId: string): Record<string, string> {
+  try {
+    // Try locale-specific file
+    const localePath = path.join(i18nDir, `${localeId}.json`);
+    if (nativeFs.existsSync(localePath)) {
+      return JSON.parse(nativeFs.readFileSync(localePath, 'utf8'));
+    }
+  } catch { /* fallback below */ }
+  // Fallback to English
+  try {
+    const enPath = path.join(i18nDir, 'en.json');
+    if (nativeFs.existsSync(enPath)) {
+      return JSON.parse(nativeFs.readFileSync(enPath, 'utf8'));
+    }
+  } catch { /* silent */ }
+  return {};
+}
+
+/**
+ * Plugin translations hook — called by the engine for each locale.
+ * Returns search-specific UI strings keyed by locale.
+ */
+export function translations(localeId: string): Record<string, string> {
+  return loadPluginStrings(localeId || 'en');
+}
+
+/**
+ * Post-build hook — generates per-locale search indexes.
+ * Each locale gets its own `search-index.json` covering all versions within that locale.
+ * Default locale index is at root, non-default locale indexes are at `/{locale}/search-index.json`.
+ */
 export async function onPostBuild({ config, pages, outputDir, log }: any) {
-  // Check if disabled in new config schema or old config schema
   const isEnabled = config.optionsMenu ? config.optionsMenu.components.search !== false : config.search !== false;
   if (!isEnabled) return;
 
   if (log) log('🔍 Generating search index...');
 
-  const searchData = [];
-  const seenIds = new Set();
-  pages.forEach(page => {
-    if (page.searchData) {
+  // Determine locale configuration
+  const locales = config.i18n?.locales || [];
+  const defaultLocale = config.i18n?.default || null;
+  const hasVersioning = config.versions?.all?.length > 0;
+  const currentVersionId = config.versions?.current;
+
+  // Group pages by locale
+  const localePages: Record<string, any[]> = { '_default': [] };
+  for (const loc of locales) {
+    if (loc.id !== defaultLocale) {
+      localePages[loc.id] = [];
+    }
+  }
+
+  for (const page of pages) {
+    if (!page.searchData) continue;
+    const outputPath = page.outputPath.replace(/\\/g, '/');
+
+    // Determine which locale this page belongs to
+    let localeId = '_default';
+    for (const loc of locales) {
+      if (loc.id !== defaultLocale && outputPath.startsWith(loc.id + '/')) {
+        localeId = loc.id;
+        break;
+      }
+    }
+    localePages[localeId] = localePages[localeId] || [];
+    localePages[localeId].push(page);
+  }
+
+  // Build an index per locale
+  for (const [localeId, locPages] of Object.entries(localePages)) {
+    if (locPages.length === 0) continue;
+
+    const searchData: any[] = [];
+    const seenIds = new Set();
+
+    for (const page of locPages) {
       let pageId = page.outputPath.replace(/\\/g, '/');
       if (pageId.endsWith('/index.html')) pageId = pageId.slice(0, -10);
       if (pageId.endsWith('.html')) pageId = pageId.slice(0, -5);
 
-      // 1. Add the main page record
+      // Detect version from the output path
+      let version: string | null = null;
+      if (hasVersioning && config.versions?.all) {
+        for (const v of config.versions.all) {
+          // Check for version prefix: `hi/05/page` or `05/page`
+          const stripped = localeId !== '_default' ? pageId.replace(new RegExp(`^${localeId}/`), '') : pageId;
+          if (stripped.startsWith(v.id + '/') || stripped === v.id) {
+            version = v.label || v.id;
+            break;
+          }
+        }
+        // Current version pages have no prefix — tag them with the current label
+        if (!version) {
+          const currentVersion = config.versions.all.find((v: any) => v.id === currentVersionId);
+          if (currentVersion) version = currentVersion.label || currentVersion.id;
+        }
+      }
+
+      // Add the main page record
       if (!seenIds.has(pageId)) {
         seenIds.add(pageId);
-        searchData.push({
+        const entry: any = {
           id: pageId,
           title: page.searchData.title,
           text: page.searchData.content,
-          // We can keep page-level headings as a string block for general page matching
-          headings: (page.searchData.headings || []).map(h => h.text).join(' ')
-        });
+          headings: (page.searchData.headings || []).map((h: any) => h.text).join(' ')
+        };
+        if (hasVersioning && version) entry.version = version;
+        searchData.push(entry);
       }
 
-      // 2. Add individual heading records for deep linking
+      // Add individual heading records for deep linking
       if (page.searchData.headings && Array.isArray(page.searchData.headings)) {
-        page.searchData.headings.forEach(heading => {
+        for (const heading of page.searchData.headings) {
           if (heading.id && heading.text) {
             const hId = `${pageId}#${heading.id}`;
             if (!seenIds.has(hId)) {
               seenIds.add(hId);
-              searchData.push({
+              const entry: any = {
                 id: hId,
                 title: `${page.searchData.title} > ${heading.text}`,
                 text: '',
                 headings: heading.text
-              });
+              };
+              if (hasVersioning && version) entry.version = version;
+              searchData.push(entry);
             }
           }
-        });
+        }
       }
     }
-  });
 
-  const miniSearch = new MiniSearch({
-    fields: ['title', 'headings', 'text'],
-    storeFields: ['title', 'id', 'text'],
-    searchOptions: { boost: { title: 2, headings: 1.5 }, fuzzy: 0.2 }
-  });
+    // Build MiniSearch index
+    const storeFields = ['title', 'id', 'text'];
+    if (hasVersioning) storeFields.push('version');
 
-  miniSearch.addAll(searchData);
+    const miniSearch = new MiniSearch({
+      fields: ['title', 'headings', 'text'],
+      storeFields,
+      searchOptions: { boost: { title: 2, headings: 1.5 }, fuzzy: 0.2 }
+    });
 
-  const json = JSON.stringify(miniSearch.toJSON());
-  await fs.writeFile(path.join(outputDir, 'search-index.json'), json);
+    miniSearch.addAll(searchData);
+    const json = JSON.stringify(miniSearch.toJSON());
+
+    // Write to the correct locale directory
+    const indexPath = localeId === '_default'
+      ? path.join(outputDir, 'search-index.json')
+      : path.join(outputDir, localeId, 'search-index.json');
+
+    await fs.mkdir(path.dirname(indexPath), { recursive: true });
+    await fs.writeFile(indexPath, json);
+  }
 }
 
-// Inject the modal HTML only if the plugin is running
+/**
+ * Inject the search modal HTML.
+ * Strings are passed as data attributes so the client JS can read them
+ * regardless of locale — the engine merges plugin translations before render.
+ */
 export function generateScripts(config: any) {
   const isEnabled = config.optionsMenu ? config.optionsMenu.components.search !== false : config.search !== false;
   if (!isEnabled) return {};
+
+  // Load strings for the active locale (available at render time)
+  const localeId = config._activeLocale?.id || 'en';
+  const strings = loadPluginStrings(localeId);
 
   const searchIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-icon icon-search"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>`;
   const closeIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-icon icon-x"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>`;
 
   const modalHtml = `
   <!-- Search Modal (Injected by @docmd/plugin-search) -->
-  <div id="docmd-search-modal" class="docmd-search-modal" style="display: none;">
+  <div id="docmd-search-modal" class="docmd-search-modal" style="display: none;"
+       data-search-placeholder="${strings.searchPlaceholder || 'Search documentation...'}"
+       data-search-no-results="${strings.searchNoResults || 'No results found.'}"
+       data-search-error="${strings.searchError || 'Failed to load search index.'}"
+       data-search-initial="${strings.searchInitial || 'Type to start searching...'}"
+       data-search-navigate="${strings.searchNavigate || 'to navigate'}"
+       data-search-escape="${strings.searchEscape || 'to close'}">
       <div class="docmd-search-box">
           <div class="docmd-search-header">
               ${searchIcon}
-              <input type="text" id="docmd-search-input" placeholder="Search documentation..." autocomplete="off" spellcheck="false">
-              <button onclick="window.closeDocmdSearch()" class="docmd-search-close" aria-label="Close search">
+              <input type="text" id="docmd-search-input" placeholder="${strings.searchPlaceholder || 'Search documentation...'}" autocomplete="off" spellcheck="false">
+              <button onclick="window.closeDocmdSearch()" class="docmd-search-close" aria-label="${strings.searchClose || 'Close search'}">
                   ${closeIcon}
               </button>
           </div>
           <div id="docmd-search-results" class="docmd-search-results"></div>
           <div class="docmd-search-footer">
-              <span><kbd class="docmd-kbd">↑</kbd> <kbd class="docmd-kbd">↓</kbd> to navigate</span>
-              <span><kbd class="docmd-kbd">ESC</kbd> to close</span>
+              <span><kbd class="docmd-kbd">↑</kbd> <kbd class="docmd-kbd">↓</kbd> ${strings.searchNavigate || 'to navigate'}</span>
+              <span><kbd class="docmd-kbd">ESC</kbd> ${strings.searchEscape || 'to close'}</span>
           </div>
       </div>
   </div>`;

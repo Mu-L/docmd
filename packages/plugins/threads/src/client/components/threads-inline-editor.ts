@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { t } from '../lib/i18n';
 
 import '@awesome.me/webawesome/dist/components/button/button.js';
 import '@awesome.me/webawesome/dist/components/textarea/textarea.js';
@@ -125,7 +126,7 @@ export class ThreadsInlineEditor extends LitElement {
       <div class="editor">
         <div class="editor-body">
           <wa-textarea
-            placeholder="Write your comment..."
+            placeholder=${t('writeComment')}
             .value=${this.value}
             rows="3"
             resize="vertical"
@@ -139,15 +140,15 @@ export class ThreadsInlineEditor extends LitElement {
           ></wa-textarea>
         </div>
         <div class="editor-footer">
-          <span class="hint">Cmd+Enter to submit</span>
+          <span class="hint">${t('cmdEnterSubmit')}</span>
           <div class="actions">
-            <wa-button size="small" appearance="outlined" @click=${this.cancel}>Cancel</wa-button>
+            <wa-button size="small" appearance="outlined" @click=${this.cancel}>${t('cancel')}</wa-button>
             <wa-button
               size="small"
               variant="brand"
               ?disabled=${!this.value.trim() || this.submitting}
               @click=${this.submit}
-            >${this.submitting ? 'Saving...' : 'Submit'}</wa-button>
+            >${this.submitting ? t('saving') : t('submit')}</wa-button>
           </div>
         </div>
       </div>

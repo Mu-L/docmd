@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -29,3 +29,4 @@ export {
 };
 
 export { createDepthTrackingContainer } from './features/index.js';
+export { findPageNeighbors, findBreadcrumbs } from './utils/navigation-helper.js';

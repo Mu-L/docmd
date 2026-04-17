@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -30,7 +30,7 @@ export async function stopServer(port: any) {
                 console.log(chalk.bold.green(`\n✅ docmd server on port ${port} has been stopped.\n`));
                 return;
             }
-        } catch (e) {
+        } catch {
             console.log(chalk.green(`✅ No docmd server found on port ${port}.\n`));
             return;
         }
@@ -82,7 +82,7 @@ export async function stopServer(port: any) {
                 process.stdout.write(chalk.dim(`     - Killing PID ${target.pid}... `));
                 process.kill(target.pid, 'SIGTERM');
                 process.stdout.write(chalk.green('Done.\n'));
-            } catch (err) {
+            } catch {
                 // If SIGTERM fails, try SIGKILL
                 try {
                     process.kill(target.pid, 'SIGKILL');
@@ -99,4 +99,3 @@ export async function stopServer(port: any) {
         console.error(chalk.red('❌ Error during stop:'), error.message);
     }
 }
-

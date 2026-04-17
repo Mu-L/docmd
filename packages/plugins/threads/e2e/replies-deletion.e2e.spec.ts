@@ -13,9 +13,7 @@
 import { test, expect } from "@playwright/test";
 import {
   Actor,
-  NavigateTo,
   ReplyToThread,
-  TheThreadCount,
 } from "./screenplay.ts";
 import { cleanThreads, setAuthor, seedAndReload, waitForReload, waitForClientProcessing } from "./helpers.ts";
 

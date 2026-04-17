@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -12,7 +12,7 @@
  * --------------------------------------------------------------------
  */
 
-// @ts-ignore: Deno/Browser compatible CDN import that TypeScript cannot natively resolve
+// @ts-expect-error Deno/Browser compatible CDN import that TypeScript cannot natively resolve
 import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
 
 (async function () {
@@ -41,7 +41,7 @@ import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.mi
         const { svg } = await mermaid.render(id, code);
         el.innerHTML = svg;
         el.setAttribute('data-processed', 'true');
-      } catch (e) {
+      } catch {
         el.setAttribute('data-processed', 'error');
       }
     }

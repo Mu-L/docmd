@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -18,7 +18,7 @@ import esbuild from 'esbuild';
 import { createRequire } from 'module';
 import nativeFs from 'fs';
 
-const require = createRequire(import.meta.url);
+const _require = createRequire(import.meta.url);
 import * as themes from '@docmd/themes';
 import * as ui from '@docmd/ui';
 
@@ -91,7 +91,7 @@ async function minifyDir(dir: string) {
         legalComments: 'none'
       });
       await nativeFs.promises.writeFile(file, COPYRIGHT_BANNER + '\n' + result.code);
-    } catch (e) {
+    } catch {
       // Ignore errors for non-standard files or mixed content
     }
   }

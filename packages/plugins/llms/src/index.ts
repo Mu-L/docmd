@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -18,12 +18,12 @@ import fs from 'fs/promises';
 export async function onPostBuild({ config, pages, outputDir, log }: any) {
   // Validation
   if (!config.siteUrl) {
-    if (log) log('⚠️  Skipping llms.txt: "siteUrl" is missing in config.');
+    if (log) log('⚠️  Skipping llms.txt: "url" is missing in config.');
     return;
   }
 
   const siteUrl = config.siteUrl.replace(/\/$/, '');
-  const options = config.plugins?.llms || {};
+  const _options = config.plugins?.llms || {};
 
   if (log) log('🤖 Generating llms.txt...');
 
@@ -94,7 +94,7 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
       } else {
         fullContent += `*(Raw content unavailable)*\n\n---\n\n`;
       }
-    } catch (e) {
+    } catch {
       if (log) log(`⚠️ Failed to read raw markdown for ${page.sourcePath}`);
     }
   }

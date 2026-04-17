@@ -2,7 +2,7 @@
 
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -32,7 +32,6 @@ const args = process.argv.slice(2);
 
 const options = {
   config: { type: 'string', short: 'c' },
-  'zero-config': { type: 'boolean', short: 'z' },
   offline: { type: 'boolean' },
   port: { type: 'string', short: 'p' },
   'build-only': { type: 'boolean' },
@@ -72,9 +71,8 @@ if (!command || values.help) {
   console.log(`  remove <plugin> Remove and unconfigure a docmd plugin`);
   console.log(`\nOptions:`);
   console.log(`  -c, --config <path>    Path to config (default: docmd.config.js)`);
-  console.log(`  -z, --zero-config      Run in auto-detect mode without a config file`);
   console.log(`  -p, --port <number>    Port to run server`);
-  console.log(`  --offline              Optimize for file:// viewing`);
+  console.log(`  --offline              Optimise for file:// viewing`);
   console.log(`  --build-only           Generate the dist/ folder without starting the server`);
   console.log(`  -v, --verbose          Show detailed package manager logs`);
   console.log(`  -V, --version          Output the version number`);
@@ -84,7 +82,6 @@ if (!command || values.help) {
 
 const opts = {
   config: values.config || 'docmd.config.js',
-  zeroConfig: values['zero-config'],
   offline: values.offline,
   port: values.port,
   buildOnly: values['build-only'],
@@ -98,7 +95,7 @@ if (command !== 'stop') {
 if (command === 'init') {
   initProject();
 } else if (command === 'build') {
-  buildSite(opts.config, { isDev: false, offline: opts.offline, zeroConfig: opts.zeroConfig });
+  buildSite(opts.config, { isDev: false, offline: opts.offline });
 } else if (command === 'dev') {
   startDevServer(opts.config, opts);
 } else if (command === 'live') {

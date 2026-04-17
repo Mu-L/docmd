@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -69,7 +69,7 @@ async function start() {
       try {
         await fs.stat(userAssetPath);
         filePath = userAssetPath;
-      } catch (e) {
+      } catch {
         // fallback to bundled assets if not found locally
       }
     }

@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -15,7 +15,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 
-export async function onPostBuild({ config, pages, outputDir, log }: any) {
+export async function onPostBuild({ config, outputDir, log }: any) {
   const pwaConfig = config.plugins?.pwa || {};
   if (pwaConfig.enabled === false) return; // Enabled by default if loaded
 

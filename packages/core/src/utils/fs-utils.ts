@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -13,7 +13,7 @@
  */
 
 import fs from 'node:fs/promises';
-import path from 'node:path';
+
 
 export async function ensureDir(dirPath: string) {
   await fs.mkdir(dirPath, { recursive: true });

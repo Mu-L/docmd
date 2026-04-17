@@ -1,6 +1,6 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation engine.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
@@ -36,7 +36,7 @@ function embedRule(state: any, startLine: number, endLine: number, silent: boole
       const hostname = url.hostname.replace('www.', '');
       html = `<div class="docmd-embed-fallback"><a href="${urlStr}" class="docmd-button docmd-button-external" target="_blank" rel="noopener noreferrer">Open ${hostname} link</a></div>`;
     }
-  } catch (e) {
+  } catch {
     // Hard fallback if string is entirely invalid URL
     html = `<div class="docmd-embed-fallback"><a href="${urlStr}" class="docmd-button docmd-button-external" target="_blank" rel="noopener noreferrer">Open link</a></div>`;
   }

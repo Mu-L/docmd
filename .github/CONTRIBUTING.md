@@ -14,18 +14,18 @@ Thank you for your interest in contributing to `docmd`! We appreciate all contri
 
 ### Project Setup
 
-Clone the repository and run the automated onboarding tool to install dependencies and perform an initial build:
+Clone the repository and set up the development environment:
 
 ```bash
 git clone https://github.com/docmd-io/docmd.git
 cd docmd
-pnpm onboard
+pnpm prep
 ```
 
-To link the local `docmd` command globally for testing in other projects:
+To also link the local `docmd` command globally for testing in other projects:
 
 ```bash
-pnpm onboard --link
+pnpm prep --link
 ```
 
 ### Local Development

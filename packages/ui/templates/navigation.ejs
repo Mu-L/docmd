@@ -1,11 +1,11 @@
 <%# ---------------------------------------------------------------
-  # docmd : the minimalist, zero-config documentation generator.
+  # docmd : the zero-config documentation engine.
   # @website https://docmd.io
   # [docmd-source] - Please do not remove this header.
   # ---------------------------------------------------------------
 %>
 
-<nav class="sidebar-nav" aria-label="Main Navigation">
+<nav class="sidebar-nav" aria-label="<%= typeof t === 'function' ? t('mainNavigation') : 'Main Navigation' %>">
   <ul>
     <% function normalizePath(p) { if (!p || p==='#' ) return '#' ; if (p.startsWith('http')) return p; let
       path=p.replace(/^(\.\/|\/)+/, '' ); path=path.replace(/(\/index\.html|index\.html|\.html|\.md)$/, '' );
@@ -45,14 +45,16 @@
 
         let href = item.path || '#';
         if (!isExternal && !isDummyLink && !href.startsWith('http')) {
-        let cleanPath = href.replace(/^(\.\/|\/)+/, '');
-        href = relativePathToRoot + cleanPath;
-        if (isOfflineMode) {
-        if (href.endsWith('/')) href += 'index.html';
-        else if (!href.endsWith('.html')) href += '/index.html';
-        } else {
-        if (href.endsWith('/index.html')) href = href.slice(0, -10);
-        }
+          let cleanPath = href.replace(/^(\.\/|\/)+/, '');
+          // Apply locale + version namespace prefix safely
+          const prefix = (typeof outputPrefix !== 'undefined') ? outputPrefix : '';
+          href = relativePathToRoot + prefix + cleanPath;
+          if (isOfflineMode) {
+            if (href.endsWith('/')) href += 'index.html';
+            else if (!href.endsWith('.html')) href += '/index.html';
+          } else {
+            if (href.endsWith('/index.html')) href = href.slice(0, -10);
+          }
       }
       %>
       <li class="<%= liClasses.join(' ') %>" <% if(isInteractive) { %> aria-expanded="<%= isOpen %>" <% } %>>

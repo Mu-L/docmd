@@ -1,0 +1,10 @@
+{
+  "searchPlaceholder": "搜索文档...",
+  "searchNoResults": "未找到结果。",
+  "searchError": "无法加载搜索索引。",
+  "searchInitial": "输入开始搜索...",
+  "searchClose": "关闭搜索",
+  "searchNavigate": "导航",
+  "searchEscape": "关闭",
+  "searchVersionBadge": "v{version}"
+}
