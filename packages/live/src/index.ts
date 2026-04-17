@@ -69,7 +69,7 @@ async function start() {
       try {
         await fs.stat(userAssetPath);
         filePath = userAssetPath;
-      } catch (e) {
+      } catch {
         // fallback to bundled assets if not found locally
       }
     }

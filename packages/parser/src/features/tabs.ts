@@ -39,11 +39,6 @@ function smartDedent(str) {
   ).join('\n');
 }
 
-// Helper to identify fences
-function isFenceLine(line) {
-  return /^(\s{0,3})(~{3,}|`{3,})/.test(line);
-}
-
 // The Parsing Rule
 function tabsRule(state, startLine, endLine, silent) {
   const start = state.bMarks[startLine] + state.tShift[startLine];
@@ -127,7 +122,7 @@ function tabsRule(state, startLine, endLine, silent) {
   const openToken = state.push('tabs_open', 'div', 1);
   openToken.attrs = [['class', 'docmd-tabs']];
 
-  const navToken = state.push('tabs_nav_open', 'div', 1);
+  state.push('tabs_nav_open', 'div', 1);
   tabs.forEach((tab, index) => {
     const navItemToken = state.push('tabs_nav_item', 'div', 0);
     navItemToken.attrs = [['class', `docmd-tabs-nav-item ${index === 0 ? 'active' : ''}`]];
@@ -135,7 +130,7 @@ function tabsRule(state, startLine, endLine, silent) {
   });
   state.push('tabs_nav_close', 'div', -1);
 
-  const contentToken = state.push('tabs_content_open', 'div', 1);
+  state.push('tabs_content_open', 'div', 1);
   tabs.forEach((tab, index) => {
     const paneToken = state.push('tab_pane_open', 'div', 1);
     paneToken.attrs = [['class', `docmd-tab-pane ${index === 0 ? 'active' : ''}`]];

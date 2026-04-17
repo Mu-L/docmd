@@ -419,7 +419,7 @@ run()
     if (tempDir) {
       try {
         fs.rmSync(tempDir, { recursive: true, force: true });
-      } catch (_) {
+      } catch {
         // ignore cleanup errors
       }
     }

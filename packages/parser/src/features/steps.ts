@@ -64,7 +64,7 @@ function stepsRule(state, startLine, endLine, silent) {
 
   state.md.block.tokenize(state, startLine + 1, nextLine);
 
-  const closeToken = state.push('steps_close', 'div', -1);
+  state.push('steps_close', 'div', -1);
 
   state.parentType = oldParentType;
   state.lineMax = oldLineMax;
@@ -96,7 +96,7 @@ export default {
       return self.renderToken(tokens, idx, options);
     };
 
-    md.renderer.rules.list_item_open = function (tokens, idx, options, env, self) {
+    md.renderer.rules.list_item_open = function (tokens, idx, _options, _env, _self) {
       let isInSteps = false;
       for (let i = idx - 1; i >= 0; i--) {
         if (tokens[i].type === 'steps_open') { isInSteps = true; break; }

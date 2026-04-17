@@ -20,7 +20,7 @@
  * @returns {string} HTML string of meta tags
  */
 
-export function generateMetaTags(config: any, pageData: any, relativePathToRoot: string) {
+export function generateMetaTags(config: any, pageData: any, _relativePathToRoot: string) {
   let html = '';
   const { frontmatter, outputPath } = pageData;
   const seo = frontmatter.seo || {}; // Page-specific SEO overrides

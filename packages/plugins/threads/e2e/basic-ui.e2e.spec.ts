@@ -9,10 +9,10 @@
  */
 
 import { test, expect } from "@playwright/test";
-import { Actor, NavigateTo, SelectText, TheHighlightCount } from "./screenplay.ts";
-import { cleanThreads, setAuthor, seedAndReload, waitForClientProcessing } from "./helpers.ts";
+import { Actor, NavigateTo } from "./screenplay.ts";
+import { setAuthor, waitForClientProcessing } from "./helpers.ts";
 
-const contentSelector = "[data-docmd-content] p, .docmd-content p, article p, main p";
+
 
 let user: Actor;
 

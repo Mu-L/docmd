@@ -28,7 +28,7 @@ export function translations(localeId: string): Record<string, string> {
   return loadPluginStrings(localeId || 'en');
 }
 
-export function markdownSetup(md: any, options?: any): void {
+export function markdownSetup(md: any, _options?: any): void {
   setupContainers(md);
   setupHighlightRule(md);
 }
@@ -57,7 +57,7 @@ export function generateScripts(config: any, options?: any): { headScriptsHtml: 
   };
 }
 
-export function getAssets(options?: any): any[] {
+export function getAssets(_options?: any): any[] {
   // Resolve relative to the compiled output location
   const distDir = path.resolve(__dirname, '..', 'dist', 'client');
   return [

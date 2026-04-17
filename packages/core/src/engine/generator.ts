@@ -19,10 +19,10 @@ import { generateAssetTag, findFilesRecursive } from './assets.js';
 import { generateHreflangTags } from './i18n.js';
 import nativeFs from 'fs';
 
-const require = createRequire(import.meta.url);
+const _require = createRequire(import.meta.url);
 import * as parser from '@docmd/parser';
+import { findPageNeighbors, findBreadcrumbs } from '@docmd/parser';
 import * as ui from '@docmd/ui';
-import { findPageNeighbors, findBreadcrumbs } from '@docmd/parser/dist/utils/navigation-helper.js';
 
 export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, hooks, buildHash, options, outputPrefix = '' }: any) {
   // Load Translations for the active locale
@@ -52,7 +52,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
           config = { ...config, navigation: JSON.parse(rawNav) };
         }
       }
-    } catch (err) {
+    } catch {
       console.warn(`[docmd] Failed to parse locale navigation: ${localeNavPath}`);
     }
   }
@@ -437,6 +437,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       activeLocale: config._activeLocale || null,
       allLocales: config._allLocales || null,
       defaultLocale: config._defaultLocale || null,
+      i18nInPlace: config.i18n?.inPlace || false,
       localePrefix: config._localeOutputPrefix || '',
       currentPagePath: navPath,
       outputPrefix,

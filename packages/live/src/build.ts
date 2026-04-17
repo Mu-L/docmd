@@ -67,7 +67,7 @@ async function build(outputPath?: string) {
 
                 const tryRead = async (f) => {
                     const p = path.join(templatesDir, f);
-                    try { return await fs.readFile(p, 'utf8'); } catch (e) { return null; }
+                    try { return await fs.readFile(p, 'utf8'); } catch { return null; }
                 };
 
                 // Read top-level EJS files
@@ -85,7 +85,7 @@ async function build(outputPath?: string) {
                             templates[`partials/${file}`] = await tryRead(`partials/${file}`);
                         }
                     }
-                } catch (e) {
+                } catch {
                     // Ignore if partials dir doesn't exist
                 }
 
@@ -153,7 +153,7 @@ async function build(outputPath?: string) {
         const copy = async (src, destName) => {
             try {
                 await fs.copyFile(src, path.join(path.extname(destName) === '.js' ? jsDest : cssDest, destName));
-            } catch (e) { console.warn(`⚠️ Missing asset: ${path.basename(src)}`); }
+            } catch { console.warn(`⚠️ Missing asset: ${path.basename(src)}`); }
         };
 
         // UI Assets (Source: main.css -> Dest: docmd-main.css)
@@ -187,7 +187,7 @@ async function build(outputPath?: string) {
         // Copy Favicon
         try {
             await fs.copyFile(path.join(ui.getAssetsDir(), 'favicon.ico'), path.join(finalOutputDir, 'favicon.ico'));
-        } catch (e) { console.log('X Missing Fav'); }
+        } catch { console.log('X Missing Fav'); }
 
         const relPath = path.relative(process.cwd(), finalOutputDir);
         console.log(`✅ Live Editor built in ./${relPath}`);

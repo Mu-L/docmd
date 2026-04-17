@@ -39,7 +39,7 @@
   <!-- प्रीव्यू -->
   <p>
     <br/>
-    <img width="800" alt="docmd प्रीव्यू" src="https://github.com/user-attachments/assets/05a18bd2-6f85-4c7a-9fb7-1ae5b36573b2" />
+    <img width="800" alt="docmd preview" src="https://github.com/user-attachments/assets/b65782ee-01e5-4f82-a204-4965a8f12402" />
     <br/>
     <sup><i>docmd `default` थीम — लाइट अपीयरेंस</i></sup>
   </p>

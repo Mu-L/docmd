@@ -155,7 +155,7 @@ declare const MiniSearch: any;
                 });
                 isIndexLoaded = true;
                 if (searchInput.value.trim()) searchInput.dispatchEvent(new Event('input'));
-            } catch (e) {
+            } catch {
                 searchResults.innerHTML = `<div class="search-error">${strings.error}</div>`;
             }
         }

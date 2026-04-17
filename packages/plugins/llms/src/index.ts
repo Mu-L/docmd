@@ -23,7 +23,7 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
   }
 
   const siteUrl = config.siteUrl.replace(/\/$/, '');
-  const options = config.plugins?.llms || {};
+  const _options = config.plugins?.llms || {};
 
   if (log) log('🤖 Generating llms.txt...');
 
@@ -94,7 +94,7 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
       } else {
         fullContent += `*(Raw content unavailable)*\n\n---\n\n`;
       }
-    } catch (e) {
+    } catch {
       if (log) log(`⚠️ Failed to read raw markdown for ${page.sourcePath}`);
     }
   }

@@ -12,7 +12,7 @@
  * --------------------------------------------------------------------
  */
 
-import chalk from 'chalk';
+
 
 /**
  * Normalizes user config to ensure all required nested objects exist.
@@ -180,6 +180,8 @@ export function normalizeConfig(userConfig: any) {
         config.i18n = {
             default: config.i18n.default || config.i18n.locales[0].id || 'en',
             position: config.i18n.position || 'options-menu',
+            stringMode: config.i18n.stringMode || false,
+            inPlace: config.i18n.inPlace || false,
             locales: config.i18n.locales.map((loc: any) => ({
                 id: loc.id,
                 label: loc.label || loc.id,

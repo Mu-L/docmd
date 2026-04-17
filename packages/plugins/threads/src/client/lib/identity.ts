@@ -101,7 +101,7 @@ async function getGravatarUrl(email: string): Promise<string | null> {
     const url = `https://gravatar.com/avatar/${hashHex}?s=80&d=404`;
 
     // Check if Gravatar actually has an image
-    const resp = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
+    const _resp = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
     // no-cors means we can't read status, so just return the displayable URL
     // Use d=blank to detect, but for display use d=404 won't work visually.
     // Instead, just return with d=mp fallback and let it show the default.

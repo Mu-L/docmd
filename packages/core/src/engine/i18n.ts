@@ -14,6 +14,7 @@
 
 import path from 'path';
 import chalk from 'chalk';
+import nativeFs from 'fs';
 import fs from '../utils/fs-utils.js';
 import { renderPages } from './generator.js';
 import { buildVersions, filterGhostVersions } from './versioning.js';
@@ -44,11 +45,13 @@ export function createLocaleConfig(config: any, locale: any): any {
 
 /**
  * Resolve the source directory for a given locale.
- * When i18n is enabled, each locale gets its own subdirectory: {baseSrcDir}/{localeId}/
+ * When i18n is enabled with directory mode, each locale gets its own subdirectory: {baseSrcDir}/{localeId}/
+ * When stringMode is enabled, all locales use the same root source directory.
  * When i18n is disabled, returns baseSrcDir unchanged.
  */
 export function resolveLocaleSrcDir(baseSrcDir: string, config: any): string {
   if (!config._activeLocale) return baseSrcDir;
+  if (config.i18n?.stringMode) return baseSrcDir;
   return path.join(baseSrcDir, config._activeLocale.id);
 }
 
@@ -56,9 +59,11 @@ export function resolveLocaleSrcDir(baseSrcDir: string, config: any): string {
  * Resolve the fallback source directory (the default locale's dir).
  * Used when a non-default locale is missing a page — falls back to the default locale.
  * Returns null if current locale IS the default (no fallback needed).
+ * Returns null in stringMode (all locales share the same source).
  */
 export function resolveFallbackSrcDir(baseSrcDir: string, config: any): string | null {
   if (!config._activeLocale || !config._defaultLocale) return null;
+  if (config.i18n?.stringMode) return null;
   if (config._activeLocale.id === config._defaultLocale) return null;
   return path.join(baseSrcDir, config._defaultLocale);
 }
@@ -99,6 +104,11 @@ export async function buildLocales({
   await filterGhostVersions(config, CWD, options.isDev);
 
   const locales = getLocales(config);
+  const isStringMode = config.i18n?.stringMode === true;
+
+  // In stringMode, build the default locale first (or single pass),
+  // then clone its output with server-side string replacements for other locales.
+  let defaultPassPages: any[] | null = null;
 
   for (const locale of locales) {
     const localeId = locale ? locale.id : null;
@@ -108,6 +118,39 @@ export async function buildLocales({
     // We pass the rootOutputDir so that path.rel() accurately maps back to root.
     // The nesting is handled purely by the string pathPrefix.
     const pathPrefix = (localeId && !isDefault) ? localeId + '/' : '';
+
+    if (isStringMode && localeId && !isDefault) {
+      // stringMode: clone default locale output with string replacements
+      if (!defaultPassPages) {
+        console.log(chalk.yellow(`⚠️  stringMode: no default locale pages to clone for ${localeId}. Skipping...`));
+        continue;
+      }
+
+      const assetsDir = config.assets || 'assets';
+      const strings = await loadStringModeTranslations(CWD, assetsDir, localeId);
+      const localeDir = locale?.dir || 'ltr';
+
+      if (Object.keys(strings).length === 0) {
+        console.log(chalk.yellow(`⚠️  No string translations found for ${localeId} (assets/i18n/${localeId}.json). Rendering default language.`));
+      }
+
+      for (const page of defaultPassPages) {
+        // Re-read the rendered default HTML and apply string replacements
+        const defaultOutputPath = path.join(rootOutputDir, page.outputPath);
+        if (!nativeFs.existsSync(defaultOutputPath)) continue;
+
+        const defaultHtml = await nativeFs.promises.readFile(defaultOutputPath, 'utf8');
+        const translatedHtml = applyStringModeReplacements(defaultHtml, strings, localeId, localeDir);
+
+        // Write to the locale-prefixed output path
+        const localeOutputPath = path.join(rootOutputDir, pathPrefix, page.outputPath);
+        await fs.ensureDir(path.dirname(localeOutputPath));
+        await nativeFs.promises.writeFile(localeOutputPath, translatedHtml);
+
+        allGeneratedPages.push({ ...page, outputPath: pathPrefix + page.outputPath });
+      }
+      continue;
+    }
 
     if (localeConfig.versions?.all?.length > 0) {
       // Versioned build within this locale
@@ -121,6 +164,7 @@ export async function buildLocales({
         pathPrefix
       });
       allGeneratedPages.push(...pages);
+      if (isStringMode && isDefault) defaultPassPages = pages;
 
     } else {
       // Standard build (no versioning) within this locale
@@ -130,11 +174,12 @@ export async function buildLocales({
 
       // The locale dir must exist (or fall back to base when no i18n)
       if (!await fs.exists(localeSrcDir)) {
-        if (localeConfig._activeLocale) {
+        if (localeConfig._activeLocale && !isStringMode) {
           console.log(chalk.yellow(`⚠️  Locale directory missing: ${localeSrcDir}. Skipping ${localeConfig._activeLocale.id}...`));
           continue;
+        } else if (!localeConfig._activeLocale) {
+          throw new Error(`Source directory not found: ${localeSrcDir}`);
         }
-        throw new Error(`Source directory not found: ${localeSrcDir}`);
       }
 
       const pages = await renderPages({
@@ -148,6 +193,7 @@ export async function buildLocales({
         outputPrefix: pathPrefix
       });
       allGeneratedPages.push(...pages);
+      if (isStringMode && (isDefault || !localeId)) defaultPassPages = pages;
     }
   }
 
@@ -199,4 +245,87 @@ export function generateHreflangTags(config: any, pageOutputPath: string): strin
     }
     return tags;
   }).join('\n');
+}
+
+/**
+ * Load string-mode translations from assets/i18n/{localeId}.json.
+ * Returns an empty object if the file doesn't exist (graceful fallback).
+ */
+export async function loadStringModeTranslations(
+  CWD: string, 
+  assetsDir: string, 
+  localeId: string
+): Promise<Record<string, string>> {
+  const filePath = path.join(CWD, assetsDir, 'i18n', `${localeId}.json`);
+  try {
+    if (nativeFs.existsSync(filePath)) {
+      const raw = await nativeFs.promises.readFile(filePath, 'utf8');
+      return JSON.parse(raw);
+    }
+  } catch (e: any) {
+    console.warn(`[docmd] Failed to load string-mode translations: ${filePath} — ${e.message}`);
+  }
+  return {};
+}
+
+/**
+ * Apply server-side string replacement on rendered HTML.
+ * Resolves data-i18n, data-i18n-html, and data-i18n-{attr} attributes
+ * using the provided translations object.
+ *
+ * This is the build-time equivalent of docmd-i18n-strings.js — it produces
+ * fully translated HTML that search engines can index.
+ */
+export function applyStringModeReplacements(html: string, strings: Record<string, string>, localeId: string, localeDir?: string): string {
+  if (!strings || Object.keys(strings).length === 0) return html;
+
+  // 1. data-i18n="key" → replace textContent
+  //    Match: <tag ... data-i18n="key" ...>content</tag>
+  html = html.replace(
+    /(<[^>]+\sdata-i18n="([^"]+)"[^>]*>)([\s\S]*?)(<\/[a-zA-Z][a-zA-Z0-9]*>)/g,
+    (match, openTag, key, _content, closeTag) => {
+      if (strings[key] !== undefined) {
+        return openTag + strings[key] + closeTag;
+      }
+      return match;
+    }
+  );
+
+  // 2. data-i18n-html="key" → replace innerHTML
+  html = html.replace(
+    /(<[^>]+\sdata-i18n-html="([^"]+)"[^>]*>)([\s\S]*?)(<\/[a-zA-Z][a-zA-Z0-9]*>)/g,
+    (match, openTag, key, _content, closeTag) => {
+      if (strings[key] !== undefined) {
+        return openTag + strings[key] + closeTag;
+      }
+      return match;
+    }
+  );
+
+  // 3. data-i18n-{attr}="key" → replace the target attribute value
+  //    e.g. data-i18n-placeholder="search.placeholder" placeholder="Search..."
+  html = html.replace(
+    /(<[^>]+)\sdata-i18n-(?!html)([a-zA-Z][\w-]*)="([^"]+)"([^>]*>)/g,
+    (match, before, targetAttr, key, after) => {
+      if (strings[key] !== undefined) {
+        // Replace the target attribute's value
+        const attrRegex = new RegExp(`(${targetAttr})="[^"]*"`);
+        const fullTag = before + ' data-i18n-' + targetAttr + '="' + key + '"' + after;
+        if (attrRegex.test(fullTag)) {
+          return fullTag.replace(attrRegex, `$1="${strings[key]}"`);
+        }
+      }
+      return match;
+    }
+  );
+
+  // 4. Update <html lang="..."> to the target locale
+  html = html.replace(/<html\s+lang="[^"]*"/, `<html lang="${localeId}"`);
+
+  // 5. Add dir attribute for RTL locales
+  if (localeDir && localeDir !== 'ltr') {
+    html = html.replace(/<html\s+lang="[^"]*"/, `$& dir="${localeDir}"`);
+  }
+
+  return html;
 }

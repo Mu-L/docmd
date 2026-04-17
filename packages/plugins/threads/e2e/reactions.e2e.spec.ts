@@ -13,7 +13,7 @@
  */
 
 import { test, expect } from "@playwright/test";
-import { Actor, NavigateTo } from "./screenplay.ts";
+import { Actor } from "./screenplay.ts";
 import { cleanThreads, setAuthor, seedAndReload, waitForReload } from "./helpers.ts";
 
 let user: Actor;

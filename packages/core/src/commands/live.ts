@@ -14,11 +14,10 @@
 
 import { createRequire } from 'module';
 
-const require = createRequire(import.meta.url);
+const _require = createRequire(import.meta.url);
 
 export async function buildLive(options: any = {}) {
   // Delegate to the standalone package
-  // @ts-ignore
   const livePkg = await import('@docmd/live');
 
   // If explicitly asked NOT to serve (for testing), just build
