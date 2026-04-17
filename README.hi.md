@@ -41,7 +41,7 @@
     <br/>
     <img width="800" alt="docmd preview" src="https://github.com/user-attachments/assets/b65782ee-01e5-4f82-a204-4965a8f12402" />
     <br/>
-    <sup><i>docmd `default` थीम — लाइट अपीयरेंस</i></sup>
+    <sup><i>docmd `default` थीम — लाइट और डार्क मोड प्रीव्यू</i></sup>
   </p>
 
 </div>
