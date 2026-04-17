@@ -14,20 +14,27 @@
   <meta name="generator" content="docmd v0.5.x">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <script>
+  <%- '<script>' %>
     var root = "<%= relativePathToRoot %>";
     if (root && !root.endsWith('/')) root += '/';
     if (root === '') root = './';
     window.DOCMD_ROOT = root;
     window.DOCMD_APPEARANCE = "<%= appearance %>";
     window.DOCMD_LOCALE = "<%= (locals.activeLocale && locals.activeLocale.id) ? locals.activeLocale.id : '' %>";
-  </script>
+  <%- '</script>' %>
 
   <% if (locals.allLocales && locals.allLocales.length > 1) { %>
+  <%
+    var i18nData = {
+      default: locals.defaultLocale || "",
+      locales: (locals.allLocales || []).map(function(l) {
+        return { id: l.id, label: l.label || l.id, dir: l.dir || "ltr" };
+      }),
+      inPlace: locals.i18nInPlace || false
+    };
+  %>
   <!-- i18n String Replacement Config -->
-  <script>
-    window.DOCMD_I18N = JSON.parse('<%= JSON.stringify({ default: locals.defaultLocale || "", locales: (locals.allLocales || []).map(function(l) { return { id: l.id, label: l.label || l.id, dir: l.dir || "ltr" }; }), inPlace: locals.i18nInPlace || false }).replace(/\x27/g, "\\x27") %>');
-  </script>
+  <%- '<script>window.DOCMD_I18N = ' + JSON.stringify(i18nData) + ';</script>' %>
   <% } %>
 
   <!-- 2. META & TITLE -->
@@ -213,7 +220,7 @@
 
     <% if (frontmatter.components?.scripts===true) { %>
       <% if (frontmatter.components?.mainScripts===true) { %>
-        <script>window.DOCMD_ROOT = "<%= relativePathToRoot %>";</script>
+        <%- '<script>window.DOCMD_ROOT = "' + relativePathToRoot + '";</script>' %>
         <script src="<%= relativePathToRoot %>assets/js/docmd-main.js"></script>
       <% } %>
 

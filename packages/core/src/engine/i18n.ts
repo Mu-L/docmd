@@ -327,5 +327,11 @@ export function applyStringModeReplacements(html: string, strings: Record<string
     html = html.replace(/<html\s+lang="[^"]*"/, `$& dir="${localeDir}"`);
   }
 
+  // 6. Update DOCMD_LOCALE to the target locale
+  html = html.replace(
+    /window\.DOCMD_LOCALE\s*=\s*"[^"]*"/,
+    `window.DOCMD_LOCALE = "${localeId}"`
+  );
+
   return html;
 }

@@ -57,7 +57,7 @@ export async function loadPlugins(config: any) {
   // A. Core Plugins — always loaded by default.
   //    Users disable with: plugins: { search: { enabled: false } }
   //    or plugins: { search: false }
-  const corePlugins = ['search', 'seo', 'sitemap', 'analytics', 'pwa', 'llms', 'mermaid'];
+  const corePlugins = ['search', 'seo', 'sitemap', 'analytics', 'llms', 'mermaid'];
 
   for (const name of corePlugins) {
     const resolved = `@docmd/plugin-${name}`;
