@@ -11,8 +11,8 @@
  */
 
 import { test, expect } from "@playwright/test";
-import { Actor, NavigateTo } from "./screenplay.ts";
-import { cleanThreads, setAuthor, seedAndReload, waitForReload, seedThread } from "./helpers.ts";
+import { Actor } from "./screenplay.ts";
+import { cleanThreads, setAuthor, seedAndReload, waitForReload } from "./helpers.ts";
 
 let user: Actor;
 

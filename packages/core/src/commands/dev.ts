@@ -241,7 +241,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
 
             if (msg.type === 'call') {
               try {
-                const { result, reload } = await dispatcher.handleCall(msg.action, msg.payload);
+                const { result } = await dispatcher.handleCall(msg.action, msg.payload);
                 // Don't send reload flag to client — let the file watcher detect
                 // the change, rebuild, and send the reload via broadcastReload()
                 ws.send(JSON.stringify({ id: msg.id, type: 'response', result, reload: false }));
@@ -331,7 +331,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
       clearTimeout(forceExitTimeout);
       console.log(chalk.green('Done.'));
       process.exit(0);
-    } catch (e) {
+    } catch {
       console.log('');
       process.exit(0);
     }

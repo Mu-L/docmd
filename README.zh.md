@@ -39,7 +39,7 @@
   <!-- 预览 -->
   <p>
     <br/>
-    <img width="800" alt="docmd 预览" src="https://github.com/user-attachments/assets/05a18bd2-6f85-4c7a-9fb7-1ae5b36573b2" />
+    <img width="800" alt="docmd preview" src="https://github.com/user-attachments/assets/755ebd1f-72e4-4404-a65d-b47326179e9e" />
     <br/>
     <sup><i>docmd `default` 主题 — 浅色外观</i></sup>
   </p>

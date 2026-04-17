@@ -7,7 +7,7 @@
 -->
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<%= (locals.activeLocale && locals.activeLocale.id) ? locals.activeLocale.id : 'en' %>"<%= (locals.activeLocale && locals.activeLocale.dir && locals.activeLocale.dir !== 'ltr') ? ' dir="' + locals.activeLocale.dir + '"' : '' %>>
 
 <head>
   <meta charset="UTF-8">
@@ -20,7 +20,15 @@
     if (root === '') root = './';
     window.DOCMD_ROOT = root;
     window.DOCMD_APPEARANCE = "<%= appearance %>";
+    window.DOCMD_LOCALE = "<%= (locals.activeLocale && locals.activeLocale.id) ? locals.activeLocale.id : '' %>";
   </script>
+
+  <% if (locals.allLocales && locals.allLocales.length > 1) { %>
+  <!-- i18n String Replacement Config -->
+  <script>
+    window.DOCMD_I18N = JSON.parse('<%= JSON.stringify({ default: locals.defaultLocale || "", locales: (locals.allLocales || []).map(function(l) { return { id: l.id, label: l.label || l.id, dir: l.dir || "ltr" }; }), inPlace: locals.i18nInPlace || false }).replace(/\x27/g, "\\x27") %>');
+  </script>
+  <% } %>
 
   <!-- 2. META & TITLE -->
   <% if (frontmatter.components?.meta !==false) { %>
@@ -226,6 +234,10 @@
 
     <% if (frontmatter.customScripts) { %>
       <%- frontmatter.customScripts %>
+    <% } %>
+
+    <% if (locals.allLocales && locals.allLocales.length > 1) { %>
+    <script src="<%= relativePathToRoot %>assets/js/docmd-i18n-strings.js?v=<%= buildHash %>"></script>
     <% } %>
   </body>
 </html>

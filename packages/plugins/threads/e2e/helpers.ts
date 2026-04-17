@@ -26,7 +26,7 @@ const FIXTURE_INDEX = path.resolve(__dirname, "fixtures/playground-index.md");
  * Restore the playground markdown to its fixture state, removing any
  * dynamically-added threads/highlights from test runs.
  */
-export async function cleanThreads(page: Page): Promise<void> {
+export async function cleanThreads(_page: Page): Promise<void> {
   const fixtureContent = fs.readFileSync(FIXTURE_INDEX, "utf-8");
   fs.writeFileSync(PLAYGROUND_INDEX, fixtureContent, "utf-8");
 }

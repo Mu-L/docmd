@@ -149,7 +149,7 @@
       e.preventDefault();
       var localeId = langLink.dataset.localeId;
       if (localeId) {
-        try { localStorage.setItem('docmd-locale', localeId); } catch (ex) { }
+        try { localStorage.setItem('docmd-locale', localeId); } catch { /* storage unavailable */ }
       }
 
       // Compute target URL preserving current page path
@@ -435,7 +435,7 @@
                 try {
                   const absoluteUrl = new URL(newHref, data.finalUrl || window.location.href);
                   oldA.setAttribute('href', absoluteUrl.pathname + absoluteUrl.hash);
-                } catch (e) {
+                } catch {
                   oldA.setAttribute('href', newHref);
                 }
               } else {
@@ -465,7 +465,7 @@
         if (hash) {
           try {
             document.querySelector(hash)?.scrollIntoView();
-          } catch (e) {
+          } catch {
             document.getElementById(hash.substring(1))?.scrollIntoView();
           }
         } else {
@@ -485,7 +485,7 @@
           if (newLayout) newLayout.style.minHeight = '';
         }, 100);
 
-      } catch (e) {
+      } catch {
         window.location.assign(url);
       }
     }
@@ -538,7 +538,7 @@
       if (window.location.hash) {
         try {
           document.querySelector(window.location.hash)?.scrollIntoView();
-        } catch (e) {
+        } catch {
           document.getElementById(window.location.hash.substring(1))?.scrollIntoView();
         }
       }

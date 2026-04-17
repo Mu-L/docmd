@@ -16,7 +16,7 @@ import { createMarkdownProcessor, processContent } from '@docmd/parser/dist/mark
 import { renderTemplateAsync } from '@docmd/parser/dist/html-renderer.js';
 import texmath from 'markdown-it-texmath';
 import katex from 'katex';
-// @ts-ignore
+// @ts-expect-error virtual module
 import templates from 'virtual:docmd-templates';
 
 // Expose the compile function to the window.docmd global
@@ -94,7 +94,7 @@ async function compile(markdown: string, config: any = {}) {
     </script>
     `;
 
-    const jsTags = [mermaidScript];
+    const _jsTags = [mermaidScript];
 
     // 3. Theme Init Script
     let themeInitScript = '';

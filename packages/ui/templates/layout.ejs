@@ -49,16 +49,16 @@
       <%= pageTitle %><% if (siteTitle && pageTitle !== siteTitle && !(frontmatter && frontmatter.titleAppend === false)) { %> - <%= siteTitle %><% } %>
     </title>
     <%- faviconLinkHtml || '' %>
-      <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-main.css?v=<%= buildHash %>">
-      <% if (config.theme?.codeHighlight !==false) { const isDarkDefault=appearance==='dark' ; %>
-        <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-light.css?v=<%= buildHash %>" id="hljs-light" <%=isDarkDefault ? 'disabled' : '' %>>
-        <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-dark.css?v=<%= buildHash %>" id="hljs-dark" <%=isDarkDefault ? '' : 'disabled' %>>
-      <% } %>
-      <%- pluginHeadScriptsHtml || '' %>
-      <% (customCssFiles || []).forEach(cssFile=> { %>
-        <link rel="stylesheet" href="<%= relativePathToRoot %><%- cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
-      <% }); %>
-      <%- themeInitScript %>
+    <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-main.css?v=<%= buildHash %>">
+    <% if (config.theme?.codeHighlight !==false) { const isDarkDefault=appearance==='dark' ; %>
+    <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-light.css?v=<%= buildHash %>" id="hljs-light" <%=isDarkDefault ? 'disabled' : '' %>>
+    <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-dark.css?v=<%= buildHash %>" id="hljs-dark" <%=isDarkDefault ? '' : 'disabled' %>>
+    <% } %>
+    <%- pluginHeadScriptsHtml || '' %>
+    <% (customCssFiles || []).forEach(cssFile=> { %>
+      <link rel="stylesheet" href="<%= relativePathToRoot %><%- cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
+    <% }); %>
+    <%- themeInitScript %>
   </head>
   <body
     class="<%= sidebarConfig?.enabled === false ? 'no-sidebar' : (sidebarConfig?.collapsible ? 'sidebar-collapsible' : 'sidebar-not-collapsible') %><%= (locals.menubarConfig && menubarConfig?.enabled !== false) ? ' has-menubar has-menubar-' + (menubarConfig.position || 'top') : '' %><%= headerConfig?.enabled === false ? ' no-header' : '' %>"
@@ -68,182 +68,180 @@
     <a href="#main-content" class="skip-link"><%= typeof t === 'function' ? t('skipToContent') : 'Skip to content' %></a>
 
     <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position !=='header' ) { %>
-      <%- await include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu: locals.optionsMenu })
-      %>
+      <%- await include('partials/menubar', {
+        menubarConfig, relativePathToRoot, renderIcon, optionsMenu: locals.optionsMenu
+      }) %>
     <% } %>
-        <% if (sidebarConfig?.enabled !==false) { %>
-          <aside class="sidebar">
-            <div class="sidebar-header">
-              <% if (logo && logo.light && logo.dark) { %>
-                <a href="<%= logo.href || relativePathToRoot %>" class="logo-link">
-                  <img
-                    src="<%= relativePathToRoot %><%- logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>"
-                    alt="<%= logo.alt || siteTitle %>" class="logo-light" <% if (logo.height) { %>style="height: <%=
-                    logo.height %>;"<% } %>>
-                      <img
-                        src="<%= relativePathToRoot %><%- logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>"
-                        alt="<%= logo.alt || siteTitle %>" class="logo-dark" <% if (logo.height) { %>style="height: <%=
-                        logo.height %>;"<% } %>>
-                </a>
-                <% } else { %>
-                  <h1><a href="<%= relativePathToRoot %>index.html">
-                      <%= siteTitle %>
-                    </a></h1>
-                  <% } %>
-                    <span class="mobile-view sidebar-menu-button float-right">
-                      <%- renderIcon("menu") %>
-                    </span>
-            </div>
-
-            <div class="sidebar-top-group">
-              <% if (locals.optionsMenu && optionsMenu.position==='sidebar-top' ) { %>
-                <div class="sidebar-options-wrapper">
-                  <%- await include('partials/options-menu', { optionsMenu, allLocales: locals.allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config: locals.config, renderIcon, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
-                </div>
-                <% } %>
-                  <% if (config.versions && config.versions.position==='sidebar-top' ) { %>
-                    <div class="sidebar-version-wrapper">
-                      <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion:
-                        config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config }) %>
-                    </div>
-                    <% } %>
-                  <% if (locals.allLocales && allLocales && allLocales.length > 1 && config.i18n && config.i18n.position === 'sidebar-top') { %>
-                    <div class="sidebar-language-wrapper">
-                      <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: false, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
-                    </div>
-                  <% } %>
-            </div>
-
-            <%- navigationHtml %>
-
-              <div class="sidebar-bottom-group mt-auto">
-                <% if (config.versions && config.versions.position==='sidebar-bottom' ) { %>
-                  <div class="sidebar-version-wrapper">
-                    <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion:
-                      config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config }) %>
-                  </div>
-                  <% } %>
-                  <% if (locals.allLocales && allLocales && allLocales.length > 1 && config.i18n && config.i18n.position === 'sidebar-bottom') { %>
-                    <div class="sidebar-language-wrapper">
-                      <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: false, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
-                    </div>
-                  <% } %>
-                    <% if (locals.optionsMenu && optionsMenu.position==='sidebar-bottom' ) { %>
-                      <div class="sidebar-options-wrapper">
-                        <%- await include('partials/options-menu', { optionsMenu, allLocales: locals.allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config: locals.config, renderIcon, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
-                      </div>
-                      <% } %>
-              </div>
-          </aside>
+    <% if (sidebarConfig?.enabled !==false) { %>
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <% if (logo && logo.light && logo.dark) { %>
+            <a href="<%= logo.href || relativePathToRoot %>" class="logo-link">
+              <img
+                src="<%= relativePathToRoot %><%- logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>"
+                alt="<%= logo.alt || siteTitle %>" class="logo-light" <% if (logo.height) { %>style="height: <%=
+                logo.height %>;"<% } %>>
+              <img
+                src="<%= relativePathToRoot %><%- logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>"
+                alt="<%= logo.alt || siteTitle %>" class="logo-dark" <% if (logo.height) { %>style="height: <%=
+                logo.height %>;"<% } %>>
+            </a>
+          <% } else { %>
+            <h1><a href="<%= relativePathToRoot %>index.html">
+                <%= siteTitle %>
+              </a></h1>
           <% } %>
-            <div class="main-content-wrapper">
-              <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position==='header' ) { %>
-                <%- await include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu:
-                  locals.optionsMenu }) %>
-                  <% } %>
-                    <% if (headerConfig?.enabled !==false) { %>
-                      <header class="page-header">
-                        <div class="header-left">
-                          <% if (sidebarConfig?.collapsible) { %>
-                            <button id="sidebar-toggle-button" class="sidebar-toggle-button"
-                              aria-label="<%= typeof t === 'function' ? t('toggleSidebar') : 'Toggle sidebar' %>">
-                              <%- renderIcon('panel-left-close') %>
-                            </button>
-                            <% } %>
-                              <div class="header-titles-wrapper">
-                                <span class="header-title">
-                                  <%= pageTitle %>
-                                </span>
-                              </div>
-                        </div>
-
-                        <div class="header-right">
-                          <% if (optionsMenu?.position==='header' ) { %>
-                            <%- await include('partials/options-menu', { optionsMenu, allLocales: locals.allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config: locals.config, renderIcon, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
-                              <% } %>
-                        </div>
-                      </header>
-                      <% } %>
-                        <div class="content-theme-cover">
-                          <main class="content-area" id="main-content">
-                            <div class="content-layout">
-                              <div class="main-content">
-                                <% if (config.layout?.breadcrumbs !== false && locals.breadcrumbs && breadcrumbs.length > 0) { %>
-                                  <nav aria-label="<%= typeof t === 'function' ? t('breadcrumb') : 'Breadcrumb' %>" class="docmd-breadcrumbs">
-                                    <ol>
-                                      <% const _bcPrefix = (typeof outputPrefix !== 'undefined' && outputPrefix) ? outputPrefix : ''; %>
-                                      <% breadcrumbs.forEach((crumb, index) => { %>
-                                        <li class="breadcrumb-item <%= index === breadcrumbs.length - 1 ? 'active' : '' %>" <%= index === breadcrumbs.length - 1 ? 'aria-current="page"' : '' %>>
-                                          <% if (crumb.path && index < breadcrumbs.length - 1) { %>
-                                            <a href="<%= relativePathToRoot %><%- _bcPrefix %><%- crumb.path.startsWith('/') ? crumb.path.substring(1) : crumb.path %>"><%= crumb.title %></a>
-                                          <% } else { %>
-                                            <span><%= crumb.title %></span>
-                                          <% } %>
-                                          <% if (index < breadcrumbs.length - 1) { %>
-                                            <span class="breadcrumb-separator"><%- renderIcon('chevron-right') %></span>
-                                          <% } %>
-                                        </li>
-                                      <% }) %>
-                                    </ol>
-                                  </nav>
-                                <% } %>
-                                <% if (headerConfig?.enabled===false) { %>
-                                  <h1>
-                                    <%= pageTitle %>
-                                  </h1>
-                                  <% } %>
-                                    <%- content %>
-                                      <% if (config.pageNavigation && (prevPage || nextPage)) { %>
-                                        <div class="page-navigation">
-                                          <% if (prevPage) { %>
-                                            <a href="<%= prevPage.url %>" class="prev-page">
-                                              <%- renderIcon('arrow-left', { class: 'page-nav-icon' }) %>
-                                                <span><small><%= typeof t === 'function' ? t('previous') : 'Previous' %></small><strong>
-                                                    <%= prevPage.title %>
-                                                  </strong></span>
-                                            </a>
-                                            <% } else { %>
-                                              <div class="prev-page-placeholder">
-                                              </div>
-                                              <% } %>
-                                                <% if (nextPage) { %>
-                                                  <a href="<%= nextPage.url %>" class="next-page">
-                                                    <span><small><%= typeof t === 'function' ? t('next') : 'Next' %></small>
-                                                      <strong>
-                                                        <%= nextPage.title %>
-                                                      </strong></span>
-                                                    <%- renderIcon('arrow-right', { class: 'page-nav-icon' }) %>
-                                                  </a>
-                                                  <% } else { %>
-                                                    <div class="next-page-placeholder">
-                                                    </div>
-                                                    <% } %>
-                                        </div>
-                                        <% } %>
-                              </div>
-                              <div class="toc-sidebar">
-                                <%- await include('toc', { content, headings, navigationHtml, isActivePage }) %>
-                              </div>
-                            </div>
-                            <div class="page-footer-actions">
-                              <% if (locals.editUrl) { %>
-                                <a href="<%= editUrl %>" target="_blank" rel="noopener noreferrer" class="edit-link">
-                                  <%- renderIcon('pencil') %>
-                                    <%= editLinkText %>
-                                </a>
-                                <% } %>
-                            </div>
-                          </main>
-                          <%- await include('partials/footer', { footerConfig, config, relativePathToRoot, logo, siteTitle,
-                            footerHtml }) %>
-                        </div>
+          <span class="mobile-view sidebar-menu-button float-right">
+            <%- renderIcon("menu") %>
+          </span>
+        </div>
+        <div class="sidebar-top-group">
+          <% if (locals.optionsMenu && optionsMenu.position==='sidebar-top' ) { %>
+            <div class="sidebar-options-wrapper">
+              <%- await include('partials/options-menu', { optionsMenu, allLocales: locals.allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config: locals.config, renderIcon, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
             </div>
-            <script src="<%= relativePathToRoot %>assets/js/docmd-main.js?v=<%= buildHash %>"></script>
-            <%- pluginBodyScriptsHtml || '' %>
-              <% (customJsFiles || []).forEach(jsFile=> {
-                if (jsFile && jsFile.trim() !== '') { %>
-                <script
-                  src="<%= relativePathToRoot %><%- jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>?v=<%= buildHash %>"></script>
-                <% } }); %>
-</body>
+          <% } %>
+          <% if (config.versions && config.versions.position==='sidebar-top' ) { %>
+            <div class="sidebar-version-wrapper">
+              <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion:
+                config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config }) %>
+            </div>
+          <% } %>
+          <% if (locals.allLocales && allLocales && allLocales.length > 1 && config.i18n && config.i18n.position === 'sidebar-top') { %>
+            <div class="sidebar-language-wrapper">
+              <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: false, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
+            </div>
+          <% } %>
+        </div>
+        <%- navigationHtml %>
+        <div class="sidebar-bottom-group mt-auto">
+          <% if (config.versions && config.versions.position==='sidebar-bottom' ) { %>
+            <div class="sidebar-version-wrapper">
+              <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion:
+                config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config }) %>
+            </div>
+          <% } %>
+          <% if (locals.allLocales && allLocales && allLocales.length > 1 && config.i18n && config.i18n.position === 'sidebar-bottom') { %>
+            <div class="sidebar-language-wrapper">
+              <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: false, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
+            </div>
+          <% } %>
+          <% if (locals.optionsMenu && optionsMenu.position==='sidebar-bottom' ) { %>
+            <div class="sidebar-options-wrapper">
+              <%- await include('partials/options-menu', { optionsMenu, allLocales: locals.allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config: locals.config, renderIcon, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
+            </div>
+          <% } %>
+        </div>
+      </aside>
+      <% } %>
+      <div class="main-content-wrapper">
+        <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position==='header' ) { %>
+          <%- await include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu:
+            locals.optionsMenu }) %>
+        <% } %>
+        <% if (headerConfig?.enabled !==false) { %>
+          <header class="page-header">
+            <div class="header-left">
+              <% if (sidebarConfig?.collapsible) { %>
+                <button id="sidebar-toggle-button" class="sidebar-toggle-button"
+                  aria-label="<%= typeof t === 'function' ? t('toggleSidebar') : 'Toggle sidebar' %>">
+                  <%- renderIcon('panel-left-close') %>
+                </button>
+              <% } %>
+              <div class="header-titles-wrapper">
+                <span class="header-title">
+                  <%= pageTitle %>
+                </span>
+              </div>
+            </div>
+            <div class="header-right">
+              <% if (optionsMenu?.position==='header' ) { %>
+                <%- await include('partials/options-menu', { optionsMenu, allLocales: locals.allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config: locals.config, renderIcon, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
+              <% } %>
+            </div>
+          </header>
+        <% } %>
+        <div class="content-theme-cover">
+          <main class="content-area" id="main-content">
+            <div class="content-layout">
+              <div class="main-content">
+                <% if (config.layout?.breadcrumbs !== false && locals.breadcrumbs && breadcrumbs.length > 0) { %>
+                  <nav aria-label="<%= typeof t === 'function' ? t('breadcrumb') : 'Breadcrumb' %>" class="docmd-breadcrumbs">
+                    <ol>
+                      <% const _bcPrefix = (typeof outputPrefix !== 'undefined' && outputPrefix) ? outputPrefix : ''; %>
+                      <% breadcrumbs.forEach((crumb, index) => { %>
+                        <li class="breadcrumb-item <%= index === breadcrumbs.length - 1 ? 'active' : '' %>" <%= index === breadcrumbs.length - 1 ? 'aria-current="page"' : '' %>>
+                          <% if (crumb.path && index < breadcrumbs.length - 1) { %>
+                            <a href="<%= relativePathToRoot %><%- _bcPrefix %><%- crumb.path.startsWith('/') ? crumb.path.substring(1) : crumb.path %>"><%= crumb.title %></a>
+                          <% } else { %>
+                            <span><%= crumb.title %></span>
+                          <% } %>
+                          <% if (index < breadcrumbs.length - 1) { %>
+                            <span class="breadcrumb-separator"><%- renderIcon('chevron-right') %></span>
+                          <% } %>
+                        </li>
+                      <% }) %>
+                    </ol>
+                  </nav>
+                <% } %>
+                <% if (headerConfig?.enabled===false) { %>
+                  <h1>
+                    <%= pageTitle %>
+                  </h1>
+                <% } %>
+                <%- content %>
+                <% if (config.pageNavigation && (prevPage || nextPage)) { %>
+                  <div class="page-navigation">
+                    <% if (prevPage) { %>
+                      <a href="<%= prevPage.url %>" class="prev-page">
+                        <%- renderIcon('arrow-left', { class: 'page-nav-icon' }) %>
+                        <span><small><%= typeof t === 'function' ? t('previous') : 'Previous' %></small><strong>
+                            <%= prevPage.title %>
+                          </strong></span>
+                      </a>
+                    <% } else { %>
+                      <div class="prev-page-placeholder">
+                      </div>
+                    <% } %>
+                    <% if (nextPage) { %>
+                      <a href="<%= nextPage.url %>" class="next-page">
+                        <span><small><%= typeof t === 'function' ? t('next') : 'Next' %></small>
+                          <strong>
+                            <%= nextPage.title %>
+                          </strong></span>
+                        <%- renderIcon('arrow-right', { class: 'page-nav-icon' }) %>
+                      </a>
+                    <% } else { %>
+                      <div class="next-page-placeholder">
+                      </div>
+                    <% } %>
+                  </div>
+                <% } %>
+              </div>
+              <div class="toc-sidebar">
+                <%- await include('toc', { content, headings, navigationHtml, isActivePage }) %>
+              </div>
+            </div>
+            <div class="page-footer-actions">
+              <% if (locals.editUrl) { %>
+                <a href="<%= editUrl %>" target="_blank" rel="noopener noreferrer" class="edit-link">
+                  <%- renderIcon('pencil') %>
+                  <%= editLinkText %>
+                </a>
+              <% } %>
+            </div>
+          </main>
+          <%- await include('partials/footer', { footerConfig, config, relativePathToRoot, logo, siteTitle,
+            footerHtml }) %>
+        </div>
+      </div>
+      <script src="<%= relativePathToRoot %>assets/js/docmd-main.js?v=<%= buildHash %>"></script>
+      <%- pluginBodyScriptsHtml || '' %>
+      <% (customJsFiles || []).forEach(jsFile=> {
+        if (jsFile && jsFile.trim() !== '') { %>
+        <script
+          src="<%= relativePathToRoot %><%- jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>?v=<%= buildHash %>"></script>
+        <% }
+      }); %>
+  </body>
 </html>

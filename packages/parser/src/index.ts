@@ -29,3 +29,4 @@ export {
 };
 
 export { createDepthTrackingContainer } from './features/index.js';
+export { findPageNeighbors, findBreadcrumbs } from './utils/navigation-helper.js';

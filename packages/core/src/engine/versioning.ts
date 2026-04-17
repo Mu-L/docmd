@@ -60,7 +60,7 @@ export function filterNavForVersion(items: any[], vSrcDir: string): any[] {
       const absoluteFilePath = path.join(vSrcDir, relativeFilePath);
       try {
         if (!nodeFs.existsSync(absoluteFilePath)) return acc;
-      } catch (e) { return acc; }
+      } catch { return acc; }
     }
 
     acc.push(newItem);

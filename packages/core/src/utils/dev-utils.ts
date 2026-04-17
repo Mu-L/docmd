@@ -20,7 +20,7 @@ import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import fs from './fs-utils.js';
 
-const __filename = fileURLToPath(import.meta.url);
+
 
 // MIME types for static file serving
 export const MIME_TYPES: Record<string, string> = {
@@ -102,7 +102,7 @@ export async function serveStatic(req: any, res: any, rootDir: string) {
       const apiScript = await fs.readFile(apiScriptPath, 'utf-8');
       res.writeHead(200, { 'Content-Type': 'text/javascript' });
       res.end(apiScript);
-    } catch (err) {
+    } catch {
       res.writeHead(404);
       res.end('Not found');
     }
@@ -160,7 +160,7 @@ export async function serveStatic(req: any, res: any, rootDir: string) {
         const htmlStr = content.toString('utf-8');
         const liveReloadScript = `${getDevInfoScript()}<script src="/__dev/docmd-api.js"></script></body>`;
         res.end(htmlStr.replace('</body>', liveReloadScript));
-      } catch (e2) {
+      } catch {
         res.writeHead(404, { 'Content-Type': 'text/html' });
         res.end(`
           <div style="font-family:system-ui;text-align:center;padding:50px;">
