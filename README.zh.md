@@ -30,7 +30,7 @@
   <p>
     <h4>
       <a href="https://docmd.io">官网</a> • 
-      <a href="https://docs.docmd.io/getting-started/installation/">文档（预览）</a> • 
+      <a href="https://docs.docmd.io">文档</a> • 
       <a href="https://live.docmd.io">在线编辑器</a> •
       <a href="https://github.com/docmd-io/docmd/issues">报告问题</a>
     </h4>
@@ -128,7 +128,7 @@ my-docs/
 
 基于浏览器的编辑器，即时编写和预览文档，无需任何配置。
 
-**立即体验：https://live.docmd.io**
+**立即体验：[live.docmd.io](https://live.docmd.io)**
 
 ## 配置（可选）
 
@@ -162,8 +162,8 @@ module.exports = defineConfig({
   i18n: {
     default: 'en',
     locales: [
-      { id: 'en', label: 'English', dir: 'ltr' },
-      { id: 'zh', label: '中文', dir: 'ltr' },
+      { id: 'en', label: 'English' },
+      { id: 'zh', label: '中文' },
     ]
   }
 });
@@ -197,12 +197,12 @@ await buildLive();
 | 插件 | 包含 | 说明 |
 | :---------- | :------- | :------------------------------------------------- |
 | `search` | ✓ | 支持模糊匹配的离线全文搜索 |
-| `pwa` | ✓ | 支持离线浏览的渐进式 Web 应用 |
 | `seo` | ✓ | SEO 标签与 Open Graph 元数据 |
 | `sitemap` | ✓ | 生成 `sitemap.xml` |
 | `analytics` | ✓ | 轻量级数据分析集成 |
 | `llms` | ✓ | AI 上下文生成（`llms.txt`） |
 | `mermaid` | ✓ | Markdown 中的 Mermaid 图表 |
+| `pwa` | 可选 | 支持离线浏览的渐进式 Web 应用 |
 | `threads` | 可选 | 内联讨论线程 *(by @svallory)* |
 | `math` | 可选 | KaTeX/LaTeX 数学公式渲染 |
 
@@ -223,8 +223,8 @@ docmd plugin add <plugin-name>
 | **版本管理** | **内置** | 原生（复杂） | mike 插件 | 手动 | 原生 |
 | **i18n** | **内置** | 原生（复杂） | 基于插件 | 手动 | 原生 |
 | **搜索** | **内置（离线）** | Algolia（云端） | 内置 | MiniSearch | 云端 |
-| **PWA** | **内置** | 社区插件 | 无 | 无 | 托管 |
 | **AI 上下文** | **内置（`llms.txt`）** | 手动 | 无 | 无 | 专有 |
+| **PWA** | **官方插件** | 社区插件 | 无 | 无 | 托管 |
 | **自托管** | **是** | 是 | 是 | 是 | 否 |
 | **零配置** | **`npx @docmd/core dev`** | 否 | 否 | 否 | 否 |
 | **费用** | **免费（OSS）** | 免费（OSS） | 免费（OSS） | 免费（OSS） | 免费增值 |
