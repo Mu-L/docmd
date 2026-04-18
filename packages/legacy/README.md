@@ -2,7 +2,7 @@
 
 > **This package has moved.** Use **[@docmd/core](https://www.npmjs.com/package/@docmd/core)** for all future updates.
 
-This is a legacy wrapper that forwards commands to `@docmd/core` to avoid breaking existing CI/CD pipelines. It will not receive new features.
+This is a legacy wrapper that forwards commands to `@docmd/core` to avoid breaking existing CI/CD pipelines. This package will not receive new features or updates.
 
 ## Migration
 
