@@ -1,0 +1,46 @@
+{
+  "name": "@docmd/api",
+  "version": "0.7.1",
+  "description": "Plugin API surface for docmd - hook registration, RPC dispatch, and source editing tools.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@docmd/parser": "workspace:*",
+    "chalk": "^4.1.2"
+  },
+  "keywords": [
+    "docmd",
+    "documentation",
+    "api",
+    "plugin",
+    "hooks",
+    "rpc",
+    "markdown",
+    "minimalist",
+    "zero-config",
+    "site-generator",
+    "static-site-generator",
+    "docs"
+  ],
+  "author": {
+    "name": "Ghazi",
+    "url": "https://mgks.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/docmd-io/docmd.git"
+  },
+  "bugs": {
+    "url": "https://github.com/docmd-io/docmd/issues"
+  },
+  "homepage": "https://docmd.io",
+  "funding": "https://github.com/sponsors/mgks",
+  "license": "MIT"
+}

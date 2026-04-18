@@ -1,0 +1,471 @@
+/**
+ * --------------------------------------------------------------------
+ * docmd : the zero-config documentation engine.
+ *
+ * @package     @docmd/api
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+/**
+ * Plugin loader with validation, isolation, and capability enforcement.
+ *
+ * §1 — Lightweight contract check at load time.
+ * §2 — Every hook invocation wrapped in try/catch.
+ * §3 — Plugins can only register for hooks they've declared.
+ */
+
+import chalk from 'chalk';
+import path from 'path';
+import { createRequire } from 'module';
+import { fileURLToPath } from 'url';
+import type { PluginDescriptor, PluginHooks, PluginModule, Capability } from './types.js';
+
+const require = createRequire(import.meta.url);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Monorepo root — two levels up from packages/api/dist/
+const __monorepoRoot = path.resolve(__dirname, '..', '..', '..');
+
+// ---------------------------------------------------------------------------
+// Capability → Hook mapping (§3)
+// ---------------------------------------------------------------------------
+
+const CAPABILITY_HOOKS: Record<Capability, string[]> = {
+  markdown:     ['markdownSetup'],
+  head:         ['generateMetaTags', 'generateScripts'],
+  body:         ['generateScripts'],
+  assets:       ['getAssets'],
+  'post-build': ['onPostBuild'],
+  actions:      ['actions'],
+  events:       ['events'],
+  translations: ['translations'],
+  init:         ['onConfigResolved'],
+  build:        ['onBeforeParse', 'onAfterParse', 'onPageReady'],
+  dev:          ['onDevServerReady'],
+};
+
+const KNOWN_CAPABILITIES = new Set(Object.keys(CAPABILITY_HOOKS));
+
+// ---------------------------------------------------------------------------
+// Hook registry
+// ---------------------------------------------------------------------------
+
+export const hooks: PluginHooks = {
+  markdownSetup: [],
+  injectHead: [],
+  injectBody: [],
+  onPostBuild: [],
+  assets: [],
+  translations: [],
+  actions: {},
+  events: {},
+  onConfigResolved: [],
+  onDevServerReady: [],
+  onBeforeParse: [],
+  onAfterParse: [],
+  onPageReady: [],
+};
+
+// ---------------------------------------------------------------------------
+// Validation (§1)
+// ---------------------------------------------------------------------------
+
+interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+}
+
+function validateDescriptor(descriptor: any): ValidationResult {
+  const errors: string[] = [];
+
+  if (!descriptor || typeof descriptor !== 'object') {
+    return { valid: false, errors: ['Missing plugin descriptor'] };
+  }
+
+  if (!descriptor.name || typeof descriptor.name !== 'string') {
+    errors.push('`name` must be a non-empty string');
+  }
+
+  if (!descriptor.version || typeof descriptor.version !== 'string') {
+    errors.push('`version` must be a valid semver string');
+  }
+
+  if (!Array.isArray(descriptor.capabilities)) {
+    errors.push('`capabilities` must be an array');
+  } else {
+    for (const cap of descriptor.capabilities) {
+      if (!KNOWN_CAPABILITIES.has(cap)) {
+        errors.push(`Unknown capability: "${cap}"`);
+      }
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Check if a plugin has declared a capability that allows a specific hook.
+ */
+function hasCapabilityForHook(descriptor: PluginDescriptor | null, hookName: string): boolean {
+  if (!descriptor) return true; // Legacy plugins without descriptors get full access
+  for (const cap of descriptor.capabilities) {
+    if (CAPABILITY_HOOKS[cap]?.includes(hookName)) return true;
+  }
+  return false;
+}
+
+// ---------------------------------------------------------------------------
+// Isolation wrapper (§2)
+// ---------------------------------------------------------------------------
+
+function safeCall<T>(hookName: string, pluginName: string, fn: (...args: any[]) => T, ...args: any[]): T | string | undefined {
+  try {
+    return fn(...args);
+  } catch (err: any) {
+    console.error(chalk.red(`Plugin "${pluginName}" threw in ${hookName}: ${err.message}`));
+    return (hookName === 'injectHead' || hookName === 'injectBody') ? '' as any : undefined;
+  }
+}
+
+// Collect errors for summary
+const pluginErrors: { plugin: string; hook: string; message: string }[] = [];
+
+// ---------------------------------------------------------------------------
+// Shorthand resolution
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve a plugin name from config shorthand to full package name.
+ * Bare names (no `/` or scope) expand to `@docmd/plugin-*`.
+ * Third-party plugins must use full package names.
+ */
+export function resolvePluginName(key: string): string {
+  if (key.includes('/')) return key;
+  return `@docmd/plugin-${key}`;
+}
+
+// ---------------------------------------------------------------------------
+// Load & Register
+// ---------------------------------------------------------------------------
+
+export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] }): Promise<PluginHooks> {
+  // Resolution paths for plugin imports — the caller (e.g. @docmd/core) should
+  // pass its own __dirname so plugins that are core's dependencies can be found
+  // even under pnpm's strict node_modules layout.
+  const resolvePaths = [process.cwd(), __dirname, __monorepoRoot, ...(opts?.resolvePaths || [])];
+
+  // 1. Reset hooks
+  hooks.markdownSetup = [];
+  hooks.injectHead = [];
+  hooks.injectBody = [];
+  hooks.onPostBuild = [];
+  hooks.assets = [];
+  hooks.translations = [];
+  hooks.actions = {};
+  hooks.events = {};
+  hooks.onConfigResolved = [];
+  hooks.onDevServerReady = [];
+  hooks.onBeforeParse = [];
+  hooks.onAfterParse = [];
+  hooks.onPageReady = [];
+  pluginErrors.length = 0;
+
+  // 2. Initialize Plugin Map (Name -> Options)
+  const pluginMap = new Map<string, any>();
+  const searchEnabled = config.optionsMenu ? config.optionsMenu.components.search !== false : config.search !== false;
+
+  // A. Core Plugins — always loaded by default.
+  const corePlugins = ['search', 'seo', 'sitemap', 'analytics', 'llms', 'mermaid'];
+
+  for (const name of corePlugins) {
+    const resolved = `@docmd/plugin-${name}`;
+    const userOpts = config.plugins?.[name];
+
+    if (userOpts === false || (userOpts && userOpts.enabled === false)) {
+      pluginMap.set(resolved, false);
+      continue;
+    }
+
+    if (name === 'search' && !searchEnabled) {
+      pluginMap.set(resolved, false);
+      continue;
+    }
+
+    pluginMap.set(resolved, userOpts || {});
+  }
+
+  // B. Add/Override from Config (non-core / optional / third-party plugins)
+  if (config.plugins) {
+    Object.keys(config.plugins).forEach(key => {
+      const resolvedName = resolvePluginName(key);
+      if (corePlugins.includes(key)) return;
+      pluginMap.set(resolvedName, config.plugins[key]);
+    });
+  }
+
+  // 3. Load and Register
+  for (const [name, options] of pluginMap) {
+    if (options === false) continue;
+
+    try {
+      let rawModule;
+      try {
+        rawModule = await import(require.resolve(name, { paths: resolvePaths }));
+      } catch (e: any) {
+        rawModule = await import(name);
+      }
+
+      const pluginModule: PluginModule = rawModule.default || rawModule;
+
+      try {
+        registerPlugin(name, pluginModule, options);
+      } catch (regError: any) {
+        console.warn(chalk.yellow(`⚠️  Plugin loaded but failed to register: ${name}`));
+        console.warn(chalk.dim(`   > ${regError.message}`));
+      }
+    } catch (e: any) {
+      console.warn(chalk.yellow(`⚠️  Could not load plugin: ${name} (missing or misconfigured)`));
+    }
+  }
+
+  // 4. Print error summary if any
+  if (pluginErrors.length > 0) {
+    console.warn(chalk.yellow(`\n⚠️  ${pluginErrors.length} plugin error(s) occurred (build completed)`));
+  }
+
+  return hooks;
+}
+
+function registerPlugin(name: string, plugin: PluginModule, options: any) {
+  const shortName = name.replace(/^@docmd\/plugin-/, '');
+  const isOfficial = name.startsWith('@docmd/plugin-');
+
+  // --- §1: Validate descriptor ---
+  const descriptor = plugin.plugin || null;
+
+  if (descriptor) {
+    const { valid, errors } = validateDescriptor(descriptor);
+    if (!valid) {
+      const msg = `Plugin "${name}" descriptor failed validation: ${errors.join(', ')}`;
+      if (isOfficial) {
+        throw new Error(msg); // Hard error for official plugins
+      }
+      console.warn(chalk.yellow(`⚠️  ${msg} — registering anyway`));
+    }
+  } else {
+    // No descriptor — emit deprecation warning (soft until 0.8.0)
+    // Silent for official plugins as they'll be updated together
+    if (!isOfficial) {
+      console.warn(chalk.dim(`   → Plugin "${name}" has no descriptor. This will be required in 0.8.0.`));
+    }
+  }
+
+  // --- §3: Capability-gated registration ---
+  const shouldExecute = (pageContext: any) => {
+    if (!pageContext || !pageContext.frontmatter) return true;
+    const fmPlugins = pageContext.frontmatter.plugins || {};
+
+    if (fmPlugins[shortName] === false) return false;
+    if (fmPlugins[shortName] === true) return true;
+
+    if (pageContext.frontmatter.noStyle) {
+      if (options && options.noStyle !== undefined) return options.noStyle;
+      if (plugin.noStyle !== undefined) return plugin.noStyle;
+      return true;
+    }
+
+    return true;
+  };
+
+  // markdownSetup
+  if (typeof plugin.markdownSetup === 'function') {
+    if (hasCapabilityForHook(descriptor, 'markdownSetup')) {
+      const fn = plugin.markdownSetup;
+      hooks.markdownSetup.push((md: any) => safeCall('markdownSetup', name, fn, md, options));
+    } else {
+      console.warn(chalk.yellow(`Plugin "${shortName}" exports markdownSetup but didn't declare "markdown" capability — skipped`));
+    }
+  }
+
+  // generateMetaTags → injectHead
+  if (typeof plugin.generateMetaTags === 'function') {
+    if (hasCapabilityForHook(descriptor, 'generateMetaTags')) {
+      const fn = plugin.generateMetaTags;
+      hooks.injectHead.push((config: any, pageContext: any, root: any) => {
+        if (!shouldExecute(pageContext)) return '';
+        return safeCall('generateMetaTags', name, fn, config, pageContext, root) as string || '';
+      });
+    } else {
+      console.warn(chalk.yellow(`Plugin "${shortName}" exports generateMetaTags but didn't declare "head" capability — skipped`));
+    }
+  }
+
+  // generateScripts → injectHead + injectBody
+  if (typeof plugin.generateScripts === 'function') {
+    if (hasCapabilityForHook(descriptor, 'generateScripts')) {
+      const fn = plugin.generateScripts;
+      hooks.injectHead.push((config: any, pageContext: any) => {
+        if (!shouldExecute(pageContext)) return '';
+        const result = safeCall('generateScripts', name, fn, config, options) as any;
+        return result?.headScriptsHtml || '';
+      });
+      hooks.injectBody.push((config: any, pageContext: any) => {
+        if (!shouldExecute(pageContext)) return '';
+        const result = safeCall('generateScripts', name, fn, config, options) as any;
+        return result?.bodyScriptsHtml || '';
+      });
+    } else {
+      console.warn(chalk.yellow(`Plugin "${shortName}" exports generateScripts but didn't declare "head"/"body" capability — skipped`));
+    }
+  }
+
+  // onPostBuild
+  if (typeof plugin.onPostBuild === 'function') {
+    if (hasCapabilityForHook(descriptor, 'onPostBuild')) {
+      const fn = plugin.onPostBuild;
+      hooks.onPostBuild.push(async (ctx: any) => {
+        try {
+          await fn({ ...ctx, options });
+        } catch (err: any) {
+          console.error(chalk.red(`Plugin "${name}" threw in onPostBuild: ${err.message}`));
+          pluginErrors.push({ plugin: name, hook: 'onPostBuild', message: err.message });
+        }
+      });
+    } else {
+      console.warn(chalk.yellow(`Plugin "${shortName}" exports onPostBuild but didn't declare "post-build" capability — skipped`));
+    }
+  }
+
+  // getAssets
+  if (typeof plugin.getAssets === 'function') {
+    if (hasCapabilityForHook(descriptor, 'getAssets')) {
+      const fn = plugin.getAssets;
+      hooks.assets.push(() => safeCall('getAssets', name, fn, options) as any[] || []);
+    } else {
+      console.warn(chalk.yellow(`Plugin "${shortName}" exports getAssets but didn't declare "assets" capability — skipped`));
+    }
+  }
+
+  // translations
+  if (typeof plugin.translations === 'function') {
+    if (hasCapabilityForHook(descriptor, 'translations')) {
+      const fn = plugin.translations;
+      hooks.translations.push((localeId: string) => safeCall('translations', name, fn, localeId, options) as Record<string, string> || {});
+    } else {
+      console.warn(chalk.yellow(`Plugin "${shortName}" exports translations but didn't declare "translations" capability — skipped`));
+    }
+  }
+
+  // actions (WebSocket RPC)
+  if (plugin.actions && typeof plugin.actions === 'object') {
+    if (hasCapabilityForHook(descriptor, 'actions')) {
+      Object.assign(hooks.actions, plugin.actions);
+    } else {
+      console.warn(chalk.yellow(`Plugin "${shortName}" exports actions but didn't declare "actions" capability — skipped`));
+    }
+  }
+
+  // events (fire-and-forget)
+  if (plugin.events && typeof plugin.events === 'object') {
+    if (hasCapabilityForHook(descriptor, 'events')) {
+      Object.assign(hooks.events, plugin.events);
+    } else {
+      console.warn(chalk.yellow(`Plugin "${shortName}" exports events but didn't declare "events" capability — skipped`));
+    }
+  }
+
+  // --- Expanded Lifecycle Hooks ---
+
+  // onConfigResolved
+  if (typeof plugin.onConfigResolved === 'function') {
+    if (hasCapabilityForHook(descriptor, 'onConfigResolved')) {
+      const fn = plugin.onConfigResolved;
+      hooks.onConfigResolved.push(async (config: any) => {
+        try {
+          await fn(config);
+        } catch (err: any) {
+          console.error(chalk.red(`Plugin "${name}" threw in onConfigResolved: ${err.message}`));
+          pluginErrors.push({ plugin: name, hook: 'onConfigResolved', message: err.message });
+        }
+      });
+    } else {
+      console.warn(chalk.yellow(`Plugin "${shortName}" exports onConfigResolved but didn't declare "init" capability — skipped`));
+    }
+  }
+
+  // onDevServerReady
+  if (typeof plugin.onDevServerReady === 'function') {
+    if (hasCapabilityForHook(descriptor, 'onDevServerReady')) {
+      const fn = plugin.onDevServerReady;
+      hooks.onDevServerReady.push(async (server: any, wss: any) => {
+        try {
+          await fn(server, wss);
+        } catch (err: any) {
+          console.error(chalk.red(`Plugin "${name}" threw in onDevServerReady: ${err.message}`));
+          pluginErrors.push({ plugin: name, hook: 'onDevServerReady', message: err.message });
+        }
+      });
+    } else {
+      console.warn(chalk.yellow(`Plugin "${shortName}" exports onDevServerReady but didn't declare "dev" capability — skipped`));
+    }
+  }
+
+  // onBeforeParse
+  if (typeof plugin.onBeforeParse === 'function') {
+    if (hasCapabilityForHook(descriptor, 'onBeforeParse')) {
+      const fn = plugin.onBeforeParse;
+      hooks.onBeforeParse.push(async (src: string, frontmatter: any) => {
+        try {
+          return await fn(src, frontmatter) ?? src;
+        } catch (err: any) {
+          console.error(chalk.red(`Plugin "${name}" threw in onBeforeParse: ${err.message}`));
+          pluginErrors.push({ plugin: name, hook: 'onBeforeParse', message: err.message });
+          return src;
+        }
+      });
+    } else {
+      console.warn(chalk.yellow(`Plugin "${shortName}" exports onBeforeParse but didn't declare "build" capability — skipped`));
+    }
+  }
+
+  // onAfterParse
+  if (typeof plugin.onAfterParse === 'function') {
+    if (hasCapabilityForHook(descriptor, 'onAfterParse')) {
+      const fn = plugin.onAfterParse;
+      hooks.onAfterParse.push(async (html: string, frontmatter: any) => {
+        try {
+          return await fn(html, frontmatter) ?? html;
+        } catch (err: any) {
+          console.error(chalk.red(`Plugin "${name}" threw in onAfterParse: ${err.message}`));
+          pluginErrors.push({ plugin: name, hook: 'onAfterParse', message: err.message });
+          return html;
+        }
+      });
+    } else {
+      console.warn(chalk.yellow(`Plugin "${shortName}" exports onAfterParse but didn't declare "build" capability — skipped`));
+    }
+  }
+
+  // onPageReady
+  if (typeof plugin.onPageReady === 'function') {
+    if (hasCapabilityForHook(descriptor, 'onPageReady')) {
+      const fn = plugin.onPageReady;
+      hooks.onPageReady.push(async (page: any) => {
+        try {
+          await fn(page);
+        } catch (err: any) {
+          console.error(chalk.red(`Plugin "${name}" threw in onPageReady: ${err.message}`));
+          pluginErrors.push({ plugin: name, hook: 'onPageReady', message: err.message });
+        }
+      });
+    } else {
+      console.warn(chalk.yellow(`Plugin "${shortName}" exports onPageReady but didn't declare "build" capability — skipped`));
+    }
+  }
+
+}
