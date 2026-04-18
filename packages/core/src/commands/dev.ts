@@ -21,8 +21,7 @@ import chalk from 'chalk';
 import { buildSite } from './build.js';
 import { loadConfig } from '../utils/config-loader.js';
 import { createRequire } from 'module';
-import { createActionDispatcher } from '../utils/action-dispatcher.js';
-import { loadPlugins, hooks } from '../utils/plugin-loader.js';
+import { createActionDispatcher, loadPlugins, hooks } from '@docmd/api';
 import {
   formatPathForDisplay, getNetworkIp, serveStatic, findAvailablePort,
 } from '../utils/dev-utils.js';
@@ -221,7 +220,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
         wss.on('error', (e: any) => console.error('WebSocket Error:', e.message));
 
         // Action dispatcher for plugin actions/events
-        await loadPlugins(config);
+        await loadPlugins(config, { resolvePaths: [__dirname] });
         const dispatcher = createActionDispatcher(hooks, {
           projectRoot: CWD,
           config,
@@ -233,6 +232,11 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
             });
           }
         });
+
+        // Execute onDevServerReady hooks
+        for (const fn of hooks.onDevServerReady) {
+          await fn(server, wss);
+        }
 
         wss.on('connection', (ws: any) => {
           ws.on('message', async (raw: any) => {

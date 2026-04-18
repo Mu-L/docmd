@@ -20,19 +20,24 @@ export { buildSite as build } from './commands/build.js';
 export { startDevServer as dev } from './commands/dev.js';
 export { buildLive } from './commands/live.js';
 
-// Action dispatcher and source editing tools
-export { createActionDispatcher, safePath } from './utils/action-dispatcher.js';
-export { createSourceTools } from './utils/source-tools.js';
+// Re-export from @docmd/api for backward compatibility
+// These modules have moved to @docmd/api as of 0.7.1.
+// Direct imports from @docmd/core continue to work but consumers
+// are encouraged to migrate to @docmd/api.
+export { createActionDispatcher, safePath, createSourceTools } from '@docmd/api';
 
-// Plugin API types
+// Plugin API types (re-exported from @docmd/api)
 export type {
   ActionContext,
   ActionHandler,
   EventHandler,
   DispatchResult,
   PluginModule,
+  PluginDescriptor,
+  PluginHooks,
+  Capability,
   SourceTools,
   BlockInfo,
   InlineSegment,
   TextLocation,
-} from './types.js';
+} from '@docmd/api';
