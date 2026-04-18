@@ -23,7 +23,7 @@
     window.DOCMD_LOCALE = "<%= (locals.activeLocale && locals.activeLocale.id) ? locals.activeLocale.id : '' %>";
   <%- '</script>' %>
 
-  <% if (locals.allLocales && locals.allLocales.length > 1) { %>
+  <% if (locals.allLocales && locals.allLocales.length > 1 && !locals.i18nStringMode) { %>
   <%
     var i18nData = {
       default: locals.defaultLocale || "",
@@ -243,7 +243,7 @@
       <%- frontmatter.customScripts %>
     <% } %>
 
-    <% if (locals.allLocales && locals.allLocales.length > 1) { %>
+    <% if (locals.allLocales && locals.allLocales.length > 1 && !locals.i18nStringMode) { %>
     <script src="<%= relativePathToRoot %>assets/js/docmd-i18n-strings.js?v=<%= buildHash %>"></script>
     <% } %>
   </body>

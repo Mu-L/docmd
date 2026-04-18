@@ -1385,8 +1385,9 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
     width: 1em;
     height: 1.5em;
     float: right;
-    margin-left: .3em;
-    opacity: .7
+    margin-left: auto;
+    opacity: .5;
+    display: inline-flex
 }
 
 .next-page,
