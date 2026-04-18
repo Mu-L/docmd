@@ -14,6 +14,13 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import type { PluginDescriptor } from '@docmd/api';
+
+export const plugin: PluginDescriptor = {
+  name: 'pwa',
+  version: '0.7.1',
+  capabilities: ['post-build']
+};
 
 export async function onPostBuild({ config, outputDir, log }: any) {
   const pwaConfig = config.plugins?.pwa || {};

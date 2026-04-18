@@ -14,6 +14,13 @@
 
 import path from 'path';
 import fs from 'fs/promises';
+import type { PluginDescriptor } from '@docmd/api';
+
+export const plugin: PluginDescriptor = {
+  name: 'sitemap',
+  version: '0.7.1',
+  capabilities: ['post-build']
+};
 
 /**
  * Hook to run after the build is complete.

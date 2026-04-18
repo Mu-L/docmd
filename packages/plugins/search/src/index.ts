@@ -17,9 +17,16 @@ import fs from 'fs/promises';
 import nativeFs from 'fs';
 import MiniSearch from 'minisearch';
 import { fileURLToPath } from 'url';
+import type { PluginDescriptor } from '@docmd/api';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+export const plugin: PluginDescriptor = {
+  name: 'search',
+  version: '0.7.1',
+  capabilities: ['post-build', 'head', 'body', 'assets', 'translations']
+};
 
 // Resolve i18n directory (sibling to dist/ in the package)
 const i18nDir = path.resolve(__dirname, '..', 'i18n');

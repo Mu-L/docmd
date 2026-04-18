@@ -4,6 +4,13 @@ import { fileURLToPath } from 'url';
 import { setup as setupContainers } from './plugin/containers.js';
 import { setup as setupHighlightRule } from './plugin/highlight-rule.js';
 import { actions } from './plugin/actions.js';
+import type { PluginDescriptor } from '@docmd/api';
+
+export const plugin: PluginDescriptor = {
+  name: 'threads',
+  version: '0.7.1',
+  capabilities: ['markdown', 'body', 'assets', 'actions', 'translations']
+};
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const i18nDir = path.resolve(__dirname, '..', 'i18n');

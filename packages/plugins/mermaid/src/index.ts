@@ -14,9 +14,16 @@
 
 import path from 'path';
 import { fileURLToPath } from 'url';
+import type { PluginDescriptor } from '@docmd/api';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+export const plugin: PluginDescriptor = {
+  name: 'mermaid',
+  version: '0.7.1',
+  capabilities: ['markdown', 'assets']
+};
 
 export function markdownSetup(md: any) {
   const defaultFence = md.renderer.rules.fence;

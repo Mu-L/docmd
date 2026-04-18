@@ -16,6 +16,14 @@
  * @returns {Object} { headScriptsHtml, bodyScriptsHtml }
  */
 
+import type { PluginDescriptor } from '@docmd/api';
+
+export const plugin: PluginDescriptor = {
+  name: 'analytics',
+  version: '0.7.1',
+  capabilities: ['head', 'body']
+};
+
 export function generateScripts(config: any) {
   let headScriptsHtml = '';
   let bodyScriptsHtml = '';

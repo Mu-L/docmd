@@ -43,7 +43,7 @@
   },
   "threads": {
     "package": "@docmd/plugin-threads",
-    "description": "Inline discussion threads for docmd documentation",
+    "description": "Inline discussion threads for docmd",
     "configKey": "threads",
     "defaultConfig": "{}"
   },

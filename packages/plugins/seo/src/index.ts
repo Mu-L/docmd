@@ -12,6 +12,14 @@
  * --------------------------------------------------------------------
  */
 
+import type { PluginDescriptor } from '@docmd/api';
+
+export const plugin: PluginDescriptor = {
+  name: 'seo',
+  version: '0.7.1',
+  capabilities: ['head']
+};
+
 /**
  * Generates HTML meta tags for a specific page.
  * @param {Object} config - Project config

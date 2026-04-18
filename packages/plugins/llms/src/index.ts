@@ -14,6 +14,13 @@
 
 import path from 'path';
 import fs from 'fs/promises';
+import type { PluginDescriptor } from '@docmd/api';
+
+export const plugin: PluginDescriptor = {
+  name: 'llms',
+  version: '0.7.1',
+  capabilities: ['post-build']
+};
 
 export async function onPostBuild({ config, pages, outputDir, log }: any) {
   // Validation

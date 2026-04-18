@@ -44,6 +44,7 @@
   "funding": "https://github.com/sponsors/mgks",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^25.6.0"
+    "@types/node": "^25.6.0",
+    "@docmd/api": "workspace:*"
   }
 }

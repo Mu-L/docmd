@@ -14,6 +14,13 @@
 
 import texmath from 'markdown-it-texmath';
 import katex from 'katex';
+import type { PluginDescriptor } from '@docmd/api';
+
+export const plugin: PluginDescriptor = {
+  name: 'math',
+  version: '0.7.1',
+  capabilities: ['markdown', 'assets']
+};
 
 export function markdownSetup(md: any) {
   // Suppress KaTeX's "quirks mode" warning — irrelevant in Node.js
