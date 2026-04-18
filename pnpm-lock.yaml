@@ -44,8 +44,20 @@ importers:
         specifier: workspace:*
         version: link:../plugins/math
 
+  packages/api:
+    dependencies:
+      '@docmd/parser':
+        specifier: workspace:*
+        version: link:../parser
+      chalk:
+        specifier: ^4.1.2
+        version: 4.1.2
+
   packages/core:
     dependencies:
+      '@docmd/api':
+        specifier: workspace:*
+        version: link:../api
       '@docmd/live':
         specifier: workspace:*
         version: link:../live
@@ -226,9 +238,9 @@ importers:
       '@awesome.me/webawesome':
         specifier: ^3.5.0
         version: 3.5.0(@floating-ui/utils@0.2.11)(@types/react@19.2.14)
-      '@docmd/core':
+      '@docmd/api':
         specifier: workspace:^
-        version: link:../../core
+        version: link:../../api
       '@docmd/parser':
         specifier: workspace:^
         version: link:../../parser
