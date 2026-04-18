@@ -39,7 +39,7 @@
   <!-- PREVIEW -->
   <p>
     <br/>
-    <img width="800" alt="docmd preview" src="https://github.com/user-attachments/assets/0b845c0b-78e3-42cc-a007-cc4653d3a8a1" />
+    <img width="800" alt="docmd preview" src="https://raw.githubusercontent.com/docmd-io/docmd/refs/heads/main/assets/docmd-cover.webp" />
     <br/>
     <sup><i>docmd `default` theme preview split in light and dark mode</i></sup>
   </p>
