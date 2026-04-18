@@ -258,4 +258,49 @@ function processContent(rawString, mdInstance, config, env = {}) {
   return { frontmatter, htmlContent, headings, searchData };
 }
 
-export { createMarkdownProcessor, processContent };
+async function processContentAsync(rawString, mdInstance, config, env = {}, hooks: any = null) {
+  let frontmatter, markdownContent;
+
+  try {
+    const parsed = matter(rawString);
+    frontmatter = parsed.data;
+    markdownContent = parsed.content;
+  } catch (e) {
+    console.error('Error parsing frontmatter:', e.message);
+    return null;
+  }
+
+  if (hooks && hooks.onBeforeParse) {
+    for (const fn of hooks.onBeforeParse) {
+      markdownContent = await fn(markdownContent, frontmatter);
+    }
+  }
+
+  if (!frontmatter.title && config.autoTitleFromH1 !== false) {
+    const h1Match = markdownContent.match(/^#\s+(.*)/m);
+    if (h1Match) frontmatter.title = h1Match[1].trim();
+  }
+
+  let htmlContent = mdInstance.render(markdownContent, env);
+
+  if (hooks && hooks.onAfterParse) {
+    for (const fn of hooks.onAfterParse) {
+      htmlContent = await fn(htmlContent, frontmatter);
+    }
+  }
+
+  const headings = extractHeadings(htmlContent);
+
+  let searchData = null;
+  if (!frontmatter.noindex) {
+    searchData = {
+      title: frontmatter.title || 'Untitled',
+      content: stripHtml(htmlContent).slice(0, 5000),
+      headings: headings.map((h: any) => ({ id: h.id, text: h.text }))
+    };
+  }
+
+  return { frontmatter, htmlContent, headings, searchData };
+}
+
+export { createMarkdownProcessor, processContent, processContentAsync };

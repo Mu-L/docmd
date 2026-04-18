@@ -12,7 +12,7 @@
  * --------------------------------------------------------------------
  */
 
-import { createMarkdownProcessor, processContent } from './markdown-processor.js';
+import { createMarkdownProcessor, processContent, processContentAsync } from './markdown-processor.js';
 import { renderTemplateAsync } from './html-renderer.js';
 import { renderIcon } from './utils/icon-renderer.js';
 import { validateConfig } from './utils/validator.js';
@@ -21,6 +21,7 @@ export {
   // Logic
   createMarkdownProcessor,
   processContent,
+  processContentAsync,
   renderTemplateAsync,
   validateConfig,
 
