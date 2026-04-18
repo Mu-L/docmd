@@ -1,6 +1,6 @@
 {
   "name": "@docmd/core",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "The zero-config documentation engine. Markdown to production docs in one command.",
   "type": "module",
   "browser": false,
@@ -17,6 +17,7 @@
     "dist"
   ],
   "dependencies": {
+    "@docmd/api": "workspace:*",
     "@docmd/live": "workspace:*",
     "@docmd/parser": "workspace:*",
     "@docmd/plugin-analytics": "workspace:*",

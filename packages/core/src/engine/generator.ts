@@ -241,7 +241,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
 
     const effectivelyIndex = isIndex || (isReadme && !hasIndexInFolder) || (isNavDesignatedIndex && !hasIndexInFolder);
 
-    const processed = parser.processContent(rawContent, mdProcessor, config, { isIndex: effectivelyIndex });
+    const processed = await parser.processContentAsync(rawContent, mdProcessor, config, { isIndex: effectivelyIndex }, hooks);
     if (!processed) continue;
 
     // Determine output path — .ejs files map like .md files
@@ -304,7 +304,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       });
 
       const effectivelyIndex = isIndex || (isReadme && !hasIndexInFolder);
-      const processed = parser.processContent(rawContent, mdProcessor, config, { isIndex: effectivelyIndex });
+      const processed = await parser.processContentAsync(rawContent, mdProcessor, config, { isIndex: effectivelyIndex }, hooks);
       if (!processed) continue;
 
       const withoutExt = relativePath.replace(/\.(md|markdown|ejs)$/, '');
@@ -391,7 +391,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
 
     // Render Full Page
     const templateString = page.frontmatter.noStyle ? templates.noStyle : templates.layout;
-    const fullHtml = await parser.renderTemplateAsync(templateString, {
+    let fullHtml = await parser.renderTemplateAsync(templateString, {
       content: page.htmlContent,
       frontmatter: page.frontmatter,
       headings: page.headings,
@@ -438,6 +438,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       allLocales: config._allLocales || null,
       defaultLocale: config._defaultLocale || null,
       i18nInPlace: config.i18n?.inPlace || false,
+      i18nStringMode: config.i18n?.stringMode || false,
       localePrefix: config._localeOutputPrefix || '',
       currentPagePath: navPath,
       outputPrefix,
@@ -450,6 +451,20 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       metaTagsHtml: '',
       pluginStylesHtml: ''
     }, { filename: ui.getTemplatePath('layout') });
+
+    const pageObj = {
+      html: fullHtml,
+      frontmatter: page.frontmatter,
+      outputPath: page.outputPath,
+      sourcePath: page.sourcePath,
+      config
+    };
+
+    for (const fn of hooks.onPageReady) {
+      await fn(pageObj);
+    }
+
+    fullHtml = pageObj.html;
 
     await fs.ensureDir(path.dirname(finalPath));
     await nativeFs.promises.writeFile(finalPath, fullHtml);

@@ -13,10 +13,13 @@
  */
 
 import path from 'path';
+import { fileURLToPath } from 'url';
 import fs from '../utils/fs-utils.js';
 import chalk from 'chalk';
 import { loadConfig } from '../utils/config-loader.js';
-import { loadPlugins } from '../utils/plugin-loader.js';
+import { loadPlugins } from '@docmd/api';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { prepareAssets } from '../engine/assets.js';
 import { buildLocales, generateLocaleRedirect } from '../engine/i18n.js';
 
@@ -33,7 +36,13 @@ export async function buildSite(configPath: string, opts: any = {}) {
   // 1. Load Config (Zero-Config aware)
   try {
     const config = await loadConfig(configPath, { isDev: options.isDev });
-    const hooks = await loadPlugins(config);
+    const hooks = await loadPlugins(config, { resolvePaths: [__dirname] });
+
+    // Execute onConfigResolved hooks
+    for (const fn of hooks.onConfigResolved) {
+      await fn(config);
+    }
+
     const buildHash = Date.now().toString(36);
 
     // Use V3 labels (config.out / config.src) which are normalized by config-schema
