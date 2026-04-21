@@ -57,8 +57,9 @@ const headingIdPlugin = (md, options: any = {}) => {
         if (!id && inlineToken && inlineToken.content && !inContainer) {
           const slug = inlineToken.content
             .toLowerCase()
+            .trim()
             .replace(/\s+/g, '-')
-            .replace(/[^\w\u4e00-\u9fa5-]+/g, '')
+            .replace(/[^\p{L}\p{N}-]+/gu, '')
             .replace(/--+/g, '-')
             .replace(/^-+/, '')
             .replace(/-+$/, '');

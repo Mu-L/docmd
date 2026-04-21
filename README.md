@@ -169,6 +169,8 @@ module.exports = defineConfig({
 });
 ```
 
+*Built-in support for: English, Hindi, Chinese, Spanish, German, Japanese, and French. You can easily add and support any other language.*
+
 Other common settings include `src`, `out`, navigation, plugins, and theming.
 
 ### Programmatic usage

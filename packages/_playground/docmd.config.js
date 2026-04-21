@@ -92,6 +92,10 @@ module.exports = defineConfig({
       { id: 'en', label: 'English', dir: 'ltr' },
       { id: 'hi', label: 'हिन्दी', dir: 'ltr' },
       { id: 'zh', label: '中文', dir: 'ltr' },
+      { id: 'es', label: 'Español', dir: 'ltr' },
+      { id: 'de', label: 'Deutsch', dir: 'ltr' },
+      { id: 'ja', label: '日本語', dir: 'ltr' },
+      { id: 'fr', label: 'Français', dir: 'ltr' },
       // { id: 'ar', label: 'العربية', dir: 'rtl' },
     ]
   },

@@ -6,7 +6,6 @@ Bundled with `@docmd/core`. You do not need to install or configure this package
 
 ```bash
 docmd add search
-docmd add analytics -V
 docmd remove search
 ```
 
