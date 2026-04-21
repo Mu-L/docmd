@@ -74,8 +74,9 @@ npm install -g @docmd/core
 ```
 
 ```bash
-docmd dev    # 開発サーバーの起動
-docmd build  # デプロイ用のビルド作成
+docmd dev     # 開発サーバーの起動
+docmd build   # デプロイ用のビルド作成
+docmd deploy  # Docker, Nginx, Caddyの設定を即座に生成
 ```
 
 ## 特徴
