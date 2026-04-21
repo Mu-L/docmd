@@ -1,5 +1,5 @@
 <div align="right">
-  <a href="./README.md">English</a> &nbsp;|&nbsp; <b>中文</b><!-- &nbsp;|&nbsp; <a href="./README.hi.md">हिन्दी</a>-->
+  <a href="./README.md">English</a> &nbsp;|&nbsp; <a href="./README.es.md">Español</a> &nbsp;|&nbsp; <a href="./README.de.md">Deutsch</a> &nbsp;|&nbsp; <a href="./README.ja.md">日本語</a> &nbsp;|&nbsp; <a href="./README.fr.md">Français</a> &nbsp;|&nbsp; <b>中文</b>
 </div>
 
 <div align="center">
@@ -168,6 +168,8 @@ module.exports = defineConfig({
   }
 });
 ```
+
+*内置支持：英语、印地语、中文、西班牙语、德语、日语和法语。您可以轻松添加和支持任何其他语言。*
 
 其他常用设置包括 `src`、`out`、导航、插件和主题。
 

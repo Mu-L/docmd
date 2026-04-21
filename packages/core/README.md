@@ -1,3 +1,7 @@
+<div align="right">
+  <b>English</b> &nbsp;|&nbsp; <a href="../../README.es.md">Español</a> &nbsp;|&nbsp; <a href="../../README.de.md">Deutsch</a> &nbsp;|&nbsp; <a href="../../README.ja.md">日本語</a> &nbsp;|&nbsp; <a href="../../README.fr.md">Français</a> &nbsp;|&nbsp; <a href="../../README.zh.md">中文</a>
+</div>
+
 <div align="center">
 
   <!-- PROJECT TITLE -->
@@ -165,6 +169,8 @@ module.exports = defineConfig({
 });
 ```
 
+*Built-in support for: English, Hindi, Chinese, Spanish, German, Japanese, and French. You can easily add and support any other language.*
+
 Other common settings include `src`, `out`, navigation, plugins, and theming.
 
 ### Programmatic usage
@@ -205,7 +211,7 @@ Plugins are only needed when you want to extend functionality.
 Install optional plugins:
 
 ```bash
-docmd plugin add <plugin-name>
+docmd add <plugin-name>
 ```
 
 ## Why docmd?
