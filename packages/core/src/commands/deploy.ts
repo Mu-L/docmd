@@ -24,14 +24,14 @@ interface DeployFlags {
 
 export async function initDeploy(opts: DeployFlags) {
   if (!opts.docker && !opts.nginx && !opts.caddy) {
-    console.log(`\n${pc.red('✖')} Please specify a deployment target to configure.`);
+    console.log(`\n${pc.red('✖')} Argument needed. Please specify a deployment target to configure.`);
     console.log(`\nAvailable targets:`);
     console.log(`  ${pc.cyan('docmd deploy --docker')}    Generate Dockerfile & .dockerignore`);
     console.log(`  ${pc.cyan('docmd deploy --nginx')}     Generate production nginx.conf`);
     console.log(`  ${pc.cyan('docmd deploy --caddy')}     Generate production Caddyfile`);
     console.log(`\nOptions:`);
     console.log(`  ${pc.cyan('--force')}                  Overwrite existing files`);
-    process.exit(1);
+    process.exit(0);
   }
 
   try {

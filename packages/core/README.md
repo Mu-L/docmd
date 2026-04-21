@@ -1,7 +1,3 @@
-<div align="right">
-  <b>EN</b> &nbsp;|&nbsp; <a href="../../README.es.md">ES</a> &nbsp;|&nbsp; <a href="../../README.de.md">DE</a> &nbsp;|&nbsp; <a href="../../README.ja.md">JA</a> &nbsp;|&nbsp; <a href="../../README.fr.md">FR</a> &nbsp;|&nbsp; <a href="../../README.zh.md">ZH</a>
-</div>
-
 <div align="center">
 
   <!-- PROJECT TITLE -->

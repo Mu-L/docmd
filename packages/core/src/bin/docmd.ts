@@ -139,9 +139,15 @@ if (command === 'init') {
   try {
     deployParsed = parseArgs({ args: deployArgs, options: deployOptions, allowPositionals: false });
   } catch (e: any) {
-    console.error(`Error: ${e.message}`);
-    console.log(`\nRun ${'\x1b[36m'}docmd deploy --help${'\x1b[0m'} for usage.`);
-    process.exit(1);
+    console.log(`\nArgument needed. Please specify a deployment target to configure.`);
+    console.log(`\nTargets:`);
+    console.log(`  --docker    Generate Dockerfile & .dockerignore`);
+    console.log(`  --nginx     Generate production nginx.conf`);
+    console.log(`  --caddy     Generate production Caddyfile`);
+    console.log(`\nOptions:`);
+    console.log(`  --force     Overwrite existing deployment files`);
+    console.log(`  -h, --help  Show this help message`);
+    process.exit(0);
   }
 
   const dv = deployParsed.values;
