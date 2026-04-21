@@ -37,8 +37,8 @@ const options = {
   port: { type: 'string', short: 'p' },
   'build-only': { type: 'boolean' },
   cwd: { type: 'string' },
-  verbose: { type: 'boolean', short: 'v' },
-  version: { type: 'boolean', short: 'V' },
+  verbose: { type: 'boolean', short: 'V' },
+  version: { type: 'boolean', short: 'v' },
   help: { type: 'boolean', short: 'h' }
 } as const;
 
@@ -88,8 +88,8 @@ if (!command || values.help) {
   console.log(`  -p, --port <number>    Port to run server`);
   console.log(`  --offline              Optimise for file:// viewing`);
   console.log(`  --build-only           Generate the dist/ folder without starting the server`);
-  console.log(`  -v, --verbose          Show detailed package manager logs`);
-  console.log(`  -V, --version          Output the version number`);
+  console.log(`  -V, --verbose          Show detailed package manager logs`);
+  console.log(`  -v, --version          Output the version number`);
   console.log(`  -h, --help             Display help for command`);
   console.log(`\nDeploy Options (docmd deploy):`);
   console.log(`  --docker               Generate Dockerfile for containerization`);
