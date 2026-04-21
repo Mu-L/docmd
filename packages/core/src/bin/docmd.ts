@@ -22,6 +22,7 @@ import { startDevServer } from '../commands/dev.js';
 import { buildLive } from '../commands/live.js';
 import { migrateProject } from '../commands/migrate.js';
 import { stopServer } from '../commands/stop.js';
+import { initDeploy } from '../commands/deploy.js';
 import { printBanner } from '../utils/logger.js';
 import { installPlugin, removePlugin } from '@docmd/plugin-installer';
 
@@ -42,7 +43,7 @@ const options = {
 
 let parsed;
 try {
-  parsed = parseArgs({ args, options, allowPositionals: true });
+  parsed = parseArgs({ args, options, allowPositionals: true, strict: false });
 } catch (e: any) {
   console.error(`Error: ${e.message}`);
   process.exit(1);
@@ -66,6 +67,7 @@ if (!command || values.help) {
   console.log(`  dev             Start the development server`);
   console.log(`  live            Launch the Live Editor`);
   console.log(`  migrate         Migrate legacy config to the new V2 structure`);
+  console.log(`  deploy          Generate production deployment configurations`);
   console.log(`  stop            Kill all running background docmd dev servers`);
   console.log(`  add <plugin>    Install and configure a docmd plugin`);
   console.log(`  remove <plugin> Remove and unconfigure a docmd plugin`);
@@ -77,6 +79,11 @@ if (!command || values.help) {
   console.log(`  -v, --verbose          Show detailed package manager logs`);
   console.log(`  -V, --version          Output the version number`);
   console.log(`  -h, --help             Display help for command`);
+  console.log(`\nDeploy Options (docmd deploy):`);
+  console.log(`  --docker               Generate Dockerfile for containerization`);
+  console.log(`  --nginx                Generate production nginx.conf`);
+  console.log(`  --caddy                Generate production Caddyfile`);
+  console.log(`  --force                Overwrite existing deployment files`);
   process.exit(0);
 }
 
@@ -105,6 +112,44 @@ if (command === 'init') {
   });
 } else if (command === 'migrate') {
   migrateProject(opts.config);
+} else if (command === 'deploy') {
+  // Deploy has its own scoped flags — re-parse argv with deploy-specific options
+  const deployArgs = process.argv.slice(3); // everything after "deploy"
+  const deployOptions = {
+    docker: { type: 'boolean' },
+    nginx: { type: 'boolean' },
+    caddy: { type: 'boolean' },
+    force: { type: 'boolean' },
+    help: { type: 'boolean', short: 'h' }
+  } as const;
+
+  let deployParsed;
+  try {
+    deployParsed = parseArgs({ args: deployArgs, options: deployOptions, allowPositionals: false });
+  } catch (e: any) {
+    console.error(`Error: ${e.message}`);
+    console.log(`\nRun ${'\x1b[36m'}docmd deploy --help${'\x1b[0m'} for usage.`);
+    process.exit(1);
+  }
+
+  const dv = deployParsed.values;
+
+  if (dv.help) {
+    console.log(`\nUsage: docmd deploy [options]\n`);
+    console.log(`Targets:`);
+    console.log(`  --docker    Generate Dockerfile & .dockerignore`);
+    console.log(`  --nginx     Generate production nginx.conf`);
+    console.log(`  --caddy     Generate production Caddyfile`);
+    console.log(`\nOptions:`);
+    console.log(`  --force     Overwrite existing deployment files`);
+    console.log(`  -h, --help  Show this help message`);
+    process.exit(0);
+  }
+
+  initDeploy({ docker: dv.docker, nginx: dv.nginx, caddy: dv.caddy, force: dv.force }).catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
 } else if (command === 'stop') {
   stopServer(opts.port);
 } else if (command === 'add') {
