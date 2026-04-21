@@ -39,7 +39,9 @@
   <!-- PREVIEW -->
   <p>
     <br/>
-    <img width="800" alt="docmd preview" src="https://raw.githubusercontent.com/docmd-io/docmd/refs/heads/main/assets/docmd-cover.webp" />
+    <a href="https://docs.docmd.io">
+      <img width="800" alt="docmd preview" src="https://raw.githubusercontent.com/docmd-io/docmd/refs/heads/main/assets/docmd-cover.webp" />
+    </a>
     <br/>
     <sup><i>Vista previa del tema `default` de docmd en modo claro y oscuro</i></sup>
   </p>
