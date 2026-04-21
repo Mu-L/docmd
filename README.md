@@ -209,7 +209,7 @@ Plugins are only needed when you want to extend functionality.
 Install optional plugins:
 
 ```bash
-docmd plugin add <plugin-name>
+docmd add <plugin-name>
 ```
 
 ## Why docmd?

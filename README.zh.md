@@ -209,7 +209,7 @@ await buildLive();
 安装可选插件：
 
 ```bash
-docmd plugin add <plugin-name>
+docmd add <plugin-name>
 ```
 
 ## 为什么选择 docmd？
