@@ -74,8 +74,9 @@ npm install -g @docmd/core
 ```
 
 ```bash
-docmd dev    # Entwicklungsserver starten
-docmd build  # Build für die Bereitstellung erstellen
+docmd dev     # Entwicklungsserver starten
+docmd build   # Build für die Bereitstellung erstellen
+docmd deploy  # Docker-, Nginx- oder Caddy-Konfig. generieren
 ```
 
 ## Funktionen
