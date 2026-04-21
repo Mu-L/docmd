@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-threads",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "type": "module",
   "description": "Inline discussion threads for docmd documentation sites.",
   "main": "dist/index.js",
@@ -21,8 +21,8 @@
     "test": "echo 'TODO: migrate tests to vitest'"
   },
   "peerDependencies": {
-    "@docmd/api": "workspace:^",
-    "@docmd/parser": "workspace:^"
+    "@docmd/api": "workspace:*",
+    "@docmd/parser": "workspace:*"
   },
   "dependencies": {
     "@awesome.me/webawesome": "^3.5.0",

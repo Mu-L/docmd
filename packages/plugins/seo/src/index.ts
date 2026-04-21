@@ -16,7 +16,7 @@ import type { PluginDescriptor } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'seo',
-  version: '0.7.1',
+  version: '0.7.2',
   capabilities: ['head']
 };
 
@@ -73,7 +73,10 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
   }
 
   // 4. Open Graph (Facebook/LinkedIn)
-  html += `<meta property="og:title" content="${pageTitle} — ${siteTitle}">\n`;
+  const appendTitle = frontmatter.titleAppend !== false;
+  const fullTitle = (appendTitle && siteTitle && pageTitle !== siteTitle) ? `${pageTitle} — ${siteTitle}` : pageTitle;
+
+  html += `<meta property="og:title" content="${fullTitle}">\n`;
   html += `<meta property="og:description" content="${description}">\n`;
   html += `<meta property="og:url" content="${pageUrl}">\n`;
   html += `<meta property="og:type" content="${seo.ogType || frontmatter.ogType || 'website'}">\n`;
@@ -96,7 +99,7 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
     html += `<meta name="twitter:site" content="${globalSeo.twitter.siteUsername}">\n`;
   }
 
-  html += `<meta name="twitter:title" content="${pageTitle}">\n`;
+  html += `<meta name="twitter:title" content="${fullTitle}">\n`;
   html += `<meta name="twitter:description" content="${description}">\n`;
   if (image) {
     html += `<meta name="twitter:image" content="${image}">\n`;
