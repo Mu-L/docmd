@@ -8,7 +8,7 @@ import type { PluginDescriptor } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'threads',
-  version: '0.7.1',
+  version: '0.7.2',
   capabilities: ['markdown', 'body', 'assets', 'actions', 'translations']
 };
 

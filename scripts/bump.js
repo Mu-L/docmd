@@ -32,6 +32,19 @@ function updateVersion(pkgPath) {
   console.log(`Updated: ${pkg.name} → ${newVersion}`);
 }
 
+function updatePluginDescriptor(pkgDir) {
+  const pluginIndexPath = path.join(pkgDir, "src", "index.ts");
+  if (fs.existsSync(pluginIndexPath)) {
+    let content = fs.readFileSync(pluginIndexPath, "utf8");
+    const versionRegex = /version:\s*(['"])(.*?)(['"])/g;
+    if (content.includes('PluginDescriptor') && versionRegex.test(content)) {
+      content = content.replace(versionRegex, `version: $1${newVersion}$3`);
+      fs.writeFileSync(pluginIndexPath, content);
+      console.log(`Updated PluginDescriptor: ${path.basename(pkgDir)} → ${newVersion}`);
+    }
+  }
+}
+
 // 1️⃣ Update root
 updateVersion(path.join(root, "package.json"));
 
@@ -42,6 +55,7 @@ function walk(dir) {
 
     if (fs.existsSync(path.join(full, "package.json"))) {
       updateVersion(path.join(full, "package.json"));
+      updatePluginDescriptor(full);
     } else if (fs.statSync(full).isDirectory()) {
       walk(full);
     }
