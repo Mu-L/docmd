@@ -23,8 +23,9 @@ export function normalizeConfig(userConfig: any) {
 
     // --- 1. Modern Syntax Standard (V3) ---
     // New labels are the source of truth. Fallback to legacy labels if present.
-    config.title = config.title || config.siteTitle;
-    config.url = config.url || config.siteUrl || config.baseUrl;
+    // Every field MUST have a default here so no consumer needs its own fallback chain.
+    config.title = config.title || config.siteTitle || 'Documentation';
+    config.url = config.url || config.siteUrl || config.baseUrl || '';
     config.src = config.src || config.srcDir || config.source || 'docs';
     config.out = config.out || config.outDir || config.outputDir || 'site';
     config.base = config.base || '/';

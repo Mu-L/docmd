@@ -397,7 +397,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       headings: page.headings,
       config,
       buildHash,
-      siteTitle: config.siteTitle,
+      siteTitle: config.title,
       pageTitle: page.frontmatter.title,
       description: page.frontmatter.description || '',
       appearance: config.theme?.appearance || config.theme?.defaultMode || 'system',

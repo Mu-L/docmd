@@ -33,12 +33,12 @@ export const plugin: PluginDescriptor = {
 
 export async function onPostBuild({ config, pages, outputDir, log }: any) {
   // 1. Check if enabled
-  if (config.plugins?.sitemap === false || !config.siteUrl) {
-    if (!config.siteUrl && log) log('⚠️  Skipping sitemap: "url" is missing in config.');
+  if (config.plugins?.sitemap === false || !config.url) {
+    if (!config.url && log) log('⚠️  Skipping sitemap: "url" is missing in config.');
     return;
   }
 
-  const siteUrl = config.siteUrl.replace(/\/$/, '');
+  const siteUrl = config.url.replace(/\/$/, '');
 
   // 2. Build XML Header
   let sitemapXml = '<?xml version="1.0" encoding="UTF-8"?>\n';

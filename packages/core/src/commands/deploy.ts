@@ -20,6 +20,7 @@ interface DeployFlags {
   nginx?: boolean;
   caddy?: boolean;
   force?: boolean;
+  config?: string;
 }
 
 export async function initDeploy(opts: DeployFlags) {

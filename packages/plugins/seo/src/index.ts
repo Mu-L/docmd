@@ -49,7 +49,7 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
   }
 
   // 2. Basic Meta
-  const siteTitle = config.siteTitle;
+  const siteTitle = config.title;
   const pageTitle = frontmatter.title || 'Untitled';
   let description = seo.description || frontmatter.description || globalSeo.defaultDescription || '';
 
@@ -62,7 +62,7 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
   html += `<meta name="description" content="${description}">\n`;
 
   // 3. Canonical URL
-  const siteUrl = config.siteUrl ? config.siteUrl.replace(/\/$/, '') : '';
+  const siteUrl = config.url ? config.url.replace(/\/$/, '') : '';
   // Convert "guide/index.html" -> "/guide/"
   const urlPath = outputPath.replace(/(^|\/)index\.html$/, '$1');
   const pageUrl = `${siteUrl}/${urlPath.replace(/^\//, '')}`;

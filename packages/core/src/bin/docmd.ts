@@ -126,7 +126,7 @@ if (command === 'init') {
   migrateProject(opts.config);
 } else if (command === 'deploy') {
   // Deploy has its own scoped flags — re-parse argv with deploy-specific options
-  const deployArgs = process.argv.slice(3); // everything after "deploy"
+  const deployArgs = args.slice(args.indexOf('deploy') + 1); // everything after "deploy"
   const deployOptions = {
     docker: { type: 'boolean' },
     nginx: { type: 'boolean' },
@@ -164,7 +164,7 @@ if (command === 'init') {
     process.exit(0);
   }
 
-  initDeploy({ docker: dv.docker, nginx: dv.nginx, caddy: dv.caddy, force: dv.force }).catch((e) => {
+  initDeploy({ docker: dv.docker, nginx: dv.nginx, caddy: dv.caddy, force: dv.force, config: opts.config }).catch((e) => {
     console.error(e);
     process.exit(1);
   });
