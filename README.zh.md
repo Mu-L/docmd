@@ -74,8 +74,9 @@ npm install -g @docmd/core
 ```
 
 ```bash
-docmd dev    # 启动开发服务器
-docmd build  # 构建部署产物
+docmd dev     # 启动开发服务器
+docmd build   # 构建部署产物
+docmd deploy  # 瞬间生成 Docker/Nginx/Caddy 配置文件
 ```
 
 ## 功能特性
