@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "pnpm docmd dev",
     "build": "pnpm -r run build",
-    "docmd": "pnpm --filter @docmd/playground exec docmd",
+    "docmd": "node packages/core/dist/bin/docmd.js --cwd packages/_playground",
     "prep": "pnpm reset && pnpm verify",
     "verify": "node scripts/verify.js",
     "lint": "eslint .",

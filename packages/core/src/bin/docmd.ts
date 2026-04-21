@@ -36,6 +36,7 @@ const options = {
   offline: { type: 'boolean' },
   port: { type: 'string', short: 'p' },
   'build-only': { type: 'boolean' },
+  cwd: { type: 'string' },
   verbose: { type: 'boolean', short: 'v' },
   version: { type: 'boolean', short: 'V' },
   help: { type: 'boolean', short: 'h' }
@@ -50,6 +51,17 @@ try {
 }
 
 const { values, positionals } = parsed;
+
+// Handle custom working directory
+if (values.cwd) {
+  try {
+    process.chdir(values.cwd);
+  } catch (err: any) {
+    console.error(`Error: Could not change directory to "${values.cwd}": ${err.message}`);
+    process.exit(1);
+  }
+}
+
 const command = positionals[0];
 
 if (values.version || (!command && args.includes('-v'))) {
