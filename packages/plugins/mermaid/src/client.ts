@@ -26,7 +26,7 @@ import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.mi
   async function renderAll() {
     mermaid.registerIconPacks([
       {
-        name: 'lucide',
+        name: 'icon',
         loader: () => fetch('https://unpkg.com/@iconify-json/lucide@1/icons.json').then((res) => res.json()),
       },
     ]);
