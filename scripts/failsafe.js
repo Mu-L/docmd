@@ -181,12 +181,12 @@ try {
     
     // Security Audit
     try { 
-        execSync('pnpm audit --audit-level=high', { cwd: CWD, stdio: 'pipe' }); 
+        execSync('pnpm audit --audit-level=moderate', { cwd: CWD, stdio: 'pipe' }); 
     } catch (e) { 
         const out = e.stdout ? e.stdout.toString() : '';
         if (out.includes('vulnerabilities found') || out.includes('Severity:')) {
             process.stdout.write(' 💥\n');
-            console.error(`\x1b[31m\x1b[1m💥 Security Audit Failed:\x1b[0m High vulnerabilities detected!`);
+            console.error(`\x1b[31m\x1b[1m💥 Security Audit Failed:\x1b[0m Vulnerabilities detected!`);
             console.error(out);
             throw new Error("Process aborted due to security vulnerabilities.");
         } else {
