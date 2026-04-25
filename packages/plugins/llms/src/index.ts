@@ -18,7 +18,7 @@ import type { PluginDescriptor } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'llms',
-  version: '0.7.4',
+  version: '0.7.5',
   capabilities: ['post-build']
 };
 
