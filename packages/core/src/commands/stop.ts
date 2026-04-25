@@ -21,22 +21,22 @@ import chalk from 'chalk';
  */
 export async function stopServer(port: any) {
     if (port) {
-        console.log(chalk.blue(`\n🔍 Searching for docmd server on port ${chalk.bold(port)}...`));
+        console.log(chalk.blue(`\n🔍 Searching for docmd instance on port ${chalk.bold(port)}...`));
         try {
             const pid = execSync(`lsof -t -i:${port}`).toString().trim();
             if (pid) {
                 console.log(chalk.yellow(`   Found process ${pid} on port ${port}. Stopping...`));
                 process.kill(Number(pid), 'SIGTERM');
-                console.log(chalk.bold.green(`\n✅ docmd server on port ${port} has been stopped.\n`));
+                console.log(chalk.bold.green(`\n✅ docmd instance on port ${port} has been stopped.\n`));
                 return;
             }
         } catch {
-            console.log(chalk.green(`✅ No docmd server found on port ${port}.\n`));
+            console.log(chalk.green(`✅ No docmd instance found on port ${port}.\n`));
             return;
         }
     }
 
-    console.log(chalk.blue('\n🔍 Searching for all running docmd servers...'));
+    console.log(chalk.blue('\n🔍 Searching for all running docmd instances...'));
 
     try {
         // Get all processes with PIDs and full command lines
@@ -71,7 +71,7 @@ export async function stopServer(port: any) {
         }
 
         if (targets.length === 0) {
-            console.log(chalk.green('✅ No running docmd servers found.\n'));
+            console.log(chalk.green('✅ No running docmd instances found.\n'));
             return;
         }
 
@@ -93,7 +93,7 @@ export async function stopServer(port: any) {
             }
         }
 
-        console.log(chalk.bold.green('\n✅ All docmd servers have been stopped.\n'));
+        console.log(chalk.bold.green('\n✅ All docmd instances have been stopped.\n'));
 
     } catch (error) {
         console.error(chalk.red('❌ Error during stop:'), error.message);
