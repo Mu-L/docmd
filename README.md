@@ -78,7 +78,11 @@ npm install -g @docmd/core
 ```bash
 docmd dev     # start dev server
 docmd build   # build for deployment
-docmd deploy  # instantly generate docker, nginx, or caddy configs
+```
+
+```bash
+docmd migrate   # migrate from other documentation tools (like Docusaurus, VitePress, MkDocs, etc.)
+docmd deploy    # instantly generate docker, nginx, or caddy configs
 ```
 
 ## Features
