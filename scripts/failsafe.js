@@ -180,7 +180,20 @@ try {
     process.stdout.write('\x1b[2m🚨 [7/7] Executing Security & Dry-Run Verification...\x1b[0m');
     
     // Security Audit
-    try { execSync('pnpm audit --audit-level=high', { cwd: CWD, stdio: 'pipe' }); } catch (e) { process.stdout.write(' ⚠️ '); console.warn('   ⚠️ Security Audit Warning: Registry endpoint might be unreachable.'); }
+    try { 
+        execSync('pnpm audit --audit-level=high', { cwd: CWD, stdio: 'pipe' }); 
+    } catch (e) { 
+        const out = e.stdout ? e.stdout.toString() : '';
+        if (out.includes('vulnerabilities found') || out.includes('Severity:')) {
+            process.stdout.write(' 💥\n');
+            console.error(`\x1b[31m\x1b[1m💥 Security Audit Failed:\x1b[0m High vulnerabilities detected!`);
+            console.error(out);
+            throw new Error("Process aborted due to security vulnerabilities.");
+        } else {
+            process.stdout.write(' ⚠️ '); 
+            console.warn('   ⚠️ Security Audit Warning: Registry endpoint might be unreachable or audit failed.'); 
+        }
+    }
     
     // The Final Gate: Bulletproof Dry-Run Publish
     runCmd('pnpm publish -r --dry-run --no-git-checks', CWD);
