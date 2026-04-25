@@ -63,10 +63,10 @@ graph TD
 ### Architecture Diagram (Lucide Icons)
 ```mermaid
 architecture-beta
-    service db(lucide:database)[Database]
-    service api(lucide:server)[API Gateway]
-    service web(lucide:globe)[Web Server]
-    service app(lucide:smartphone)[Mobile App]
+    service db(icon:database)[Database]
+    service api(icon:server)[API Gateway]
+    service web(icon:globe)[Web Server]
+    service app(icon:smartphone)[Mobile App]
 
     app:R -- L:api
     web:R -- L:api

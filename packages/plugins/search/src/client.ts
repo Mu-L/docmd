@@ -28,7 +28,9 @@ declare const MiniSearch: any;
     let miniSearch: any = null;
     let isIndexLoaded = false;
     let selectedIndex = -1;
-    let activeVersionFilters = new Set<string>();
+    const activeVersionFilters = new Set<string>();
+    let globalAllVersions: string[] = [];
+    const globalVersionColors: Record<string, {bg: string, fg: string}> = {};
 
     function initSearch() {
         const searchModal = document.getElementById('docmd-search-modal') as HTMLElement;
@@ -149,16 +151,67 @@ declare const MiniSearch: any;
                 if (!response.ok) throw new Error(String(response.status));
 
                 const jsonString = await response.text();
+                const indexData = JSON.parse(jsonString);
+                
+                // Extract all versions globally from the raw MiniSearch index data
+                const docs = indexData.storedFields || {};
+                globalAllVersions = [...new Set(Object.values(docs).map((d: any) => d.version).filter(Boolean))] as string[];
+                globalAllVersions.sort();
+
+                const huePresets = [210, 150, 30, 330, 270, 60, 180, 0];
+                globalAllVersions.forEach((v, i) => {
+                    const hue = huePresets[i % huePresets.length];
+                    globalVersionColors[v] = { bg: `hsl(${hue}, 55%, 92%)`, fg: `hsl(${hue}, 60%, 35%)` };
+                });
+
                 miniSearch = MiniSearch.loadJSON(jsonString, {
                     fields: ['title', 'headings', 'text'],
                     storeFields: ['title', 'id', 'text', 'version'],
                     searchOptions: { fuzzy: 0.2, prefix: true, boost: { title: 2, headings: 1.5 } }
                 });
+                
+                console.log('[docmd-search] Index loaded. Versions found:', globalAllVersions.length);
+                renderGlobalFilters();
                 isIndexLoaded = true;
                 if (searchInput.value.trim()) searchInput.dispatchEvent(new Event('input'));
             } catch {
                 searchResults.innerHTML = `<div class="search-error">${strings.error}</div>`;
             }
+        }
+
+        function renderGlobalFilters() {
+            console.log('[docmd-search] Rendering global filters. Versions:', globalAllVersions);
+            if (globalAllVersions.length === 0) return;
+            let filterContainer = document.getElementById('docmd-global-search-filters');
+            if (!filterContainer) {
+                filterContainer = document.createElement('div');
+                filterContainer.id = 'docmd-global-search-filters';
+                filterContainer.style.cssText = 'padding: 12px 20px 8px 20px; border-bottom: 1px solid var(--docmd-border); display: flex; flex-wrap: wrap; gap: 8px;';
+                searchResults.parentNode?.insertBefore(filterContainer, searchResults);
+            }
+
+            filterContainer.innerHTML = globalAllVersions.map(v => {
+                const vc = globalVersionColors[v];
+                const isActive = activeVersionFilters.has(v);
+                const icon = isActive 
+                    ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>` 
+                    : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>`;
+                return `<span class="search-filter-tag ${isActive ? 'active' : ''}" data-version="${v}" style="background:${vc.bg};color:${vc.fg};cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:12px;font-size:11px;border: 1px solid ${isActive ? vc.fg : 'transparent'}; opacity: ${activeVersionFilters.size > 0 && !isActive ? '0.6' : '1'}; transition: all 0.2s;">
+                    ${icon} ${v}
+                </span>`;
+            }).join('');
+
+            filterContainer.querySelectorAll('.search-filter-tag').forEach(tag => {
+                tag.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const v = (tag as HTMLElement).dataset.version!;
+                    if (activeVersionFilters.has(v)) activeVersionFilters.delete(v);
+                    else activeVersionFilters.add(v);
+                    renderGlobalFilters();
+                    if (searchInput.value.trim()) searchInput.dispatchEvent(new Event('input'));
+                });
+            });
         }
 
         function getSnippet(text: string | undefined, query: string): string {
@@ -187,55 +240,25 @@ declare const MiniSearch: any;
             selectedIndex = -1;
             if (!query) { 
                 searchResults.innerHTML = emptyStateHtml; 
-                activeVersionFilters.clear();
                 return; 
             }
             if (!isIndexLoaded) return;
 
-            const results = miniSearch.search(query);
+            let results = miniSearch.search(query);
+            
+            if (activeVersionFilters.size > 0) {
+                results = results.filter((r: any) => activeVersionFilters.has(r.version));
+            }
+
             if (results.length === 0) {
-                searchResults.innerHTML = `<div class="search-no-results">${strings.noResults}</div>`;
+                searchResults.innerHTML = `<div class="search-no-results">${activeVersionFilters.size > 0 ? 'No results match the selected filters.' : strings.noResults}</div>`;
                 return;
             }
 
-            // Generate deterministic colors for version badges
-            const versionColors: Record<string, {bg: string, fg: string}> = {};
-            const huePresets = [210, 150, 30, 330, 270, 60, 180, 0];
-            const allVersions: string[] = [...new Set(results.map((r: any) => r.version).filter(Boolean))] as string[];
-            
-            // Clean up active filters that are no longer in the results
-            activeVersionFilters.forEach(v => {
-                if (!allVersions.includes(v)) activeVersionFilters.delete(v);
-            });
-
-            allVersions.forEach((v, i) => {
-                const hue = huePresets[i % huePresets.length];
-                versionColors[v] = { bg: `hsl(${hue}, 55%, 92%)`, fg: `hsl(${hue}, 60%, 35%)` };
-            });
-
-            let filteredResults = results;
-            if (activeVersionFilters.size > 0) {
-                filteredResults = results.filter((r: any) => activeVersionFilters.has(r.version));
-            }
-
-            let filtersHtml = '';
-            if (allVersions.length > 0) {
-                filtersHtml = `<div class="search-filters" style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--docmd-border);">` + allVersions.map(v => {
-                    const vc = versionColors[v];
-                    const isActive = activeVersionFilters.has(v);
-                    const icon = isActive 
-                        ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>` 
-                        : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>`;
-                    return `<span class="search-filter-tag ${isActive ? 'active' : ''}" data-version="${v}" style="background:${vc.bg};color:${vc.fg};cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:12px;font-size:11px;margin-right:6px;border: 1px solid ${isActive ? vc.fg : 'transparent'}; opacity: ${activeVersionFilters.size > 0 && !isActive ? '0.6' : '1'}; transition: all 0.2s;">
-                        ${icon} ${v}
-                    </span>`;
-                }).join('') + `</div>`;
-            }
-
-            const resultsHtml = filteredResults.slice(0, 10).map((result: any, index: number) => {
+            searchResults.innerHTML = results.slice(0, 10).map((result: any, index: number) => {
                 const snippet = getSnippet(result.text, query);
                 const linkHref = `${ROOT_PATH}${result.id}`;
-                const vc = result.version ? versionColors[result.version] : null;
+                const vc = result.version ? globalVersionColors[result.version] : null;
                 const versionBadge = result.version
                     ? `<span class="search-result-version" style="background:${vc!.bg};color:${vc!.fg}">${result.version}</span>`
                     : '';
@@ -245,23 +268,6 @@ declare const MiniSearch: any;
                         <div class="search-result-preview">${snippet}</div>
                     </a>`;
             }).join('');
-
-            searchResults.innerHTML = filtersHtml + (resultsHtml || `<div class="search-no-results">No results match the selected filters.</div>`);
-
-            searchResults.querySelectorAll('.search-filter-tag').forEach(tag => {
-                tag.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const v = (tag as HTMLElement).dataset.version!;
-                    if (activeVersionFilters.has(v)) {
-                        activeVersionFilters.delete(v);
-                    } else {
-                        activeVersionFilters.add(v);
-                    }
-                    // Re-render with same query
-                    searchInput.dispatchEvent(new Event('input'));
-                });
-            });
 
             searchResults.querySelectorAll('.search-result-item').forEach((item, idx) => {
                 item.addEventListener('mouseenter', () => { selectedIndex = idx; updateSelection(searchResults.querySelectorAll('.search-result-item') as NodeListOf<HTMLElement>); });
