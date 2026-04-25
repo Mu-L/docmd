@@ -12,10 +12,10 @@
     "dist"
   ],
   "devDependencies": {
+    "@docmd/api": "workspace:*",
     "@types/node": "^18.19.130",
     "esbuild": "^0.28.0",
-    "typescript": "^5.9.3",
-    "@docmd/api": "workspace:*"
+    "typescript": "^5.9.3"
   },
   "keywords": [
     "docmd",
@@ -48,5 +48,8 @@
   },
   "homepage": "https://docmd.io",
   "funding": "https://github.com/sponsors/mgks",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "mermaid": "11.4.1"
+  }
 }

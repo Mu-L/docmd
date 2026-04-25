@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mermaid Icon Test</title>
+</head>
+<body>
+    <div class="mermaid">
+    flowchart TD
+        A[lucide:user]
+        B["lucide:user User"]
+        C("lucide:user User")
+        E([icon:lucide:user User])
+        F([lucide:user])
+        G["icon:user User"]
+    </div>
+    
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+        
+        try {
+            mermaid.registerIconPacks([
+              {
+                name: 'lucide',
+                loader: () => fetch('https://unpkg.com/@iconify-json/lucide@1/icons.json').then((res) => res.json()),
+              },
+              {
+                name: 'icon',
+                loader: () => fetch('https://unpkg.com/@iconify-json/lucide@1/icons.json').then((res) => res.json()),
+              }
+            ]);
+        } catch (e) {
+            console.error('Error registering:', e);
+        }
+
+        mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
+        
+        setTimeout(() => {
+            mermaid.run({
+                querySelector: '.mermaid'
+            }).then(() => console.log('Rendered')).catch(e => console.error(e));
+        }, 1000);
+    </script>
+</body>
+</html>
