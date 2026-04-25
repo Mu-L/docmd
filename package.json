@@ -36,7 +36,12 @@
     "overrides": {
       "flatted": ">=3.4.2",
       "picomatch": ">=2.3.2",
-      "brace-expansion": ">=2.0.3"
+      "brace-expansion": ">=2.0.3",
+      "cross-spawn": ">=7.0.6",
+      "dompurify": ">=3.1.9",
+      "lodash-es": ">=4.18.0",
+      "uuid": ">=11.0.0",
+      "mermaid": ">=11.10.0"
     }
   },
   "workspaces": [
