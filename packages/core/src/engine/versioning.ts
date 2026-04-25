@@ -42,13 +42,17 @@ export async function filterGhostVersions(config: any, CWD: string, isDev: boole
  * Smart filter: remove navigation items that point to files which don't exist
  * in a specific version directory. Prevents broken links when pages were
  * added or removed between versions.
+ *
+ * When fallbackSrcDir is provided (i18n with inherited pages), the filter
+ * keeps nav items that exist in EITHER the locale dir or the fallback dir,
+ * since fallback pages are generated with a "not translated" warning.
  */
-export function filterNavForVersion(items: any[], vSrcDir: string): any[] {
+export function filterNavForVersion(items: any[], vSrcDir: string, fallbackSrcDir?: string | null): any[] {
   return items.reduce((acc, item) => {
     const newItem = { ...item };
 
     if (newItem.children) {
-      newItem.children = filterNavForVersion(newItem.children, vSrcDir);
+      newItem.children = filterNavForVersion(newItem.children, vSrcDir, fallbackSrcDir);
     }
 
     if (newItem.path && !newItem.path.startsWith('http') && !newItem.external) {
@@ -59,7 +63,17 @@ export function filterNavForVersion(items: any[], vSrcDir: string): any[] {
 
       const absoluteFilePath = path.join(vSrcDir, relativeFilePath);
       try {
-        if (!nodeFs.existsSync(absoluteFilePath)) return acc;
+        if (!nodeFs.existsSync(absoluteFilePath)) {
+          // If a fallback dir exists, check there too before removing
+          if (fallbackSrcDir) {
+            const fallbackFilePath = path.join(fallbackSrcDir, relativeFilePath);
+            try {
+              if (!nodeFs.existsSync(fallbackFilePath)) return acc;
+            } catch { return acc; }
+          } else {
+            return acc;
+          }
+        }
       } catch { return acc; }
     }
 
@@ -158,7 +172,7 @@ export async function buildVersions({
     const combinedOutputPrefix = pathPrefix + versionPrefixSegment;
 
     const activeNav = resolveVersionNav(v, vSrcDir, config.navigation);
-    const cleanedNav = filterNavForVersion(activeNav, vSrcDir);
+    const cleanedNav = filterNavForVersion(activeNav, vSrcDir, fallbackSrcDir);
 
     const versionedConfig = {
       ...config,
