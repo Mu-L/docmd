@@ -22,7 +22,9 @@ import basics from './basics.js';
 import embed from './embed.js';
 import hero from './hero.js';
 
-const FEATURES = [basics, buttons, embed, common, tabs, steps, changelog, hero];
+import tags from './tags.js';
+
+const FEATURES = [basics, buttons, tags, embed, common, tabs, steps, changelog, hero];
 
 function registerFeatures(md) {
   FEATURES.forEach(feature => {

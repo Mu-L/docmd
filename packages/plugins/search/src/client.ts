@@ -28,6 +28,7 @@ declare const MiniSearch: any;
     let miniSearch: any = null;
     let isIndexLoaded = false;
     let selectedIndex = -1;
+    let activeVersionFilters = new Set<string>();
 
     function initSearch() {
         const searchModal = document.getElementById('docmd-search-modal') as HTMLElement;
@@ -184,7 +185,11 @@ declare const MiniSearch: any;
         searchInput.addEventListener('input', (e) => {
             const query = (e.target as HTMLInputElement).value.trim();
             selectedIndex = -1;
-            if (!query) { searchResults.innerHTML = emptyStateHtml; return; }
+            if (!query) { 
+                searchResults.innerHTML = emptyStateHtml; 
+                activeVersionFilters.clear();
+                return; 
+            }
             if (!isIndexLoaded) return;
 
             const results = miniSearch.search(query);
@@ -197,12 +202,37 @@ declare const MiniSearch: any;
             const versionColors: Record<string, {bg: string, fg: string}> = {};
             const huePresets = [210, 150, 30, 330, 270, 60, 180, 0];
             const allVersions: string[] = [...new Set(results.map((r: any) => r.version).filter(Boolean))] as string[];
+            
+            // Clean up active filters that are no longer in the results
+            activeVersionFilters.forEach(v => {
+                if (!allVersions.includes(v)) activeVersionFilters.delete(v);
+            });
+
             allVersions.forEach((v, i) => {
                 const hue = huePresets[i % huePresets.length];
                 versionColors[v] = { bg: `hsl(${hue}, 55%, 92%)`, fg: `hsl(${hue}, 60%, 35%)` };
             });
 
-            searchResults.innerHTML = results.slice(0, 10).map((result: any, index: number) => {
+            let filteredResults = results;
+            if (activeVersionFilters.size > 0) {
+                filteredResults = results.filter((r: any) => activeVersionFilters.has(r.version));
+            }
+
+            let filtersHtml = '';
+            if (allVersions.length > 0) {
+                filtersHtml = `<div class="search-filters" style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--docmd-border);">` + allVersions.map(v => {
+                    const vc = versionColors[v];
+                    const isActive = activeVersionFilters.has(v);
+                    const icon = isActive 
+                        ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>` 
+                        : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>`;
+                    return `<span class="search-filter-tag ${isActive ? 'active' : ''}" data-version="${v}" style="background:${vc.bg};color:${vc.fg};cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:12px;font-size:11px;margin-right:6px;border: 1px solid ${isActive ? vc.fg : 'transparent'}; opacity: ${activeVersionFilters.size > 0 && !isActive ? '0.6' : '1'}; transition: all 0.2s;">
+                        ${icon} ${v}
+                    </span>`;
+                }).join('') + `</div>`;
+            }
+
+            const resultsHtml = filteredResults.slice(0, 10).map((result: any, index: number) => {
                 const snippet = getSnippet(result.text, query);
                 const linkHref = `${ROOT_PATH}${result.id}`;
                 const vc = result.version ? versionColors[result.version] : null;
@@ -215,6 +245,23 @@ declare const MiniSearch: any;
                         <div class="search-result-preview">${snippet}</div>
                     </a>`;
             }).join('');
+
+            searchResults.innerHTML = filtersHtml + (resultsHtml || `<div class="search-no-results">No results match the selected filters.</div>`);
+
+            searchResults.querySelectorAll('.search-filter-tag').forEach(tag => {
+                tag.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const v = (tag as HTMLElement).dataset.version!;
+                    if (activeVersionFilters.has(v)) {
+                        activeVersionFilters.delete(v);
+                    } else {
+                        activeVersionFilters.add(v);
+                    }
+                    // Re-render with same query
+                    searchInput.dispatchEvent(new Event('input'));
+                });
+            });
 
             searchResults.querySelectorAll('.search-result-item').forEach((item, idx) => {
                 item.addEventListener('mouseenter', () => { selectedIndex = idx; updateSelection(searchResults.querySelectorAll('.search-result-item') as NodeListOf<HTMLElement>); });
