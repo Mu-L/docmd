@@ -1,6 +1,6 @@
 {
   "name": "@docmd/core",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "description": "The zero-config documentation engine. Markdown to production docs in one command.",
   "type": "module",
   "browser": false,
