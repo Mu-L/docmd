@@ -1,6 +1,6 @@
 {
   "name": "@docmd/monorepo",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "private": true,
   "description": "The minimalist, zero-config documentation generator monorepo.",
   "scripts": {
@@ -34,13 +34,9 @@
       "esbuild"
     ],
     "overrides": {
-      "uuid": ">=14.0.0"
+      "mermaid>uuid": ">=14.0.0"
     }
   },
-  "workspaces": [
-    "packages/*",
-    "packages/plugins/*"
-  ],
   "keywords": [
     "docmd",
     "markdown",

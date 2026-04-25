@@ -439,6 +439,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       // i18n locale context
       activeLocale: config._activeLocale || null,
       allLocales: config._allLocales || null,
+      builtLocales: config._builtLocales ? [...config._builtLocales] : null,
       defaultLocale: config._defaultLocale || null,
       i18nInPlace: config.i18n?.inPlace || false,
       i18nStringMode: config.i18n?.stringMode || false,

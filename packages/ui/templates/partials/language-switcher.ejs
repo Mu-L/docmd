@@ -45,8 +45,12 @@
       const isCurrentActive = current && loc.id === current.id;
       const isLocDefault = loc.id === defaultLocale;
             
-      // Non-default locales are disabled when this version doesn't have i18n
-      const isDisabled = !isLocDefault && !versionHasI18n;
+      // Non-default locales are disabled when:
+      // 1. This version doesn't have i18n support, OR
+      // 2. The locale's source directory doesn't exist (no content was generated)
+      const builtLocales = config._builtLocales;
+      const isLocaleBuilt = !builtLocales || builtLocales.has ? builtLocales?.has(loc.id) : (Array.isArray(builtLocales) ? builtLocales.includes(loc.id) : true);
+      const isDisabled = !isLocDefault && (!versionHasI18n || !isLocaleBuilt);
             
       const base = config.base || '/';
       const normalizedBase = base.endsWith('/') ? base : base + '/';

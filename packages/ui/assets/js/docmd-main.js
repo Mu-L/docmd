@@ -147,6 +147,12 @@
     const langLink = e.target.closest('.language-switcher-item');
     if (langLink) {
       e.preventDefault();
+
+      // Skip disabled locales (no content available)
+      if (langLink.classList.contains('disabled') || langLink.getAttribute('aria-disabled') === 'true') {
+        return;
+      }
+
       var localeId = langLink.dataset.localeId;
       if (localeId) {
         try { localStorage.setItem('docmd-locale', localeId); } catch { /* storage unavailable */ }
@@ -180,8 +186,20 @@
           if (response.ok) {
             window.location.href = targetHref + window.location.hash;
           } else {
-            // Fallback: go to target locale root (preserve version prefix if present)
-            window.location.href = base + targetLocPrefix;
+            // Fallback 1: try target locale root (preserve version prefix if present)
+            var localeRoot = base + targetLocPrefix;
+            fetch(localeRoot, { method: 'HEAD' })
+              .then(function (rootResponse) {
+                if (rootResponse.ok) {
+                  window.location.href = localeRoot;
+                } else {
+                  // Fallback 2: locale root doesn't exist either — stay on default locale's equivalent page
+                  window.location.href = base + currentPath;
+                }
+              })
+              .catch(function () {
+                window.location.href = base + currentPath;
+              });
           }
         })
         .catch(function () {

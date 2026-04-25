@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  uuid: '>=14.0.0'
+  mermaid>uuid: '>=14.0.0'
 
 importers:
 
@@ -226,10 +226,6 @@ importers:
         version: 5.9.3
 
   packages/plugins/mermaid:
-    dependencies:
-      mermaid:
-        specifier: ^11.14.0
-        version: 11.14.0
     devDependencies:
       '@docmd/api':
         specifier: workspace:*
@@ -240,6 +236,9 @@ importers:
       esbuild:
         specifier: ^0.28.0
         version: 0.28.0
+      mermaid:
+        specifier: ^11.14.0
+        version: 11.14.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3

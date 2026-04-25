@@ -98,5 +98,6 @@ module.exports = defineConfig({
   navigation: [
     { title: 'Latest Home', path: '/', icon: 'home' },
     { title: 'Nostyle', path: '/nostyle', icon: 'file' },
+    { title: 'Mermaid icon test', path: '/mermaid-icon-test', icon: 'mermaid'}
   ]
 });

@@ -106,6 +106,30 @@ export async function buildLocales({
   const locales = getLocales(config);
   const isStringMode = config.i18n?.stringMode === true;
 
+  // Pre-scan which locale directories actually exist so the language switcher
+  // can disable unavailable locales during rendering (before pages are built).
+  // The default locale is always "available" since it renders at root.
+  if (config.i18n && config.i18n.locales) {
+    const baseSrcDir = path.resolve(CWD, config.src);
+    const availableLocaleIds = new Set<string>();
+    for (const loc of config.i18n.locales) {
+      if (loc.id === config.i18n.default) {
+        availableLocaleIds.add(loc.id);
+        continue;
+      }
+      if (isStringMode) {
+        // stringMode: all locales are available (they clone the default)
+        availableLocaleIds.add(loc.id);
+        continue;
+      }
+      const locDir = path.join(baseSrcDir, loc.id);
+      if (nativeFs.existsSync(locDir)) {
+        availableLocaleIds.add(loc.id);
+      }
+    }
+    config._builtLocales = availableLocaleIds;
+  }
+
   // In stringMode, build the default locale first (or single pass),
   // then clone its output with server-side string replacements for other locales.
   let defaultPassPages: any[] | null = null;
