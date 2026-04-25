@@ -13,7 +13,7 @@
     "bump": "node scripts/bump.js",
     "stop": "node packages/core/dist/bin/docmd.js stop >/dev/null 2>&1 || true",
     "clean": "rm -rf node_modules packages/*/node_modules packages/plugins/*/node_modules packages/*/dist packages/plugins/*/dist packages/*/public packages/plugins/*/public packages/*/site packages/plugins/*/site *.tsbuildinfo temp-* >/dev/null 2>&1;",
-    "unlink": "npm uninstall -g @docmd/core @docmd/monorepo docmd docmd-live -s >/dev/null 2>&1 || true; pnpm uninstall -g @docmd/core @docmd/monorepo docmd docmd-live -s >/dev/null 2>&1 || true; rm -f $(which docmd 2>/dev/null) $(which docmd-live 2>/dev/null) >/dev/null 2>&1 || true;",
+    "unlink": "npm uninstall -g @docmd/core @docmd/monorepo docmd docmd-live -s >/dev/null 2>&1 || true; pnpm uninstall -g @docmd/core @docmd/monorepo docmd docmd-live -s >/dev/null 2>&1 || true; rm -f $(which -a docmd 2>/dev/null) $(which -a docmd-live 2>/dev/null) >/dev/null 2>&1 || true;",
     "reset": "node scripts/status.js start:reset && pnpm -s stop && pnpm -s unlink && pnpm -s clean && node scripts/status.js reset"
   },
   "devDependencies": {
