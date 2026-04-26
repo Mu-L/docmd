@@ -146,3 +146,21 @@ export function normalizeNavPaths(items: any[]): void {
     }
   }
 }
+
+/**
+ * Recursively normalises all `url` values in a menubar tree.
+ * Applies the same trailing-slash enforcement and external detection as Markdown links.
+ */
+export function normalizeMenubarPaths(items: any[]): void {
+  if (!items) return;
+  for (const item of items) {
+    if (item.url && typeof item.url === 'string') {
+      const result = resolveHref(item.url);
+      item.url = result.href;
+      if (result.isExternal) item.external = true;
+    }
+    if (item.items) {
+      normalizeMenubarPaths(item.items);
+    }
+  }
+}

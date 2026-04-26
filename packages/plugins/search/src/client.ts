@@ -257,7 +257,8 @@ declare const MiniSearch: any;
 
             searchResults.innerHTML = results.slice(0, 10).map((result: any, index: number) => {
                 const snippet = getSnippet(result.text, query);
-                const linkHref = `${ROOT_PATH}${result.id}`;
+                const cleanId = result.id.startsWith('/') ? result.id.slice(1) : result.id;
+                const linkHref = `${ROOT_PATH}${cleanId}`;
                 const vc = result.version ? globalVersionColors[result.version] : null;
                 const versionBadge = result.version
                     ? `<span class="search-result-version" style="background:${vc!.bg};color:${vc!.fg}">${result.version}</span>`
