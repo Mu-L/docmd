@@ -12,7 +12,7 @@
  * --------------------------------------------------------------------
  */
 
-
+import { normalizeNavPaths } from '@docmd/parser';
 
 /**
  * Normalizes user config to ensure all required nested objects exist.
@@ -147,6 +147,8 @@ export function normalizeConfig(userConfig: any) {
     // Normalize Navigation
     config.navigation = Array.isArray(config.navigation) ? config.navigation : [];
 
+    normalizeNavPaths(config.navigation);
+
     // --- 5. Plugins ---
     config.hasExplicitPlugins = 'plugins' in userConfig;
     config.plugins = config.plugins || {};
@@ -203,3 +205,6 @@ export function normalizeConfig(userConfig: any) {
 
     return config;
 }
+
+// Re-export for backward compatibility (used by generator.ts, versioning.ts)
+export { normalizeNavPaths } from '@docmd/parser';

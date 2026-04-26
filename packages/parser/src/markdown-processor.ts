@@ -15,6 +15,7 @@
 import MarkdownIt from 'markdown-it';
 import matter from 'lite-matter';
 import { highlight } from 'lite-hl';
+import { resolveHref } from './utils/normalize-href.js';
 
 // Standard Plugins
 import attrs from 'markdown-it-attrs';
@@ -192,34 +193,42 @@ function createMarkdownProcessor(config: any = {}, pluginsCallback: any) {
     const hrefIndex = token.attrIndex('href');
 
     if (hrefIndex >= 0) {
-      let href = token.attrs[hrefIndex][1];
+      const href = token.attrs[hrefIndex][1];
 
-      const isExternal = href.match(/^(?:[a-z]+:|\/\/)/i);
-      const isAsset = href.match(/(^|\/)assets\//);
       const isHashOnly = href.startsWith('#');
+      const isAsset = href.match(/(^|\/)assets\//);
 
-      if (!isExternal && !isAsset && !isHashOnly) {
-        // Extract hash if it exists (e.g., info.md#section)
-        let hash = '';
-        const hashIndex = href.indexOf('#');
-        if (hashIndex >= 0) {
-          hash = href.substring(hashIndex);
-          href = href.substring(0, hashIndex);
-        }
+      if (!isHashOnly && !isAsset) {
+        const result = resolveHref(href);
 
-        if (href.endsWith('.md')) {
-          href = href.replace(/\.md$/, '');
+        if (!result.isRaw) {
+          let pathPart = result.href;
+          let hashPart = '';
+          const hi = pathPart.indexOf('#');
+          if (hi >= 0) {
+            hashPart = pathPart.substring(hi);
+            pathPart = pathPart.substring(0, hi);
+          }
 
-          // If the page was shifted into a subfolder (Clean URLs), we must traverse up one level
-          if (!href.startsWith('/') && env && env.isIndex === false) {
-            if (href.startsWith('./')) {
-              href = '../' + href.substring(2);
-            } else {
-              href = '../' + href;
+          // Depth adjustment for clean URLs (non-index pages are shifted into subfolders)
+          const isProtocol = pathPart.match(/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i);
+          if (!isProtocol && !pathPart.startsWith('/') && env && env.isIndex === false) {
+            if (pathPart.startsWith('./')) {
+              pathPart = '../' + pathPart.substring(2);
+            } else if (pathPart !== '') {
+              pathPart = '../' + pathPart;
             }
           }
 
-          token.attrs[hrefIndex][1] = href + hash;
+          token.attrs[hrefIndex][1] = pathPart + hashPart;
+        } else {
+          token.attrs[hrefIndex][1] = result.href;
+        }
+
+        // Apply external attributes
+        if (result.isExternal) {
+          token.attrSet('target', '_blank');
+          token.attrSet('rel', 'noopener noreferrer');
         }
       }
     }

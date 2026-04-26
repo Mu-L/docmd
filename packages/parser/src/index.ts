@@ -31,3 +31,4 @@ export {
 
 export { createDepthTrackingContainer } from './features/index.js';
 export { findPageNeighbors, findBreadcrumbs } from './utils/navigation-helper.js';
+export { normalizeInternalHref, normalizeNavPaths, resolveHref } from './utils/normalize-href.js';
