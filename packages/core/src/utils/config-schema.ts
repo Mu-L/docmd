@@ -12,7 +12,7 @@
  * --------------------------------------------------------------------
  */
 
-import { normalizeNavPaths } from '@docmd/parser';
+import { normalizeNavPaths, normalizeMenubarPaths } from '@docmd/parser';
 
 /**
  * Normalizes user config to ensure all required nested objects exist.
@@ -92,10 +92,13 @@ export function normalizeConfig(userConfig: any) {
     // --- Menubar (Top Navigation Bar) ---
     if (userLayout.menubar) {
         config.menubar = {
-            enabled: true,
-            position: 'top', // 'top' or 'header'
+            position: userLayout.menubar.position || 'top',
+            left: Array.isArray(userLayout.menubar.left) ? userLayout.menubar.left : [],
+            right: Array.isArray(userLayout.menubar.right) ? userLayout.menubar.right : [],
             ...userLayout.menubar
         };
+        normalizeMenubarPaths(config.menubar.left);
+        normalizeMenubarPaths(config.menubar.right);
     } else {
         config.menubar = null;
     }
@@ -207,4 +210,4 @@ export function normalizeConfig(userConfig: any) {
 }
 
 // Re-export for backward compatibility (used by generator.ts, versioning.ts)
-export { normalizeNavPaths } from '@docmd/parser';
+export { normalizeNavPaths, normalizeMenubarPaths } from '@docmd/parser';

@@ -225,5 +225,6 @@ if (command === 'init') {
   removePlugin(positionals[1], opts);
 } else {
   console.error(`Unknown command: ${command}`);
+  console.log(`\nRun 'docmd --help' for the list of available commands.\n`);
   process.exit(1);
 }

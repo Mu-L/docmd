@@ -94,7 +94,8 @@
         if (currentPath.startsWith(normCurrentRoot)) {
           const suffix = currentPath.substring(normCurrentRoot.length);
           const normTargetRoot = targetRoot.endsWith('/') ? targetRoot : targetRoot + '/';
-          const targetHref = normTargetRoot + suffix + window.location.hash;
+          let targetHref = normTargetRoot + suffix + window.location.hash;
+          targetHref = targetHref.replace(/([^:])\/{2,}/g, '$1/'); // Prevent double slashes
 
           // Smart Switcher: Check if the exact page exists in the target version
           fetch(targetHref, { method: 'HEAD' })
