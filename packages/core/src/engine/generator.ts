@@ -21,7 +21,7 @@ import nativeFs from 'fs';
 
 const _require = createRequire(import.meta.url);
 import * as parser from '@docmd/parser';
-import { findPageNeighbors, findBreadcrumbs } from '@docmd/parser';
+import { findPageNeighbors, findBreadcrumbs, normalizeNavPaths } from '@docmd/parser';
 import * as ui from '@docmd/ui';
 
 export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, hooks, buildHash, options, outputPrefix = '' }: any) {
@@ -43,13 +43,17 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
     try {
       if (nativeFs.existsSync(localeNavPath)) {
         const rawNav = await nativeFs.promises.readFile(localeNavPath, 'utf8');
-        config = { ...config, navigation: JSON.parse(rawNav) };
+        const parsedNav = JSON.parse(rawNav);
+        normalizeNavPaths(parsedNav);
+        config = { ...config, navigation: parsedNav };
       } else if (fallbackSrcDir) {
         // Fall back to default locale's navigation.json
         const fallbackNavPath = path.join(fallbackSrcDir, 'navigation.json');
         if (nativeFs.existsSync(fallbackNavPath)) {
           const rawNav = await nativeFs.promises.readFile(fallbackNavPath, 'utf8');
-          config = { ...config, navigation: JSON.parse(rawNav) };
+          const parsedNav = JSON.parse(rawNav);
+          normalizeNavPaths(parsedNav);
+          config = { ...config, navigation: parsedNav };
         }
       }
     } catch {

@@ -18,6 +18,7 @@ import fs from '../utils/fs-utils.js';
 import chalk from 'chalk';
 import { renderPages } from './generator.js';
 import { resolveLocaleSrcDir, resolveFallbackSrcDir } from './i18n.js';
+import { normalizeNavPaths } from '@docmd/parser';
 
 /**
  * Filter out "ghost" versions — configured versions whose source directories
@@ -57,9 +58,14 @@ export function filterNavForVersion(items: any[], vSrcDir: string, fallbackSrcDi
 
     if (newItem.path && !newItem.path.startsWith('http') && !newItem.external) {
       let relativeFilePath = newItem.path.replace(/^\//, '');
-      if (!relativeFilePath.endsWith('.md')) relativeFilePath += '.md';
-      if (relativeFilePath.endsWith('/.md')) relativeFilePath = relativeFilePath.replace('/.md', '/index.md');
-      if (relativeFilePath === '.md') relativeFilePath = 'index.md';
+      // Reverse clean-URL normalisation to find the source file
+      if (relativeFilePath.endsWith('/') || relativeFilePath === '') {
+        // Trailing slash (or root) → could be folder/index.md
+        const dir = relativeFilePath.replace(/\/$/, '');
+        relativeFilePath = dir ? dir + '/index.md' : 'index.md';
+      } else if (!relativeFilePath.endsWith('.md')) {
+        relativeFilePath += '.md';
+      }
 
       const absoluteFilePath = path.join(vSrcDir, relativeFilePath);
       try {
@@ -101,6 +107,10 @@ export function resolveVersionNav(v: any, vSrcDir: string, configNavigation: any
     console.warn(`[WARNING] Failed to parse navigation.json in ${vSrcDir}:`, err.message);
     activeNav = v.navigation || configNavigation;
   }
+
+  // Clone activeNav before mutating to avoid modifying global config
+  activeNav = JSON.parse(JSON.stringify(activeNav));
+  normalizeNavPaths(activeNav);
 
   return activeNav;
 }

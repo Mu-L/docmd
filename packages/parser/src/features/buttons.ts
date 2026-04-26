@@ -13,6 +13,7 @@
  */
 
 import { renderIcon } from '../utils/icon-renderer.js';
+import { resolveHref } from '../utils/normalize-href.js';
 
 function buttonRule(state, startLine, endLine, silent) {
   const start = state.bMarks[startLine] + state.tShift[startLine];
@@ -49,18 +50,30 @@ function buttonRule(state, startLine, endLine, silent) {
     }
   }
 
-  // Handle Link Types
-  let href = rawLink;
-  let isExternal = false;
+  // Resolve link through the unified normaliser
+  const result = resolveHref(rawLink);
+  let href = result.href;
 
-  if (href.startsWith('external:')) {
-    href = href.replace('external:', '');
-    isExternal = true;
-  } else if (href.startsWith('mailto:')) {
-    // Keep as is
-  } else if (href.startsWith('http')) {
-    // Auto-detect external http
-    isExternal = true;
+  // Clean URL depth adjustment for non-index pages
+  if (!result.isRaw && !result.isExternal && !href.startsWith('#')) {
+    let hashPart = '';
+    let pathPart = href;
+    const hashIdx = href.indexOf('#');
+    if (hashIdx >= 0) {
+      hashPart = href.substring(hashIdx);
+      pathPart = href.substring(0, hashIdx);
+    }
+
+    const isProtocol = pathPart.match(/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i);
+    if (!isProtocol && !pathPart.startsWith('/') && state.env && state.env.isIndex === false) {
+      if (pathPart.startsWith('./')) {
+        pathPart = '../' + pathPart.substring(2);
+      } else if (pathPart !== '') {
+        pathPart = '../' + pathPart;
+      }
+    }
+
+    href = pathPart + hashPart;
   }
 
   // Generate Token
@@ -72,7 +85,7 @@ function buttonRule(state, startLine, endLine, silent) {
     styleAttr = ` style="background-color: ${color}; border-color: ${color}; color: #fff;"`;
   }
 
-  const targetAttr = isExternal ? ' target="_blank" rel="noopener noreferrer"' : '';
+  const targetAttr = result.isExternal ? ' target="_blank" rel="noopener noreferrer"' : '';
 
   let iconHtml = '';
   if (icon) {

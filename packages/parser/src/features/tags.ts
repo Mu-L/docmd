@@ -13,6 +13,7 @@
  */
 
 import { renderIcon } from '../utils/icon-renderer.js';
+import { resolveHref } from '../utils/normalize-href.js';
 
 function tagInlineRule(state, silent) {
   const start = state.pos;
@@ -59,9 +60,9 @@ function tagInlineRule(state, silent) {
   let tagHtml = `<span class="docmd-tag"${styleAttr}>${iconHtml}${state.md.renderInline(text)}</span>`;
 
   if (link) {
-    const isExternal = link.startsWith('http');
-    const targetAttr = isExternal ? ' target="_blank" rel="noopener noreferrer"' : '';
-    tagHtml = `<a href="${link}" class="docmd-tag-link" style="text-decoration:none;"${targetAttr}>${tagHtml}</a>`;
+    const result = resolveHref(link);
+    const targetAttr = result.isExternal ? ' target="_blank" rel="noopener noreferrer"' : '';
+    tagHtml = `<a href="${result.href}" class="docmd-tag-link" style="text-decoration:none;"${targetAttr}>${tagHtml}</a>`;
   }
 
   token.content = tagHtml;

@@ -24,7 +24,7 @@ const __dirname = path.dirname(__filename);
 
 export const plugin: PluginDescriptor = {
   name: 'search',
-  version: '0.7.5',
+  version: '0.7.6',
   capabilities: ['post-build', 'head', 'body', 'assets', 'translations']
 };
 
@@ -112,7 +112,8 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
     for (const page of locPages) {
       let pageId = page.outputPath.replace(/\\/g, '/');
       if (pageId.endsWith('/index.html')) pageId = pageId.slice(0, -10);
-      if (pageId.endsWith('.html')) pageId = pageId.slice(0, -5);
+      else if (pageId === 'index.html') pageId = '/';
+      else if (pageId.endsWith('.html')) pageId = pageId.slice(0, -5);
 
       // Detect version from the output path
       let version: string | null = null;

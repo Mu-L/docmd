@@ -14,6 +14,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { normalizeInternalHref } from '@docmd/parser';
 
 // Extract title from Frontmatter or H1 without loading heavy parsers
 function extractTitleFromFile(filePath: string, filename: string) {
@@ -102,8 +103,8 @@ export function buildAutoNav(dir: string, basePath = '/'): any[] { // Default ba
       if (isIndex || (isReadme && !hasIndex)) {
         linkPath = basePath === '/' ? '/' : basePath;
       } else {
-        // Strip extension for clean URLs
-        linkPath = linkPath.replace(/\.(md|ejs)$/i, '');
+        // Use centralised normaliser for clean URLs with trailing slash
+        linkPath = normalizeInternalHref(linkPath);
       }
 
       nav.push({ title, path: linkPath });

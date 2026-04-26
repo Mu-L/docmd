@@ -1,0 +1,148 @@
+/**
+ * --------------------------------------------------------------------
+ * docmd : the zero-config documentation engine.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+/**
+ * Result of processing a href through the normaliser.
+ */
+export interface NormalizedHref {
+  /** The cleaned, SEO-safe href */
+  href: string;
+  /** Whether the link should open in a new tab */
+  isExternal: boolean;
+  /** Whether the link should skip normalisation (raw file reference) */
+  isRaw: boolean;
+}
+
+/**
+ * Centralised internal href normaliser.
+ *
+ * Converts any user-written link format into a clean, SEO-optimised URL
+ * that ends with a trailing slash (for directory-style pages) or is left
+ * untouched (for external, hash-only, or asset links).
+ *
+ * Supports special prefixes:
+ *   - `external:` — forces the link to open in a new tab (strips prefix)
+ *   - `raw:` — bypasses normalisation (strips prefix, keeps extension)
+ *
+ * Supported input formats (all produce the same output):
+ *   - overview.md          → overview/
+ *   - overview             → overview/
+ *   - overview/            → overview/
+ *   - ./overview.md        → ./overview/
+ *   - ../api/commands.md   → ../api/commands/
+ *   - localisation/index.md  → localisation/
+ *   - ./content/index.md     → ./content/
+ *   - ../index.md            → ../
+ *   - index.md               → (empty string — root of current dir)
+ *   - /absolute/path.md      → /absolute/path/
+ *   - #section               → #section (unchanged)
+ *   - https://example.com    → https://example.com (unchanged, auto-external)
+ *   - mailto:hi@docmd.io     → mailto:hi@docmd.io (unchanged)
+ *   - external:overview.md   → overview/ (opens in new tab)
+ *   - raw:docs/readme.md     → docs/readme.md (no normalisation)
+ *
+ * @param href  The raw href string from a markdown link, button, or nav config.
+ * @returns     The normalised result with external/raw flags.
+ */
+export function resolveHref(href: string): NormalizedHref {
+  if (!href) return { href, isExternal: false, isRaw: false };
+
+  // 1. Handle `raw:` prefix — bypass all normalisation, keep extension
+  if (href.startsWith('raw:')) {
+    return { href: href.slice(4), isExternal: false, isRaw: true };
+  }
+
+  // 2. Handle `external:` prefix — normalise but flag as external
+  let isExternal = false;
+  if (href.startsWith('external:')) {
+    href = href.slice(9);
+    isExternal = true;
+  }
+
+  // 3. Auto-detect external protocols
+  if (href.match(/^(?:https?:|\/\/)/i)) {
+    isExternal = true;
+  }
+
+  // 4. Pass through: all protocols (mailto:, tel:, ftp:, etc.), hash-only, asset paths
+  if (
+    href.match(/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i) ||  // http:, https:, mailto:, tel:, ftp:, //
+    href.startsWith('#') ||
+    href.match(/(^|\/)assets\//)
+  ) {
+    return { href, isExternal, isRaw: false };
+  }
+
+  // 5. Separate hash fragment
+  let hash = '';
+  const hashIndex = href.indexOf('#');
+  if (hashIndex >= 0) {
+    hash = href.substring(hashIndex);
+    href = href.substring(0, hashIndex);
+  }
+
+  // 6. Strip .md, .html, and .ejs extensions
+  if (href.endsWith('.md')) {
+    href = href.slice(0, -3);
+  } else if (href.endsWith('.html')) {
+    href = href.slice(0, -5);
+  } else if (href.endsWith('.ejs')) {
+    href = href.slice(0, -4);
+  }
+
+  // 7. Strip trailing /index (the page is the folder root)
+  //    Handles: dir/index, ./dir/index, ../dir/index, /dir/index
+  //    Also handles bare "index" (root index)
+  if (href === 'index' || href === './index') {
+    href = href === 'index' ? '' : './';
+  } else if (href.endsWith('/index')) {
+    href = href.slice(0, -5); // "dir/index" → "dir/"
+  }
+
+  // 8. Ensure trailing slash for non-empty paths
+  //    But NOT for empty string (which represents current directory root)
+  if (href !== '' && !href.endsWith('/')) {
+    href += '/';
+  }
+
+  // 9. Collapse any accidental double slashes (preserve leading // caught above)
+  href = href.replace(/([^:])\/{2,}/g, '$1/');
+
+  return { href: href + hash, isExternal, isRaw: false };
+}
+
+/**
+ * Simplified normaliser for backward compatibility.
+ * Returns only the normalised href string (no external/raw flags).
+ * Used by navigation normalisation where external detection is handled separately.
+ */
+export function normalizeInternalHref(href: string): string {
+  return resolveHref(href).href;
+}
+
+/**
+ * Recursively normalises all `path` values in a navigation tree.
+ * Used for nav config from `navigation.json`, `docmd.config.js`, and the auto-router.
+ */
+export function normalizeNavPaths(items: any[]): void {
+  if (!items) return;
+  for (const item of items) {
+    if (item.path && typeof item.path === 'string') {
+      item.path = normalizeInternalHref(item.path);
+    }
+    if (item.children) {
+      normalizeNavPaths(item.children);
+    }
+  }
+}
