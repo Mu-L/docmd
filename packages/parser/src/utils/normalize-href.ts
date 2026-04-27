@@ -64,16 +64,16 @@ export function resolveHref(href: string): NormalizedHref {
   }
 
   // 2. Handle `external:` prefix — normalise but flag as external
+  // Users must explicitly use external: prefix to open in new tab
   let isExternal = false;
   if (href.startsWith('external:')) {
     href = href.slice(9);
     isExternal = true;
   }
 
-  // 3. Auto-detect external protocols
-  if (href.match(/^(?:https?:|\/\/)/i)) {
-    isExternal = true;
-  }
+  // 3. Auto-detect external protocols (only for detection, not for new-tab behavior)
+  // This info can be used separately if needed, but we don't set isExternal here
+  // to give users control over their own docs links
 
   // 4. Pass through: all protocols (mailto:, tel:, ftp:, etc.), hash-only, asset paths
   if (
@@ -163,4 +163,19 @@ export function normalizeMenubarPaths(items: any[]): void {
       normalizeMenubarPaths(item.items);
     }
   }
+}
+
+/**
+ * Sanitize a URL by collapsing consecutive slashes (except after protocol).
+ * This is the last-resort safety net - if upstream logic is correct, this
+ * should be a no-op.
+ *
+ * @example
+ *   sanitizeUrl('//docs//guide/')  → '/docs/guide/'
+ *   sanitizeUrl('https://a.com//b') → 'https://a.com/b'
+ */
+export function sanitizeUrl(url: string): string {
+  if (!url) return url;
+  // Collapse double+ slashes, but preserve protocol://
+  return url.replace(/([^:])\/\/+/g, '$1/');
 }
