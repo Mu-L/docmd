@@ -32,3 +32,17 @@ export {
 export { createDepthTrackingContainer } from './features/index.js';
 export { findPageNeighbors, findBreadcrumbs } from './utils/navigation-helper.js';
 export { normalizeInternalHref, normalizeNavPaths, normalizeMenubarPaths, resolveHref } from './utils/normalize-href.js';
+
+// Centralised URL Utilities — the single source of truth for all URL transformations.
+// Plugins, templates, and engine components MUST use these instead of rolling their own.
+export {
+  sanitizeUrl,
+  outputPathToSlug,
+  outputPathToPathname,
+  outputPathToCanonical,
+  buildContextualUrl,
+  createUrlContext,
+  computePageUrls,
+  buildAbsoluteUrl,
+} from './utils/url-utils.js';
+export type { UrlContext, PageUrls } from './utils/url-utils.js';
