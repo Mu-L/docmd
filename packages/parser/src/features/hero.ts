@@ -69,7 +69,7 @@ function heroRule(state, startLine, endLine, silent) {
     }
 
     if (!fenceMarker) {
-      if (nextContent.match(/^:::\s+[a-zA-Z]/) && !nextContent.match(/^:::\s+(button|embed)/)) {
+      if (nextContent.match(/^:::\s+[a-zA-Z]/) && !nextContent.match(/^:::\s+(button|embed|tag)\b/)) {
         depth++;
       } else if (nextContent.match(/^:::\s*$/)) {
         depth--;
