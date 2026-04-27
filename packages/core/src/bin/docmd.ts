@@ -39,7 +39,8 @@ const options = {
   cwd: { type: 'string' },
   verbose: { type: 'boolean', short: 'V' },
   version: { type: 'boolean', short: 'v' },
-  help: { type: 'boolean', short: 'h' }
+  help: { type: 'boolean', short: 'h' },
+  force: { type: 'boolean' }
 } as const;
 
 let parsed;
@@ -81,6 +82,7 @@ if (!command || values.help) {
   console.log(`  migrate         Migrate from Docusaurus, MkDocs, VitePress, or Astro Starlight`);
   console.log(`  deploy          Generate production deployment configurations`);
   console.log(`  stop            Kill all running background docmd dev servers`);
+  console.log(`                  Use --force to also kill serve processes on common ports`);
   console.log(`  add <plugin>    Install and configure a docmd plugin`);
   console.log(`  remove <plugin> Remove and unconfigure a docmd plugin`);
   console.log(`\nOptions:`);
@@ -104,7 +106,8 @@ const opts = {
   offline: values.offline,
   port: values.port,
   buildOnly: values['build-only'],
-  verbose: values.verbose
+  verbose: values.verbose,
+  force: values.force
 };
 
 if (command !== 'stop') {
@@ -210,7 +213,7 @@ if (command === 'init') {
     process.exit(1);
   });
 } else if (command === 'stop') {
-  stopServer(opts.port);
+  stopServer(opts.port, opts.force);
 } else if (command === 'add') {
   if (!positionals[1]) {
     console.error('Error: missing plugin name.');

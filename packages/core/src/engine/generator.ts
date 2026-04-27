@@ -21,7 +21,7 @@ import nativeFs from 'fs';
 
 const _require = createRequire(import.meta.url);
 import * as parser from '@docmd/parser';
-import { findPageNeighbors, findBreadcrumbs, normalizeNavPaths } from '@docmd/parser';
+import { findPageNeighbors, findBreadcrumbs, normalizeNavPaths, createUrlContext, buildContextualUrl, computePageUrls, buildAbsoluteUrl, sanitizeUrl } from '@docmd/parser';
 import * as ui from '@docmd/ui';
 
 export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, hooks, buildHash, options, outputPrefix = '' }: any) {
@@ -343,21 +343,22 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
     const { prevPage, nextPage } = findPageNeighbors(config.navigation, navPath);
     const breadcrumbs = config.layout?.breadcrumbs !== false ? findBreadcrumbs(config.navigation, navPath) : [];
 
-    // Centralized URL Builder for all UI components
-    const buildRelativeUrl = (href: string) => {
-      if (!href || href === '#') return '#';
-      if (href.startsWith('http') || href.startsWith('//') || href.startsWith('mailto:')) return href;
-      
-      const cleanPath = href.replace(/^(\.\/|\/)+/, '');
-      const prefixStr = outputPrefix ? outputPrefix.replace(/\/$/, '') : '';
-      let combinedPath = prefixStr ? (cleanPath ? prefixStr + '/' + cleanPath : prefixStr) : cleanPath;
-      
-      if (options.offline && combinedPath !== '' && !combinedPath.endsWith('.html')) {
-        combinedPath = combinedPath.replace(/\/$/, '') + '/index.html';
-      }
-      
-      return relativePathToRoot + combinedPath;
-    };
+    // ── Centralized URL Context ──
+    // Created once per page, consumed by ALL templates and helpers.
+    const urlContext = createUrlContext({
+      relativePathToRoot,
+      outputPrefix,
+      offline: options.offline,
+      base: config.base || '/',
+      siteUrl: config.url || '',
+    });
+
+    // Pre-compute page URLs for plugin consumption
+    const pageUrls = computePageUrls(page.outputPath, config.url || '');
+
+    // Single URL builder — delegates to the centralized engine.
+    // Passed to EJS templates as `buildRelativeUrl`.
+    const buildRelativeUrl = (href: string) => buildContextualUrl(href, urlContext);
 
     // Fix Neighbor Links
     const fixNeighbor = (node: any) => {
@@ -368,7 +369,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
     // Inject Assets
     const assetHeadHtml = assetTags.head.map((gen: any) => gen(relativePathToRoot)).join('\n');
     const assetBodyHtml = assetTags.body.map((gen: any) => gen(relativePathToRoot)).join('\n');
-    const pageContext = { frontmatter: page.frontmatter, outputPath: page.outputPath };
+    const pageContext = { frontmatter: page.frontmatter, outputPath: page.outputPath, urls: pageUrls };
 
     const fullHeadHtml = [
       hooks.injectHead.map((fn: any) => fn(config, pageContext, relativePathToRoot)).join('\n'),
@@ -465,6 +466,10 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       // Translation function
       t,
 
+      // Centralised URL utilities — available in all templates
+      buildAbsoluteUrl,
+      sanitizeUrl,
+
       // Placeholders for template compatibility
       themeCssLinkHtml: '',
       metaTagsHtml: '',
@@ -476,6 +481,8 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       frontmatter: page.frontmatter,
       outputPath: page.outputPath,
       sourcePath: page.sourcePath,
+      urls: pageUrls,
+      urlContext,
       config
     };
 
@@ -487,6 +494,9 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
 
     await fs.ensureDir(path.dirname(finalPath));
     await nativeFs.promises.writeFile(finalPath, fullHtml);
+
+    // Attach pre-computed URLs to the page for post-build plugin consumption
+    (page as any).urls = pageUrls;
   }
 
   return pages;
