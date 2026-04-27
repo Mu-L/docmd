@@ -18,6 +18,7 @@ import nativeFs from 'fs';
 import fs from '../utils/fs-utils.js';
 import { renderPages } from './generator.js';
 import { buildVersions, filterGhostVersions } from './versioning.js';
+import { sanitizeUrl } from '@docmd/parser';
 
 /**
  * Prepare locale context to inject into config for a build pass.
@@ -255,14 +256,25 @@ export function generateHreflangTags(config: any, pageOutputPath: string): strin
   if (!config._allLocales) return '';
 
   const base = config.base && config.base !== '/' ? config.base.replace(/\/$/, '') : '';
-  const pagePath = pageOutputPath.replace(/index\.html$/, '').replace(/\\/g, '/');
+  let pagePath = pageOutputPath.replace(/index\.html$/, '').replace(/\\/g, '/');
+  
+  // Strip the current locale prefix from pagePath if present.
+  // pageOutputPath may be "hi/guide/index.html" — we need just "guide/".
+  const defaultLocale = config._defaultLocale;
+  for (const loc of config._allLocales) {
+    if (loc.id !== defaultLocale && pagePath.startsWith(loc.id + '/')) {
+      pagePath = pagePath.slice(loc.id.length + 1);
+      break;
+    }
+  }
 
   return config._allLocales.map((loc: any) => {
     const isDefault = loc.id === config._defaultLocale;
     // Default locale → root path, non-default → /{locale}/path
-    const href = isDefault
+    // Use sanitizeUrl to ensure no double slashes
+    const href = sanitizeUrl(isDefault
       ? `${base}/${pagePath}`
-      : `${base}/${loc.id}/${pagePath}`;
+      : `${base}/${loc.id}/${pagePath}`);
     let tags = `<link rel="alternate" hreflang="${loc.id}" href="${href}">`;
     if (isDefault) {
       tags += `\n<link rel="alternate" hreflang="x-default" href="${href}">`;
