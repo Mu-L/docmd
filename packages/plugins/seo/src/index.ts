@@ -13,6 +13,7 @@
  */
 
 import type { PluginDescriptor } from '@docmd/api';
+import { outputPathToPathname, sanitizeUrl } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'seo',
@@ -62,10 +63,10 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
   html += `<meta name="description" content="${description}">\n`;
 
   // 3. Canonical URL
+  // Use centralised URL utility for consistent URL generation.
   const siteUrl = config.url ? config.url.replace(/\/$/, '') : '';
-  // Convert "guide/index.html" -> "/guide/"
-  const urlPath = outputPath.replace(/(^|\/)index\.html$/, '$1');
-  const pageUrl = `${siteUrl}/${urlPath.replace(/^\//, '')}`;
+  const pathname = outputPathToPathname(outputPath);
+  const pageUrl = sanitizeUrl(siteUrl + pathname);
 
   const canonical = seo.canonicalUrl || frontmatter.canonicalUrl || pageUrl;
   if (canonical) {

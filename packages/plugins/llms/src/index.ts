@@ -15,6 +15,7 @@
 import path from 'path';
 import fs from 'fs/promises';
 import type { PluginDescriptor } from '@docmd/api';
+import { outputPathToPathname, sanitizeUrl } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'llms',
@@ -57,16 +58,10 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
 
   // Generate Links
   for (const page of validPages) {
-    let relativeUrl = page.outputPath;
-
-    // Clean URL logic (match sitemap behavior)
-    if (relativeUrl.endsWith('/index.html')) {
-      relativeUrl = relativeUrl.replace('/index.html', '/');
-    } else if (relativeUrl.endsWith('index.html')) {
-      relativeUrl = '';
-    }
-
-    const fullUrl = `${siteUrl}/${relativeUrl}`;
+    // Use centralised URL utility for consistent URL generation.
+    // This is the single source of truth — no manual outputPath parsing.
+    const pathname = outputPathToPathname(page.outputPath);
+    const fullUrl = sanitizeUrl(siteUrl + pathname);
     const title = page.frontmatter.title || 'Untitled';
 
     content += `- [${title}](${fullUrl})\n`;
@@ -87,10 +82,9 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
   fullContent += `---\n\n`;
 
   for (const page of validPages) {
-    let relativeUrl = page.outputPath;
-    if (relativeUrl.endsWith('/index.html')) relativeUrl = relativeUrl.replace('/index.html', '/');
-    else if (relativeUrl.endsWith('index.html')) relativeUrl = '';
-    const fullUrl = `${siteUrl}/${relativeUrl}`;
+    // Use centralised URL utility — same as above
+    const pathname = outputPathToPathname(page.outputPath);
+    const fullUrl = sanitizeUrl(siteUrl + pathname);
     const title = page.frontmatter.title || 'Untitled';
 
     fullContent += `## [${title}](${fullUrl})\n\n`;

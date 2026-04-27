@@ -15,6 +15,7 @@
 import path from 'path';
 import fs from 'fs/promises';
 import type { PluginDescriptor } from '@docmd/api';
+import { outputPathToPathname, sanitizeUrl } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'sitemap',
@@ -56,20 +57,14 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
     // Skip hidden pages
     if (fm.sitemap === false || fm.noindex === true) continue;
 
-    const pagePath = page.outputPath; // e.g. "guide/index.html"
-    let url = siteUrl;
-
-    // URL Construction Logic
-    if (pagePath === 'index.html') {
-      url += '/';
-    } else if (pagePath.endsWith('/index.html')) {
-      url += '/' + pagePath.replace('/index.html', '/');
-    } else {
-      url += '/' + pagePath;
-    }
+    // Use centralised URL utility for consistent URL generation.
+    // This is the single source of truth — no manual outputPath parsing.
+    const pathname = outputPathToPathname(page.outputPath);
+    const url = sanitizeUrl(siteUrl + pathname);
 
     // Metadata Logic
-    const priority = fm.priority || (pagePath === 'index.html' ? rootPriority : defaultPriority);
+    const isRoot = pathname === '/';
+    const priority = fm.priority || (isRoot ? rootPriority : defaultPriority);
     const changefreq = fm.changefreq || defaultChangefreq;
 
     sitemapXml += '  <url>\n';

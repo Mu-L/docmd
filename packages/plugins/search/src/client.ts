@@ -257,8 +257,10 @@ declare const MiniSearch: any;
 
             searchResults.innerHTML = results.slice(0, 10).map((result: any, index: number) => {
                 const snippet = getSnippet(result.text, query);
+                // Strip leading slash to avoid double-slash when concatenating with ROOT_PATH
                 const cleanId = result.id.startsWith('/') ? result.id.slice(1) : result.id;
-                const linkHref = `${ROOT_PATH}${cleanId}`;
+                // Sanitize: collapse any accidental double slashes (except after protocol)
+                const linkHref = `${ROOT_PATH}${cleanId}`.replace(/([^:])\/\/+/g, '$1/');
                 const vc = result.version ? globalVersionColors[result.version] : null;
                 const versionBadge = result.version
                     ? `<span class="search-result-version" style="background:${vc!.bg};color:${vc!.fg}">${result.version}</span>`

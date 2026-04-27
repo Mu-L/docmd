@@ -18,6 +18,7 @@ import nativeFs from 'fs';
 import MiniSearch from 'minisearch';
 import { fileURLToPath } from 'url';
 import type { PluginDescriptor } from '@docmd/api';
+import { outputPathToSlug, sanitizeUrl } from '@docmd/api';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -110,10 +111,15 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
     const seenIds = new Set();
 
     for (const page of locPages) {
-      let pageId = page.outputPath.replace(/\\/g, '/');
-      if (pageId.endsWith('/index.html')) pageId = pageId.slice(0, -10);
-      else if (pageId === 'index.html') pageId = '/';
-      else if (pageId.endsWith('.html')) pageId = pageId.slice(0, -5);
+      // Use centralised URL utility for consistent slug generation.
+      // This is the single source of truth — no manual outputPath parsing.
+      let pageId = outputPathToSlug(page.outputPath);
+      
+      // For search index, we want the slug without leading slash (except for root)
+      // This ensures clean concatenation in the client: ROOT_PATH + pageId
+      if (pageId.startsWith('/') && pageId !== '/') {
+        pageId = pageId.slice(1);
+      }
 
       // Detect version from the output path
       let version: string | null = null;
