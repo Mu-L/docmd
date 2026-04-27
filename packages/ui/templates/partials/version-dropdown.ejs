@@ -27,12 +27,6 @@
       const isCurrentActive = current && v.id === current.id;
       const isTargetRootVersion = v.id === versions.current;
 
-      // We use the 'config' object which is available in all templates
-
-      const base = config.base || '/';
-      const normalizedBase = base.endsWith('/') ? base : base + '/';
-
-      // Include locale prefix for non-default locales
       // Include locale prefix for non-default locales
       const locPrefix = (typeof localePrefix !== 'undefined' && localePrefix) ? localePrefix : '';
 
@@ -41,7 +35,11 @@
       const targetHasLocale = locPrefix ? versionI18nMap[v.id] !== false : true;
       const effectiveLocPrefix = targetHasLocale ? locPrefix : '';
       const targetSuffix = isTargetRootVersion ? '' : v.id + '/';
-      const absoluteHref = normalizedBase + effectiveLocPrefix + targetSuffix;
+
+      // Use centralised URL builder — single source of truth
+      const absoluteHref = (typeof buildAbsoluteUrl === 'function')
+        ? buildAbsoluteUrl(config.base || '/', effectiveLocPrefix, targetSuffix, '')
+        : ((config.base || '/').replace(/\/?$/, '/') + effectiveLocPrefix + targetSuffix);
 
       // Data Root for JS Sticky Logic
       const dataRoot = absoluteHref;

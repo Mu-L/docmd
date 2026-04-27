@@ -18,6 +18,8 @@
  * --------------------------------------------------------------------
  */
 
+/* global requestAnimationFrame, cancelAnimationFrame */
+
 (function () {
 
   // 1. EVENT DELEGATION
@@ -359,10 +361,14 @@
       // Wait 65ms to ensure the user actually intends to click
       clearTimeout(prefetchTimer);
       prefetchTimer = setTimeout(() => {
-        pageCache.set(url, fetch(url).then(res => {
+        // Prefetch using hash-stripped URL — the fragment is never sent to the server
+        const prefetchUrl = new URL(link.href);
+        const prefetchFetchUrl = prefetchUrl.origin + prefetchUrl.pathname + prefetchUrl.search;
+        if (pageCache.has(prefetchFetchUrl)) return;
+        pageCache.set(prefetchFetchUrl, fetch(prefetchFetchUrl).then(res => {
           if (!res.ok) throw new Error('Prefetch failed');
           return { html: res.text(), finalUrl: res.url };
-        }).catch(() => pageCache.delete(url)));
+        }).catch(() => pageCache.delete(prefetchFetchUrl)));
       }, 65);
     });
 
@@ -379,14 +385,32 @@
 
       const url = new URL(link.href);
       if (url.origin !== location.origin) return;
-      if (url.pathname === window.location.pathname && url.hash) return;
+
+      // Same-page hash navigation: scroll to the target element smoothly
+      // without a full SPA fetch. The browser's native behaviour doesn't
+      // fire reliably after a previous pushState, so we handle it manually.
+      if (url.pathname === window.location.pathname && url.hash) {
+        e.preventDefault();
+        history.pushState({}, '', url.href);
+        const target = document.querySelector(url.hash) || document.getElementById(url.hash.substring(1));
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
 
       e.preventDefault();
       await navigateTo(url.href);
     });
 
     window.addEventListener('popstate', () => {
-      if (window.location.pathname === currentPath) return;
+      // Same-page hash change via browser back/forward
+      if (window.location.pathname === currentPath) {
+        const hash = window.location.hash;
+        if (hash) {
+          const target = document.querySelector(hash) || document.getElementById(hash.substring(1));
+          if (target) target.scrollIntoView({ behavior: 'smooth' });
+        }
+        return;
+      }
       navigateTo(window.location.href, false);
     });
 
@@ -396,18 +420,25 @@
       try {
         if (layout) layout.style.minHeight = layout.getBoundingClientRect().height + 'px';
 
+        // Separate hash from the fetch URL — servers don't receive fragments,
+        // and res.url (finalUrl) will never contain the hash. We preserve it
+        // manually so pushState and the scroll both use the correct value.
+        const parsedUrl = new URL(url);
+        const requestedHash = parsedUrl.hash; // e.g. "#configuration"
+        const fetchUrl = parsedUrl.origin + parsedUrl.pathname + parsedUrl.search;
+
         let data;
-        if (pageCache.has(url)) {
-          data = await pageCache.get(url);
+        if (pageCache.has(fetchUrl)) {
+          data = await pageCache.get(fetchUrl);
           data.html = await data.html;
         } else {
-          const res = await fetch(url);
+          const res = await fetch(fetchUrl);
           if (!res.ok) throw new Error('Fetch failed');
           data = { html: await res.text(), finalUrl: res.url };
-          pageCache.set(url, Promise.resolve(data));
+          pageCache.set(fetchUrl, Promise.resolve(data));
         }
 
-        const finalUrl = data.finalUrl;
+        const finalUrl = data.finalUrl + requestedHash;
         const html = data.html;
 
         const parser = new DOMParser();
@@ -488,16 +519,19 @@
           if (oldEl && newEl) oldEl.innerHTML = newEl.innerHTML;
         });
 
-        const hash = new URL(finalUrl).hash;
-        if (hash) {
-          try {
-            document.querySelector(hash)?.scrollIntoView();
-          } catch {
-            document.getElementById(hash.substring(1))?.scrollIntoView();
+        // Scroll after the browser has painted the new content.
+        // requestAnimationFrame ensures the swapped innerHTML is in the layout.
+        requestAnimationFrame(() => {
+          if (requestedHash) {
+            try {
+              const target = document.querySelector(requestedHash)
+                || document.getElementById(requestedHash.substring(1));
+              if (target) target.scrollIntoView({ behavior: 'smooth' });
+            } catch { /* invalid selector — ignore */ }
+          } else {
+            window.scrollTo(0, 0);
           }
-        } else {
-          window.scrollTo(0, 0);
-        }
+        });
 
         injectCopyButtons();
         initializeScrollSpy();

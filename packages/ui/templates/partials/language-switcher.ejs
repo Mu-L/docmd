@@ -52,12 +52,14 @@
       const isLocaleBuilt = !builtLocales || builtLocales.has ? builtLocales?.has(loc.id) : (Array.isArray(builtLocales) ? builtLocales.includes(loc.id) : true);
       const isDisabled = !isLocDefault && (!versionHasI18n || !isLocaleBuilt);
             
-      const base = config.base || '/';
-      const normalizedBase = base.endsWith('/') ? base : base + '/';
-            
       // Build locale-aware URL preserving version and page path
+      // Use centralised URL builder — single source of truth
       const locPrefix = isLocDefault ? '' : loc.id + '/';
-      const absoluteHref = isDisabled ? '#' : (normalizedBase + locPrefix + versionPrefix + pagePath);
+      const absoluteHref = isDisabled 
+        ? '#' 
+        : ((typeof buildAbsoluteUrl === 'function')
+            ? buildAbsoluteUrl(config.base || '/', locPrefix, versionPrefix, pagePath)
+            : ((config.base || '/').replace(/\/?$/, '/') + locPrefix + versionPrefix + pagePath));
     %>
     <li>
       <a href="<%= absoluteHref %>" 

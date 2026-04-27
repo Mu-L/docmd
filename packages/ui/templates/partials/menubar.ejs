@@ -10,7 +10,9 @@ function menubarHref(item) {
   return item.external ? item.url : buildRelativeUrl(item.url); 
 }
 function menubarTarget(item) { 
-  return (item.external || (item.url && item.url.startsWith('http'))) ? ' target="_blank" rel="noopener noreferrer"' : '' ; 
+  // Only open in new tab if user explicitly adds external: prefix
+  // Users who want their own docs site to open in new tab should add external: prefix
+  return item.external ? ' target="_blank" rel="noopener noreferrer"' : '' ; 
 }
 %>
 
@@ -50,7 +52,7 @@ function menubarTarget(item) {
                             <%- renderIcon(sub.icon, { class: 'menubar-icon' }) %>
                           <% } %>
                           <%= sub.text %>
-                          <% if (sub.external || (sub.url && sub.url.startsWith('http'))) { %>
+                          <% if (sub.external) { %>
                             <%- renderIcon('external-link', { class: 'menubar-ext-icon' }) %>
                           <% } %>
                         </a>
@@ -67,7 +69,7 @@ function menubarTarget(item) {
                   <span>
                     <%= item.text %>
                   </span>
-                  <% if (item.external || (item.url && item.url.startsWith('http'))) { %>
+                  <% if (item.external) { %>
                     <%- renderIcon('external-link', { class: 'menubar-ext-icon' }) %>
                   <% } %>
                 </a>
@@ -98,7 +100,7 @@ function menubarTarget(item) {
                             <%- renderIcon(sub.icon, { class: 'menubar-icon' }) %>
                           <% } %>
                           <%= sub.text %>
-                          <% if (sub.external || (sub.url && sub.url.startsWith('http'))) { %>
+                          <% if (sub.external) { %>
                             <%- renderIcon('external-link', { class: 'menubar-ext-icon' }) %>
                           <% } %>
                         </a>
@@ -115,7 +117,7 @@ function menubarTarget(item) {
                 <span>
                   <%= item.text %>
                 </span>
-                <% if (item.external || (item.url && item.url.startsWith('http'))) { %>
+                <% if (item.external) { %>
                   <%- renderIcon('external-link', { class: 'menubar-ext-icon' }) %>
                 <% } %>
               </a>

@@ -7,9 +7,19 @@
 
 <nav class="sidebar-nav" aria-label="<%= typeof t === 'function' ? t('mainNavigation') : 'Main Navigation' %>">
   <ul>
-    <% function normalizePath(p) { if (!p || p==='#' ) return '#' ; if (p.startsWith('http')) return p; let
-      path=p.replace(/^(\.\/|\/)+/, '' ); path=path.replace(/(\/index\.html|index\.html|\.html|\.md)$/, '' );
-      path=path.replace(/\/$/, '' ); return '/' + path; } function isChildActive(item, currentPath) { if
+    <% 
+      // normalizePath: used ONLY for active-state comparison (not for href generation).
+      // All href generation goes through buildRelativeUrl() which delegates to the
+      // centralized URL engine in @docmd/parser.
+      function normalizePath(p) {
+        if (!p || p === '#') return '#';
+        if (p.startsWith('http')) return p;
+        let path = p.replace(/^(\.\/|\/)+/, '');
+        path = path.replace(/(\/index\.html|index\.html|\.html|\.md)$/, '');
+        path = path.replace(/\/$/, '');
+        return '/' + path;
+      }
+      function isChildActive(item, currentPath) { if
       (!item.children) return false; const currentNorm=normalizePath(currentPath); return item.children.some(child=> {
       const childNorm = normalizePath(child.path);
       if (childNorm === currentNorm) return true;

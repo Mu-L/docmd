@@ -39,7 +39,7 @@
     --sidebar-link-active-text: #18181b;
 
     /* Code Colors */
-    --code-bg: #eaeaea1f;
+    --code-bg: #9392921f;
     --code-text: #27272a;
 
     /* Accents */
@@ -523,15 +523,6 @@ body.sidebar-collapsed .main-content-wrapper {
     display: flex;
     flex-direction: column;
     min-width: 0;
-}
-
-.content-area {
-    padding: var(--space-8) 5%;
-    max-width: 1216px;
-    /* 1200 + 16 for some wiggle room */
-    margin: 0 auto;
-    width: 100%;
-    box-sizing: border-box;
 }
 
 @media (max-width: 768px) {
@@ -1266,7 +1257,7 @@ blockquote.docmd-embed {
 }
 
 .content-area {
-    padding: 1rem 5%;
+    padding: 1rem 2.5rem;
     max-width: 1200px;
     margin: 0 auto;
     width: 100%;
@@ -1757,17 +1748,17 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
     background-color: var(--sidebar-bg);
     color: var(--accent-color, var(--link-color));
     border: 1px solid var(--border-color);
-    padding: 4px 12px;
+    padding: 3px 8px;
     border-radius: 20px;
-    font-size: .85rem;
-    font-weight: 600;
+    font-size: .75rem;
+    font-weight: 500;
     font-family: var(--font-family-mono)
 }
 
 .changelog-body {
-    border-left: 2px solid var(--border-color);
-    padding-left: 2rem;
-    padding-bottom: 1rem
+    border-left: 1px solid var(--border-color);
+    padding-left: 2.5rem;
+    padding-bottom: .5rem;
 }
 
 .changelog-body> :first-child {
@@ -2238,6 +2229,7 @@ a.docmd-tag-link .docmd-tag:hover {
 
 .docmd-tag .tag-icon {
     display: inline-block;
+    margin-right: 5px;
 }
 
 .callout-title {
