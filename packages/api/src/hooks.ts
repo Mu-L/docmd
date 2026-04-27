@@ -135,6 +135,16 @@ function safeCall<T>(hookName: string, pluginName: string, fn: (...args: any[]) 
 // Collect errors for summary
 const pluginErrors: { plugin: string; hook: string; message: string }[] = [];
 
+// Track which plugin warnings have already been printed to avoid repeating them on
+// every dev-server rebuild. Keyed by `pluginName:warningType`.
+const _printedWarnings = new Set<string>();
+
+function warnOnce(key: string, message: string): void {
+  if (_printedWarnings.has(key)) return;
+  _printedWarnings.add(key);
+  console.warn(message);
+}
+
 // ---------------------------------------------------------------------------
 // Shorthand resolution
 // ---------------------------------------------------------------------------
@@ -225,11 +235,10 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
       try {
         registerPlugin(name, pluginModule, options);
       } catch (regError: any) {
-        console.warn(chalk.yellow(`⚠️  Plugin loaded but failed to register: ${name}`));
-        console.warn(chalk.dim(`   > ${regError.message}`));
+        warnOnce(`register:${name}`, chalk.yellow(`⚠️  Plugin loaded but failed to register: ${name}`) + chalk.dim(`\n   > ${regError.message}`));
       }
     } catch (e: any) {
-      console.warn(chalk.yellow(`⚠️  Could not load plugin: ${name} (missing or misconfigured)`));
+      warnOnce(`load:${name}`, chalk.yellow(`⚠️  Could not load plugin: ${name} (missing or misconfigured)`));
     }
   }
 

@@ -21,6 +21,24 @@ export { createActionDispatcher, safePath } from './rpc.js';
 // Source editing tools
 export { createSourceTools } from './source.js';
 
+// ─── Centralised URL Utilities ─────────────────────────────────────────────
+// Re-exported from @docmd/parser for plugin consumption.
+// Plugins MUST use these instead of rolling their own URL logic.
+export {
+  sanitizeUrl,
+  outputPathToSlug,
+  outputPathToPathname,
+  outputPathToCanonical,
+  buildContextualUrl,
+  createUrlContext,
+  computePageUrls,
+  buildAbsoluteUrl,
+  resolveHref,
+  normalizeInternalHref,
+} from '@docmd/parser';
+
+export type { UrlContext, PageUrls } from '@docmd/parser';
+
 // Types
 export type {
   // Plugin system
