@@ -18,7 +18,7 @@ import chalk from 'chalk';
 const KNOWN_KEYS = [
   // V3 Modern Labels
   'title', 'url', 'src', 'out', 'base', 'layout',
-  'versions', 'redirects', 'notFound',
+  'versions', 'redirects', 'notFound', 'projects',
 
   // V2 Legacy Labels
   'siteTitle', 'siteUrl', 'srcDir', 'outputDir',
@@ -26,7 +26,7 @@ const KNOWN_KEYS = [
   // Shared Features
   'logo', 'sidebar', 'theme', 'customJs', 'autoTitleFromH1',
   'copyCode', 'plugins', 'navigation', 'footer', 'sponsor', 'favicon',
-  'search', 'minify', 'editLink', 'pageNavigation'
+  'search', 'minify', 'editLink', 'pageNavigation', 'i18n'
 ];
 
 // Common typos mapping
@@ -49,7 +49,8 @@ function validateConfig(config) {
   const warnings = [];
 
   // 1. Required Fields (Accept either title OR siteTitle)
-  if (!config.title && !config.siteTitle) {
+  // Skip for multi-project root configs — they only have projects[]
+  if (!config.title && !config.siteTitle && !Array.isArray(config.projects)) {
     errors.push('Missing required property: "title" (or "siteTitle")');
   }
 

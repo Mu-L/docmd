@@ -53,6 +53,11 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
     if (e.silent) {
       process.exit(0); // Exit gracefully if it's a known non-project folder error
     }
+    // Config validation errors already print their details — exit cleanly
+    if (e.message === 'Invalid configuration file.' || e.message?.startsWith('Error parsing config')) {
+      console.error(`\nBuild failed:\n${e.message}\n`);
+      process.exit(1);
+    }
     throw e;
   }
   const CWD = process.cwd();

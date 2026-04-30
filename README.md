@@ -1,5 +1,7 @@
 <div align="right">
-  <b>EN</b> &nbsp;|&nbsp; <a href="./README.es.md">ES</a> &nbsp;|&nbsp; <a href="./README.de.md">DE</a> &nbsp;|&nbsp; <a href="./README.ja.md">日本語</a> &nbsp;|&nbsp; <a href="./README.fr.md">FR</a> &nbsp;|&nbsp; <a href="./README.zh.md">中文</a>
+  <sup>
+    <b>EN</b> &nbsp;|&nbsp; <a href="./README.es.md">ES</a> &nbsp;|&nbsp; <a href="./README.de.md">DE</a> &nbsp;|&nbsp; <a href="./README.ja.md">日本語</a> &nbsp;|&nbsp; <a href="./README.fr.md">FR</a> &nbsp;|&nbsp; <a href="./README.zh.md">中文</a>
+  </sup>
 </div>
 
 <div align="center">
@@ -227,13 +229,14 @@ docmd add <plugin-name>
 | :--------------- | :------------------------ | :------------------- | :-------------- | :--------------- | :--------------- |
 | **Language**     | **Node.js**               | React.js             | Python          | Vue              | SaaS             |
 | **Config required** | **None**               | `docusaurus.config.js` | `mkdocs.yml`  | `config.mts`     | `mint.json`      |
+| **Multi-project**| **Native**                | Plugin               | Plugin          | No               | No               |
 | **Initial payload** | **~18kb**              | ~250kb               | ~40kb           | ~50kb            | ~120kb           |
 | **Navigation**   | **Instant SPA**           | React SPA            | Full reloads    | Vue SPA          | Hosted SPA       |
-| **Versioning**   | **Built-in**              | Native (complex)     | mike plugin     | Manual           | Native           |
-| **i18n**         | **Built-in**              | Native (complex)     | Plugin-based    | Manual           | Native           |
-| **Search**       | **Built-in (offline)**    | Algolia (cloud)      | Built-in        | MiniSearch        | Cloud            |
+| **Versioning**   | **Native**              | Native (complex)     | mike plugin     | Manual           | Native           |
+| **i18n**         | **Native**              | Native (complex)     | Plugin-based    | Manual           | Native           |
+| **Search**       | **Built-in (offline)**    | Algolia (cloud)      | Built-in        | MiniSearch       | Cloud            |
 | **AI Context**   | **Built-in (`llms.txt`)** | Manual               | None            | None             | Proprietary      |
-| **PWA**          | **Official Plugin**       | Community plugin     | None            | None             | Hosted           |
+| **PWA**          | **Plugin**              | Community plugin     | None            | None             | Hosted           |
 | **Self-hosted**  | **Yes**                   | Yes                  | Yes             | Yes              | No               |
 | **Zero-config**  | **`npx @docmd/core dev`** | No                   | No              | No               | No               |
 | **Cost**         | **Free (OSS)**            | Free (OSS)           | Free (OSS)      | Free (OSS)       | Freemium         |
