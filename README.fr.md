@@ -1,5 +1,7 @@
 <div align="right">
-  <a href="./README.md">EN</a> &nbsp;|&nbsp; <a href="./README.es.md">ES</a> &nbsp;|&nbsp; <a href="./README.de.md">DE</a> &nbsp;|&nbsp; <a href="./README.ja.md">日本語</a> &nbsp;|&nbsp; <b>FR</b> &nbsp;|&nbsp; <a href="./README.zh.md">中文</a>
+  <sup>
+    <a href="./README.md">EN</a> &nbsp;|&nbsp; <a href="./README.es.md">ES</a> &nbsp;|&nbsp; <a href="./README.de.md">DE</a> &nbsp;|&nbsp; <a href="./README.ja.md">日本語</a> &nbsp;|&nbsp; <b>FR</b> &nbsp;|&nbsp; <a href="./README.zh.md">中文</a>
+  </sup>
 </div>
 
 <div align="center">
