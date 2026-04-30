@@ -11,7 +11,7 @@ To test your changes, keep the dev server running (`pnpm run dev`). Any change y
 
 ## Component Verification
 
-Test your UI components and parser rules here to ensure visual consistency:
+Test your UI components and parser rules here to ensure consistency:
 
 ::: card "Container Test"
     Test nested callouts and containers.

@@ -15,7 +15,7 @@
 import path from 'path';
 import nodeFs from 'fs';
 import fs from '../utils/fs-utils.js';
-import chalk from 'chalk';
+import { TUI } from '@docmd/tui';
 import { renderPages } from './generator.js';
 import { resolveLocaleSrcDir, resolveFallbackSrcDir } from './i18n.js';
 import { normalizeNavPaths } from '@docmd/parser';
@@ -33,7 +33,7 @@ export async function filterGhostVersions(config: any, CWD: string, isDev: boole
     if (await fs.exists(vSrcDir)) {
       validVersions.push(v);
     } else {
-      if (!isDev) console.log(chalk.yellow(`⚠️  Skipping missing version: ${v.id} (${v.dir})`));
+      if (!isDev) TUI.warn(`Skipping missing version: ${v.id} (${v.dir})`);
     }
   }
   config.versions.all = validVersions;
@@ -104,7 +104,7 @@ export function resolveVersionNav(v: any, vSrcDir: string, configNavigation: any
       activeNav = v.navigation;
     }
   } catch (err) {
-    console.warn(`[WARNING] Failed to parse navigation.json in ${vSrcDir}:`, err.message);
+    TUI.warn(`Failed to parse navigation.json in ${vSrcDir}: ${err.message}`);
     activeNav = v.navigation || configNavigation;
   }
 
@@ -172,7 +172,7 @@ export async function buildVersions({
     }
 
     if (!await fs.exists(vSrcDir)) {
-      if (!options.isDev) console.log(chalk.yellow(`⚠️  Version directory missing: ${v.dir}. Skipping ${v.id}...`));
+      if (!options.isDev) TUI.warn(`Version directory missing: ${v.dir}. Skipping ${v.id}...`);
       continue;
     }
 

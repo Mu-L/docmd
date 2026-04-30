@@ -15,9 +15,8 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from '../utils/fs-utils.js';
-import chalk from 'chalk';
 import { loadConfig } from '../utils/config-loader.js';
-import { loadPlugins } from '@docmd/api';
+import { TUI, loadPlugins } from '@docmd/api';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { prepareAssets } from '../engine/assets.js';
@@ -29,6 +28,7 @@ export async function buildSite(configPath: string, opts: any = {}) {
   const options = {
     isDev: opts.isDev || false,
     offline: opts.offline || false,
+    quiet: opts.quiet || false,
   };
 
   const CWD = process.cwd();
@@ -192,25 +192,25 @@ export async function buildSite(configPath: string, opts: any = {}) {
     }
 
     // --- 5. Post Build Hooks (Search, Sitemap, LLMs) ---
+    if (!options.quiet) TUI.section('Post-Build Tasks', TUI.blue);
     await Promise.all(hooks.onPostBuild.map(fn => fn({
       config,
       pages: allGeneratedPages,
       outputDir: rootOutputDir,
-      log: (msg) => !options.isDev && console.log(msg)
+      log: (msg: string) => !options.quiet && TUI.step(msg, 'DONE', TUI.blue)
     })));
 
     if (!options.isDev) {
-      console.log(chalk.green(`✅ Build complete. Generated ${allGeneratedPages.length} pages.`));
+      TUI.footer(TUI.blue);
+      TUI.success(`Build complete. Generated ${allGeneratedPages.length} pages.`);
     }
 
-  } catch (e) {
+  } catch (e: any) {
     if (!options.isDev) {
-      console.error(chalk.red('Build failed:'));
+      TUI.error('Build failed', e.message);
       // Show full stack trace if we are in a testing/CI environment
       if (process.env.npm_lifecycle_event === 'test' || process.env.CI) {
         console.error(e.stack);
-      } else {
-        console.error(e.message);
       }
       process.exit(1);
     }

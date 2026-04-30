@@ -39,7 +39,7 @@
 import path from 'path';
 import fs from '../utils/fs-utils.js';
 import nativeFs from 'fs';
-import chalk from 'chalk';
+import { TUI } from '@docmd/tui';
 import { loadConfig } from '../utils/config-loader.js';
 import { buildSite } from '../commands/build.js';
 
@@ -137,6 +137,22 @@ function validateProjects(projects: ProjectEntry[]): void {
   if (!hasRoot) {
     throw new Error('Multi-project config must have a root project with prefix "/"');
   }
+
+  // Check for potential conflicts: warn if root project might have content at a sub-project's prefix
+  const rootProject = projects.find(p => p.prefix === '/');
+  if (rootProject) {
+    const rootSrcPath = path.resolve(process.cwd(), rootProject.src);
+    for (const project of projects) {
+      if (project.prefix === '/') continue;
+      const prefixName = project.prefix.replace(/^\//, '');
+      // Check if root project has a folder matching another project's prefix
+      const conflictPath = path.join(rootSrcPath, prefixName);
+      if (nativeFs.existsSync(conflictPath)) {
+        TUI.warn(`Potential conflict: Root project has "${prefixName}/" folder which may conflict with project prefix "${project.prefix}".`);
+        TUI.warn(`Content at "${rootProject.src}/${prefixName}/" will be overwritten by project "${project.src}".`);
+      }
+    }
+  }
 }
 
 /* ── Build ─────────────────────────────────────────────────── */
@@ -153,7 +169,7 @@ function validateProjects(projects: ProjectEntry[]): void {
  */
 export async function buildMultiProject(
   multiConfig: MultiProjectConfig,
-  opts: { isDev?: boolean; offline?: boolean } = {}
+  opts: { isDev?: boolean; offline?: boolean; quiet?: boolean } = {}
 ): Promise<void> {
   const CWD = process.cwd();
   const rootOutDir = path.resolve(CWD, multiConfig.out || 'site');
@@ -167,7 +183,11 @@ export async function buildMultiProject(
     return a.prefix.localeCompare(b.prefix);
   });
 
-  console.log(chalk.blue(`\n📦 Multi-Project Build (${sorted.length} projects)\n`));
+  // Only show banner in production builds, not in dev mode
+  if (!opts.isDev && !opts.quiet) {
+    TUI.banner(undefined, 'Multi-Project');
+    TUI.section(`Multi-Project Build (${sorted.length} projects)`);
+  }
 
   // Ensure clean output directory
   await fs.ensureDir(rootOutDir);
@@ -175,7 +195,7 @@ export async function buildMultiProject(
   // Copy shared assets first (root-level assets/ folder)
   const sharedAssetsDir = path.resolve(CWD, 'assets');
   if (nativeFs.existsSync(sharedAssetsDir)) {
-    console.log(chalk.dim(`   Shared assets: ${path.relative(CWD, sharedAssetsDir)}`));
+    TUI.item('Shared assets', path.relative(CWD, sharedAssetsDir));
   }
 
   for (const project of sorted) {
@@ -189,15 +209,15 @@ export async function buildMultiProject(
       : path.join(rootOutDir, prefix.replace(/^\//, ''));
 
     const label = prefix === '/' ? `/ (root)` : prefix;
-    console.log(chalk.bold(`\n   ┌─ Building: ${label}`));
-    console.log(chalk.dim(`   │  src: ${project.src}/`));
-    console.log(chalk.dim(`   │  out: ${path.relative(CWD, projectOutDir)}/`));
+    TUI.divider(`Building: ${label}`);
+    TUI.item('Source', `${project.src}/`);
+    TUI.item('Output', `${path.relative(CWD, projectOutDir)}/`);
 
     // Check if the project has its own config
     const hasProjectConfig = nativeFs.existsSync(projectConfigPath);
 
     if (!hasProjectConfig) {
-      console.log(chalk.dim(`   │  config: zero-config (no docmd.config.js found)`));
+      TUI.item('Config', 'zero-config (no docmd.config.js found)');
     }
 
     // Change to project directory and build
@@ -226,10 +246,11 @@ export async function buildMultiProject(
         offline: opts.offline || false,
       });
 
-      console.log(chalk.green(`   └─ ✓ Done`));
+      TUI.step(`Project ${label}`, 'DONE');
 
     } catch (err: any) {
-      console.error(chalk.red(`   └─ ✗ Failed: ${err.message}`));
+      TUI.step(`Project ${label}`, 'FAIL');
+      TUI.error(`Build failed for ${label}`, err.message);
       if (!opts.isDev) throw err;
     } finally {
       // Always restore CWD
@@ -240,8 +261,68 @@ export async function buildMultiProject(
   }
 
   // Final summary
-  const totalSize = await getDirectorySize(rootOutDir);
-  console.log(chalk.green(`\n✅ Multi-project build complete → ${path.relative(CWD, rootOutDir)}/ (${formatBytes(totalSize)})\n`));
+  if (!opts.isDev && !opts.quiet) {
+    const totalSize = await getDirectorySize(rootOutDir);
+    TUI.footer();
+    TUI.success(`Multi-project build complete → ${path.relative(CWD, rootOutDir)}/ (${formatBytes(totalSize)})`);
+  } else {
+    TUI.footer();
+  }
+}
+
+/* ── Single Project Build (for dev watchers) ────────────────── */
+
+async function buildSingleProject(
+  project: ProjectEntry,
+  multiConfig: MultiProjectConfig,
+  opts: { isDev?: boolean; offline?: boolean; quiet?: boolean } = {}
+): Promise<void> {
+  const CWD = process.cwd();
+  const rootOutDir = path.resolve(CWD, multiConfig.out || 'site');
+  const prefix = project.prefix === '/' ? '/' : project.prefix.replace(/\/$/, '');
+  const projectSrcDir = path.resolve(CWD, project.src);
+  const projectConfigPath = path.join(projectSrcDir, 'docmd.config.js');
+
+  const projectOutDir = prefix === '/'
+    ? rootOutDir
+    : path.join(rootOutDir, prefix.replace(/^\//, ''));
+
+  const label = prefix === '/' ? '/ (root)' : prefix;
+
+  // Check if project has its own config
+  const hasProjectConfig = nativeFs.existsSync(projectConfigPath);
+
+  // Change to project directory and build
+  const originalCwd = process.cwd();
+  process.chdir(projectSrcDir);
+
+  try {
+    process.env.DOCMD_PROJECT_OUT = projectOutDir;
+    process.env.DOCMD_PROJECT_PREFIX = prefix;
+
+    // Copy shared assets if they exist
+    const sharedAssetsDir = path.resolve(CWD, 'assets');
+    if (nativeFs.existsSync(sharedAssetsDir)) {
+      await fs.ensureDir(path.join(projectOutDir, 'assets'));
+      await fs.copy(sharedAssetsDir, path.join(projectOutDir, 'assets'));
+    }
+
+    // Build only this project
+    const configFile = hasProjectConfig ? 'docmd.config.js' : 'docmd.config.js';
+    await buildSite(configFile, {
+      isDev: opts.isDev || false,
+      offline: opts.offline || false,
+      quiet: true, // Suppress output in dev mode
+    });
+
+  } catch (err: any) {
+    TUI.error(`Build failed for ${label}`, err.message);
+    throw err;
+  } finally {
+    process.chdir(originalCwd);
+    delete process.env.DOCMD_PROJECT_OUT;
+    delete process.env.DOCMD_PROJECT_PREFIX;
+  }
 }
 
 /* ── Dev Server Wrapper ────────────────────────────────────── */
@@ -292,23 +373,21 @@ export async function devMultiProject(
     const localUrl = `http://127.0.0.1:${port}`;
     const networkUrl = networkIp ? `http://${networkIp}:${port}` : null;
 
-    const border = chalk.gray('────────────────────────────────────────');
-    console.log(border);
-    console.log(`  ${chalk.bold.green('MULTI-PROJECT DEV SERVER')}`);
+    // TUI.banner(undefined, 'MULTI-PROJECT');
+    TUI.section('DEV SERVER');
     console.log('');
-    console.log(`  ${chalk.bold('Local:')}    ${chalk.cyan(localUrl)}`);
+    TUI.item('Local', localUrl, TUI.bold);
     if (networkUrl) {
-      console.log(`  ${chalk.bold('Network:')}  ${chalk.cyan(networkUrl)}`);
+      TUI.item('Network', networkUrl, TUI.bold);
     }
     console.log('');
 
     for (const project of multiConfig.projects) {
       const prefix = project.prefix === '/' ? '/' : project.prefix;
-      console.log(`  ${chalk.dim('Project:')}  ${chalk.cyan(localUrl + prefix)} → ${project.src}/`);
+      TUI.item('Project', localUrl + prefix);
     }
 
-    console.log(border);
-    console.log('');
+    TUI.footer();
   });
 
   // Watch each project's source directory for changes
@@ -322,23 +401,36 @@ export async function devMultiProject(
 
     nativeFs.watch(projectSrcDir, { recursive: true }, (event, filename) => {
       if (!filename) return;
+      // Ignore config temp files, node_modules, .git, etc.
       if (filename.includes('.git') || filename.includes('node_modules') ||
-          filename.includes('.DS_Store') || filename.startsWith('.')) return;
+          filename.includes('.DS_Store') || filename.startsWith('.') ||
+          filename.includes('docmd.config-') || filename.endsWith('.js.bak')) return;
 
       if (rebuildTimeout) clearTimeout(rebuildTimeout);
       rebuildTimeout = setTimeout(async () => {
         if (isRebuilding) return;
         isRebuilding = true;
 
+        // Build only this project, not all - show file path relative to project
         const label = project.prefix === '/' ? '/' : project.prefix;
-        process.stdout.write(chalk.dim(`↻ Change in ${project.src}/${filename} [${label}]... `));
+        // Show [WAIT] [project-name] path/to/file.md - strip project folder name
+        const displayPath = filename.replace(/^[^/]+\//, '');
+        // Use a single line that gets updated
+        console.log(`\x1b[34m│\x1b[0m  \x1b[36m[ WAIT ]\x1b[0m \x1b[33m[${label}]\x1b[0m ${displayPath}`);
+        const stepLineStart = `\x1b[34m│\x1b[0m  `;
 
         try {
-          await buildMultiProject(multiConfig, { isDev: true });
+          await buildSingleProject(project, multiConfig, { isDev: true });
           broadcastReload();
-          process.stdout.write(chalk.green('Done.\n'));
+          // Overwrite the WAIT line with DONE
+          if (process.stdout.isTTY) {
+            process.stdout.write(`\x1b[1A\r${stepLineStart}\x1b[32m[ DONE ]\x1b[0m \x1b[33m[${label}]\x1b[0m ${displayPath}\n`);
+          } else {
+            console.log(`${stepLineStart}\x1b[32m[ DONE ]\x1b[0m \x1b[33m[${label}]\x1b[0m ${displayPath}`);
+          }
         } catch (err: any) {
-          console.error(chalk.red(`\n❌ Rebuild failed: ${err.message}`));
+          console.log(`${stepLineStart}\x1b[31m[ FAIL ]\x1b[0m \x1b[33m[${label}]\x1b[0m ${displayPath}`);
+          TUI.error('Rebuild failed', err.message);
         } finally {
           isRebuilding = false;
         }
@@ -353,13 +445,13 @@ export async function devMultiProject(
       rebuildTimeout = setTimeout(async () => {
         if (isRebuilding) return;
         isRebuilding = true;
-        process.stdout.write(chalk.dim(`↻ Shared assets changed... `));
+        TUI.step('Shared assets changed');
         try {
           await buildMultiProject(multiConfig, { isDev: true });
           broadcastReload();
-          process.stdout.write(chalk.green('Done.\n'));
+          TUI.step('All Projects', 'DONE');
         } catch (err: any) {
-          console.error(chalk.red(`\n❌ Rebuild failed: ${err.message}`));
+          TUI.error('Rebuild failed', err.message);
         } finally {
           isRebuilding = false;
         }
@@ -367,9 +459,20 @@ export async function devMultiProject(
     });
   }
 
-  // Graceful shutdown
+  // Graceful shutdown - suppress ^C display
+  if (process.stdin.isTTY) {
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    process.stdin.on('data', (data) => {
+      if (data[0] === 0x03) {
+        process.emit('SIGINT' as any);
+      }
+    });
+  }
+
   process.on('SIGINT', () => {
-    console.log(chalk.yellow('\n🛑 Shutting down...'));
+    if (process.stdin.isTTY) process.stdin.setRawMode(false);
+    TUI.dim('Shutting down...');
     server.close();
     if (wss) wss.close();
     process.exit(0);

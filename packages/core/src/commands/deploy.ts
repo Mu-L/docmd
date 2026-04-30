@@ -12,8 +12,8 @@
  * --------------------------------------------------------------------
  */
 
-import pc from 'chalk';
 import { generateDeployConfigs } from '../engine/deployer.js';
+import { TUI } from '@docmd/api';
 
 interface DeployFlags {
   docker?: boolean;
@@ -25,22 +25,23 @@ interface DeployFlags {
 
 export async function initDeploy(opts: DeployFlags) {
   if (!opts.docker && !opts.nginx && !opts.caddy) {
-    console.log(`\n${pc.red('✖')} Argument needed. Please specify a deployment target to configure.`);
-    console.log(`\nAvailable targets:`);
-    console.log(`  ${pc.cyan('docmd deploy --docker')}    Generate Dockerfile & .dockerignore`);
-    console.log(`  ${pc.cyan('docmd deploy --nginx')}     Generate production nginx.conf`);
-    console.log(`  ${pc.cyan('docmd deploy --caddy')}     Generate production Caddyfile`);
-    console.log(`\nOptions:`);
-    console.log(`  ${pc.cyan('--force')}                  Overwrite existing files`);
+    TUI.section('Deployment Configuration');
+    TUI.info('Please specify a target to configure:');
+    console.log(`  ${TUI.cyan('--docker')}    Generate Dockerfile & .dockerignore`);
+    console.log(`  ${TUI.cyan('--nginx ')}    Generate production nginx.conf`);
+    console.log(`  ${TUI.cyan('--caddy ')}    Generate production Caddyfile`);
+    TUI.footer();
     process.exit(0);
   }
 
   try {
+    TUI.section('Generating Deployment Configs');
     await generateDeployConfigs(opts);
-    console.log(`\n${pc.green('✨')} Deployment configuration generated successfully!`);
-    console.log(`${pc.blue('ℹ')}  Remember to run \`docmd build\` first to generate your static site content.`);
+    TUI.footer();
+    TUI.success('Deployment configurations generated successfully!');
+    TUI.info(`Remember to run ${TUI.cyan('docmd build')} first to generate your static site content.`);
   } catch (err: any) {
-    console.error(`\n${pc.red('✖')} Failed to generate deployment config: ${err.message}`);
+    TUI.error('Failed to generate deployment config', err.message);
     process.exit(1);
   }
 }

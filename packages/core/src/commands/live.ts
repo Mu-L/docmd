@@ -16,14 +16,20 @@ import { createRequire } from 'module';
 
 const _require = createRequire(import.meta.url);
 
+import fs from '../utils/fs-utils.js';
+import path from 'path';
+import { TUI } from '@docmd/api';
+
 export async function buildLive(options: any = {}) {
   // Delegate to the standalone package
   const livePkg = await import('@docmd/live');
 
   // If explicitly asked NOT to serve (for testing), just build
   if (options.serve === false) {
-    console.log('🔨 Building Live Editor ...');
+    TUI.section('Building Live Editor');
+    TUI.step('Compiling standalone runtime', 'WAIT');
     await livePkg.build(process.cwd());
+    TUI.footer();
   } else {
     // Default behavior: Build + Serve
     await livePkg.start();

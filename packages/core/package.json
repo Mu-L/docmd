@@ -29,8 +29,8 @@
     "@docmd/plugin-seo": "workspace:*",
     "@docmd/plugin-sitemap": "workspace:*",
     "@docmd/themes": "workspace:*",
+    "@docmd/tui": "workspace:*",
     "@docmd/ui": "workspace:*",
-    "chalk": "^4.1.2",
     "esbuild": "^0.28.0",
     "ws": "^8.20.0"
   },

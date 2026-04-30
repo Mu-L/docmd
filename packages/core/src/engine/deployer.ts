@@ -15,7 +15,7 @@
 import fs from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import pc from 'chalk';
+import { TUI } from '@docmd/tui';
 import { loadConfig } from '../utils/config-loader.js';
 import { normalizeConfig } from '../utils/config-schema.js';
 
@@ -81,7 +81,7 @@ async function resolveDeployContext(configPath: string) {
  */
 async function writeDeployFile(filePath: string, content: string, label: string): Promise<boolean> {
   await fs.writeFile(filePath, content, 'utf8');
-  console.log(`  ${pc.green('✓')} Generated ${label}`);
+  TUI.step(label, 'DONE');
   return true;
 }
 
@@ -96,12 +96,13 @@ export async function generateDeployConfigs(opts: DeployOpts) {
   const buildCmd = ctx.configFile ? `docmd build --config ${ctx.configFile}` : 'docmd build';
 
   // Log what config was detected
-  console.log(`\n  ${pc.blue('ℹ')} Project: ${pc.bold(ctx.title)}`);
-  console.log(`  ${pc.blue('ℹ')} Output:  ${pc.bold(ctx.outDir)}/`);
+  TUI.section('Deployment Context');
+  TUI.item('Project', ctx.title);
+  TUI.item('Output', `${ctx.outDir}/`);
   if (ctx.hostname) {
-    console.log(`  ${pc.blue('ℹ')} Host:    ${pc.bold(ctx.hostname)}`);
+    TUI.item('Host', ctx.hostname);
   }
-  console.log('');
+  TUI.footer();
 
   if (opts.docker) {
     // Check if user also generated nginx.conf — if so, copy it into the container
@@ -266,7 +267,7 @@ ${spaCaddyLine}
   }
 
   if (generatedCount === 0 && (opts.docker || opts.nginx || opts.caddy)) {
-    console.log(`  ${pc.blue('ℹ')} No deployment files were generated.`);
+    TUI.warn('No deployment files were generated.');
   }
 }
 

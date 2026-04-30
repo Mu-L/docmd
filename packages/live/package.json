@@ -25,11 +25,15 @@
     "@docmd/plugin-math": "workspace:*",
     "@docmd/plugin-mermaid": "workspace:*",
     "@docmd/themes": "workspace:*",
+    "@docmd/tui": "workspace:*",
     "@docmd/ui": "workspace:*",
     "buffer": "^6.0.3",
     "esbuild": "^0.28.0",
     "katex": "^0.16.45",
     "markdown-it-texmath": "^1.0.0"
+  },
+  "devDependencies": {
+    "@docmd/api": "workspace:*"
   },
   "keywords": [
     "docmd",

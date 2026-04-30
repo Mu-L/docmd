@@ -20,10 +20,12 @@
  * — Plugins can only register for hooks they've declared.
  */
 
-import chalk from 'chalk';
-import path from 'path';
-import { createRequire } from 'module';
-import { fileURLToPath } from 'url';
+import { TUI } from '@docmd/tui';
+import path from 'node:path';
+import nativeFs from 'node:fs';
+import process from 'node:process';
+import { createRequire } from 'node:module';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { PluginDescriptor, PluginHooks, PluginModule, Capability } from './types.js';
 
 const require = createRequire(import.meta.url);
@@ -127,7 +129,7 @@ function safeCall<T>(hookName: string, pluginName: string, fn: (...args: any[]) 
   try {
     return fn(...args);
   } catch (err: any) {
-    console.error(chalk.red(`Plugin "${pluginName}" threw in ${hookName}: ${err.message}`));
+    TUI.error(`Plugin "${pluginName}" threw in ${hookName}`, err.message);
     return (hookName === 'injectHead' || hookName === 'injectBody') ? '' as any : undefined;
   }
 }
@@ -142,7 +144,7 @@ const _printedWarnings = new Set<string>();
 function warnOnce(key: string, message: string): void {
   if (_printedWarnings.has(key)) return;
   _printedWarnings.add(key);
-  console.warn(message);
+  TUI.warn(message);
 }
 
 // ---------------------------------------------------------------------------
@@ -164,10 +166,16 @@ export function resolvePluginName(key: string): string {
 // ---------------------------------------------------------------------------
 
 export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] }): Promise<PluginHooks> {
-  // Resolution paths for plugin imports — the caller (e.g. @docmd/core) should
+  // 1. Resolution paths for plugin imports — the caller (e.g. @docmd/core) should
   // pass its own __dirname so plugins that are core's dependencies can be found
   // even under pnpm's strict node_modules layout.
-  const resolvePaths = [process.cwd(), __dirname, __monorepoRoot, ...(opts?.resolvePaths || [])];
+  const resolvePaths = [
+    process.cwd(), 
+    __dirname, 
+    __monorepoRoot, 
+    path.join(__monorepoRoot, 'packages/plugins'),
+    ...(opts?.resolvePaths || [])
+  ];
 
   // 1. Reset hooks
   hooks.markdownSetup = [];
@@ -223,11 +231,28 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
     if (options === false) continue;
 
     try {
-      let rawModule;
+      let rawModule: any;
       try {
-        rawModule = await import(require.resolve(name, { paths: resolvePaths }));
+        const resolvedPath = require.resolve(name, { paths: resolvePaths });
+        rawModule = await import(pathToFileURL(resolvedPath).href);
       } catch (e: any) {
-        rawModule = await import(name);
+        // Monorepo fallback: if it's an official plugin, try packages/plugins/{id}
+        if (name.startsWith('@docmd/plugin-')) {
+          const id = name.replace('@docmd/plugin-', '');
+          const localPath = path.resolve(__monorepoRoot, 'packages/plugins', id, 'dist/index.js');
+          if (nativeFs.existsSync(localPath)) {
+            rawModule = await import(pathToFileURL(localPath).href);
+          }
+        }
+
+        if (!rawModule) {
+          // Fallback for non-package plugins or when resolution fails
+          try {
+            rawModule = await import(name);
+          } catch (innerError: any) {
+            throw new Error(`Failed to resolve ${name}. Search paths: ${resolvePaths.join(', ')}. Detail: ${innerError.message}`);
+          }
+        }
       }
 
       const pluginModule: PluginModule = rawModule.default || rawModule;
@@ -235,16 +260,16 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
       try {
         registerPlugin(name, pluginModule, options);
       } catch (regError: any) {
-        warnOnce(`register:${name}`, chalk.yellow(`⚠️  Plugin loaded but failed to register: ${name}`) + chalk.dim(`\n   > ${regError.message}`));
+        warnOnce(`register:${name}`, TUI.yellow(`⚠️  Plugin loaded but failed to register: ${name}`) + TUI.dim(`\n   > ${regError.message}`));
       }
     } catch (e: any) {
-      warnOnce(`load:${name}`, chalk.yellow(`⚠️  Could not load plugin: ${name} (missing or misconfigured)`));
+      warnOnce(`load:${name}`, TUI.yellow(`⚠️  Could not load plugin: ${name} (missing or misconfigured)`) + TUI.dim(`\n   > ${e.message}`));
     }
   }
 
   // 4. Print error summary if any
   if (pluginErrors.length > 0) {
-    console.warn(chalk.yellow(`\n⚠️  ${pluginErrors.length} plugin error(s) occurred (build completed)`));
+    TUI.warn(`${pluginErrors.length} plugin error(s) occurred (build completed)`);
   }
 
   return hooks;
@@ -264,13 +289,13 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
       if (isOfficial) {
         throw new Error(msg); // Hard error for official plugins
       }
-      console.warn(chalk.yellow(`⚠️  ${msg} — registering anyway`));
+      TUI.warn(`${msg} — registering anyway`);
     }
   } else {
     // No descriptor — emit deprecation warning (soft until 0.8.0)
     // Silent for official plugins as they'll be updated together
     if (!isOfficial) {
-      console.warn(chalk.dim(`   → Plugin "${name}" has no descriptor. This will be required in 0.8.0.`));
+      TUI.warn(`Plugin "${name}" has no descriptor. This will be required in 0.8.0.`);
     }
   }
 
@@ -297,7 +322,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
       const fn = plugin.markdownSetup;
       hooks.markdownSetup.push((md: any) => safeCall('markdownSetup', name, fn, md, options));
     } else {
-      console.warn(chalk.yellow(`Plugin "${shortName}" exports markdownSetup but didn't declare "markdown" capability — skipped`));
+      TUI.warn(`Plugin "${shortName}" exports markdownSetup but didn't declare "markdown" capability — skipped`);
     }
   }
 
@@ -307,10 +332,10 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
       const fn = plugin.generateMetaTags;
       hooks.injectHead.push((config: any, pageContext: any, root: any) => {
         if (!shouldExecute(pageContext)) return '';
-        return safeCall('generateMetaTags', name, fn, config, pageContext, root) as string || '';
+        return safeCall('generateMetaTags', name, fn, config, pageContext, root) || '';
       });
     } else {
-      console.warn(chalk.yellow(`Plugin "${shortName}" exports generateMetaTags but didn't declare "head" capability — skipped`));
+      TUI.warn(`Plugin "${shortName}" exports generateMetaTags but didn't declare "head" capability — skipped`);
     }
   }
 
@@ -329,7 +354,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
         return result?.bodyScriptsHtml || '';
       });
     } else {
-      console.warn(chalk.yellow(`Plugin "${shortName}" exports generateScripts but didn't declare "head"/"body" capability — skipped`));
+      TUI.warn(`Plugin "${shortName}" exports generateScripts but didn't declare "head"/"body" capability — skipped`);
     }
   }
 
@@ -341,12 +366,12 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
         try {
           await fn({ ...ctx, options });
         } catch (err: any) {
-          console.error(chalk.red(`Plugin "${name}" threw in onPostBuild: ${err.message}`));
+          TUI.error(`Plugin "${name}" threw in onPostBuild`, err.message);
           pluginErrors.push({ plugin: name, hook: 'onPostBuild', message: err.message });
         }
       });
     } else {
-      console.warn(chalk.yellow(`Plugin "${shortName}" exports onPostBuild but didn't declare "post-build" capability — skipped`));
+      TUI.warn(`Plugin "${shortName}" exports onPostBuild but didn't declare "post-build" capability — skipped`);
     }
   }
 
@@ -356,7 +381,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
       const fn = plugin.getAssets;
       hooks.assets.push(() => safeCall('getAssets', name, fn, options) as any[] || []);
     } else {
-      console.warn(chalk.yellow(`Plugin "${shortName}" exports getAssets but didn't declare "assets" capability — skipped`));
+      TUI.warn(`Plugin "${shortName}" exports getAssets but didn't declare "assets" capability — skipped`);
     }
   }
 
@@ -366,7 +391,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
       const fn = plugin.translations;
       hooks.translations.push((localeId: string) => safeCall('translations', name, fn, localeId, options) as Record<string, string> || {});
     } else {
-      console.warn(chalk.yellow(`Plugin "${shortName}" exports translations but didn't declare "translations" capability — skipped`));
+      TUI.warn(`Plugin "${shortName}" exports translations but didn't declare "translations" capability — skipped`);
     }
   }
 
@@ -375,7 +400,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
     if (hasCapabilityForHook(descriptor, 'actions')) {
       Object.assign(hooks.actions, plugin.actions);
     } else {
-      console.warn(chalk.yellow(`Plugin "${shortName}" exports actions but didn't declare "actions" capability — skipped`));
+      TUI.warn(`Plugin "${shortName}" exports actions but didn't declare "actions" capability — skipped`);
     }
   }
 
@@ -384,7 +409,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
     if (hasCapabilityForHook(descriptor, 'events')) {
       Object.assign(hooks.events, plugin.events);
     } else {
-      console.warn(chalk.yellow(`Plugin "${shortName}" exports events but didn't declare "events" capability — skipped`));
+      TUI.warn(`Plugin "${shortName}" exports events but didn't declare "events" capability — skipped`);
     }
   }
 
@@ -398,12 +423,12 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
         try {
           await fn(config);
         } catch (err: any) {
-          console.error(chalk.red(`Plugin "${name}" threw in onConfigResolved: ${err.message}`));
+          TUI.error(`Plugin "${name}" threw in onConfigResolved`, err.message);
           pluginErrors.push({ plugin: name, hook: 'onConfigResolved', message: err.message });
         }
       });
     } else {
-      console.warn(chalk.yellow(`Plugin "${shortName}" exports onConfigResolved but didn't declare "init" capability — skipped`));
+      TUI.warn(`Plugin "${shortName}" exports onConfigResolved but didn't declare "init" capability — skipped`);
     }
   }
 
@@ -415,12 +440,12 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
         try {
           await fn(server, wss);
         } catch (err: any) {
-          console.error(chalk.red(`Plugin "${name}" threw in onDevServerReady: ${err.message}`));
+          TUI.error(`Plugin "${name}" threw in onDevServerReady`, err.message);
           pluginErrors.push({ plugin: name, hook: 'onDevServerReady', message: err.message });
         }
       });
     } else {
-      console.warn(chalk.yellow(`Plugin "${shortName}" exports onDevServerReady but didn't declare "dev" capability — skipped`));
+      TUI.warn(`Plugin "${shortName}" exports onDevServerReady but didn't declare "dev" capability — skipped`);
     }
   }
 
@@ -432,13 +457,13 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
         try {
           return await fn(src, frontmatter) ?? src;
         } catch (err: any) {
-          console.error(chalk.red(`Plugin "${name}" threw in onBeforeParse: ${err.message}`));
+          TUI.error(`Plugin "${name}" threw in onBeforeParse`, err.message);
           pluginErrors.push({ plugin: name, hook: 'onBeforeParse', message: err.message });
           return src;
         }
       });
     } else {
-      console.warn(chalk.yellow(`Plugin "${shortName}" exports onBeforeParse but didn't declare "build" capability — skipped`));
+      TUI.warn(`Plugin "${shortName}" exports onBeforeParse but didn't declare "build" capability — skipped`);
     }
   }
 
@@ -450,13 +475,13 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
         try {
           return await fn(html, frontmatter) ?? html;
         } catch (err: any) {
-          console.error(chalk.red(`Plugin "${name}" threw in onAfterParse: ${err.message}`));
+          TUI.error(`Plugin "${name}" threw in onAfterParse`, err.message);
           pluginErrors.push({ plugin: name, hook: 'onAfterParse', message: err.message });
           return html;
         }
       });
     } else {
-      console.warn(chalk.yellow(`Plugin "${shortName}" exports onAfterParse but didn't declare "build" capability — skipped`));
+      TUI.warn(`Plugin "${shortName}" exports onAfterParse but didn't declare "build" capability — skipped`);
     }
   }
 
@@ -468,12 +493,12 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
         try {
           await fn(page);
         } catch (err: any) {
-          console.error(chalk.red(`Plugin "${name}" threw in onPageReady: ${err.message}`));
+          TUI.error(`Plugin "${name}" threw in onPageReady`, err.message);
           pluginErrors.push({ plugin: name, hook: 'onPageReady', message: err.message });
         }
       });
     } else {
-      console.warn(chalk.yellow(`Plugin "${shortName}" exports onPageReady but didn't declare "build" capability — skipped`));
+      TUI.warn(`Plugin "${shortName}" exports onPageReady but didn't declare "build" capability — skipped`);
     }
   }
 

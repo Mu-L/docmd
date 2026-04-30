@@ -61,6 +61,17 @@ const TUI = {
 
     alert: (msg, color = C.green) => {
         console.log(`${color}${C.bold}⬢ ${msg}${C.reset}\n`);
+    },
+
+    error: (msg, detail) => {
+        console.error(`\n\x1b[31m\x1b[1m┌─ Failure\x1b[0m`);
+        console.error(`\x1b[31m│\x1b[0m  ${msg}`);
+        if (detail) {
+            detail.split('\n').forEach(line => {
+                console.error(`\x1b[31m│\x1b[0m  \x1b[2m${line}\x1b[0m`);
+            });
+        }
+        console.error(`\x1b[31m└──────────────────────────────────────────────────────────\x1b[0m\n`);
     }
 };
 
@@ -76,15 +87,8 @@ if (TYPE === 'start:reset') {
 } else if (TYPE === 'start:verify') {
     TUI.section('Failsafe Verification', C.blue);
 } else if (TYPE === 'verify') {
-    const isLinked = args.includes('--linked');
-    TUI.item('Foundation & Integrity', 'DONE', C.reset, '\x1b[34m');
-    TUI.item('Project Lifecycle', 'DONE', C.reset, '\x1b[34m');
-    TUI.item('Engine Reliability', 'DONE', C.reset, '\x1b[34m');
-    TUI.item('Plugin Ecosystem', 'DONE', C.reset, '\x1b[34m');
-    TUI.item('Runtime Readiness', 'DONE', C.reset, '\x1b[34m');
-    TUI.item('Infrastructure Health', 'DONE', C.reset, '\x1b[34m');
-    TUI.item('Security Audit', 'DONE', C.reset, '\x1b[34m');
-    if (isLinked) TUI.item('Global Link Propagation', 'DONE', C.reset, '\x1b[34m');
     TUI.footer(C.blue);
-    TUI.alert('Docmd is production-ready.');
+    TUI.alert('docmd is production-ready.');
+} else if (TYPE === 'error') {
+    TUI.error(process.argv[3], process.argv[4]);
 }

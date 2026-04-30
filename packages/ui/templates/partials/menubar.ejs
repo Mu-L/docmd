@@ -34,7 +34,7 @@ function menubarTarget(item) {
             </a>
             <% } else if (item.type==='dropdown' ) { %>
               <div class="menubar-dropdown">
-                <button class="menubar-dropdown-toggle" type="button" aria-expanded="false">
+                <button class="menubar-dropdown-toggle" type="button" aria-expanded="false" aria-label="<%= item.text %> menu">
                   <% if (item.icon) { %>
                     <%- renderIcon(item.icon, { class: 'menubar-icon' }) %>
                   <% } %>
@@ -82,7 +82,7 @@ function menubarTarget(item) {
           <% menubarConfig.right.forEach(item=> { %>
             <% if (item.type==='dropdown' ) { %>
               <div class="menubar-dropdown">
-                <button class="menubar-dropdown-toggle" type="button" aria-expanded="false">
+                <button class="menubar-dropdown-toggle" type="button" aria-expanded="false" aria-label="<%= item.text %> menu">
                   <% if (item.icon) { %>
                     <%- renderIcon(item.icon, { class: 'menubar-icon' }) %>
                   <% } %>
