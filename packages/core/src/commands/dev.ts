@@ -341,7 +341,8 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
 
     if (process.stdin.isTTY) process.stdin.setRawMode(false);
 
-    TUI.dim('Shutting down...');
+    console.log('');
+    TUI.success('Shutting down...');
 
     // Force exit after a shorter timeout if graceful shutdown hangs
     const forceExitTimeout = setTimeout(() => {
@@ -357,7 +358,6 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
 
       await Promise.all(closures);
       clearTimeout(forceExitTimeout);
-      TUI.success('Shutdown complete.');
       process.exit(0);
     } catch {
       process.exit(0);

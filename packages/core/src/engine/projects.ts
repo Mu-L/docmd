@@ -470,9 +470,16 @@ export async function devMultiProject(
     });
   }
 
+  let isShuttingDown = false;
   process.on('SIGINT', () => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
     if (process.stdin.isTTY) process.stdin.setRawMode(false);
-    TUI.dim('Shutting down...');
+
+    console.log('');
+    TUI.success('Shutting down...');
+
     server.close();
     if (wss) wss.close();
     process.exit(0);
