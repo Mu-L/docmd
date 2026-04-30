@@ -1,5 +1,7 @@
 <div align="right">
-  <a href="./README.md">EN</a> &nbsp;|&nbsp; <a href="./README.es.md">ES</a> &nbsp;|&nbsp; <a href="./README.de.md">DE</a> &nbsp;|&nbsp; <a href="./README.ja.md">日本語</a> &nbsp;|&nbsp; <a href="./README.fr.md">FR</a> &nbsp;|&nbsp; <b>中文</b>
+  <sup>
+    <a href="./README.md">EN</a> &nbsp;|&nbsp; <a href="./README.es.md">ES</a> &nbsp;|&nbsp; <a href="./README.de.md">DE</a> &nbsp;|&nbsp; <a href="./README.ja.md">日本語</a> &nbsp;|&nbsp; <a href="./README.fr.md">FR</a> &nbsp;|&nbsp; <b>中文</b>
+  </sup>
 </div>
 
 <div align="center">
@@ -223,20 +225,19 @@ docmd add <plugin-name>
 
 ## 为什么选择 docmd？
 
-| 特性 | docmd | Docusaurus | MkDocs Material | VitePress | Mintlify |
-| :--------------- | :------------------------ | :------------------- | :-------------- | :--------------- | :--------------- |
-| **语言** | **Node.js** | React.js | Python | Vue | SaaS |
-| **配置要求** | **无** | `docusaurus.config.js` | `mkdocs.yml` | `config.mts` | `mint.json` |
-| **初始负载** | **~18kb** | ~250kb | ~40kb | ~50kb | ~120kb |
-| **导航** | **即时 SPA** | React SPA | 页面刷新 | Vue SPA | 托管 SPA |
-| **版本管理** | **内置** | 原生（复杂） | mike 插件 | 手动 | 原生 |
-| **i18n** | **内置** | 原生（复杂） | 基于插件 | 手动 | 原生 |
-| **搜索** | **内置（离线）** | Algolia（云端） | 内置 | MiniSearch | 云端 |
+| 特性          | docmd          | Docusaurus   | MkDocs       | VitePress    | Mintlify     |
+| :----------: | :------------: | :----------: | :----------: | :-----------: | :----------: |
+| **语言**      | **Node.js**    | React.js     | Python       | Vue          | SaaS         |
+| **配置要求**  | **无**         | `docusaurus.config.js` | `mkdocs.yml` | `config.mts` | `mint.json`  |
+| **初始负载**  | **~18kb**      | ~250kb       | ~40kb        | ~50kb        | ~120kb       |
+| **导航**      | **即时 SPA**   | React SPA    | 页面刷新     | Vue SPA      | 托管 SPA     |
+| **版本管理**  | **内置**       | 原生（复杂） |mike 插件 | 手动 | 原生 |
+| **i18n**     | **内置**       | 原生（复杂） | 基于插件 | 手动 | 原生 |
+| **搜索**      | **内置（离线）** | Algolia（云端） | 内置 | MiniSearch | 云端 |
 | **AI 上下文** | **内置（`llms.txt`）** | 手动 | 无 | 无 | 专有 |
-| **PWA** | **官方插件** | 社区插件 | 无 | 无 | 托管 |
-| **自托管** | **是** | 是 | 是 | 是 | 否 |
-| **零配置** | **`npx @docmd/core dev`** | 否 | 否 | 否 | 否 |
-| **费用** | **免费（OSS）** | 免费（OSS） | 免费（OSS） | 免费（OSS） | 免费增值 |
+| **PWA**      | **官方插件**   | 社区插件     | 无           | 无           | 托管         |
+| **自托管**    | **是**         | 是           | 是           | 是           | 否           |
+| **费用**      | **免费（OSS）** | 免费（OSS） | 免费（OSS） | 免费（OSS） | 免费增值     |
 
 简单起步，无缝扩展。
 

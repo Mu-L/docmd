@@ -18,6 +18,7 @@ const path = require('path');
 const args = process.argv.slice(2);
 const isCI = process.env.CI === 'true' || args.includes('--skip-setup');
 const shouldLink = args.includes('--link');
+const skipHeader = args.includes('--skip-header');
 
 function run(cmd, silent = true) {
     try {
@@ -30,12 +31,13 @@ function run(cmd, silent = true) {
 
 // 1. Show starting logo (only if not in CI or if user wants it)
 if (!isCI) {
-    run('node scripts/status.js start:verify', false);
+    const headerCmd = skipHeader ? 'node scripts/status.js start:verify --skip-header' : 'node scripts/status.js start:verify';
+    run(headerCmd, false);
 }
 
 // 2. Run the actual failsafe check
 // Forwarding arguments to failsafe.js
-const failsafeArgs = args.filter(a => a !== '--link').join(' ');
+const failsafeArgs = args.filter(a => a !== '--link' && a !== '--skip-header').join(' ');
 run(`node scripts/failsafe.js ${failsafeArgs}`, false);
 
 // 3. Handle global linking if requested

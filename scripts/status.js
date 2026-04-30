@@ -19,11 +19,13 @@ const LOGO = `
  |___|___|___|_|_|_|___|
 `;
 
-const TYPE = process.argv[2];
+const args = process.argv.slice(2);
+const TYPE = args[0];
+const skipHeader = args.includes('--skip-header');
 
-const IS_START = TYPE.startsWith('start:');
+const IS_START = TYPE && TYPE.startsWith('start:');
 
-if (IS_START) {
+if (IS_START && !skipHeader) {
     console.log('\x1b[34m%s\x1b[0m', LOGO);
     console.log('\x1b[2m Dev Environment \x1b[0m\n\n');
 }

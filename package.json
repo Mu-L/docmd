@@ -7,7 +7,7 @@
     "dev": "pnpm docmd dev",
     "build": "pnpm -r run build",
     "docmd": "node packages/core/dist/bin/docmd.js --cwd packages/_playground",
-    "prep": "pnpm reset && pnpm verify",
+    "prep": "node scripts/prep.js",
     "verify": "node scripts/verify.js",
     "lint": "eslint .",
     "bump": "node scripts/bump.js",
