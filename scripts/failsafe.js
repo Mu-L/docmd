@@ -30,9 +30,10 @@ const CLI_BIN = path.join(CWD, 'packages/core/dist/bin/docmd.js');
 const LIVE_PUBLIC = path.join(CWD, 'dist');
 const TEMP_SCRIPT = path.join(CWD, 'temp-live-test.mjs');
 
-console.log('🛡️  Running Universal Failsafe...');
+console.log(`\x1b[34m│\x1b[0m  \x1b[1mUNIVERSAL FAILSAFE\x1b[0m`);
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'docmd-failsafe-'));
-console.log(`\x1b[2m   Temp Workspace: ${tempDir}\x1b[0m\n`);
+console.log(`\x1b[34m│\x1b[0m  \x1b[2mWorkspace: ${tempDir}\x1b[0m`);
+console.log(`\x1b[34m│\x1b[0m`);
 
 function assert(condition, message) {
     if (!condition) throw new Error(`❌ FAIL: ${message}`);
@@ -42,9 +43,14 @@ function runCmd(cmd, cwd) {
     try {
         execSync(cmd, { cwd, stdio: 'pipe' });
     } catch (e) {
-        process.stdout.write(' 💥\n');
-        console.error(`\x1b[31m\x1b[1m💥 Command Failed:\x1b[0m ${cmd}`);
-        if (e.stderr) console.error(e.stderr.toString());
+        process.stdout.write(` \x1b[31m[ ERROR ]\x1b[0m\n`);
+        console.error(`\n\x1b[31m\x1b[1m┌─ Failsafe Command Failed\x1b[0m`);
+        console.error(`\x1b[31m│\x1b[0m  \x1b[2mCommand:\x1b[0m ${cmd}`);
+        if (e.stderr) {
+            console.error(`\x1b[31m│\x1b[0m  \x1b[2mError:\x1b[0m`);
+            console.error(e.stderr.toString().split('\n').map(l => `\x1b[31m│\x1b[0m  ${l}`).join('\n'));
+        }
+        console.error(`\x1b[31m└──────────────────────────────────────────────────────────\x1b[0m`);
         throw new Error("Process aborted due to command failure.");
     }
 }
@@ -57,7 +63,7 @@ try {
     const rootVersion = rootPkg.version;
 
     // --- PILLAR 1: MONOREPO FOUNDATIONS & INTEGRITY ---
-    process.stdout.write('\x1b[2m📦 [1/7] Verifying Monorepo Foundations & Integrity...\x1b[0m');
+    process.stdout.write(`\x1b[34m│\x1b[0m  \x1b[2m[1/7] Monorepo Integrity\x1b[0m`.padEnd(55));
     if (!skipSetup) {
         runCmd('pnpm install --silent', CWD);
         runCmd('pnpm run lint', CWD);
@@ -87,11 +93,11 @@ try {
     }
     checkIntegrity(path.join(CWD, 'packages'));
     runCmd('pnpm publish -r --dry-run --no-git-checks', CWD);
-    process.stdout.write('\n');
+    process.stdout.write(` \x1b[32m[ DONE ]\x1b[0m\n`);
 
 
     // --- PILLAR 2: PROJECT LIFECYCLE & CONTENT INJECTION ---
-    process.stdout.write('\x1b[2m🚀 [2/7] Testing Project Lifecycle & Initialization...\x1b[0m');
+    process.stdout.write(`\x1b[34m│\x1b[0m  \x1b[2m[2/7] Project Lifecycle\x1b[0m`.padEnd(55));
     runCmd(`node "${CLI_BIN}" init`, tempDir);
     
     const docsDir = path.join(tempDir, 'docs');
@@ -103,11 +109,11 @@ try {
     fs.writeFileSync(path.join(docsDir, 'stress.md'), `---\ntitle: "Stress"\n---\n::: card\n::: callout\n# Content\n:::\n:::\n`);
     fs.writeFileSync(path.join(docsV1Dir, 'index.md'), '# V1');
     fs.writeFileSync(path.join(zeroDocsDir, 'docs', 'index.md'), '# Zero');
-    process.stdout.write('\n');
+    process.stdout.write(` \x1b[32m[ DONE ]\x1b[0m\n`);
 
 
     // --- PILLAR 3: ENGINE RELIABILITY (MULTI-PARADIGM BUILDS) ---
-    process.stdout.write('\x1b[2m🔨 [3/7] Verifying Engine Reliability (E2E Builds)...\x1b[0m');
+    process.stdout.write(`\x1b[34m│\x1b[0m  \x1b[2m[3/7] Engine Reliability\x1b[0m`.padEnd(55));
     const configs = [
         { name: 'legacy.config.cjs', content: `module.exports = { siteTitle: 'Legacy', srcDir: 'docs', outputDir: 'site-legacy' };` },
         { name: 'modern.config.js', content: `export default { title: 'Modern', url: 'https://test.com', src: 'docs', out: 'site-modern', versions: { current: 'v2', all:[{ id: 'v2', dir: 'docs', label: 'v2' }] } };` }
@@ -119,11 +125,11 @@ try {
     
     assert(fs.readFileSync(path.join(tempDir, 'site-modern/index.html'), 'utf8').includes('Modern'), "Modern build failed");
     assert(fs.readFileSync(path.join(tempDir, 'site-modern/stress/index.html'), 'utf8').includes('docmd-container card'), "Parser leakage detected");
-    process.stdout.write('\n');
+    process.stdout.write(` \x1b[32m[ DONE ]\x1b[0m\n`);
 
 
     // --- PILLAR 4: PLUGIN ECOSYSTEM LIFECYCLE ---
-    process.stdout.write('\x1b[2m🔌 [4/7] Testing Plugin Ecosystem Lifecycle...\x1b[0m');
+    process.stdout.write(`\x1b[34m│\x1b[0m  \x1b[2m[4/7] Plugin Ecosystem\x1b[0m`.padEnd(55));
     const pTest = path.join(tempDir, 'plugin-test');
     fs.mkdirSync(pTest); 
     fs.writeFileSync(path.join(pTest, 'package.json'), JSON.stringify({ name: 'p-test', version: '1.0.0' }));
@@ -139,11 +145,11 @@ try {
     fs.writeFileSync(path.join(pDefaults, 'docmd.config.js'), "export default { title: 'Test', url: 'https://t.com' };");
     runCmd(`node "${CLI_BIN}" build`, pDefaults);
     assert(fs.existsSync(path.join(pDefaults, 'site/sitemap.xml')), "Core sitemap plugin failed");
-    process.stdout.write('\n');
+    process.stdout.write(` \x1b[32m[ DONE ]\x1b[0m\n`);
 
 
     // --- PILLAR 5: RUNTIME & DEPLOYMENT READINESS ---
-    process.stdout.write('\x1b[2m🎥 [5/7] Verifying Runtime & Deployment Readiness...\x1b[0m');
+    process.stdout.write(`\x1b[34m│\x1b[0m  \x1b[2m[5/7] Runtime Readiness\x1b[0m`.padEnd(55));
     
     // Live Runtime
     if (fs.existsSync(LIVE_PUBLIC)) fs.rmSync(LIVE_PUBLIC, { recursive: true });
@@ -159,11 +165,11 @@ try {
     fs.mkdirSync(dTest);
     runCmd(`node "${CLI_BIN}" deploy --docker --nginx --caddy`, dTest);
     assert(fs.readFileSync(path.join(dTest, 'Dockerfile'), 'utf8').includes(rootVersion), "Deploy version pin failed");
-    process.stdout.write('\n');
+    process.stdout.write(` \x1b[32m[ DONE ]\x1b[0m\n`);
 
 
     // --- PILLAR 6: INFRASTRUCTURE HEALTH (ZERO-CONFIG & NAVIGATION) ---
-    process.stdout.write('\x1b[2m🧹 [6/7] Validating Infrastructure Health...\x1b[0m');
+    process.stdout.write(`\x1b[34m│\x1b[0m  \x1b[2m[6/7] Infrastructure Health\x1b[0m`.padEnd(55));
     
     // ZeroConfig leak test
     runCmd(`node "${CLI_BIN}" build`, zeroDocsDir);
@@ -173,11 +179,11 @@ try {
     // Nav JSON integrity
     const nPath = path.join(CWD, '..', 'docs', 'docs', 'navigation.json');
     if (fs.existsSync(nPath)) JSON.parse(fs.readFileSync(nPath, 'utf8'));
-    process.stdout.write('\n');
+    process.stdout.write(` \x1b[32m[ DONE ]\x1b[0m\n`);
 
 
     // --- PILLAR 7: SECURITY & FINAL RELEASE VERIFICATION ---
-    process.stdout.write('\x1b[2m🚨 [7/7] Executing Security & Dry-Run Verification...\x1b[0m');
+    process.stdout.write(`\x1b[34m│\x1b[0m  \x1b[2m[7/7] Security Verification\x1b[0m`.padEnd(55));
     
     // Security Audit
     try { 
@@ -190,19 +196,19 @@ try {
             console.error(out);
             throw new Error("Process aborted due to security vulnerabilities.");
         } else {
-            process.stdout.write(' ⚠️ '); 
-            console.warn('   ⚠️ Security Audit Warning: Registry endpoint might be unreachable or audit failed.'); 
+            process.stdout.write(` \x1b[33m[ WARN ]\x1b[0m\n`); 
+            console.warn(`\x1b[34m│\x1b[0m  \x1b[33mWarning:\x1b[0m Registry endpoint might be unreachable or audit failed.`); 
         }
     }
     
     // The Final Gate: Bulletproof Dry-Run Publish
     runCmd('pnpm publish -r --dry-run --no-git-checks', CWD);
     
-    process.stdout.write('\n');
+    process.stdout.write(` \x1b[32m[ DONE ]\x1b[0m\n`);
 
 } catch (e) {
     if (!e.message.includes('Process aborted')) console.error(e.message);
-    console.error('\x1b[31m\x1b[1m\n❌ FAILSAFE CRITICAL FAILURE ❌\x1b[0m');
+    console.error('\x1b[31m\x1b[1m\n[ CRITICAL FAILURE ]\x1b[0m');
     process.exit(1);
 } finally {
     if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true, force: true });

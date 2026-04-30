@@ -12,6 +12,24 @@
  * --------------------------------------------------------------------
  */
 
+const args = process.argv.slice(2);
+const TYPE = args[0];
+const skipHeader = args.includes('--skip-header');
+
+// TUI Design Tokens
+const C = {
+    reset: '\x1b[0m',
+    bold: '\x1b[1m',
+    dim: '\x1b[2m',
+    blue: '\x1b[34m',
+    cyan: '\x1b[36m',
+    green: '\x1b[32m',
+    yellow: '\x1b[33m',
+    red: '\x1b[31m',
+    bgBlue: '\x1b[44m',
+    black: '\x1b[30m'
+};
+
 const LOGO = `
     _                 _ 
   _| |___ ___ _____ _| |
@@ -19,39 +37,54 @@ const LOGO = `
  |___|___|___|_|_|_|___|
 `;
 
-const args = process.argv.slice(2);
-const TYPE = args[0];
-const skipHeader = args.includes('--skip-header');
+/**
+ * Modern TUI Components
+ */
+const TUI = {
+    header: (title) => {
+        console.log(`\n${C.blue}${LOGO}${C.reset}`);
+        console.log(`${C.dim} ${title} ${C.reset}\n`);
+    },
+    
+    section: (label, color = C.cyan) => {
+        console.log(`${color}${C.bold}┌─ ${label}${C.reset}`);
+    },
+    
+    item: (label, status = 'DONE', color = C.dim, barColor = '\x1b[36m') => {
+        const indicator = status === 'DONE' ? `\x1b[32m[ DONE ]\x1b[0m` : `\x1b[36m[ ${status} ]\x1b[0m`;
+        console.log(`${barColor}│\x1b[0m  ${color}${label.padEnd(45)}${C.reset} ${indicator}`);
+    },
+    
+    footer: (color = C.cyan) => {
+        console.log(`${color}└──────────────────────────────────────────────────────────${C.reset}\n`);
+    },
 
-const IS_START = TYPE && TYPE.startsWith('start:');
+    alert: (msg, color = C.green) => {
+        console.log(`${color}${C.bold}⬢ ${msg}${C.reset}\n`);
+    }
+};
 
-if (IS_START && !skipHeader) {
-    console.log('\x1b[34m%s\x1b[0m', LOGO);
-    console.log('\x1b[2m Dev Environment \x1b[0m\n\n');
+if (TYPE && TYPE.startsWith('start:') && !skipHeader) {
+    TUI.header('Monorepo Maintenance Pipeline');
 }
 
 if (TYPE === 'start:reset') {
-    process.stdout.write('🫧  \x1b[1mResetting docmd...\x1b[0m \x1b[2m(cleaning up)\x1b[0m');
-} else if (TYPE === 'start:verify') {
-    process.stdout.write('🛡️  \x1b[1mVerifying docmd...\x1b[0m \x1b[2m(running intensive failsafe checks)\x1b[0m');
+    TUI.section('Resetting Docmd Engine', C.cyan);
 } else if (TYPE === 'reset') {
-    console.log('\n\x1b[32m✅ Reset complete!\x1b[0m\n');
-    console.log('\x1b[34m🛑 Any running servers stopped.\x1b[0m');
-    console.log('\x1b[34m🔗 Global links and binaries removed.\x1b[0m');
-    console.log('\x1b[34m🧹 Monorepo cleaned.\x1b[0m');
-    console.log('\x1b[32m\n⚡️ You can start fresh now.\x1b[0m');
-
+    TUI.footer(C.cyan);
+    TUI.alert('Ready for fresh verification.');
+} else if (TYPE === 'start:verify') {
+    TUI.section('Failsafe Verification', C.blue);
 } else if (TYPE === 'verify') {
-    const isLinked = process.argv[3] === '--linked';
-    console.log('\n\x1b[32m✨ Failsafe verification passed!\x1b[0m\n');
-    console.log('\x1b[34m✅ Monorepo integrity & version sync verified.\x1b[0m');
-    console.log('\x1b[34m✅ Engine reliability & multi-paradigm builds passed.\x1b[0m');
-    console.log('\x1b[34m✅ Plugin ecosystem & installer lifecycle verified.\x1b[0m');
-    console.log('\x1b[34m✅ Runtime execution & Live Editor sandbox verified.\x1b[0m');
-    console.log('\x1b[34m✅ Deployment engine & infrastructure health verified.\x1b[0m');
-    console.log('\x1b[34m✅ Security audit & release verification complete.\x1b[0m');
-    if (isLinked) console.log('\x1b[34m🔗 Linked docmd globally.\x1b[0m');
-    console.log('\x1b[32m\n🛡️  docmd is ready for production!\x1b[0m');
+    const isLinked = args.includes('--linked');
+    TUI.item('Foundation & Integrity', 'DONE', C.reset, '\x1b[34m');
+    TUI.item('Project Lifecycle', 'DONE', C.reset, '\x1b[34m');
+    TUI.item('Engine Reliability', 'DONE', C.reset, '\x1b[34m');
+    TUI.item('Plugin Ecosystem', 'DONE', C.reset, '\x1b[34m');
+    TUI.item('Runtime Readiness', 'DONE', C.reset, '\x1b[34m');
+    TUI.item('Infrastructure Health', 'DONE', C.reset, '\x1b[34m');
+    TUI.item('Security Audit', 'DONE', C.reset, '\x1b[34m');
+    if (isLinked) TUI.item('Global Link Propagation', 'DONE', C.reset, '\x1b[34m');
+    TUI.footer(C.blue);
+    TUI.alert('Docmd is production-ready.');
 }
-
-console.log('\n');

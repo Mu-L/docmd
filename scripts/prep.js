@@ -60,22 +60,24 @@ function deepWipe() {
 run('node scripts/status.js start:reset', false);
 
 // 2. Stop any running servers
+process.stdout.write(`\x1b[36m│\x1b[0m  \x1b[2mStopping active servers\x1b[0m`.padEnd(55));
 run('pnpm -s stop');
+process.stdout.write(` \x1b[32m[ DONE ]\x1b[0m\n`);
 
 // 3. Deep Wipe (Unlink)
-process.stdout.write('\x1b[2m   Wiping global binaries...\x1b[0m');
-// Standard uninstalls - individual try/catch to avoid overall failure
+process.stdout.write(`\x1b[36m│\x1b[0m  \x1b[2mWiping global binaries\x1b[0m`.padEnd(55));
 const pkgs = ['@docmd/core', '@docmd/monorepo', 'docmd', 'docmd-live'];
 for (const pkg of pkgs) {
     try { execSync(`npm uninstall -g ${pkg} -s`, { stdio: 'ignore' }); } catch { /* ignore */ }
     try { execSync(`pnpm uninstall -g ${pkg} -s`, { stdio: 'ignore' }); } catch { /* ignore */ }
 }
-// Aggressive wipe
 deepWipe();
-process.stdout.write(' \x1b[32mDone!\x1b[0m\n');
+process.stdout.write(` \x1b[32m[ DONE ]\x1b[0m\n`);
 
 // 4. Clean
+process.stdout.write(`\x1b[36m│\x1b[0m  \x1b[2mCleaning monorepo\x1b[0m`.padEnd(55));
 run('pnpm -s clean');
+process.stdout.write(` \x1b[32m[ DONE ]\x1b[0m\n`);
 
 // 5. Final Reset Report
 run('node scripts/status.js reset', false);
