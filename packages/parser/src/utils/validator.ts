@@ -12,7 +12,8 @@
  * --------------------------------------------------------------------
  */
 
-import chalk from 'chalk';
+
+import { TUI } from '@docmd/tui';
 
 // Known configuration keys for typo detection (V2 + V3)
 const KNOWN_KEYS = [
@@ -97,19 +98,17 @@ function validateConfig(config) {
 
   // Output results
   if (warnings.length > 0) {
-    console.log(chalk.yellow('\n⚠️  Configuration Warnings:'));
-    warnings.forEach(w => console.log(chalk.yellow(`   - ${w}`)));
+    TUI.warn('Configuration Warnings:');
+    warnings.forEach(w => TUI.warn(w));
   }
 
   if (errors.length > 0) {
-    console.log(chalk.red('\n❌ Configuration Errors:'));
-    errors.forEach(e => console.log(chalk.red(`   - ${e}`)));
-    console.log('');
-    // We throw to stop the build process in the CLI
+    TUI.error('Configuration Errors');
+    errors.forEach(e => TUI.error(e));
     throw new Error('Invalid configuration file.');
   }
 
-  return true;
+  return { warnings, errors };
 }
 
 export { validateConfig };

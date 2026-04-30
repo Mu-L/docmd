@@ -13,7 +13,7 @@
  */
 
 import { execSync } from 'child_process';
-import chalk from 'chalk';
+import { TUI } from '@docmd/api';
 
 /**
  * find and kill running docmd processes
@@ -25,7 +25,7 @@ export async function stopServer(port: any, force: boolean = false) {
     const commonPorts = [3000, 3001, 8080, 8081];
 
     if (port) {
-        console.log(chalk.blue(`\n🔍 Searching for docmd instance on port ${chalk.bold(port)}...`));
+        TUI.section(`Stopping port ${port}`);
         try {
             // Try lsof first
             let pid = '';
@@ -43,23 +43,25 @@ export async function stopServer(port: any, force: boolean = false) {
                 }
             }
             if (pid) {
-                console.log(chalk.yellow(`   Found process ${pid} on port ${port}. Stopping...`));
+                TUI.step(`Found process ${pid} on port ${port}`, 'WAIT');
                 try {
                     process.kill(Number(pid), 'SIGTERM');
                 } catch {
                     process.kill(Number(pid), 'SIGKILL');
                 }
-                console.log(chalk.bold.green(`\n✅ docmd instance on port ${port} has been stopped.\n`));
+                TUI.footer();
+                TUI.success(`Docmd instance on port ${port} has been stopped.`);
                 return;
             }
         } catch {
             // No process found
         }
-        console.log(chalk.green(`✅ No docmd instance found on port ${port}.\n`));
+        TUI.step(`No instance found on port ${port}`, 'SKIP');
+        TUI.footer();
         return;
     }
 
-    console.log(chalk.blue('\n🔍 Searching for all running docmd instances...'));
+    TUI.section('Stopping all instances');
 
     try {
         // Get all processes with PIDs and full command lines
@@ -101,42 +103,29 @@ export async function stopServer(port: any, force: boolean = false) {
         }
 
         if (targets.length === 0) {
-            console.log(chalk.green('✅ No running docmd instances found.\n'));
-            if (force) {
-                console.log(chalk.dim(`   (use without --force to only stop docmd processes)\n`));
-            }
+            TUI.step('No running docmd instances found', 'SKIP');
+            TUI.footer();
             return;
-        }
-
-        const docmdCount = targets.filter(t => t.type === 'docmd').length;
-        const serveCount = targets.filter(t => t.type === 'serve').length;
-
-        if (force && serveCount > 0) {
-            console.log(chalk.yellow(`   Found ${docmdCount} docmd process(es) and ${serveCount} serve process(es).`));
-            console.log(chalk.dim(`   (serve processes included due to --force flag)\n`));
-        } else {
-            console.log(chalk.yellow(`   Found ${targets.length} process(es). Stopping...`));
         }
 
         for (const target of targets) {
             try {
-                process.stdout.write(chalk.dim(`     - Killing ${target.type} PID ${target.pid}... `));
+                TUI.step(`Killing ${target.type} PID ${target.pid}`, 'DONE');
                 process.kill(target.pid, 'SIGTERM');
-                process.stdout.write(chalk.green('Done.\n'));
             } catch {
                 // If SIGTERM fails, try SIGKILL
                 try {
                     process.kill(target.pid, 'SIGKILL');
-                    process.stdout.write(chalk.yellow('Forced.\n'));
-                } catch (err2) {
-                    process.stdout.write(chalk.red(`Failed: ${err2.message}\n`));
+                } catch (err2: any) {
+                    TUI.step(`Failed to kill PID ${target.pid}: ${err2.message}`, 'FAIL', TUI.red);
                 }
             }
         }
 
-        console.log(chalk.bold.green('\n✅ All docmd instances have been stopped.\n'));
+        TUI.footer();
+        TUI.success('All docmd instances have been stopped.');
 
     } catch (error: any) {
-        console.error(chalk.red('❌ Error during stop:'), error.message);
+        TUI.error('Error during stop', error.message);
     }
 }

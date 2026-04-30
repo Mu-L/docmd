@@ -13,7 +13,7 @@
  */
 
 import path from 'path';
-import chalk from 'chalk';
+import { TUI } from '@docmd/tui';
 import nativeFs from 'fs';
 import fs from '../utils/fs-utils.js';
 import { renderPages } from './generator.js';
@@ -113,6 +113,7 @@ export async function buildLocales({
   if (config.i18n && config.i18n.locales) {
     const baseSrcDir = path.resolve(CWD, config.src);
     const availableLocaleIds = new Set<string>();
+    
     for (const loc of config.i18n.locales) {
       if (loc.id === config.i18n.default) {
         availableLocaleIds.add(loc.id);
@@ -123,9 +124,25 @@ export async function buildLocales({
         availableLocaleIds.add(loc.id);
         continue;
       }
+      
+      // Check for locale directory - handle both versioned and non-versioned structures
+      // Non-versioned: baseSrcDir/{localeId}/
+      // Versioned: baseSrcDir/{versionDir}/{localeId}/
       const locDir = path.join(baseSrcDir, loc.id);
       if (nativeFs.existsSync(locDir)) {
         availableLocaleIds.add(loc.id);
+        continue;
+      }
+      
+      // Check versioned structure: look in the current version's directory
+      if (config.versions?.all?.length > 0) {
+        const currentVersion = config.versions.all.find((v: any) => v.id === config.versions.current);
+        if (currentVersion) {
+          const versionedLocDir = path.join(baseSrcDir, currentVersion.dir, loc.id);
+          if (nativeFs.existsSync(versionedLocDir)) {
+            availableLocaleIds.add(loc.id);
+          }
+        }
       }
     }
     config._builtLocales = availableLocaleIds;
@@ -147,7 +164,7 @@ export async function buildLocales({
     if (isStringMode && localeId && !isDefault) {
       // stringMode: clone default locale output with string replacements
       if (!defaultPassPages) {
-        console.log(chalk.yellow(`⚠️  stringMode: no default locale pages to clone for ${localeId}. Skipping...`));
+        TUI.warn(`stringMode: no default locale pages to clone for ${localeId}. Skipping...`);
         continue;
       }
 
@@ -156,7 +173,7 @@ export async function buildLocales({
       const localeDir = locale?.dir || 'ltr';
 
       if (Object.keys(strings).length === 0) {
-        console.log(chalk.yellow(`⚠️  No string translations found for ${localeId} (assets/i18n/${localeId}.json). Rendering default language.`));
+        TUI.warn(`No string translations found for ${localeId} (assets/i18n/${localeId}.json). Rendering default language.`);
       }
 
       for (const page of defaultPassPages) {
@@ -200,7 +217,7 @@ export async function buildLocales({
       // The locale dir must exist (or fall back to base when no i18n)
       if (!await fs.exists(localeSrcDir)) {
         if (localeConfig._activeLocale && !isStringMode) {
-          console.log(chalk.yellow(`⚠️  Locale directory missing: ${localeSrcDir}. Skipping ${localeConfig._activeLocale.id}...`));
+          TUI.warn(`Locale directory missing: ${localeSrcDir}. Skipping ${localeConfig._activeLocale.id}...`);
           continue;
         } else if (!localeConfig._activeLocale) {
           throw new Error(`Source directory not found: ${localeSrcDir}`);
@@ -299,7 +316,7 @@ export async function loadStringModeTranslations(
       return JSON.parse(raw);
     }
   } catch (e: any) {
-    console.warn(`[docmd] Failed to load string-mode translations: ${filePath} — ${e.message}`);
+    TUI.warn(`Failed to load string-mode translations: ${filePath} — ${e.message}`);
   }
   return {};
 }

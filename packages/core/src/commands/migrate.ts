@@ -14,8 +14,8 @@
 
 import fs from '../utils/fs-utils.js';
 import path from 'path';
-import chalk from 'chalk';
 import nativeFs from 'fs';
+import { TUI } from '@docmd/api';
 
 function serializeConfig(obj: any) {
   const json = JSON.stringify(obj, null, 2);
@@ -40,7 +40,7 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
   };
 
   if (options.docusaurus) {
-    console.log(chalk.blue('📦 Migrating from Docusaurus...'));
+    TUI.section('Docusaurus Migration');
     const configPath = path.resolve(CWD, 'docusaurus.config.js');
     const tsConfigPath = path.resolve(CWD, 'docusaurus.config.ts');
 
@@ -48,7 +48,7 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
     if (nativeFs.existsSync(configPath)) activeConfigPath = configPath;
     else if (nativeFs.existsSync(tsConfigPath)) activeConfigPath = tsConfigPath;
     else {
-      console.error(chalk.red('❌ docusaurus.config.js or docusaurus.config.ts not found in the current directory.'));
+      TUI.error('Missing configuration', 'docusaurus.config.js or docusaurus.config.ts not found.');
       return;
     }
 
@@ -61,29 +61,33 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
     if (titleMatch) title = titleMatch[1];
 
     await moveFilesToBackup(backupDir);
+    TUI.step('Created backup directory', 'DONE');
 
     const backupDocsDir = path.resolve(backupDir, 'docs');
     const newDocsDir = path.resolve(CWD, 'docs');
     if (nativeFs.existsSync(backupDocsDir)) {
       await fs.copy(backupDocsDir, newDocsDir);
-      console.log(chalk.dim(`   > Copied docs/ directory`));
+      TUI.step('Migrated documentation content', 'DONE');
     } else {
       await fs.ensureDir(newDocsDir);
+      TUI.step('Created new docs directory', 'DONE');
     }
 
     const docmdConfig = { title, src: 'docs', out: 'dist', theme: { appearance: 'system' } };
     await nativeFs.promises.writeFile(path.resolve(CWD, 'docmd.config.js'), serializeConfig(docmdConfig));
+    TUI.step('Generated docmd.config.js', 'DONE');
 
-    console.log(chalk.green('\n✅ Docusaurus Migration Complete!'));
-    console.log(`   Original files moved to: ${chalk.cyan('docusaurus-backup/')}`);
-    console.log(`   Run ${chalk.cyan('npx @docmd/core dev')} to preview your site.`);
+    TUI.footer();
+    TUI.success('Docusaurus migration complete.');
+    TUI.info(`Original files moved to: ${TUI.cyan('docusaurus-backup/')}`);
+    TUI.info(`Run ${TUI.cyan('docmd dev')} to preview your site.`);
 
   } else if (options.mkdocs) {
-    console.log(chalk.blue('📦 Migrating from MkDocs...'));
+    TUI.section('MkDocs Migration');
     const configPath = path.resolve(CWD, 'mkdocs.yml');
 
     if (!nativeFs.existsSync(configPath)) {
-      console.error(chalk.red('❌ mkdocs.yml not found in the current directory.'));
+      TUI.error('Missing configuration', 'mkdocs.yml not found.');
       return;
     }
 
@@ -96,25 +100,29 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
     if (titleMatch) title = titleMatch[1].trim();
 
     await moveFilesToBackup(backupDir);
+    TUI.step('Created backup directory', 'DONE');
 
     const backupDocsDir = path.resolve(backupDir, 'docs');
     const newDocsDir = path.resolve(CWD, 'docs');
     if (nativeFs.existsSync(backupDocsDir)) {
       await fs.copy(backupDocsDir, newDocsDir);
-      console.log(chalk.dim(`   > Copied docs/ directory`));
+      TUI.step('Migrated documentation content', 'DONE');
     } else {
       await fs.ensureDir(newDocsDir);
+      TUI.step('Created new docs directory', 'DONE');
     }
 
     const docmdConfig = { title, src: 'docs', out: 'dist', theme: { appearance: 'system' } };
     await nativeFs.promises.writeFile(path.resolve(CWD, 'docmd.config.js'), serializeConfig(docmdConfig));
+    TUI.step('Generated docmd.config.js', 'DONE');
 
-    console.log(chalk.green('\n✅ MkDocs Migration Complete!'));
-    console.log(`   Original files moved to: ${chalk.cyan('mkdocs-backup/')}`);
-    console.log(`   Run ${chalk.cyan('npx @docmd/core dev')} to preview your site.`);
+    TUI.footer();
+    TUI.success('MkDocs migration complete.');
+    TUI.info(`Original files moved to: ${TUI.cyan('mkdocs-backup/')}`);
+    TUI.info(`Run ${TUI.cyan('docmd dev')} to preview your site.`);
 
   } else if (options.vitepress) {
-    console.log(chalk.blue('📦 Migrating from VitePress...'));
+    TUI.section('VitePress Migration');
     const CWD = process.cwd();
 
     let configDir = '';
@@ -134,7 +142,7 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
     }
 
     if (!activeConfigPath) {
-      console.error(chalk.red('❌ .vitepress/config.[js|ts|mjs] not found in root or docs/ directory.'));
+      TUI.error('Missing configuration', '.vitepress/config.[js|ts|mjs] not found.');
       return;
     }
 
@@ -147,40 +155,40 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
     if (titleMatch) title = titleMatch[1];
 
     await moveFilesToBackup(backupDir);
+    TUI.step('Created backup directory', 'DONE');
 
-    // Determine the source of docs. If config is in docs/.vitepress, docs is in docs/. Otherwise docs is in root.
     const isDocsInRoot = configDir === '.vitepress';
     const newDocsDir = path.resolve(CWD, 'docs');
     await fs.ensureDir(newDocsDir);
 
     if (isDocsInRoot) {
-      // Copy all .md files from backup root to new docs dir
       const files = await nativeFs.promises.readdir(backupDir);
       for (const file of files) {
         if (file.endsWith('.md')) {
           await fs.copy(path.resolve(backupDir, file), path.resolve(newDocsDir, file));
         }
       }
-      console.log(chalk.dim(`   > Copied root markdown files to docs/`));
+      TUI.step('Migrated root content to docs/', 'DONE');
     } else {
-      // Config was in docs/.vitepress, copy the docs folder except .vitepress
       const backupDocsDir = path.resolve(backupDir, 'docs');
       if (nativeFs.existsSync(backupDocsDir)) {
         await fs.copy(backupDocsDir, newDocsDir);
         await fs.remove(path.resolve(newDocsDir, '.vitepress'));
-        console.log(chalk.dim(`   > Copied docs/ directory (stripped .vitepress)`));
+        TUI.step('Migrated docs content', 'DONE');
       }
     }
 
     const docmdConfig = { title, src: 'docs', out: 'dist', theme: { appearance: 'system' } };
     await nativeFs.promises.writeFile(path.resolve(CWD, 'docmd.config.js'), serializeConfig(docmdConfig));
+    TUI.step('Generated docmd.config.js', 'DONE');
 
-    console.log(chalk.green('\n✅ VitePress Migration Complete!'));
-    console.log(`   Original files moved to: ${chalk.cyan('vitepress-backup/')}`);
-    console.log(`   Run ${chalk.cyan('npx @docmd/core dev')} to preview your site.`);
+    TUI.footer();
+    TUI.success('VitePress migration complete.');
+    TUI.info(`Original files moved to: ${TUI.cyan('vitepress-backup/')}`);
+    TUI.info(`Run ${TUI.cyan('docmd dev')} to preview your site.`);
 
   } else if (options.starlight) {
-    console.log(chalk.blue('📦 Migrating from Astro Starlight...'));
+    TUI.section('Starlight Migration');
     const configPath = path.resolve(CWD, 'astro.config.mjs');
     const tsConfigPath = path.resolve(CWD, 'astro.config.ts');
 
@@ -188,7 +196,7 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
     if (nativeFs.existsSync(configPath)) activeConfigPath = configPath;
     else if (nativeFs.existsSync(tsConfigPath)) activeConfigPath = tsConfigPath;
     else {
-      console.error(chalk.red('❌ astro.config.mjs or astro.config.ts not found.'));
+      TUI.error('Missing configuration', 'astro.config.mjs or astro.config.ts not found.');
       return;
     }
 
@@ -201,22 +209,26 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
     if (titleMatch) title = titleMatch[1];
 
     await moveFilesToBackup(backupDir);
+    TUI.step('Created backup directory', 'DONE');
 
     const backupDocsDir = path.resolve(backupDir, 'src/content/docs');
     const newDocsDir = path.resolve(CWD, 'docs');
 
     if (nativeFs.existsSync(backupDocsDir)) {
       await fs.copy(backupDocsDir, newDocsDir);
-      console.log(chalk.dim(`   > Copied src/content/docs/ to docs/`));
+      TUI.step('Migrated documentation content', 'DONE');
     } else {
       await fs.ensureDir(newDocsDir);
+      TUI.step('Created new docs directory', 'DONE');
     }
 
     const docmdConfig = { title, src: 'docs', out: 'dist', theme: { appearance: 'system' } };
     await nativeFs.promises.writeFile(path.resolve(CWD, 'docmd.config.js'), serializeConfig(docmdConfig));
+    TUI.step('Generated docmd.config.js', 'DONE');
 
-    console.log(chalk.green('\n✅ Astro Starlight Migration Complete!'));
-    console.log(`   Original files moved to: ${chalk.cyan('starlight-backup/')}`);
-    console.log(`   Run ${chalk.cyan('npx @docmd/core dev')} to preview your site.`);
+    TUI.footer();
+    TUI.success('Astro Starlight migration complete.');
+    TUI.info(`Original files moved to: ${TUI.cyan('starlight-backup/')}`);
+    TUI.info(`Run ${TUI.cyan('docmd dev')} to preview your site.`);
   }
 }

@@ -50,9 +50,9 @@ importers:
       '@docmd/parser':
         specifier: workspace:*
         version: link:../parser
-      chalk:
-        specifier: ^4.1.2
-        version: 4.1.2
+      '@docmd/tui':
+        specifier: workspace:*
+        version: link:../tui
 
   packages/core:
     dependencies:
@@ -92,12 +92,12 @@ importers:
       '@docmd/themes':
         specifier: workspace:*
         version: link:../themes
+      '@docmd/tui':
+        specifier: workspace:*
+        version: link:../tui
       '@docmd/ui':
         specifier: workspace:*
         version: link:../ui
-      chalk:
-        specifier: ^4.1.2
-        version: 4.1.2
       esbuild:
         specifier: ^0.28.0
         version: 0.28.0
@@ -129,6 +129,9 @@ importers:
       '@docmd/themes':
         specifier: workspace:*
         version: link:../themes
+      '@docmd/tui':
+        specifier: workspace:*
+        version: link:../tui
       '@docmd/ui':
         specifier: workspace:*
         version: link:../ui
@@ -144,9 +147,16 @@ importers:
       markdown-it-texmath:
         specifier: ^1.0.0
         version: 1.0.0
+    devDependencies:
+      '@docmd/api':
+        specifier: workspace:*
+        version: link:../api
 
   packages/parser:
     dependencies:
+      '@docmd/tui':
+        specifier: workspace:*
+        version: link:../tui
       embed-lite:
         specifier: ^0.1.4
         version: 0.1.4
@@ -192,13 +202,10 @@ importers:
 
   packages/plugins/installer:
     dependencies:
-      chalk:
-        specifier: ^4.1.2
-        version: 4.1.2
-    devDependencies:
       '@docmd/api':
         specifier: workspace:*
         version: link:../../api
+    devDependencies:
       '@types/node':
         specifier: ^25.6.0
         version: 25.6.0
@@ -303,6 +310,19 @@ importers:
         version: 5.9.3
 
   packages/themes: {}
+
+  packages/tui:
+    dependencies:
+      chalk:
+        specifier: ^4.1.2
+        version: 4.1.2
+    devDependencies:
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
 
   packages/ui: {}
 

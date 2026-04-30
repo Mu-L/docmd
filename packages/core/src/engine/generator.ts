@@ -371,15 +371,18 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
     const assetBodyHtml = assetTags.body.map((gen: any) => gen(relativePathToRoot)).join('\n');
     const pageContext = { frontmatter: page.frontmatter, outputPath: page.outputPath, urls: pageUrls };
 
+    const headInjections = await Promise.all(hooks.injectHead.map((fn: any) => fn(config, pageContext, relativePathToRoot)));
+    const bodyInjections = await Promise.all(hooks.injectBody.map((fn: any) => fn(config, pageContext)));
+
     const fullHeadHtml = [
-      hooks.injectHead.map((fn: any) => fn(config, pageContext, relativePathToRoot)).join('\n'),
+      headInjections.join('\n'),
       assetHeadHtml,
       generateHreflangTags(config, page.outputPath)
     ].join('\n');
 
     const fullBodyHtml = [
       assetBodyHtml,
-      hooks.injectBody.map((fn: any) => fn(config, pageContext)).join('\n')
+      bodyInjections.join('\n')
     ].join('\n');
 
     // Source file path relative to srcDir — used by plugins (e.g. threads) to identify the file

@@ -189,8 +189,8 @@ export interface PluginModule {
 /** The shape of the hooks object maintained by the plugin loader. */
 export interface PluginHooks {
   markdownSetup: ((md: any) => void)[];
-  injectHead: ((config: any, pageContext: any, root?: string) => string)[];
-  injectBody: ((config: any, pageContext: any) => string)[];
+  injectHead: ((config: any, pageContext: any, root?: string) => string | Promise<string>)[];
+  injectBody: ((config: any, pageContext: any) => string | Promise<string>)[];
   onPostBuild: ((ctx: any) => Promise<void>)[];
   assets: (() => any[])[];
   translations: ((localeId: string) => Record<string, string>)[];

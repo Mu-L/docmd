@@ -1,7 +1,7 @@
 {
-  "name": "@docmd/api",
+  "name": "@docmd/tui",
   "version": "0.7.7",
-  "description": "Plugin API surface for docmd - hook registration, RPC dispatch, and source editing tools.",
+  "description": "Terminal User Interface (TUI) design system for docmd.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -18,21 +18,20 @@
     "dist"
   ],
   "dependencies": {
-    "@docmd/parser": "workspace:*",
-    "@docmd/tui": "workspace:*"
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^5.8.2"
   },
   "keywords": [
     "docmd",
     "documentation",
-    "api",
-    "plugin",
-    "hooks",
-    "rpc",
-    "markdown",
-    "minimalist",
-    "zero-config",
-    "site-generator",
-    "static-site-generator",
+    "tui",
+    "terminal",
+    "cli",
+    "design-system",
+    "chalk",
     "docs"
   ],
   "author": {

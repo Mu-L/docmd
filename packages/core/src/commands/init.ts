@@ -12,6 +12,7 @@
  * --------------------------------------------------------------------
  */
 
+import { TUI } from '@docmd/api';
 import fs from '../utils/fs-utils.js';
 import path from 'path';
 import readline from 'readline';
@@ -226,12 +227,14 @@ export async function initProject() {
     assets: false
   };
 
+  TUI.section('Project Setup');
+
   // Check if package.json exists
   if (!await fs.pathExists(packageJsonFile)) {
     await fs.writeJson(packageJsonFile, defaultPackageJson, { spaces: 2 });
-    console.log('📦 Created `package.json` (Deployment Ready)');
+    TUI.step('Created package.json', 'DONE');
   } else {
-    console.log('⏭️  Skipped existing `package.json`');
+    TUI.step('Using existing package.json', 'SKIP');
   }
 
   // Check each file individually
@@ -261,8 +264,8 @@ export async function initProject() {
   // Determine if we should override existing files
   let shouldOverride = false;
   if (existingFiles.length > 0) {
-    console.warn('⚠️  The following files already exist:');
-    existingFiles.forEach(file => console.warn(`   - ${file}`));
+    TUI.warn('Existing files detected:');
+    existingFiles.forEach(file => console.log(`   - ${file}`));
 
     const rl = readline.createInterface({
       input: process.stdin,
@@ -270,7 +273,7 @@ export async function initProject() {
     });
 
     const answer = await new Promise(resolve => {
-      rl.question('Do you want to override these files? (y/N): ', resolve);
+      rl.question(`\n ${TUI.bold('Do you want to override these files?')} (y/N): `, resolve);
     });
 
     rl.close();
@@ -278,16 +281,16 @@ export async function initProject() {
     shouldOverride = (answer as string).toLowerCase() === 'y';
 
     if (!shouldOverride) {
-      console.log('⏭️  Skipping existing files. Will only create new files.');
+      TUI.step('Maintaining existing files', 'SKIP');
     }
   }
 
   // Create docs directory if it doesn't exist
   if (!dirExists.docs) {
     await fs.ensureDir(docsDir);
-    console.log('📁 Created `docs/` directory');
+    TUI.step('Created docs/ directory', 'DONE');
   } else {
-    console.log('📁 Using existing `docs/` directory');
+    TUI.step('Using existing docs/ directory', 'SKIP');
   }
 
   // Create assets directory structure if it doesn't exist
@@ -296,9 +299,9 @@ export async function initProject() {
     await fs.ensureDir(assetsCssDir);
     await fs.ensureDir(assetsJsDir);
     await fs.ensureDir(assetsImagesDir);
-    console.log('📁 Created `assets/` directory with css, js, and images subdirectories');
+    TUI.step('Created assets/ infrastructure', 'DONE');
   } else {
-    console.log('📁 Using existing `assets/` directory');
+    TUI.step('Using existing assets/ directory', 'SKIP');
     if (!await fs.pathExists(assetsCssDir)) await fs.ensureDir(assetsCssDir);
     if (!await fs.pathExists(assetsJsDir)) await fs.ensureDir(assetsJsDir);
     if (!await fs.pathExists(assetsImagesDir)) await fs.ensureDir(assetsImagesDir);
@@ -307,22 +310,22 @@ export async function initProject() {
   // Write config file if it doesn't exist or user confirmed override
   if (!await fs.pathExists(configFile) || shouldOverride) {
     await fs.writeFile(configFile, defaultConfigContent, 'utf8');
-    console.log(`📄 ${shouldOverride ? 'Updated' : 'Created'} \`docmd.config.js\``);
+    TUI.step(`${shouldOverride ? 'Updated' : 'Created'} docmd.config.js`, 'DONE');
   } else {
-    console.log('⏭️  Skipped existing `docmd.config.js`');
+    TUI.step('Using existing docmd.config.js', 'SKIP');
   }
 
   // Write index.md file if it doesn't exist or user confirmed override
   if (!await fs.pathExists(indexMdFile)) {
     await fs.writeFile(indexMdFile, defaultIndexMdContent, 'utf8');
-    console.log('📄 Created `docs/index.md`');
+    TUI.step('Created docs/index.md', 'DONE');
   } else if (shouldOverride) {
     await fs.writeFile(indexMdFile, defaultIndexMdContent, 'utf8');
-    console.log('📄 Updated `docs/index.md`');
+    TUI.step('Updated docs/index.md', 'DONE');
   } else {
-    console.log('⏭️  Skipped existing `docs/index.md`');
+    TUI.step('Using existing docs/index.md', 'SKIP');
   }
 
-  console.log('✅ Project initialization complete!');
-  console.log('👉 Run `npm install` to setup dependencies.');
+  TUI.footer();
+  TUI.success('Initialization complete. Run `npm install` to setup dependencies.');
 }

@@ -36,25 +36,25 @@ if (!isCI) {
 }
 
 // 2. Run the actual failsafe check
-// Forwarding arguments to failsafe.js
+// Forwarding arguments to failsafe.mjs
 const failsafeArgs = args.filter(a => a !== '--link' && a !== '--skip-header').join(' ');
-run(`node scripts/failsafe.js ${failsafeArgs}`, false);
+run(`node scripts/failsafe.mjs ${failsafeArgs}`, false);
 
 // 3. Handle global linking if requested
 if (shouldLink) {
-    process.stdout.write('\n\x1b[2m🔗 Linking docmd globally...\x1b[0m');
+    process.stdout.write(`\x1b[34m│\x1b[0m  \x1b[2mLinking docmd globally...\x1b[0m`);
     try {
         execSync('npm link --silent', { cwd: path.join(process.cwd(), 'packages/core'), stdio: 'ignore' });
-        console.log(' \x1b[32mDone!\x1b[0m');
+        console.log(' \x1b[32m[ DONE ]\x1b[0m');
     } catch {
-        console.log(' \x1b[31mFailed (requires sudo?)\x1b[0m');
+        console.log(' \x1b[31m[ FAIL ]\x1b[0m');
     }
 }
 
 // 4. Show final completion status
 if (!isCI) {
-    const statusCmd = shouldLink ? 'node scripts/status.js verify --linked' : 'node scripts/status.js verify';
+    const statusCmd = 'node scripts/status.js verify';
     run(statusCmd, false);
 } else {
-    console.log('\n🛡️  \x1b[32m\x1b[1mdocmd verification passed!\x1b[0m');
+    console.log('\n\x1b[32m\x1b[1m⬢ Docmd verification passed!\x1b[0m\n');
 }

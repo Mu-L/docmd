@@ -23,7 +23,8 @@ import { buildLive } from '../commands/live.js';
 import { migrateProject } from '../commands/migrate.js';
 import { stopServer } from '../commands/stop.js';
 import { initDeploy } from '../commands/deploy.js';
-import { printBanner } from '../utils/logger.js';
+
+import { TUI } from '@docmd/api';
 import { installPlugin, removePlugin } from '@docmd/plugin-installer';
 
 const pkgUrl = new URL('../../package.json', import.meta.url);
@@ -71,33 +72,41 @@ if (values.version || (!command && args.includes('-v'))) {
 }
 
 if (!command || values.help) {
-  printBanner();
-  console.log(`docmd v${version}`);
-  console.log(`\nUsage: docmd <command> [options]\n`);
-  console.log(`Commands:`);
-  console.log(`  init            Initialize a new documentation project`);
-  console.log(`  build           Build the static site for production`);
-  console.log(`  dev             Start the development server`);
-  console.log(`  live            Launch the Live Editor`);
-  console.log(`  migrate         Migrate from Docusaurus, MkDocs, VitePress, or Astro Starlight`);
-  console.log(`  deploy          Generate production deployment configurations`);
-  console.log(`  stop            Kill all running background docmd dev servers`);
-  console.log(`                  Use --force to also kill serve processes on common ports`);
-  console.log(`  add <plugin>    Install and configure a docmd plugin`);
-  console.log(`  remove <plugin> Remove and unconfigure a docmd plugin`);
-  console.log(`\nOptions:`);
-  console.log(`  -c, --config <path>    Path to config (default: docmd.config.js)`);
-  console.log(`  -p, --port <number>    Port to run server`);
-  console.log(`  --offline              Optimise for file:// viewing`);
-  console.log(`  --build-only           Generate the dist/ folder without starting the server`);
-  console.log(`  -V, --verbose          Show detailed package manager logs`);
-  console.log(`  -v, --version          Output the version number`);
-  console.log(`  -h, --help             Display help for command`);
-  console.log(`\nDeploy Options (docmd deploy):`);
-  console.log(`  --docker               Generate Dockerfile for containerization`);
-  console.log(`  --nginx                Generate production nginx.conf`);
-  console.log(`  --caddy                Generate production Caddyfile`);
-  console.log(`  --force                Overwrite existing deployment files`);
+  TUI.banner(undefined, version);
+  TUI.info(`Usage: docmd <command> [options]\n`);
+  
+  TUI.section('Commands');
+  const cmds = [
+    ['init', 'Initialize a new documentation project'],
+    ['build', 'Build the static site for production'],
+    ['dev', 'Start the development server'],
+    ['live', 'Launch the Live Editor'],
+    ['migrate', 'Migrate from Docusaurus, MkDocs, VitePress, etc.'],
+    ['deploy', 'Generate production deployment configurations'],
+    ['stop', 'Kill all running background docmd dev servers'],
+    ['add', 'Install and configure a docmd plugin'],
+    ['remove', 'Remove and unconfigure a docmd plugin']
+  ];
+  cmds.forEach(([c, d]) => TUI.item(c, d, TUI.cyan));
+
+  TUI.section('Options');
+  const optsList = [
+    ['-c, --config', 'Path to config (default: docmd.config.js)'],
+    ['-p, --port', 'Port to run server'],
+    ['--offline', 'Optimise for file:// viewing'],
+    ['--build-only', 'Generate dist/ without starting server'],
+    ['-V, --verbose', 'Show detailed package manager logs'],
+    ['-v, --version', 'Output the version number'],
+    ['-h, --help', 'Display help for command']
+  ];
+  optsList.forEach(([o, d]) => TUI.item(o, d, TUI.cyan));
+  
+  TUI.section('Deploy Options');
+  TUI.item('--docker', 'Generate Dockerfile & .dockerignore', TUI.cyan);
+  TUI.item('--nginx', 'Generate production nginx.conf', TUI.cyan);
+  TUI.item('--caddy', 'Generate production Caddyfile', TUI.cyan);
+  TUI.footer();
+  
   process.exit(0);
 }
 
@@ -111,7 +120,7 @@ const opts = {
 };
 
 if (command !== 'stop') {
-  printBanner();
+  TUI.banner(undefined, version);
 }
 
 if (command === 'init') {

@@ -17,6 +17,7 @@ import http from 'http';
 import fs from 'fs/promises';
 import { fileURLToPath } from 'node:url';
 import { build } from './build.js';
+import { TUI } from '@docmd/tui';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -103,18 +104,19 @@ async function start() {
 
   // 3. Start Listening
   server.listen(port, '0.0.0.0', () => {
-    console.log(`\n🌍 Launching Live Editor at http://localhost:${port}`);
-    console.log(`   Serving from: ${publicDir}`);
-    console.log('   (Press Ctrl+C to stop)\n');
+    TUI.success(`Launching Live Editor at http://localhost:${port}`);
+    TUI.info(`Serving from: ${publicDir}`);
+    TUI.info('(Press Ctrl+C to stop)');
   });
 
   server.on('error', (err: any) => {
-    console.error(err);
+    TUI.error('Live server error', err.message);
     process.exit(1);
   });
 
   process.on('SIGINT', () => {
-    console.log('\n🛑 Shutting down Live Editor...');
+    console.log('\n');
+    TUI.warn('Shutting down Live Editor...\n');
     server.close();
     process.exit();
   });

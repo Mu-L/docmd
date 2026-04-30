@@ -15,7 +15,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
-import chalk from 'chalk';
+
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
@@ -105,7 +105,7 @@ function injectPluginToConfig(configPath, meta) {
         
       content = prefix + insert + suffix;
     } else {
-      console.warn(chalk.yellow(`Could not automatically inject plugin into config file. Please add '${configKey}': ${meta.defaultConfig} manually to the plugins object.`));
+      TUI.warn(`Could not automatically inject plugin into config file. Please add '${configKey}': ${meta.defaultConfig} manually to the plugins object.`);
       return false;
     }
   }
@@ -143,17 +143,16 @@ function removePluginFromConfig(configPath, meta) {
 }
 
 
+import { TUI } from '@docmd/api';
+
 async function installPlugin(pluginInput: string, opts: { verbose?: boolean } = {}) {
   const cwd = process.cwd();
   const pkgManager = getPackageManager(cwd);
   const meta = resolvePluginMeta(pluginInput);
   const packageName = meta.package;
 
-  if (opts.verbose) {
-    console.log(chalk.cyan(`Installing ${packageName} using ${pkgManager}...`));
-  } else {
-    process.stdout.write(chalk.cyan(`Installing ${packageName}... `));
-  }
+  TUI.section('Plugin Installation');
+  TUI.step(`Installing ${packageName} via ${pkgManager}`, 'WAIT');
 
   let installCmd = '';
   if (pkgManager === 'npm') installCmd = `npm install ${packageName}`;
@@ -161,7 +160,6 @@ async function installPlugin(pluginInput: string, opts: { verbose?: boolean } = 
   else if (pkgManager === 'pnpm') installCmd = `pnpm add ${packageName}`;
   else if (pkgManager === 'bun') installCmd = `bun add ${packageName}`;
 
-  // Use `--no-save` fallback for global / raw directories gracefully if it's npm
   if (pkgManager === 'npm' && !fs.existsSync(path.join(cwd, 'package.json'))) {
     installCmd += ' --no-save';
   }
@@ -170,28 +168,25 @@ async function installPlugin(pluginInput: string, opts: { verbose?: boolean } = 
     const stdioMode = opts.verbose ? 'inherit' : 'pipe';
     execSync(installCmd, { stdio: stdioMode, cwd });
     
-    if (!opts.verbose) process.stdout.write(chalk.green(`Done\n`));
-    else console.log(chalk.green(`Successfully installed ${packageName}.`));
+    TUI.step(packageName, 'DONE');
     
     const configPath = path.join(cwd, 'docmd.config.js');
-    console.log(chalk.cyan(`Injecting '${meta.configKey}' into docmd.config.js...`));
+    TUI.divider('Configuration');
+    TUI.step(`Activating ${meta.configKey}`, 'WAIT', TUI.blue);
 
     const injected = injectPluginToConfig(configPath, meta);
     if (injected) {
-      console.log(chalk.green(`Successfully activated '${meta.configKey}' in config.`));
+      TUI.step('Activation completed', 'DONE', TUI.blue);
     } else {
-      console.log(chalk.yellow(`Plugin '${meta.configKey}' was already in config or could not be injected.`));
+      TUI.step('Plugin already configured', 'SKIP', TUI.blue);
     }
-  } catch (err) {
-    if (!opts.verbose) process.stdout.write(chalk.red(`Failed\n`));
-    console.error(chalk.red(`❌ Could not install plugin '${packageName}'.`));
-    if (opts.verbose) {
-      console.error(chalk.dim(err.message));
-      if (err.stdout) console.error(err.stdout.toString());
-      if (err.stderr) console.error(err.stderr.toString());
-    } else {
-      console.error(chalk.yellow(`Run with --verbose to see detailed logs.`));
-    }
+    TUI.footer();
+    TUI.success('Plugin successfully installed and activated.');
+
+  } catch (err: any) {
+    TUI.step(packageName, 'FAIL');
+    TUI.footer();
+    TUI.error(`Could not install ${packageName}`, opts.verbose ? err.message : 'Run with --verbose for detailed logs.');
   }
 }
 
@@ -201,11 +196,8 @@ async function removePlugin(pluginInput: string, opts: { verbose?: boolean } = {
   const meta = resolvePluginMeta(pluginInput);
   const packageName = meta.package;
 
-  if (opts.verbose) {
-    console.log(chalk.cyan(`Removing ${packageName} using ${pkgManager}...`));
-  } else {
-    process.stdout.write(chalk.cyan(`Removing ${packageName}... `));
-  }
+  TUI.section('Plugin Removal');
+  TUI.step(`Uninstalling ${packageName} via ${pkgManager}`, 'WAIT');
 
   let uninstallCmd = '';
   if (pkgManager === 'npm') uninstallCmd = `npm uninstall ${packageName}`;
@@ -217,24 +209,25 @@ async function removePlugin(pluginInput: string, opts: { verbose?: boolean } = {
     const stdioMode = opts.verbose ? 'inherit' : 'pipe';
     execSync(uninstallCmd, { stdio: stdioMode, cwd });
     
-    if (!opts.verbose) process.stdout.write(chalk.green(`Done\n`));
-    else console.log(chalk.green(`Successfully uninstalled ${packageName}.`));
+    TUI.step(packageName, 'DONE');
     
     const configPath = path.join(cwd, 'docmd.config.js');
-    console.log(chalk.cyan(`Removing '${meta.configKey}' from docmd.config.js...`));
+    TUI.divider('Configuration');
+    TUI.step(`Removing ${meta.configKey}`, 'WAIT', TUI.blue);
 
     const removed = removePluginFromConfig(configPath, meta);
     if (removed) {
-      console.log(chalk.green(`Successfully deactivated '${meta.configKey}' in config.`));
+      TUI.step('Cleanup completed', 'DONE', TUI.blue);
     } else {
-      console.log(chalk.yellow(`Plugin '${meta.configKey}' was not found in config or could not be removed automatically.`));
+      TUI.step('No config entry found', 'SKIP', TUI.blue);
     }
-  } catch (err) {
-    if (!opts.verbose) process.stdout.write(chalk.red(`Failed\n`));
-    console.error(chalk.red(`❌ Could not remove plugin '${packageName}'.`));
-    if (opts.verbose) {
-      console.error(chalk.dim(err.message));
-    }
+    TUI.footer();
+    TUI.success('Plugin successfully uninstalled.');
+
+  } catch (err: any) {
+    TUI.step(packageName, 'FAIL');
+    TUI.footer();
+    TUI.error(`Could not remove ${packageName}`, err.message);
   }
 }
 

@@ -21,6 +21,9 @@ export { createActionDispatcher, safePath } from './rpc.js';
 // Source editing tools
 export { createSourceTools } from './source.js';
 
+// TUI tools
+export { TUI } from '@docmd/tui';
+
 // ─── Centralised URL Utilities ─────────────────────────────────────────────
 // Re-exported from @docmd/parser for plugin consumption.
 // Plugins MUST use these instead of rolling their own URL logic.

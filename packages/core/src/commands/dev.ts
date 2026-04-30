@@ -17,7 +17,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import nativeFs from 'node:fs';
 import path from 'path';
 import fs from '../utils/fs-utils.js';
-import chalk from 'chalk';
+import { TUI } from '@docmd/api';
 import { buildSite } from './build.js';
 import { loadConfig } from '../utils/config-loader.js';
 import { createRequire } from 'module';
@@ -55,7 +55,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
     }
     // Config validation errors already print their details — exit cleanly
     if (e.message === 'Invalid configuration file.' || e.message?.startsWith('Error parsing config')) {
-      console.error(`\nBuild failed:\n${e.message}\n`);
+      TUI.error('Build failed', e.message);
       process.exit(1);
     }
     throw e;
@@ -92,11 +92,11 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
   }
 
   // Initial Build
-  console.log(chalk.blue('🚀 Performing initial build...'));
+  TUI.info('Performing initial build...');
   try {
     await buildSite(configPathOption, { isDev: true, preserve: options.preserve });
   } catch (error) {
-    console.error(chalk.red('❌ Initial build failed:'), error.message);
+    TUI.error('Initial build failed', error.message);
   }
 
   // Watcher Setup
@@ -104,15 +104,15 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
   const configWatchPath = paths.configFileToWatch;
   const hasConfigFile = await fs.pathExists(configWatchPath);
 
-  console.log(chalk.dim('\n👀 Watching for changes in:'));
-  console.log(chalk.dim(`   - Source: ${chalk.cyan(formatPathForDisplay(paths.srcDirToWatch, CWD))}`));
+  TUI.info('Watching for changes:');
+  TUI.item('Source', formatPathForDisplay(paths.srcDirToWatch, CWD), TUI.dim, TUI.blue);
   if (hasConfigFile) {
-    console.log(chalk.dim(`   - Config: ${chalk.cyan(formatPathForDisplay(configWatchPath, CWD))}`));
+    TUI.item('Config', formatPathForDisplay(configWatchPath, CWD), TUI.dim, TUI.blue);
   }
   if (userAssetsDirExists) {
-    console.log(chalk.dim(`   - Assets: ${chalk.cyan(formatPathForDisplay(paths.userAssetsDir, CWD))}`));
+    TUI.item('Assets', formatPathForDisplay(paths.userAssetsDir, CWD), TUI.dim, TUI.blue);
   }
-  console.log('');
+  TUI.divider('Watchers');
 
   const watchers: nativeFs.FSWatcher[] = [];
   let isRebuilding = false;
@@ -155,15 +155,21 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
         rebuildTimeout = setTimeout(() => {
           const executeBuildFn = async () => {
             if (isRebuilding) { rebuildQueued = true; return; }
-            process.stdout.write(chalk.dim(`↻ Change in ${relativeFilePath}... `));
+            
+            TUI.step(`Rebuilding: ${relativeFilePath}`, 'WAIT');
             isRebuilding = true;
             rebuildQueued = false;
             try {
-              await buildSite(configPathOption, { isDev: true, preserve: options.preserve });
+              await buildSite(configPathOption, { 
+                isDev: true, 
+                preserve: options.preserve,
+                quiet: true 
+              });
+              TUI.step(`Rebuilding: ${relativeFilePath}`, 'DONE');
               broadcastReload();
-              process.stdout.write(chalk.green('Done.\n'));
             } catch (error: any) {
-              console.error(chalk.red('\n❌ Rebuild failed:'), error.message);
+              TUI.step(`Rebuilding: ${relativeFilePath}`, 'FAIL');
+              TUI.error('Rebuild failed', error.message);
             } finally {
               isRebuilding = false;
               if (rebuildQueued) executeBuildFn();
@@ -187,7 +193,8 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
         configLock = true;
 
         setTimeout(async () => {
-          process.stdout.write(chalk.yellow('⚙  Config changed. Reloading... '));
+          const configName = path.basename(configWatchPath);
+          TUI.step(`Reloading config: ${configName}`, 'WAIT');
           try {
             // Tear down all watchers (including this config watcher)
             watchers.forEach(w => w.close());
@@ -202,16 +209,21 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
             state.outputDir = paths.outputDir;
 
             // Full rebuild with fresh config
-            await buildSite(configPathOption, { isDev: true, preserve: options.preserve });
+            await buildSite(configPathOption, { 
+              isDev: true, 
+              preserve: options.preserve,
+              quiet: true 
+            });
+
+            TUI.step(`Reloading config: ${configName}`, 'DONE');
 
             // Re-setup all watchers
             setupContentWatchers();
             setupConfigWatcher();
 
             broadcastReload();
-            process.stdout.write(chalk.green('Done.\n'));
           } catch (error: any) {
-            console.error(chalk.red('\n❌ Config reload failed:'), error.message);
+            TUI.error('Config reload failed', error.message);
             // Recover
             setupContentWatchers();
             setupConfigWatcher();
@@ -232,7 +244,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
     server.listen(port, '0.0.0.0')
       .once('listening', async () => {
         wss = new WebSocketServer({ server });
-        wss.on('error', (e: any) => console.error('WebSocket Error:', e.message));
+        wss.on('error', (e: any) => TUI.error('WebSocket Error', e.message));
 
         // Action dispatcher for plugin actions/events
         await loadPlugins(config, { resolvePaths: [__dirname] });
@@ -278,21 +290,18 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
         const localUrl = `http://127.0.0.1:${port}`;
         const networkUrl = networkIp ? `http://${networkIp}:${port}` : null;
 
-        const border = chalk.gray('────────────────────────────────────────');
-        console.log(border);
-        console.log(`  ${chalk.bold.green('SERVER RUNNING')}  ${chalk.dim(`(v${require('../../package.json').version})`)}`);
-        console.log('');
-        console.log(`  ${chalk.bold('Local:')}    ${chalk.cyan(localUrl)}`);
+        TUI.section('Development Server Running', TUI.green);
+        TUI.item('', '', TUI.dim, TUI.green);
+        TUI.item('Local Access', localUrl, TUI.bold, TUI.green);
         if (networkUrl) {
-          console.log(`  ${chalk.bold('Network:')}  ${chalk.cyan(networkUrl)}`);
+          TUI.item('Network Access', networkUrl, TUI.bold, TUI.green);
         }
-        console.log('');
-        console.log(`  ${chalk.dim('Serving:')}  ${formatPathForDisplay(paths.outputDir, CWD)}`);
-        console.log(border);
-        console.log('');
+        TUI.item('Serving from', formatPathForDisplay(paths.outputDir, CWD), TUI.dim, TUI.green);
+        TUI.item('','', TUI.dim, TUI.green);
+        TUI.footer(TUI.green);
 
-        if (!await fs.pathExists(indexHtmlPath)) {
-          console.warn(chalk.yellow(`⚠️  Warning: Root index.html not found.`));
+        if (!await fs.pathExists(path.join(paths.outputDir, 'index.html'))) {
+          TUI.warn('Root index.html not found. Build may be incomplete.');
         }
       })
       .once('error', (err: any) => {
@@ -300,7 +309,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
           server.close();
           tryStartServer(port + 1);
         } else {
-          console.error(chalk.red(`Failed to start server: ${err.message}`));
+          TUI.error('Failed to start server', err.message);
           process.exit(1);
         }
       });
@@ -332,7 +341,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
 
     if (process.stdin.isTTY) process.stdin.setRawMode(false);
 
-    process.stdout.write(chalk.yellow('\n🛑 Shutting down...\n'));
+    TUI.dim('Shutting down...');
 
     // Force exit after a shorter timeout if graceful shutdown hangs
     const forceExitTimeout = setTimeout(() => {
@@ -348,10 +357,9 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
 
       await Promise.all(closures);
       clearTimeout(forceExitTimeout);
-      console.log(chalk.green('Done.'));
+      TUI.success('Shutdown complete.');
       process.exit(0);
     } catch {
-      console.log('');
       process.exit(0);
     }
   });

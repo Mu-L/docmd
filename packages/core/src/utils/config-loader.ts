@@ -17,8 +17,8 @@ import fs from 'fs';
 import { validateConfig } from '@docmd/parser';
 import { normalizeConfig } from './config-schema.js';
 import { buildAutoNav } from './auto-router.js';
-import chalk from 'chalk';
 import { pathToFileURL } from 'url';
+import { TUI } from '@docmd/api';
 
 function hasMarkdownFiles(dir: string, maxDepth = 2, currentDepth = 0): boolean {
   if (currentDepth > maxDepth) return false;
@@ -39,7 +39,7 @@ async function buildZeroConfig(cwd: string, isDev = false, quiet = false) {
 
   if (isDev && !quiet) {
     if (!(global as any).__DOCMD_ZERO_LOGGED) {
-      console.log(chalk.yellow('✨ Zero-Config mode activated. Analyzing directory...'));
+      TUI.info('Zero-Config mode activated. Analyzing directory...');
       (global as any).__DOCMD_ZERO_LOGGED = true;
     }
   }
@@ -55,10 +55,9 @@ async function buildZeroConfig(cwd: string, isDev = false, quiet = false) {
   }
 
   if (!srcDir) {
-    console.log(chalk.bold.red(`‼️  No documentation directory found in this root!  ‼️\n`));
-    console.log(chalk.yellow(`Zero-Config expects one of these directories: ${chalk.bold(candidates.join(', '))}`));
-    console.log(chalk.dim('Please create one of these folders or provide a docmd.config.js file.\n'));
-    console.log(chalk.dim('Shutting down silently...\n'));
+    TUI.error('Configuration Error', 'No documentation directory found.');
+    TUI.info(`Zero-Config expects one of: ${candidates.join(', ')}`);
+    TUI.info('Create one of these folders or provide a docmd.config.js file.');
 
     const err: any = new Error('No candidate documentation directory found.');
     err.silent = true;
@@ -68,8 +67,8 @@ async function buildZeroConfig(cwd: string, isDev = false, quiet = false) {
   const absSrcDir = path.join(cwd, srcDir);
 
   if (!hasMarkdownFiles(absSrcDir, 2)) {
-    console.log(chalk.yellow(`\n⚠️  No documentation content found in ${chalk.bold(absSrcDir)}`));
-    console.log(chalk.dim('   docmd expects markdown files in the documentation folder.\n'));
+    TUI.warn(`No documentation content found in ${absSrcDir}`);
+    TUI.info('docmd expects markdown files in the source folder.');
 
     const err: any = new Error('No content found for documentation.');
     err.silent = true;
@@ -117,7 +116,7 @@ export async function loadConfig(configPath: string, options: any = {}) {
     else {
       // Fallback to Zero-Config if nothing is found to prevent crashing!
       if (!(global as any).__DOCMD_NO_CONFIG_LOGGED && !options.quiet) {
-        console.log(chalk.yellow('⚠️  ') + chalk.dim('No config found — running in auto mode. Run `docmd init` to create one.'));
+        TUI.warn('No config found. Running in auto mode. Run `docmd init` to create one.');
         (global as any).__DOCMD_NO_CONFIG_LOGGED = true;
       }
       return await buildZeroConfig(cwd, options.isDev, options.quiet);
@@ -174,14 +173,8 @@ export async function loadConfig(configPath: string, options: any = {}) {
     );
 
     if (isLegacy) {
-      console.log(chalk.yellow('┌──────────────────────────────────────────────────────────┐'));
-      console.log(chalk.yellow('│  ⚠️  Update Config: Legacy Configuration Detected!        │'));
-      console.log(chalk.yellow('│                                                          │'));
-      console.log(chalk.yellow('│  Run "') +
-        chalk.green('docmd migrate') +
-        chalk.yellow('" to upgrade your config to the       │'));
-      console.log(chalk.yellow('│  new V2 structure (it will auto backup your old config). │'));
-      console.log(chalk.yellow('└──────────────────────────────────────────────────────────┘\n'));
+      TUI.error('Legacy Configuration Detected', 'Your docmd.config.js uses an outdated structure.');
+      TUI.info(`Run ${TUI.cyan('docmd migrate')} to automatically upgrade your configuration.`);
     }
 
     validateConfig(rawConfig);
@@ -232,8 +225,7 @@ export async function loadConfig(configPath: string, options: any = {}) {
 
       if (!hasNavInSubdirs) {
         if (!options.quiet && !(global as any).__DOCMD_ZERO_NAV_LOGGED) {
-          console.log(chalk.dim('   ➖ No navigation settings found in config!'));
-          console.log(chalk.dim('   ✨ Auto-generating navigation with Zero-Config...'));
+          TUI.info('No navigation settings found. Auto-generating with Zero-Config...');
           if (options.isDev) (global as any).__DOCMD_ZERO_NAV_LOGGED = true;
         }
 
