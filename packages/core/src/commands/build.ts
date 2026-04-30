@@ -33,6 +33,18 @@ export async function buildSite(configPath: string, opts: any = {}) {
 
   const CWD = process.cwd();
 
+  // ── Multi-Project Detection ──────────────────────────
+  // If we're NOT already inside a multi-project build (no env var set),
+  // check if the root config has a projects[] array.
+  if (!process.env.DOCMD_PROJECT_SRC) {
+    const { detectMultiProject, buildMultiProject } = await import('../engine/projects.js');
+    const multiConfig = await detectMultiProject(configPath);
+    if (multiConfig) {
+      await buildMultiProject(multiConfig, options);
+      return;
+    }
+  }
+
   // 1. Load Config (Zero-Config aware)
   try {
     const config = await loadConfig(configPath, { isDev: options.isDev });

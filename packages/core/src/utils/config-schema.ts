@@ -26,9 +26,9 @@ export function normalizeConfig(userConfig: any) {
     // Every field MUST have a default here so no consumer needs its own fallback chain.
     config.title = config.title || config.siteTitle || 'Documentation';
     config.url = config.url || config.siteUrl || config.baseUrl || '';
-    config.src = config.src || config.srcDir || config.source || 'docs';
-    config.out = config.out || config.outDir || config.outputDir || 'site';
-    config.base = config.base || '/';
+    config.src = process.env.DOCMD_PROJECT_SRC || config.src || config.srcDir || config.source || 'docs';
+    config.out = process.env.DOCMD_PROJECT_OUT || config.out || config.outDir || config.outputDir || 'site';
+    config.base = process.env.DOCMD_PROJECT_PREFIX || config.base || '/';
 
     // Failsafe: Keep legacy keys attached for older plugins (SEO, Sitemap) to prevent breakage during transition.
     config.siteTitle = config.title;
