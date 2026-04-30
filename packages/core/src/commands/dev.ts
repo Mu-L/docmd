@@ -37,7 +37,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
   };
 
   // ── Multi-Project Detection ──────────────────────────
-  if (!process.env.DOCMD_PROJECT_SRC) {
+  if (!process.env.DOCMD_PROJECT_OUT) {
     const { detectMultiProject, devMultiProject } = await import('../engine/projects.js');
     const multiConfig = await detectMultiProject(configPathOption);
     if (multiConfig) {

@@ -25,7 +25,7 @@ const __dirname = path.dirname(__filename);
 
 export const plugin: PluginDescriptor = {
   name: 'search',
-  version: '0.7.6',
+  version: '0.7.7',
   capabilities: ['post-build', 'head', 'body', 'assets', 'translations']
 };
 

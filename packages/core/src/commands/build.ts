@@ -36,7 +36,7 @@ export async function buildSite(configPath: string, opts: any = {}) {
   // ── Multi-Project Detection ──────────────────────────
   // If we're NOT already inside a multi-project build (no env var set),
   // check if the root config has a projects[] array.
-  if (!process.env.DOCMD_PROJECT_SRC) {
+  if (!process.env.DOCMD_PROJECT_OUT) {
     const { detectMultiProject, buildMultiProject } = await import('../engine/projects.js');
     const multiConfig = await detectMultiProject(configPath);
     if (multiConfig) {

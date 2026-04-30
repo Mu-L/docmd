@@ -220,14 +220,25 @@ export async function loadConfig(configPath: string, options: any = {}) {
       }
 
       if (!hasNavInSubdirs) {
+        // Check if navigation.json exists directly in the source root
+        const rootNavPath = path.join(navScanDir, 'navigation.json');
+        if (fs.existsSync(rootNavPath)) {
+          hasNavInSubdirs = true;
+          try {
+            normalized.navigation = JSON.parse(fs.readFileSync(rootNavPath, 'utf-8'));
+          } catch { /* fall through to auto-nav */ }
+        }
+      }
+
+      if (!hasNavInSubdirs) {
         if (!options.quiet && !(global as any).__DOCMD_ZERO_NAV_LOGGED) {
           console.log(chalk.dim('   ➖ No navigation settings found in config!'));
           console.log(chalk.dim('   ✨ Auto-generating navigation with Zero-Config...'));
           if (options.isDev) (global as any).__DOCMD_ZERO_NAV_LOGGED = true;
         }
-      }
 
-      normalized.navigation = buildAutoNav(navScanDir);
+        normalized.navigation = buildAutoNav(navScanDir);
+      }
     }
 
     return normalized;
