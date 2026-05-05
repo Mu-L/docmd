@@ -1261,7 +1261,9 @@ blockquote.docmd-embed {
     max-width: 1200px;
     margin: 0 auto;
     width: 100%;
-    box-sizing: border-box
+    box-sizing: border-box;
+    flex: 1 1 auto;
+    min-height: 0
 }
 
 pre {
