@@ -1,5 +1,5 @@
 /**
- * Integration test — full round-trip for threads plugin
+ * Integration test - full round-trip for threads plugin
  *
  * Verifies: plugin loading, action handlers, markdown serialization,
  * container rendering, and highlight rule.

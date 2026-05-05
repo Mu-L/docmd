@@ -178,7 +178,7 @@ if (command === 'init') {
     process.exit(1);
   });
 } else if (command === 'deploy') {
-  // Deploy has its own scoped flags — re-parse argv with deploy-specific options
+  // Deploy has its own scoped flags - re-parse argv with deploy-specific options
   const deployArgs = args.slice(args.indexOf('deploy') + 1); // everything after "deploy"
   const deployOptions = {
     docker: { type: 'boolean' },

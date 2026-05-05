@@ -60,8 +60,8 @@ export function createDepthTrackingContainer(md, name, renderOpen, renderClose) 
     const max = state.eMarks[startLine];
     const lineContent = state.src.slice(start, max).trim();
 
-    // Match opening tag e.g., `::: callout info Title`
-    const regex = new RegExp(`^:::\\s+${name}(?:\\s+(.*))?$`);
+    // Match opening tag e.g., `::: callout info Title` or `:::callout info Title` (spaceless)
+    const regex = new RegExp(`^:::\\s*${name}(?:\\s+(.*))?$`);
     const match = lineContent.match(regex);
     if (!match) return false;
     if (silent) return true;
@@ -87,7 +87,7 @@ export function createDepthTrackingContainer(md, name, renderOpen, renderClose) 
       }
 
       if (!fenceMarker) {
-        if (nextContent.match(/^:::\s+[a-zA-Z]/) && !nextContent.match(/^:::\s+(button|embed|tag)\b/)) {
+        if (nextContent.match(/^:::\s*[a-zA-Z]/) && !nextContent.match(/^:::\s*(button|embed|tag)\b/)) {
           depth++;
         } else if (nextContent.match(/^:::\s*$/)) {
           depth--;
@@ -201,6 +201,50 @@ export default {
     createDepthTrackingContainer(md, 'grid', () => {
       return `<div class="docmd-container grid-item">\n`;
     }, () => '</div>\n');
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Container Aliases (VitePress/Docusaurus compatibility)
+    // These allow users migrating from other documentation engines to use
+    // familiar syntax without modification.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // Callout type aliases - map directly to callout variants
+    const calloutAliases = [
+      // VitePress aliases
+      { name: 'tip', type: 'tip' },
+      { name: 'warning', type: 'warning' },
+      { name: 'danger', type: 'danger' },
+      { name: 'info', type: 'info' },
+      // Docusaurus aliases
+      { name: 'note', type: 'info' },
+      { name: 'caution', type: 'warning' },
+    ];
+
+    for (const alias of calloutAliases) {
+      createDepthTrackingContainer(md, alias.name, (tokens, idx) => {
+        const info = tokens[idx].info.trim();
+        const { title, icon } = parseTitleAndIcon(info);
+        const renderedTitle = title ? md.renderInline(title) : '';
+        const iconHtml = icon ? renderIcon(icon, { class: 'callout-icon-heading' }) : '';
+        return `<div class="docmd-container callout callout-${alias.type}">${renderedTitle || iconHtml ? `<div class="callout-title">${iconHtml}${renderedTitle}</div>` : ''}<div class="callout-content">\n`;
+      }, () => '</div></div>\n');
+    }
+
+    // VitePress details alias -> collapsible
+    createDepthTrackingContainer(md, 'details', (tokens, idx) => {
+      const info = tokens[idx].info.trim();
+      const { title, icon } = parseTitleAndIcon(info);
+      const displayTitle = title || 'Details';
+      const renderedTitle = md.renderInline(displayTitle);
+      const iconHtml = icon ? renderIcon(icon, { class: 'collapsible-icon-heading' }) : '';
+
+      return `<details class="docmd-container collapsible">
+        <summary class="collapsible-summary">
+            <span class="collapsible-title">${iconHtml}${renderedTitle}</span>
+            <span class="collapsible-arrow"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+        </summary>
+        <div class="collapsible-content">\n`;
+    }, () => '</div></details>\n');
 
   }
 };

@@ -68,6 +68,9 @@ importers:
       '@docmd/plugin-analytics':
         specifier: workspace:*
         version: link:../plugins/analytics
+      '@docmd/plugin-git':
+        specifier: workspace:*
+        version: link:../plugins/git
       '@docmd/plugin-installer':
         specifier: workspace:*
         version: link:../plugins/installer
@@ -199,6 +202,15 @@ importers:
       '@docmd/api':
         specifier: workspace:*
         version: link:../../api
+
+  packages/plugins/git:
+    devDependencies:
+      '@docmd/api':
+        specifier: workspace:*
+        version: link:../../api
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
 
   packages/plugins/installer:
     dependencies:

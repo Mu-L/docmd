@@ -1,6 +1,6 @@
 # @docmd/ui
 
-The visual foundation of docmd — EJS layout templates, core CSS and JavaScript, and SVG icon sets that all official themes build upon.
+The visual foundation of docmd - EJS layout templates, core CSS and JavaScript, and SVG icon sets that all official themes build upon.
 
 Part of the **[docmd](https://github.com/docmd-io/docmd)** documentation engine.
 

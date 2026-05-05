@@ -35,7 +35,8 @@ function changelogRule(state, startLine, endLine, silent) {
   const max = state.eMarks[startLine];
   const lineContent = state.src.slice(start, max).trim();
 
-  if (lineContent !== '::: changelog') return false;
+  // Support both '::: changelog' and ':::changelog' (spaceless)
+  if (lineContent !== '::: changelog' && lineContent !== ':::changelog') return false;
   if (silent) return true;
 
   let nextLine = startLine;
@@ -59,7 +60,7 @@ function changelogRule(state, startLine, endLine, silent) {
     }
 
     if (!fenceMarker) {
-      if (nextContent.match(/^:::\s+[a-zA-Z]/) && !nextContent.match(/^:::\s+button/)) {
+      if (nextContent.match(/^:::\s*[a-zA-Z]/) && !nextContent.match(/^:::\s*button/)) {
         depth++;
       } else if (nextContent.match(/^:::\s*$/)) {
         depth--;

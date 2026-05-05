@@ -1,5 +1,5 @@
 /**
- * Emoji reaction tests — adapted from old reactions.e2e.spec.ts.
+ * Emoji reaction tests - adapted from old reactions.e2e.spec.ts.
  *
  * Changes from old plugin:
  * - Reactions stored in markdown (not SQLite)

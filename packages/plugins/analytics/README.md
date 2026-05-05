@@ -1,6 +1,6 @@
 # @docmd/plugin-analytics
 
-Adds Google Analytics (GA4) to your docmd site — bundled with `@docmd/core`, zero installation required.
+Adds Google Analytics (GA4) to your docmd site - bundled with `@docmd/core`, zero installation required.
 
 ```js
 // docmd.config.js

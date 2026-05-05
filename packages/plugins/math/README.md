@@ -1,6 +1,6 @@
 # @docmd/plugin-math
 
-Adds LaTeX mathematics to your docmd site via KaTeX — inline `$...$` and block `$$...$$` syntax, rendered client-side with no server overhead. An optional plugin, installed separately.
+Adds LaTeX mathematics to your docmd site via KaTeX - inline `$...$` and block `$$...$$` syntax, rendered client-side with no server overhead. An optional plugin, installed separately.
 
 ```bash
 docmd add math

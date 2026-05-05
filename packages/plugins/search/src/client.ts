@@ -143,7 +143,7 @@ declare const MiniSearch: any;
             });
         }
 
-        // 3. Index Loading — fetches locale-specific index
+        // 3. Index Loading - fetches locale-specific index
         async function loadIndex() {
             try {
                 const response = await fetch(searchIndexUrl);

@@ -184,7 +184,7 @@ export async function loadConfig(configPath: string, options: any = {}) {
     // Ensure we have a navigation array, fallback to Auto-Router if empty (unless explicitly set to empty)
     if (!normalized.navigation || (normalized.navigation.length === 0 && !hasExplicitNav)) {
       // When i18n or versioning is enabled, check if navigation.json exists
-      // in locale/version dirs before warning — it will be loaded later per-locale/version
+      // in locale/version dirs before warning - it will be loaded later per-locale/version
       let navScanDir = path.resolve(cwd, normalized.srcDir);
       let hasNavInSubdirs = false;
 

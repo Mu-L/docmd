@@ -6,11 +6,11 @@ This package provides a unified, high-signal design system for all terminal outp
 
 ## Features
 
-- **Semantic Styling** — Predefined color tokens for consistent visual feedback
-- **Layout Components** — Box-drawing based sections, dividers, and footers
-- **Progress Tracking** — Standardized step-by-step progress logging
-- **Zero Configuration** — Works out of the box with reasonable defaults
-- **Universal Branding** — Centralised ASCII logo for consistent brand presence
+- **Semantic Styling** - Predefined color tokens for consistent visual feedback
+- **Layout Components** - Box-drawing based sections, dividers, and footers
+- **Progress Tracking** - Standardized step-by-step progress logging
+- **Zero Configuration** - Works out of the box with reasonable defaults
+- **Universal Branding** - Centralised ASCII logo for consistent brand presence
 
 ## Usage
 

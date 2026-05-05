@@ -192,19 +192,19 @@
       if (manifest) {
         var localePages = manifest[localeId];
         if (localePages && localePages.indexOf(lookupPath) !== -1) {
-          // Page exists in target locale — navigate directly
+          // Page exists in target locale - navigate directly
           window.location.href = targetHref + window.location.hash;
         } else if (localePages && localePages.length > 0) {
-          // Locale exists but this page doesn't — go to locale root
+          // Locale exists but this page doesn't - go to locale root
           window.location.href = base + targetLocPrefix;
         } else {
-          // Locale has no pages at all — stay on current page
+          // Locale has no pages at all - stay on current page
           window.location.href = base + currentPath;
         }
         return;
       }
 
-      // Fallback: no manifest available — use HEAD fetch (legacy/graceful degradation)
+      // Fallback: no manifest available - use HEAD fetch (legacy/graceful degradation)
       fetch(targetHref, { method: 'HEAD' })
         .then(function (response) {
           if (response.ok) {
@@ -361,7 +361,7 @@
       // Wait 65ms to ensure the user actually intends to click
       clearTimeout(prefetchTimer);
       prefetchTimer = setTimeout(() => {
-        // Prefetch using hash-stripped URL — the fragment is never sent to the server
+        // Prefetch using hash-stripped URL - the fragment is never sent to the server
         const prefetchUrl = new URL(link.href);
         const prefetchFetchUrl = prefetchUrl.origin + prefetchUrl.pathname + prefetchUrl.search;
         if (pageCache.has(prefetchFetchUrl)) return;
@@ -420,7 +420,7 @@
       try {
         if (layout) layout.style.minHeight = layout.getBoundingClientRect().height + 'px';
 
-        // Separate hash from the fetch URL — servers don't receive fragments,
+        // Separate hash from the fetch URL - servers don't receive fragments,
         // and res.url (finalUrl) will never contain the hash. We preserve it
         // manually so pushState and the scroll both use the correct value.
         const parsedUrl = new URL(url);
@@ -527,7 +527,7 @@
               const target = document.querySelector(requestedHash)
                 || document.getElementById(requestedHash.substring(1));
               if (target) target.scrollIntoView({ behavior: 'smooth' });
-            } catch { /* invalid selector — ignore */ }
+            } catch { /* invalid selector - ignore */ }
           } else {
             window.scrollTo(0, 0);
           }

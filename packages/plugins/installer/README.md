@@ -1,6 +1,6 @@
 # @docmd/plugin-installer
 
-The engine behind `docmd add` and `docmd remove` — downloads plugins, resolves dependencies, and injects configuration into your `docmd.config.js` automatically.
+The engine behind `docmd add` and `docmd remove` - downloads plugins, resolves dependencies, and injects configuration into your `docmd.config.js` automatically.
 
 Bundled with `@docmd/core`. You do not need to install or configure this package directly.
 

@@ -1,5 +1,5 @@
 /**
- * Basic UI tests — adapted from old devtalk.e2e.spec.ts "basic UI" describe block.
+ * Basic UI tests - adapted from old devtalk.e2e.spec.ts "basic UI" describe block.
  *
  * Changes from old plugin:
  * - No sidebar panel/toggle button (inline-only architecture)
@@ -21,7 +21,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await page.waitForSelector("threads-app", { state: "attached", timeout: 10_000 });
   await setAuthor(page, "TestUser");
-  // NOTE: Do NOT clean threads here — these tests verify the pre-existing
+  // NOTE: Do NOT clean threads here - these tests verify the pre-existing
   // threads from the playground markdown (index.md ::: threads block)
   // Wait for client-side JS to finish processing highlights
   await waitForClientProcessing(page);

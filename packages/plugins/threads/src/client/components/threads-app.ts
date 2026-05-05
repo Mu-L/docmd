@@ -113,7 +113,7 @@ export class ThreadsApp extends LitElement {
     if (!contentArea) return;
 
     const HEADING_TAGS = new Set(['H1', 'H2', 'H3', 'H4', 'H5', 'H6']);
-    // Only target direct children of the content area — avoids TOC, sidebar headings, etc.
+    // Only target direct children of the content area - avoids TOC, sidebar headings, etc.
     const headings = Array.from(contentArea.children).filter(el => HEADING_TAGS.has(el.tagName));
 
     for (const heading of headings) {
@@ -217,7 +217,7 @@ export class ThreadsApp extends LitElement {
   };
 
   /**
-   * Handle popover "add comment" — open inline editor after the block.
+   * Handle popover "add comment" - open inline editor after the block.
    */
   private handleAddComment(): void {
     if (!this.pendingAnchor || !this.pendingBlockEl) return;
@@ -284,7 +284,7 @@ export class ThreadsApp extends LitElement {
     this.updateFabBadge();
   }
 
-  // Color palette for highlights — cycles through these
+  // Color palette for highlights - cycles through these
   private static HIGHLIGHT_COLORS = [
     'threads-hl-yellow',
     'threads-hl-blue',
@@ -408,7 +408,7 @@ export class ThreadsApp extends LitElement {
         // Skip if actions already added (re-render)
         if (commentEl.querySelector('.threads-comment__actions')) continue;
 
-        // Actions container — pushed to the right via margin-left: auto
+        // Actions container - pushed to the right via margin-left: auto
         const actions = document.createElement('div');
         actions.className = 'threads-comment__actions';
 

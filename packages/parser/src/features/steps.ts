@@ -16,7 +16,8 @@ function stepsRule(state, startLine, endLine, silent) {
   const start = state.bMarks[startLine] + state.tShift[startLine];
   const max = state.eMarks[startLine];
   const lineContent = state.src.slice(start, max).trim();
-  if (lineContent !== '::: steps') return false;
+  // Support both '::: steps' and ':::steps' (spaceless)
+  if (lineContent !== '::: steps' && lineContent !== ':::steps') return false;
   if (silent) return true;
 
   let nextLine = startLine;
@@ -40,7 +41,7 @@ function stepsRule(state, startLine, endLine, silent) {
     }
 
     if (!fenceMarker) {
-      if (nextContent.match(/^:::\s+[a-zA-Z]/) && !nextContent.match(/^:::\s+button/)) {
+      if (nextContent.match(/^:::\s*[a-zA-Z]/) && !nextContent.match(/^:::\s*button/)) {
         depth++;
       } else if (nextContent.match(/^:::\s*$/)) {
         depth--;

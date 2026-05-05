@@ -48,7 +48,8 @@ function tabsRule(state, startLine, endLine, silent) {
   const max = state.eMarks[startLine];
   const lineContent = state.src.slice(start, max).trim();
 
-  if (lineContent !== '::: tabs') return false;
+  // Support both '::: tabs' and ':::tabs' (spaceless)
+  if (lineContent !== '::: tabs' && lineContent !== ':::tabs') return false;
   if (silent) return true;
 
   let nextLine = startLine;
@@ -74,10 +75,10 @@ function tabsRule(state, startLine, endLine, silent) {
     if (!fenceMarker) {
       // Increment depth for block-level container openers only.
       // Inline self-closing containers (tag, button, embed) must NOT affect depth
-      // because they have no matching closing `:::` — treating them as openers
+      // because they have no matching closing `:::` - treating them as openers
       // would make the tabs parser wait for an extra closing `:::` that never comes.
-      const INLINE_CONTAINERS = /^:::\s+(tag|button|embed)\b/;
-      if (nextContent.match(/^:::\s+[a-zA-Z]/) && !INLINE_CONTAINERS.test(nextContent)) {
+      const INLINE_CONTAINERS = /^:::\s*(tag|button|embed)\b/;
+      if (nextContent.match(/^:::\s*[a-zA-Z]/) && !INLINE_CONTAINERS.test(nextContent)) {
         depth++;
       } else if (nextContent.match(/^:::\s*$/)) {
         depth--;

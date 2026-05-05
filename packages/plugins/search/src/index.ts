@@ -25,7 +25,7 @@ const __dirname = path.dirname(__filename);
 
 export const plugin: PluginDescriptor = {
   name: 'search',
-  version: '0.7.7',
+  version: '0.7.8',
   capabilities: ['post-build', 'head', 'body', 'assets', 'translations']
 };
 
@@ -55,7 +55,7 @@ function loadPluginStrings(localeId: string): Record<string, string> {
 }
 
 /**
- * Plugin translations hook — called by the engine for each locale.
+ * Plugin translations hook - called by the engine for each locale.
  * Returns search-specific UI strings keyed by locale.
  */
 export function translations(localeId: string): Record<string, string> {
@@ -63,7 +63,7 @@ export function translations(localeId: string): Record<string, string> {
 }
 
 /**
- * Post-build hook — generates per-locale search indexes.
+ * Post-build hook - generates per-locale search indexes.
  * Each locale gets its own `search-index.json` covering all versions within that locale.
  * Default locale index is at root, non-default locale indexes are at `/{locale}/search-index.json`.
  */
@@ -112,7 +112,7 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
 
     for (const page of locPages) {
       // Use centralised URL utility for consistent slug generation.
-      // This is the single source of truth — no manual outputPath parsing.
+      // This is the single source of truth - no manual outputPath parsing.
       let pageId = outputPathToSlug(page.outputPath);
       
       // For search index, we want the slug without leading slash (except for root)
@@ -132,7 +132,7 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
             break;
           }
         }
-        // Current version pages have no prefix — tag them with the current label
+        // Current version pages have no prefix - tag them with the current label
         if (!version) {
           const currentVersion = config.versions.all.find((v: any) => v.id === currentVersionId);
           if (currentVersion) version = currentVersion.label || currentVersion.id;
@@ -199,7 +199,7 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
 /**
  * Inject the search modal HTML.
  * Strings are passed as data attributes so the client JS can read them
- * regardless of locale — the engine merges plugin translations before render.
+ * regardless of locale - the engine merges plugin translations before render.
  */
 export function generateScripts(config: any) {
   const isEnabled = config.optionsMenu ? config.optionsMenu.components.search !== false : config.search !== false;

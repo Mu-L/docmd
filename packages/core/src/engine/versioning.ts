@@ -21,7 +21,7 @@ import { resolveLocaleSrcDir, resolveFallbackSrcDir } from './i18n.js';
 import { normalizeNavPaths } from '@docmd/parser';
 
 /**
- * Filter out "ghost" versions — configured versions whose source directories
+ * Filter out "ghost" versions - configured versions whose source directories
  * don't actually exist on disk. Mutates `config.versions.all` in place.
  */
 export async function filterGhostVersions(config: any, CWD: string, isDev: boolean) {
@@ -89,7 +89,7 @@ export function filterNavForVersion(items: any[], vSrcDir: string, fallbackSrcDi
 }
 
 /**
- * Resolve the active navigation for a version — checks for navigation.json (Nav V2),
+ * Resolve the active navigation for a version - checks for navigation.json (Nav V2),
  * then per-version config override, then falls back to the global config navigation.
  */
 export function resolveVersionNav(v: any, vSrcDir: string, configNavigation: any): any {
@@ -160,7 +160,7 @@ export async function buildVersions({
     let versionHasI18n = true;
 
     if (!await fs.exists(vSrcDir) && await fs.exists(baseSrcDir)) {
-      // Locale subdir doesn't exist but base dir does — this version has no i18n structure
+      // Locale subdir doesn't exist but base dir does - this version has no i18n structure
       versionHasI18n = false;
       if (config._activeLocale && config._activeLocale.id !== config._defaultLocale) {
         // Non-default locale: skip entirely (no translations for this version)

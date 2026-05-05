@@ -1,5 +1,5 @@
 /**
- * Tests for threads container rules — markdown-it rendering of ::: threads blocks
+ * Tests for threads container rules - markdown-it rendering of ::: threads blocks
  *
  * Run: node packages/plugins/threads/tests/containers.test.js
  *

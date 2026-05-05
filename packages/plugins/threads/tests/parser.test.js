@@ -1,5 +1,5 @@
 /**
- * Tests for threads parser — serialize/deserialize ::: threads block
+ * Tests for threads parser - serialize/deserialize ::: threads block
  *
  * Run: node packages/plugins/threads/tests/parser.test.js
  */

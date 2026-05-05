@@ -36,7 +36,7 @@ async function renderTemplateAsync(templateString, data, options: any = {}) {
       ...options,
       async: true,
       preprocessor: (content) => {
-        // Strip frontmatter from included files — frontmatter is a docmd concern,
+        // Strip frontmatter from included files - frontmatter is a docmd concern,
         // not an EJS/template concern. The top-level page's frontmatter is handled
         // by processContent/lite-matter, but recursive includes should not re-render it.
         const fmRegex = /^(?:---[\r\n]+)([\s\S]*?)(?:[\r\n]+---(?:[\r\n]+|$))/;

@@ -18,12 +18,12 @@ import type { PluginDescriptor } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'math',
-  version: '0.7.7',
+  version: '0.7.8',
   capabilities: ['markdown', 'assets']
 };
 
 export function markdownSetup(md: any) {
-  // Suppress KaTeX's "quirks mode" warning — irrelevant in Node.js
+  // Suppress KaTeX's "quirks mode" warning - irrelevant in Node.js
   const origWarn = console.warn;
   console.warn = (...args: any[]) => {
     if (typeof args[0] === 'string' && args[0].includes('quirks mode')) return;

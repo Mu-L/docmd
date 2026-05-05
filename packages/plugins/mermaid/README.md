@@ -1,6 +1,6 @@
 # @docmd/plugin-mermaid
 
-Adds [Mermaid.js](https://mermaid.js.org/) diagram support to your docmd site — write flowcharts, sequence diagrams, and more directly in Markdown using a standard code fence. Bundled with `@docmd/core`.
+Adds [Mermaid.js](https://mermaid.js.org/) diagram support to your docmd site - write flowcharts, sequence diagrams, and more directly in Markdown using a standard code fence. Bundled with `@docmd/core`.
 
 ````md
 ```mermaid

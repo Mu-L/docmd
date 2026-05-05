@@ -51,6 +51,8 @@ updateVersion(path.join(root, "package.json"));
 // 2️⃣ Recursively update all packages
 function walk(dir) {
   for (const entry of fs.readdirSync(dir)) {
+    if (['node_modules', 'dist', '.build'].includes(entry)) continue;
+
     const full = path.join(dir, entry);
 
     if (fs.existsSync(path.join(full, "package.json"))) {

@@ -1,5 +1,5 @@
 /**
- * Thread creation tests — adapted from old devtalk.e2e.spec.ts "discussions" block
+ * Thread creation tests - adapted from old devtalk.e2e.spec.ts "discussions" block
  * and filters-general.e2e.spec.ts "general comments" block.
  *
  * Changes from old plugin:

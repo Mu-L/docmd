@@ -1,0 +1,13 @@
+{
+  "lastUpdated": "Last updated",
+  "recentCommits": "Recent commits",
+  "viewCommitHistory": "View commit history",
+  "editOnGitHub": "Edit on GitHub",
+  "editOnGitLab": "Edit on GitLab",
+  "editOnBitbucket": "Edit on Bitbucket",
+  "editThisPage": "Edit this page",
+  "justNow": "just now",
+  "minutesAgo": "{n}m ago",
+  "hoursAgo": "{n}h ago",
+  "daysAgo": "{n}d ago"
+}

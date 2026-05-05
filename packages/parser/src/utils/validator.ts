@@ -50,7 +50,7 @@ function validateConfig(config) {
   const warnings = [];
 
   // 1. Required Fields (Accept either title OR siteTitle)
-  // Skip for multi-project root configs — they only have projects[]
+  // Skip for multi-project root configs - they only have projects[]
   if (!config.title && !config.siteTitle && !Array.isArray(config.projects)) {
     errors.push('Missing required property: "title" (or "siteTitle")');
   }

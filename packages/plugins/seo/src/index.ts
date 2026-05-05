@@ -17,7 +17,7 @@ import { outputPathToPathname, sanitizeUrl } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'seo',
-  version: '0.7.7',
+  version: '0.7.8',
   capabilities: ['head']
 };
 
@@ -75,7 +75,7 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
 
   // 4. Open Graph (Facebook/LinkedIn)
   const appendTitle = frontmatter.titleAppend !== false;
-  const fullTitle = (appendTitle && siteTitle && pageTitle !== siteTitle) ? `${pageTitle} — ${siteTitle}` : pageTitle;
+  const fullTitle = (appendTitle && siteTitle && pageTitle !== siteTitle) ? `${pageTitle} - ${siteTitle}` : pageTitle;
 
   html += `<meta property="og:title" content="${fullTitle}">\n`;
   html += `<meta property="og:description" content="${description}">\n`;

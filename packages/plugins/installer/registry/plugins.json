@@ -5,6 +5,12 @@
     "configKey": "analytics",
     "defaultConfig": "{}"
   },
+  "git": {
+    "package": "@docmd/plugin-git",
+    "description": "Git integration with last-updated timestamps and commit history",
+    "configKey": "git",
+    "defaultConfig": "{}"
+  },
   "search": {
     "package": "@docmd/plugin-search",
     "description": "Local search implementation for docmd",

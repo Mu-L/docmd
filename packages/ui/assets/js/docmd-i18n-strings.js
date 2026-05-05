@@ -133,7 +133,7 @@
   }
 
   /**
-   * Switch locale — updates localStorage, reloads strings.
+   * Switch locale - updates localStorage, reloads strings.
    * For multi-page i18n sites, redirects to the locale-prefixed URL.
    * For single-page noStyle sites, swaps strings in place.
    *

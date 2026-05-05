@@ -101,7 +101,7 @@ export async function buildSite(configPath: string, opts: any = {}) {
     // --- i18n PAGE MANIFEST ---
     // Emit a tiny JS file mapping locale IDs to their available page paths.
     // The client-side language switcher uses this for instant page-existence
-    // checks — zero HEAD fetches, works offline, CDN-agnostic.
+    // checks - zero HEAD fetches, works offline, CDN-agnostic.
     if (config.i18n && config.i18n.locales) {
       const defaultLocale = config.i18n.default || '';
       const localeIds = new Set(config.i18n.locales.map((l: any) => l.id));

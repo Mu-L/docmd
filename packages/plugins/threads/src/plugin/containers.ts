@@ -101,7 +101,7 @@ export function parseCommentInfo(info: string): CommentInfo {
  * Register all thread-related container rules on a markdown-it instance.
  */
 export function setup(md: any): void {
-  // 1. threads — outer wrapper
+  // 1. threads - outer wrapper
   createDepthTrackingContainer(
     md,
     'threads',
@@ -109,7 +109,7 @@ export function setup(md: any): void {
     () => '</div>\n'
   );
 
-  // 2. thread — individual thread
+  // 2. thread - individual thread
   createDepthTrackingContainer(
     md,
     'thread',
@@ -122,7 +122,7 @@ export function setup(md: any): void {
     () => '</div>\n'
   );
 
-  // 3. comment — individual comment
+  // 3. comment - individual comment
   createDepthTrackingContainer(
     md,
     'comment',
@@ -143,7 +143,7 @@ export function setup(md: any): void {
     () => '</div></div>\n'
   );
 
-  // 4. reactions — reactions container
+  // 4. reactions - reactions container
   createDepthTrackingContainer(
     md,
     'reactions',

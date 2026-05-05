@@ -8,7 +8,7 @@ import type { PluginDescriptor } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'threads',
-  version: '0.7.7',
+  version: '0.7.8',
   capabilities: ['markdown', 'body', 'assets', 'actions', 'translations']
 };
 
@@ -47,7 +47,7 @@ export function generateScripts(config: any, options?: any): { headScriptsHtml: 
     const authorsPath = path.resolve(srcDir, '.threads', 'authors.json');
     authorsJson = fs.readFileSync(authorsPath, 'utf8');
   } catch {
-    // File doesn't exist yet — that's fine
+    // File doesn't exist yet - that's fine
   }
 
   const clientConfig = JSON.stringify({

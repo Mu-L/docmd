@@ -1,5 +1,5 @@
 /**
- * Tests for highlight inline rule — ==text=={thread-id} syntax
+ * Tests for highlight inline rule - ==text=={thread-id} syntax
  *
  * Run: node packages/plugins/threads/tests/highlight-rule.test.js
  */

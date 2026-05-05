@@ -1,5 +1,5 @@
 /**
- * Inline editor tests — adapted from old inline-editor.e2e.spec.ts.
+ * Inline editor tests - adapted from old inline-editor.e2e.spec.ts.
  *
  * Changes from old plugin:
  * - threads-inline-editor replaces devtalk-inline-editor

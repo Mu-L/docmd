@@ -124,7 +124,7 @@ function tryPageSearch(anchor: Anchor): Range | null {
 export function reanchor(thread: Thread): AnchorResult {
   const anchor = thread.anchor;
 
-  // Untethered comments have no anchor — skip re-anchoring
+  // Untethered comments have no anchor - skip re-anchoring
   if (!anchor || !anchor.quote) {
     return { threadId: thread.id, range: null, orphan: false };
   }

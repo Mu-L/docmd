@@ -19,7 +19,7 @@ import { outputPathToPathname, sanitizeUrl } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'llms',
-  version: '0.7.7',
+  version: '0.7.8',
   capabilities: ['post-build']
 };
 
@@ -59,7 +59,7 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
   // Generate Links
   for (const page of validPages) {
     // Use centralised URL utility for consistent URL generation.
-    // This is the single source of truth — no manual outputPath parsing.
+    // This is the single source of truth - no manual outputPath parsing.
     const pathname = outputPathToPathname(page.outputPath);
     const fullUrl = sanitizeUrl(siteUrl + pathname);
     const title = page.frontmatter.title || 'Untitled';
@@ -82,7 +82,7 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
   fullContent += `---\n\n`;
 
   for (const page of validPages) {
-    // Use centralised URL utility — same as above
+    // Use centralised URL utility - same as above
     const pathname = outputPathToPathname(page.outputPath);
     const fullUrl = sanitizeUrl(siteUrl + pathname);
     const title = page.frontmatter.title || 'Untitled';

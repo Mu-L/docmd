@@ -1,5 +1,5 @@
 /**
- * Thread resolve/unresolve tests — adapted from old devtalk.e2e.spec.ts
+ * Thread resolve/unresolve tests - adapted from old devtalk.e2e.spec.ts
  * "thread behavior" block.
  *
  * Changes from old plugin:

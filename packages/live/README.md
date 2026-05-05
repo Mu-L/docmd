@@ -1,6 +1,6 @@
 # @docmd/live
 
-The browser-based bundle that powers the docmd Live Editor — packages the core parser, UI, and themes into a single standalone script that renders documentation client-side without a Node.js server.
+The browser-based bundle that powers the docmd Live Editor - packages the core parser, UI, and themes into a single standalone script that renders documentation client-side without a Node.js server.
 
 **Live demo:** **[live.docmd.io](https://live.docmd.io)**
 

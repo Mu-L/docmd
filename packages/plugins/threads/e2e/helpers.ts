@@ -175,7 +175,7 @@ export async function seedAndReload(
     if (found > 0) return result;
   }
 
-  // Final attempt — let Playwright's own timeout handle it
+  // Final attempt - let Playwright's own timeout handle it
   await page.waitForSelector(selector, { state: "attached", timeout: 5_000 });
 
   return result;

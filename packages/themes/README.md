@@ -1,6 +1,6 @@
 # @docmd/themes
 
-Official themes for docmd — three production-ready designs with full light/dark mode support, each customisable via CSS variables.
+Official themes for docmd - three production-ready designs with full light/dark mode support, each customisable via CSS variables.
 
 | Theme | Style |
 |:---|:---|

@@ -41,7 +41,7 @@ export function findThreadsBlockBounds(lines: string[]): { start: number; end: n
     }
   }
 
-  // Unclosed block — treat rest of file as the block
+  // Unclosed block - treat rest of file as the block
   return { start, end: lines.length - 1 };
 }
 
@@ -380,7 +380,7 @@ export function replaceThreadsBlock(markdownContent: string, threads: Thread[]):
     return [...before, ...serialized.trimEnd().split('\n'), ...after].join('\n');
   }
 
-  // No existing block — append
+  // No existing block - append
   if (serialized === '') return markdownContent;
 
   // Ensure there's a blank line before the threads block

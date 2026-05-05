@@ -6,7 +6,7 @@
 
 # @docmd/plugin-seo
 
-Generates meta tags, Open Graph, and Twitter Card markup for every page in your docmd site — canonical URLs, descriptions, and social previews handled automatically. Bundled with `@docmd/core`.
+Generates meta tags, Open Graph, and Twitter Card markup for every page in your docmd site - canonical URLs, descriptions, and social previews handled automatically. Bundled with `@docmd/core`.
 
 ```js
 // docmd.config.js

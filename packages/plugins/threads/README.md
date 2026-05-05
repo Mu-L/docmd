@@ -1,6 +1,6 @@
 # @docmd/plugin-threads
 
-Adds inline discussion threads to your docmd site — stored directly in Markdown as `::: threads` containers, so comments live in your repo and sync with your Git and PR workflows. Supports text highlighting, replies, thread resolution, and emoji reactions. An optional plugin, installed separately.
+Adds inline discussion threads to your docmd site - stored directly in Markdown as `::: threads` containers, so comments live in your repo and sync with your Git and PR workflows. Supports text highlighting, replies, thread resolution, and emoji reactions. An optional plugin, installed separately.
 
 ```bash
 docmd add threads

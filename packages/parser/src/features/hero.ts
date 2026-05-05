@@ -36,7 +36,8 @@ function heroRule(state, startLine, endLine, silent) {
   const max = state.eMarks[startLine];
   const lineContent = state.src.slice(start, max).trim();
 
-  const regex = /^:::\s+hero(?:\s+(.*))?$/;
+  // Support both '::: hero' and ':::hero' (spaceless)
+  const regex = /^:::\s*hero(?:\s+(.*))?$/;
   const match = lineContent.match(regex);
   if (!match) return false;
   if (silent) return true;
@@ -69,7 +70,7 @@ function heroRule(state, startLine, endLine, silent) {
     }
 
     if (!fenceMarker) {
-      if (nextContent.match(/^:::\s+[a-zA-Z]/) && !nextContent.match(/^:::\s+(button|embed|tag)\b/)) {
+      if (nextContent.match(/^:::\s*[a-zA-Z]/) && !nextContent.match(/^:::\s*(button|embed|tag)\b/)) {
         depth++;
       } else if (nextContent.match(/^:::\s*$/)) {
         depth--;

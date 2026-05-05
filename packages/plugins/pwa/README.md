@@ -1,9 +1,9 @@
 # @docmd/plugin-pwa
 
-Makes your docmd site installable and offline-capable — generates a web manifest and service worker with intelligent caching and automatic cache busting on every build. Bundled with `@docmd/core`.
+Makes your docmd site installable and offline-capable - generates a web manifest and service worker with intelligent caching and automatic cache busting on every build. Bundled with `@docmd/core`.
 
 ```js
-// docmd.config.js — all options are optional
+// docmd.config.js - all options are optional
 module.exports = {
   plugins: {
     pwa: {

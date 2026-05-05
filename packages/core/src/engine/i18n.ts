@@ -58,7 +58,7 @@ export function resolveLocaleSrcDir(baseSrcDir: string, config: any): string {
 
 /**
  * Resolve the fallback source directory (the default locale's dir).
- * Used when a non-default locale is missing a page — falls back to the default locale.
+ * Used when a non-default locale is missing a page - falls back to the default locale.
  * Returns null if current locale IS the default (no fallback needed).
  * Returns null in stringMode (all locales share the same source).
  */
@@ -78,7 +78,7 @@ export function getLocales(config: any): any[] {
 }
 
 /**
- * Build all locales — the outer loop of the build pipeline.
+ * Build all locales - the outer loop of the build pipeline.
  * For each locale, runs the versioning loop (or standard build) inside it.
  *
  * The default locale builds directly into rootOutputDir (no prefix).
@@ -256,7 +256,7 @@ export async function buildLocales({
  * switcher handles navigation to non-default locales.
  */
 export async function generateLocaleRedirect(config: any, _rootOutputDir: string): Promise<void> {
-  // Default locale is at root — no redirect needed.
+  // Default locale is at root - no redirect needed.
   // The language switcher provides navigation to /hi/, /zh/, etc.
   if (!config.i18n?.locales) return;
   return;
@@ -276,7 +276,7 @@ export function generateHreflangTags(config: any, pageOutputPath: string): strin
   let pagePath = pageOutputPath.replace(/index\.html$/, '').replace(/\\/g, '/');
   
   // Strip the current locale prefix from pagePath if present.
-  // pageOutputPath may be "hi/guide/index.html" — we need just "guide/".
+  // pageOutputPath may be "hi/guide/index.html" - we need just "guide/".
   const defaultLocale = config._defaultLocale;
   for (const loc of config._allLocales) {
     if (loc.id !== defaultLocale && pagePath.startsWith(loc.id + '/')) {
@@ -316,7 +316,7 @@ export async function loadStringModeTranslations(
       return JSON.parse(raw);
     }
   } catch (e: any) {
-    TUI.warn(`Failed to load string-mode translations: ${filePath} — ${e.message}`);
+    TUI.warn(`Failed to load string-mode translations: ${filePath} - ${e.message}`);
   }
   return {};
 }
@@ -326,7 +326,7 @@ export async function loadStringModeTranslations(
  * Resolves data-i18n, data-i18n-html, and data-i18n-{attr} attributes
  * using the provided translations object.
  *
- * This is the build-time equivalent of docmd-i18n-strings.js — it produces
+ * This is the build-time equivalent of docmd-i18n-strings.js - it produces
  * fully translated HTML that search engines can index.
  */
 export function applyStringModeReplacements(html: string, strings: Record<string, string>, localeId: string, localeDir?: string): string {

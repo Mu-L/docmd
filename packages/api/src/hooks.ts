@@ -15,9 +15,9 @@
 /**
  * Plugin loader with validation, isolation, and capability enforcement.
  *
- * — Lightweight contract check at load time.
- * — Every hook invocation wrapped in try/catch.
- * — Plugins can only register for hooks they've declared.
+ * - Lightweight contract check at load time.
+ * - Every hook invocation wrapped in try/catch.
+ * - Plugins can only register for hooks they've declared.
  */
 
 import { TUI } from '@docmd/tui';
@@ -30,7 +30,7 @@ import type { PluginDescriptor, PluginHooks, PluginModule, Capability } from './
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// Monorepo root — two levels up from packages/api/dist/
+// Monorepo root - two levels up from packages/api/dist/
 const __monorepoRoot = path.resolve(__dirname, '..', '..', '..');
 
 // ---------------------------------------------------------------------------
@@ -162,11 +162,112 @@ export function resolvePluginName(key: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Auto-Install for Official Plugins
+// ---------------------------------------------------------------------------
+
+// Load the official plugin registry
+let _pluginRegistry: Record<string, any> | null = null;
+
+function getPluginRegistry(): Record<string, any> {
+  if (_pluginRegistry) return _pluginRegistry;
+  
+  try {
+    // Try to load from @docmd/plugin-installer
+    const registryPath = require.resolve('@docmd/plugin-installer/registry/plugins.json', {
+      paths: [process.cwd(), __dirname, __monorepoRoot]
+    });
+    _pluginRegistry = JSON.parse(nativeFs.readFileSync(registryPath, 'utf8'));
+  } catch {
+    // Fallback: try monorepo path
+    const localPath = path.resolve(__monorepoRoot, 'packages/plugins/installer/registry/plugins.json');
+    if (nativeFs.existsSync(localPath)) {
+      _pluginRegistry = JSON.parse(nativeFs.readFileSync(localPath, 'utf8'));
+    } else {
+      _pluginRegistry = {};
+    }
+  }
+  
+  return _pluginRegistry!;
+}
+
+/**
+ * Detect the package manager used in the current project.
+ */
+function detectPackageManager(cwd: string): 'pnpm' | 'yarn' | 'bun' | 'npm' {
+  let dir = cwd;
+  while (dir !== path.parse(dir).root) {
+    if (nativeFs.existsSync(path.join(dir, 'pnpm-lock.yaml'))) return 'pnpm';
+    if (nativeFs.existsSync(path.join(dir, 'yarn.lock'))) return 'yarn';
+    if (nativeFs.existsSync(path.join(dir, 'bun.lockb'))) return 'bun';
+    if (nativeFs.existsSync(path.join(dir, 'package-lock.json'))) return 'npm';
+    dir = path.dirname(dir);
+  }
+  return 'npm';
+}
+
+/**
+ * Get the current docmd version for version-matched installs.
+ */
+function getDocmdVersion(): string {
+  try {
+    const corePkgPath = require.resolve('@docmd/core/package.json', {
+      paths: [process.cwd(), __dirname, __monorepoRoot]
+    });
+    const pkg = JSON.parse(nativeFs.readFileSync(corePkgPath, 'utf8'));
+    return pkg.version || 'latest';
+  } catch {
+    return 'latest';
+  }
+}
+
+/**
+ * Auto-install an official plugin from npm.
+ * Only works for plugins in the official registry.
+ * Installs the exact version matching the current docmd version.
+ */
+async function autoInstallPlugin(packageName: string): Promise<boolean> {
+  const shortName = packageName.replace('@docmd/plugin-', '');
+  const registry = getPluginRegistry();
+  
+  // Security: Only auto-install plugins in the official registry
+  if (!registry[shortName]) {
+    warnOnce(`registry:${packageName}`, TUI.yellow(`Plugin "${shortName}" not found in official registry - manual installation required`));
+    return false;
+  }
+
+  const cwd = process.cwd();
+  const pkgManager = detectPackageManager(cwd);
+  const version = getDocmdVersion();
+  const versionedPackage = version === 'latest' ? packageName : `${packageName}@${version}`;
+
+  TUI.step(`Downloading missing plugin: ${shortName}`, 'WAIT');
+
+  let installCmd = '';
+  switch (pkgManager) {
+    case 'pnpm': installCmd = `pnpm add ${versionedPackage}`; break;
+    case 'yarn': installCmd = `yarn add ${versionedPackage}`; break;
+    case 'bun': installCmd = `bun add ${versionedPackage}`; break;
+    default: installCmd = `npm install ${versionedPackage}`; break;
+  }
+
+  try {
+    const { execSync } = await import('node:child_process');
+    execSync(installCmd, { stdio: 'pipe', cwd, timeout: 60000 });
+    TUI.step(`Plugin installed: ${shortName}`, 'DONE');
+    return true;
+  } catch (err: any) {
+    TUI.step(`Failed to install: ${shortName}`, 'FAIL');
+    warnOnce(`install:${packageName}`, TUI.dim(`Run "docmd add ${shortName}" manually for details`));
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Load & Register
 // ---------------------------------------------------------------------------
 
 export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] }): Promise<PluginHooks> {
-  // 1. Resolution paths for plugin imports — the caller (e.g. @docmd/core) should
+  // 1. Resolution paths for plugin imports - the caller (e.g. @docmd/core) should
   // pass its own __dirname so plugins that are core's dependencies can be found
   // even under pnpm's strict node_modules layout.
   const resolvePaths = [
@@ -197,8 +298,8 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
   const pluginMap = new Map<string, any>();
   const searchEnabled = config.optionsMenu ? config.optionsMenu.components.search !== false : config.search !== false;
 
-  // A. Core Plugins — always loaded by default.
-  const corePlugins = ['search', 'seo', 'sitemap', 'analytics', 'llms', 'mermaid'];
+  // A. Core Plugins - always loaded by default.
+  const corePlugins = ['search', 'seo', 'sitemap', 'analytics', 'llms', 'mermaid', 'git'];
 
   for (const name of corePlugins) {
     const resolved = `@docmd/plugin-${name}`;
@@ -226,12 +327,14 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
     });
   }
 
-  // 3. Load and Register
+  // 3. Load and Register (with auto-install for official plugins)
   for (const [name, options] of pluginMap) {
     if (options === false) continue;
 
     try {
       let rawModule: any;
+      let needsAutoInstall = false;
+      
       try {
         const resolvedPath = require.resolve(name, { paths: resolvePaths });
         rawModule = await import(pathToFileURL(resolvedPath).href);
@@ -242,28 +345,56 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
           const localPath = path.resolve(__monorepoRoot, 'packages/plugins', id, 'dist/index.js');
           if (nativeFs.existsSync(localPath)) {
             rawModule = await import(pathToFileURL(localPath).href);
+          } else {
+            // Mark for auto-install if it's an official plugin not found
+            needsAutoInstall = true;
           }
         }
 
-        if (!rawModule) {
+        if (!rawModule && !needsAutoInstall) {
           // Fallback for non-package plugins or when resolution fails
           try {
             rawModule = await import(name);
           } catch (innerError: any) {
-            throw new Error(`Failed to resolve ${name}. Search paths: ${resolvePaths.join(', ')}. Detail: ${innerError.message}`);
+            // For official plugins, attempt auto-install
+            if (name.startsWith('@docmd/plugin-')) {
+              needsAutoInstall = true;
+            } else {
+              throw new Error(`Failed to resolve ${name}. Search paths: ${resolvePaths.join(', ')}. Detail: ${innerError.message}`);
+            }
           }
         }
       }
+
+      // Auto-install official plugins that are missing
+      if (needsAutoInstall && name.startsWith('@docmd/plugin-')) {
+        const installed = await autoInstallPlugin(name);
+        if (installed) {
+          // Retry loading after install
+          try {
+            const resolvedPath = require.resolve(name, { paths: resolvePaths });
+            rawModule = await import(pathToFileURL(resolvedPath).href);
+          } catch {
+            // If still fails, skip this plugin
+            warnOnce(`autoinstall:${name}`, TUI.yellow(`Could not load ${name} after auto-install`));
+            continue;
+          }
+        } else {
+          continue; // Skip if auto-install failed
+        }
+      }
+
+      if (!rawModule) continue;
 
       const pluginModule: PluginModule = rawModule.default || rawModule;
 
       try {
         registerPlugin(name, pluginModule, options);
       } catch (regError: any) {
-        warnOnce(`register:${name}`, TUI.yellow(`⚠️  Plugin loaded but failed to register: ${name}`) + TUI.dim(`\n   > ${regError.message}`));
+        warnOnce(`register:${name}`, TUI.yellow(`Plugin loaded but failed to register: ${name}`) + TUI.dim(`\n   > ${regError.message}`));
       }
     } catch (e: any) {
-      warnOnce(`load:${name}`, TUI.yellow(`⚠️  Could not load plugin: ${name} (missing or misconfigured)`) + TUI.dim(`\n   > ${e.message}`));
+      warnOnce(`load:${name}`, TUI.yellow(`Could not load plugin: ${name} (missing or misconfigured)`) + TUI.dim(`\n   > ${e.message}`));
     }
   }
 
@@ -289,10 +420,10 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
       if (isOfficial) {
         throw new Error(msg); // Hard error for official plugins
       }
-      TUI.warn(`${msg} — registering anyway`);
+      TUI.warn(`${msg} - registering anyway`);
     }
   } else {
-    // No descriptor — emit deprecation warning (soft until 0.8.0)
+    // No descriptor - emit deprecation warning (soft until 0.8.0)
     // Silent for official plugins as they'll be updated together
     if (!isOfficial) {
       TUI.warn(`Plugin "${name}" has no descriptor. This will be required in 0.8.0.`);
@@ -322,7 +453,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
       const fn = plugin.markdownSetup;
       hooks.markdownSetup.push((md: any) => safeCall('markdownSetup', name, fn, md, options));
     } else {
-      TUI.warn(`Plugin "${shortName}" exports markdownSetup but didn't declare "markdown" capability — skipped`);
+      TUI.warn(`Plugin "${shortName}" exports markdownSetup but didn't declare "markdown" capability - skipped`);
     }
   }
 
@@ -335,7 +466,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
         return safeCall('generateMetaTags', name, fn, config, pageContext, root) || '';
       });
     } else {
-      TUI.warn(`Plugin "${shortName}" exports generateMetaTags but didn't declare "head" capability — skipped`);
+      TUI.warn(`Plugin "${shortName}" exports generateMetaTags but didn't declare "head" capability - skipped`);
     }
   }
 
@@ -354,7 +485,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
         return result?.bodyScriptsHtml || '';
       });
     } else {
-      TUI.warn(`Plugin "${shortName}" exports generateScripts but didn't declare "head"/"body" capability — skipped`);
+      TUI.warn(`Plugin "${shortName}" exports generateScripts but didn't declare "head"/"body" capability - skipped`);
     }
   }
 
@@ -371,7 +502,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
         }
       });
     } else {
-      TUI.warn(`Plugin "${shortName}" exports onPostBuild but didn't declare "post-build" capability — skipped`);
+      TUI.warn(`Plugin "${shortName}" exports onPostBuild but didn't declare "post-build" capability - skipped`);
     }
   }
 
@@ -381,7 +512,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
       const fn = plugin.getAssets;
       hooks.assets.push(() => safeCall('getAssets', name, fn, options) as any[] || []);
     } else {
-      TUI.warn(`Plugin "${shortName}" exports getAssets but didn't declare "assets" capability — skipped`);
+      TUI.warn(`Plugin "${shortName}" exports getAssets but didn't declare "assets" capability - skipped`);
     }
   }
 
@@ -391,7 +522,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
       const fn = plugin.translations;
       hooks.translations.push((localeId: string) => safeCall('translations', name, fn, localeId, options) as Record<string, string> || {});
     } else {
-      TUI.warn(`Plugin "${shortName}" exports translations but didn't declare "translations" capability — skipped`);
+      TUI.warn(`Plugin "${shortName}" exports translations but didn't declare "translations" capability - skipped`);
     }
   }
 
@@ -400,7 +531,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
     if (hasCapabilityForHook(descriptor, 'actions')) {
       Object.assign(hooks.actions, plugin.actions);
     } else {
-      TUI.warn(`Plugin "${shortName}" exports actions but didn't declare "actions" capability — skipped`);
+      TUI.warn(`Plugin "${shortName}" exports actions but didn't declare "actions" capability - skipped`);
     }
   }
 
@@ -409,7 +540,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
     if (hasCapabilityForHook(descriptor, 'events')) {
       Object.assign(hooks.events, plugin.events);
     } else {
-      TUI.warn(`Plugin "${shortName}" exports events but didn't declare "events" capability — skipped`);
+      TUI.warn(`Plugin "${shortName}" exports events but didn't declare "events" capability - skipped`);
     }
   }
 
@@ -428,7 +559,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
         }
       });
     } else {
-      TUI.warn(`Plugin "${shortName}" exports onConfigResolved but didn't declare "init" capability — skipped`);
+      TUI.warn(`Plugin "${shortName}" exports onConfigResolved but didn't declare "init" capability - skipped`);
     }
   }
 
@@ -445,7 +576,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
         }
       });
     } else {
-      TUI.warn(`Plugin "${shortName}" exports onDevServerReady but didn't declare "dev" capability — skipped`);
+      TUI.warn(`Plugin "${shortName}" exports onDevServerReady but didn't declare "dev" capability - skipped`);
     }
   }
 
@@ -463,7 +594,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
         }
       });
     } else {
-      TUI.warn(`Plugin "${shortName}" exports onBeforeParse but didn't declare "build" capability — skipped`);
+      TUI.warn(`Plugin "${shortName}" exports onBeforeParse but didn't declare "build" capability - skipped`);
     }
   }
 
@@ -481,7 +612,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
         }
       });
     } else {
-      TUI.warn(`Plugin "${shortName}" exports onAfterParse but didn't declare "build" capability — skipped`);
+      TUI.warn(`Plugin "${shortName}" exports onAfterParse but didn't declare "build" capability - skipped`);
     }
   }
 
@@ -498,7 +629,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
         }
       });
     } else {
-      TUI.warn(`Plugin "${shortName}" exports onPageReady but didn't declare "build" capability — skipped`);
+      TUI.warn(`Plugin "${shortName}" exports onPageReady but didn't declare "build" capability - skipped`);
     }
   }
 

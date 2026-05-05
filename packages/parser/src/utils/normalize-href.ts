@@ -32,8 +32,8 @@ export interface NormalizedHref {
  * untouched (for external, hash-only, or asset links).
  *
  * Supports special prefixes:
- *   - `external:` — forces the link to open in a new tab (strips prefix)
- *   - `raw:` — bypasses normalisation (strips prefix, keeps extension)
+ *   - `external:` - forces the link to open in a new tab (strips prefix)
+ *   - `raw:` - bypasses normalisation (strips prefix, keeps extension)
  *
  * Supported input formats (all produce the same output):
  *   - overview.md          → overview/
@@ -44,7 +44,7 @@ export interface NormalizedHref {
  *   - localisation/index.md  → localisation/
  *   - ./content/index.md     → ./content/
  *   - ../index.md            → ../
- *   - index.md               → (empty string — root of current dir)
+ *   - index.md               → (empty string - root of current dir)
  *   - /absolute/path.md      → /absolute/path/
  *   - #section               → #section (unchanged)
  *   - https://example.com    → https://example.com (unchanged, auto-external)
@@ -58,12 +58,12 @@ export interface NormalizedHref {
 export function resolveHref(href: string): NormalizedHref {
   if (!href) return { href, isExternal: false, isRaw: false };
 
-  // 1. Handle `raw:` prefix — bypass all normalisation, keep extension
+  // 1. Handle `raw:` prefix - bypass all normalisation, keep extension
   if (href.startsWith('raw:')) {
     return { href: href.slice(4), isExternal: false, isRaw: true };
   }
 
-  // 2. Handle `external:` prefix — normalise but flag as external
+  // 2. Handle `external:` prefix - normalise but flag as external
   // Users must explicitly use external: prefix to open in new tab
   let isExternal = false;
   if (href.startsWith('external:')) {

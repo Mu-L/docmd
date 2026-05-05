@@ -4,10 +4,10 @@ Plugin API surface for docmd - hook registration, RPC dispatch, and source editi
 
 This package is the canonical home for the docmd plugin system. It provides:
 
-- **Plugin Loader** — Validates, isolates, and registers plugins with capability-gated hooks
-- **Action Dispatcher** — WebSocket RPC system for live-edit actions and fire-and-forget events
-- **Source Tools** — Block-level markdown source editing (insert, replace, wrap, remove)
-- **Type Definitions** — `PluginDescriptor`, `PluginModule`, `ActionContext`, `SourceTools`, and more
+- **Plugin Loader** - Validates, isolates, and registers plugins with capability-gated hooks
+- **Action Dispatcher** - WebSocket RPC system for live-edit actions and fire-and-forget events
+- **Source Tools** - Block-level markdown source editing (insert, replace, wrap, remove)
+- **Type Definitions** - `PluginDescriptor`, `PluginModule`, `ActionContext`, `SourceTools`, and more
 
 ## Usage
 

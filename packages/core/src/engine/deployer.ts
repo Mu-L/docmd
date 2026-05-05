@@ -51,7 +51,7 @@ async function resolveDeployContext(configPath: string) {
   }
 
   // After loadConfig/normalizeConfig, all fields are guaranteed to exist
-  // under their modern names. No fallback chains needed — normalizeConfig
+  // under their modern names. No fallback chains needed - normalizeConfig
   // is the single source of truth for all defaults.
   const title = config.title;
   const outDir = config.out;
@@ -105,7 +105,7 @@ export async function generateDeployConfigs(opts: DeployOpts) {
   TUI.footer();
 
   if (opts.docker) {
-    // Check if user also generated nginx.conf — if so, copy it into the container
+    // Check if user also generated nginx.conf - if so, copy it into the container
     const hasNginxConf = opts.nginx || await fileExists(resolve(cwd, 'nginx.conf'));
     const nginxCopyLine = hasNginxConf
       ? 'COPY nginx.conf /etc/nginx/conf.d/default.conf'
@@ -162,7 +162,7 @@ Thumbs.db
   if (opts.nginx) {
     const serverName = ctx.hostname || 'localhost';
 
-    // SPA fallback block — only included when SPA mode is active
+    // SPA fallback block - only included when SPA mode is active
     const spaBlock = ctx.isSpa ? `
     # SPA Routing Fallback
     location / {
@@ -224,7 +224,7 @@ ${spaBlock}
   if (opts.caddy) {
     const caddyAddress = ctx.hostname || ':80';
 
-    // SPA fallback — only when SPA mode is active
+    // SPA fallback - only when SPA mode is active
     const spaCaddyLine = ctx.isSpa
       ? '    try_files {path} {path}/ /index.html'
       : '    try_files {path} {path}/';

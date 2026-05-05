@@ -20,8 +20,8 @@ function buttonRule(state, startLine, endLine, silent) {
   const max = state.eMarks[startLine];
   const lineContent = state.src.slice(start, max).trim();
 
-  // Regex matches: ::: button "Text" Link [color]
-  const match = lineContent.match(/^:::\s+button\s+(?:["'](.*?)["']|(\S+))\s+(.*)$/);
+  // Regex matches: ::: button "Text" Link [color] or :::button (spaceless)
+  const match = lineContent.match(/^:::\s*button\s+(?:["'](.*?)["']|(\S+))\s+(.*)$/);
 
   if (!match) return false;
   if (silent) return true;

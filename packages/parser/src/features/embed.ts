@@ -19,7 +19,8 @@ function embedRule(state: any, startLine: number, endLine: number, silent: boole
   const max = state.eMarks[startLine];
   const lineContent = state.src.slice(start, max).trim();
 
-  const match = lineContent.match(/^:::\s+embed\s+(?:\[|")?((https?:\/\/)[^\]"\s]+)(?:\]|")?$/i);
+  // Support both '::: embed' and ':::embed' (spaceless)
+  const match = lineContent.match(/^:::\s*embed\s+(?:\[|")?((https?:\/\/)[^\]"\s]+)(?:\]|")?$/i);
   if (!match) return false;
   if (silent) return true;
 

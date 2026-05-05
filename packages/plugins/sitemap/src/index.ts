@@ -19,7 +19,7 @@ import { outputPathToPathname, sanitizeUrl } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'sitemap',
-  version: '0.7.7',
+  version: '0.7.8',
   capabilities: ['post-build']
 };
 
@@ -58,7 +58,7 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
     if (fm.sitemap === false || fm.noindex === true) continue;
 
     // Use centralised URL utility for consistent URL generation.
-    // This is the single source of truth — no manual outputPath parsing.
+    // This is the single source of truth - no manual outputPath parsing.
     const pathname = outputPathToPathname(page.outputPath);
     const url = sanitizeUrl(siteUrl + pathname);
 

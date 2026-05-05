@@ -101,7 +101,7 @@ function buildSegments(rawContent: string, md: any): InlineSegment[] {
 
   for (const child of children) {
     if (child.nesting === 1) {
-      // Opening tag — advance rawCursor past the opening marker
+      // Opening tag - advance rawCursor past the opening marker
       const syn = syntaxForToken(child);
       if (syn) {
         const markerPos = rawContent.indexOf(syn[0], rawCursor);
@@ -111,7 +111,7 @@ function buildSegments(rawContent: string, md: any): InlineSegment[] {
       }
       syntaxStack.push(syn);
     } else if (child.nesting === -1) {
-      // Closing tag — advance rawCursor past the closing marker
+      // Closing tag - advance rawCursor past the closing marker
       const syn = syntaxStack.pop();
       if (syn) {
         const closeMarker = syn[1];
@@ -134,7 +134,7 @@ function buildSegments(rawContent: string, md: any): InlineSegment[] {
         rawCursor = markerPos + backtick.length + child.content.length + backtick.length;
       }
     } else if (child.type === 'softbreak') {
-      // Treat as newline in text content — skip in raw
+      // Treat as newline in text content - skip in raw
       const nlPos = rawContent.indexOf('\n', rawCursor);
       if (nlPos !== -1) rawCursor = nlPos + 1;
     } else if (child.type === 'text') {

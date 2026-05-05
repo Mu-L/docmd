@@ -1,6 +1,6 @@
 # @docmd/plugin-llms
 
-Generates `llms.txt` and `llms-full.txt` at build time so your documentation is immediately accessible to AI agents — ChatGPT, Claude, Cursor, and any tool that follows the [llmstxt.org](https://llmstxt.org/) standard.
+Generates `llms.txt` and `llms-full.txt` at build time so your documentation is immediately accessible to AI agents - ChatGPT, Claude, Cursor, and any tool that follows the [llmstxt.org](https://llmstxt.org/) standard.
 
 Bundled with `@docmd/core`. Requires `siteUrl` in your config to produce valid absolute links.
 

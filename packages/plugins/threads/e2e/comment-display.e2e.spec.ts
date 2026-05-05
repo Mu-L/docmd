@@ -1,5 +1,5 @@
 /**
- * Comment display tests — adapted from old comment-display.e2e.spec.ts.
+ * Comment display tests - adapted from old comment-display.e2e.spec.ts.
  *
  * Changes from old plugin:
  * - Comments are server-rendered HTML (.threads-comment) not Lit components
@@ -124,7 +124,7 @@ test.describe("markdown rendering in comments", () => {
   });
 
   test.fixme("HTML special characters are escaped", async () => {
-    // FIXME: XSS vulnerability — the markdown-it parser has html:true, so raw
+    // FIXME: XSS vulnerability - the markdown-it parser has html:true, so raw
     // HTML in comment bodies is rendered as-is. Comment body content should be
     // sanitized before storage or rendering.
     const { id: threadId } = await seedAndReload(user.page, {

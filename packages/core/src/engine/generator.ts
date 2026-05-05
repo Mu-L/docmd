@@ -119,7 +119,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       if (item.children) {
         extractNavIndexes(item.children);
       } else if (item._sourceFile) {
-        // _sourceFile is the original path like '/highlighting' — normalize to relative path
+        // _sourceFile is the original path like '/highlighting' - normalize to relative path
         navDesignatedIndexFiles.add(item._sourceFile.replace(/^\//, ''));
       }
     }
@@ -248,7 +248,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
     const processed = await parser.processContentAsync(rawContent, mdProcessor, config, { isIndex: effectivelyIndex }, hooks);
     if (!processed) continue;
 
-    // Determine output path — .ejs files map like .md files
+    // Determine output path - .ejs files map like .md files
     const withoutExt = relativePath.replace(/\.(md|markdown|ejs)$/, '');
     const htmlOutputPath = effectivelyIndex
       ? path.posix.join(outputPrefix, path.dirname(relativePath), 'index.html').replace(/^\/?/, '')
@@ -356,7 +356,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
     // Pre-compute page URLs for plugin consumption
     const pageUrls = computePageUrls(page.outputPath, config.url || '');
 
-    // Single URL builder — delegates to the centralized engine.
+    // Single URL builder - delegates to the centralized engine.
     // Passed to EJS templates as `buildRelativeUrl`.
     const buildRelativeUrl = (href: string) => buildContextualUrl(href, urlContext);
 
@@ -385,7 +385,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       bodyInjections.join('\n')
     ].join('\n');
 
-    // Source file path relative to srcDir — used by plugins (e.g. threads) to identify the file
+    // Source file path relative to srcDir - used by plugins (e.g. threads) to identify the file
     const sourceRelative = path.relative(process.cwd(), page.sourcePath).replace(/\\/g, '/');
 
     let editUrl = null;
@@ -469,7 +469,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       // Translation function
       t,
 
-      // Centralised URL utilities — available in all templates
+      // Centralised URL utilities - available in all templates
       buildAbsoluteUrl,
       sanitizeUrl,
 

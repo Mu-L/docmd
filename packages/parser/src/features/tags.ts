@@ -22,8 +22,8 @@ function tagInlineRule(state, silent) {
   if (state.src.charCodeAt(start) !== 0x3A /* : */) return false;
   if (state.src.slice(start, start + 3) !== ':::') return false;
 
-  // We are at `:::`. Let's see if it's `::: tag `
-  const match = state.src.slice(start, max).match(/^:::\s+tag\s+(?:["']([^"']+)["']|(\S+))((?:\s+(?:icon|color|link):\S+)*)/);
+  // We are at `:::`. Let's see if it's `::: tag` or `:::tag` (spaceless)
+  const match = state.src.slice(start, max).match(/^:::\s*tag\s+(?:["']([^"']+)["']|(\S+))((?:\s+(?:icon|color|link):\S+)*)/);
   if (!match) return false;
 
   if (silent) return true;

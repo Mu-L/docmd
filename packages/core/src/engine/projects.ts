@@ -228,7 +228,7 @@ export async function buildMultiProject(
       // The project's docmd.config.js should NOT have src/out,
       // because the multi-project handler provides those.
       // We set environment variables so the config loader can
-      // pick them up. src is NOT overridden — the child config
+      // pick them up. src is NOT overridden - the child config
       // controls where content lives (defaults to 'docs').
       process.env.DOCMD_PROJECT_OUT = projectOutDir;
       process.env.DOCMD_PROJECT_PREFIX = prefix;

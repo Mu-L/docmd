@@ -447,7 +447,7 @@ export function injectComponentStyles(): void {
        border-top: 1px solid var(--tc-border);
     } */
 
-    /* Avatar column — row 1; vertical line spans rows 2-3 */
+    /* Avatar column - row 1; vertical line spans rows 2-3 */
     .threads-comment__avatar-col {
       grid-column: 1;
       grid-row: 1;

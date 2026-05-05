@@ -1,0 +1,13 @@
+{
+  "lastUpdated": "最后更新",
+  "recentCommits": "最近提交",
+  "viewCommitHistory": "查看提交历史",
+  "editOnGitHub": "在 GitHub 上编辑",
+  "editOnGitLab": "在 GitLab 上编辑",
+  "editOnBitbucket": "在 Bitbucket 上编辑",
+  "editThisPage": "编辑此页",
+  "justNow": "刚刚",
+  "minutesAgo": "{n}分钟前",
+  "hoursAgo": "{n}小时前",
+  "daysAgo": "{n}天前"
+}

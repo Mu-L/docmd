@@ -1,5 +1,5 @@
 /**
- * Reply and deletion tests — adapted from old editing-deletion.e2e.spec.ts
+ * Reply and deletion tests - adapted from old editing-deletion.e2e.spec.ts
  * and devtalk.e2e.spec.ts "discussions" block.
  *
  * Changes from old plugin:
@@ -226,7 +226,7 @@ test.describe("comment editing", () => {
 
     const commentId = comments[0].id;
 
-    // Attempt to edit with empty body — the API should reject it or the guard should prevent it
+    // Attempt to edit with empty body - the API should reject it or the guard should prevent it
     try {
       await user.page.evaluate(
         async ({ threadId, commentId }) => {
@@ -241,7 +241,7 @@ test.describe("comment editing", () => {
         { threadId, commentId },
       );
     } catch {
-      // Expected — empty body should be rejected
+      // Expected - empty body should be rejected
     }
 
     // Verify original body unchanged

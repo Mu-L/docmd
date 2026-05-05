@@ -72,7 +72,7 @@ export interface UrlContext {
 
 /**
  * Pre-computed URL data attached to every page object.
- * Plugins can read these directly — zero computation needed.
+ * Plugins can read these directly - zero computation needed.
  */
 export interface PageUrls {
   /** Clean directory-style slug, e.g. `guide/` or `/` for root */
@@ -87,7 +87,7 @@ export interface PageUrls {
 
 /**
  * Collapse consecutive slashes (except after protocol `:`), enforce
- * consistent formatting. This is the **last-resort safety net** — if
+ * consistent formatting. This is the **last-resort safety net** - if
  * the upstream logic is correct, this should be a no-op.
  *
  * Note: This function is imported from normalize-href.ts to ensure

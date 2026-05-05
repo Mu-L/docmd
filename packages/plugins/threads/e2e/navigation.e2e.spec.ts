@@ -1,5 +1,5 @@
 /**
- * SPA navigation tests — adapted from old headings-navigation.e2e.spec.ts
+ * SPA navigation tests - adapted from old headings-navigation.e2e.spec.ts
  * "SPA navigation" block.
  *
  * Changes from old plugin:

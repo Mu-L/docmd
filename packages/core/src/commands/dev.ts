@@ -53,7 +53,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
     if (e.silent) {
       process.exit(0); // Exit gracefully if it's a known non-project folder error
     }
-    // Config validation errors already print their details — exit cleanly
+    // Config validation errors already print their details - exit cleanly
     if (e.message === 'Invalid configuration file.' || e.message?.startsWith('Error parsing config')) {
       TUI.error('Build failed', e.message);
       process.exit(1);
@@ -78,7 +78,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
 
   let paths = resolveConfigPaths(config);
 
-  // Create Server — uses a mutable reference so config restarts update the output dir
+  // Create Server - uses a mutable reference so config restarts update the output dir
   const state = { outputDir: paths.outputDir };
   const server = http.createServer((req, res) => serveStatic(req, res, state.outputDir));
   let wss;
@@ -184,7 +184,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
 
   setupContentWatchers();
 
-  // Config file watcher — reload config, rebuild, re-setup watchers
+  // Config file watcher - reload config, rebuild, re-setup watchers
   if (hasConfigFile) {
     let configLock = false;
     const setupConfigWatcher = () => {
@@ -273,7 +273,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
             if (msg.type === 'call') {
               try {
                 const { result } = await dispatcher.handleCall(msg.action, msg.payload);
-                // Don't send reload flag to client — let the file watcher detect
+                // Don't send reload flag to client - let the file watcher detect
                 // the change, rebuild, and send the reload via broadcastReload()
                 ws.send(JSON.stringify({ id: msg.id, type: 'response', result, reload: false }));
               } catch (e: any) {
