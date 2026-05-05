@@ -51,8 +51,9 @@
   }
 
   /**
-   * Wire up hover/focus show-hide on .git-last-updated elements
-   * that contain a .git-commit-tooltip.
+   * Wire up keyboard accessibility on .git-last-updated elements.
+   * Tooltip visibility is handled by CSS :hover/:focus-within.
+   * JS only adds tabindex and aria attributes for keyboard users.
    */
   function wireTooltips() {
     document.querySelectorAll('.git-last-updated').forEach(function (wrapper) {
@@ -63,14 +64,6 @@
       wrapper.setAttribute('tabindex', '0');
       wrapper.setAttribute('role', 'button');
       wrapper.setAttribute('aria-label', i18n.viewCommitHistory || 'View commit history');
-
-      function show() { tooltip.classList.add('visible'); }
-      function hide() { tooltip.classList.remove('visible'); }
-
-      wrapper.addEventListener('mouseenter', show);
-      wrapper.addEventListener('mouseleave', hide);
-      wrapper.addEventListener('focus', show);
-      wrapper.addEventListener('blur', hide);
     });
   }
 

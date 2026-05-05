@@ -12,7 +12,7 @@
  * --------------------------------------------------------------------
  */
 
-/* Last Updated Element */
+/* ── Wrapper ─────────────────────────────────────────────────────── */
 .git-last-updated {
   display: inline-flex;
   align-items: center;
@@ -20,6 +20,189 @@
   color: var(--text-light);
   font-size: 0.875rem;
   position: relative;
+  /* Extend hover area downward to bridge the gap to the tooltip,
+     preventing mouseout firing when cursor travels from text to tooltip */
+  padding-bottom: 0.75rem;
+  margin-bottom: -0.75rem;
+}
+
+.git-last-updated.has-history {
+  cursor: default;
+}
+
+.git-last-updated.has-history:hover,
+.git-last-updated.has-history:focus-within {
+  color: var(--link-color);
+}
+
+/* ── Icon / Label / Time ─────────────────────────────────────────── */
+.git-icon {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.git-label {
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.git-time {
+  font-weight: 500;
+  pointer-events: none;
+}
+
+/* ── Spacer ──────────────────────────────────────────────────────── */
+.git-spacer {
+  flex: 1;
+}
+
+/* ── Tooltip ─────────────────────────────────────────────────────── */
+.git-commit-tooltip {
+  position: absolute;
+  /* Sit flush against the bottom of the wrapper's padded area */
+  bottom: 0;
+  left: 0;
+  min-width: 280px;
+  max-width: 360px;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 0.75rem;
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s linear 0.15s;
+  pointer-events: none;
+}
+
+/* Show via CSS :hover so mouse movement within the extended area never
+   triggers a hide — JS .visible class is the fallback for keyboard */
+.git-last-updated.has-history:hover .git-commit-tooltip,
+.git-last-updated.has-history:focus-within .git-commit-tooltip,
+.git-commit-tooltip.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s linear 0s;
+  pointer-events: auto;
+}
+
+/* ── Arrow ───────────────────────────────────────────────────────── */
+.git-commit-tooltip::after,
+.git-commit-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 1.5rem;
+  border: 6px solid transparent;
+  pointer-events: none;
+}
+
+.git-commit-tooltip::after {
+  border-bottom-color: var(--border-color);
+  margin-bottom: -1px;
+}
+
+.git-commit-tooltip::before {
+  border-bottom-color: var(--bg-color);
+  z-index: 1;
+}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+.git-tooltip-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  color: var(--text-light);
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* ── Commit List ─────────────────────────────────────────────────── */
+.git-commit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.git-commit-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.5rem 0;
+}
+
+.git-commit-item:not(:last-child) {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.git-commit-avatar {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--accent-color, #3b82f6);
+  color: #fff;
+  font-size: 0.625rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.git-commit-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.git-commit-message {
+  font-size: 0.8125rem;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.git-commit-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.6875rem;
+  color: var(--text-light);
+  margin-top: 0.125rem;
+}
+
+.git-commit-author {
+  font-weight: 500;
+}
+
+.git-commit-date {
+  opacity: 0.8;
+}
+
+/* ── Dark mode ───────────────────────────────────────────────────── */
+[data-theme="dark"] .git-commit-tooltip {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .git-commit-tooltip {
+    min-width: 240px;
+    max-width: calc(100vw - 2rem);
+    left: -0.5rem;
+  }
+
+  .git-label {
+    display: none;
+  }
 }
 
 .git-last-updated.has-history {
