@@ -39,10 +39,11 @@
   }
 
   /**
-   * Hydrate all [data-timestamp] spans with formatted relative time.
+   * Hydrate all git [data-timestamp] elements with formatted relative time.
+   * Scoped to .git-last-updated and .git-commit-list to avoid collisions.
    */
   function hydrateTimes() {
-    document.querySelectorAll('[data-timestamp]').forEach(function (el) {
+    document.querySelectorAll('.git-last-updated [data-timestamp], .git-commit-list [data-timestamp]').forEach(function (el) {
       const ts = parseInt(el.getAttribute('data-timestamp'), 10);
       if (!ts || isNaN(ts)) return;
       el.textContent = formatTime(ts);
