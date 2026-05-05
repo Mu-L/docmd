@@ -173,6 +173,7 @@ export async function buildMultiProject(
 ): Promise<void> {
   const CWD = process.cwd();
   const rootOutDir = path.resolve(CWD, multiConfig.out || 'site');
+  const totalElapsed = TUI.timer();
 
   validateProjects(multiConfig.projects);
 
@@ -183,9 +184,8 @@ export async function buildMultiProject(
     return a.prefix.localeCompare(b.prefix);
   });
 
-  // Only show banner in production builds, not in dev mode
-  if (!opts.isDev && !opts.quiet) {
-    TUI.banner(undefined, 'Multi-Project');
+  // Section header — the CLI already printed the docmd banner
+  if (!opts.quiet) {
     TUI.section(`Multi-Project Build (${sorted.length} projects)`);
   }
 
@@ -195,8 +195,16 @@ export async function buildMultiProject(
   // Copy shared assets first (root-level assets/ folder)
   const sharedAssetsDir = path.resolve(CWD, 'assets');
   if (nativeFs.existsSync(sharedAssetsDir)) {
-    TUI.item('Shared assets', path.relative(CWD, sharedAssetsDir));
+    if (!opts.quiet) {
+      TUI.item('Shared assets', path.relative(CWD, sharedAssetsDir), TUI.dim, TUI.cyan);
+    }
   }
+
+  if (!opts.quiet) {
+    TUI.footer(TUI.cyan);
+  }
+
+  let totalPages = 0;
 
   for (const project of sorted) {
     const prefix = project.prefix === '/' ? '/' : project.prefix.replace(/\/$/, '');
@@ -209,15 +217,19 @@ export async function buildMultiProject(
       : path.join(rootOutDir, prefix.replace(/^\//, ''));
 
     const label = prefix === '/' ? `/ (root)` : prefix;
-    TUI.divider(`Building: ${label}`);
-    TUI.item('Source', `${project.src}/`);
-    TUI.item('Output', `${path.relative(CWD, projectOutDir)}/`);
+    const projectElapsed = TUI.timer();
+
+    if (!opts.quiet) {
+      TUI.section(`Building: ${label}`);
+      TUI.item('Source', `${project.src}/`, TUI.dim, TUI.cyan);
+      TUI.item('Output', `${path.relative(CWD, projectOutDir)}/`, TUI.dim, TUI.cyan);
+    }
 
     // Check if the project has its own config
     const hasProjectConfig = nativeFs.existsSync(projectConfigPath);
 
-    if (!hasProjectConfig) {
-      TUI.item('Config', 'zero-config (no docmd.config.js found)');
+    if (!hasProjectConfig && !opts.quiet) {
+      TUI.item('Config', 'zero-config (no docmd.config.js found)', TUI.dim, TUI.cyan);
     }
 
     // Change to project directory and build
@@ -239,17 +251,30 @@ export async function buildMultiProject(
         await fs.copy(sharedAssetsDir, path.join(projectOutDir, 'assets'));
       }
 
-      // Build this project
+      // Build this project — quiet suppresses headers/summary,
+      // but showStats + onProgress give us live feedback
       const configFile = hasProjectConfig ? 'docmd.config.js' : 'docmd.config.js';
+
       await buildSite(configFile, {
         isDev: opts.isDev || false,
         offline: opts.offline || false,
+        quiet: true,          // Suppress child's own section headers/summary
+        showStats: !opts.quiet,    // But still show versions/locales in parent's section
+        onProgress: !opts.quiet ? (current: number, total: number) => {
+          TUI.progress(`Processing pages`, current, total);
+        } : undefined,
       });
 
-      TUI.step(`Project ${label}`, 'DONE');
+      if (!opts.quiet) {
+        TUI.step(`Project ${label} built in ${projectElapsed()}`, 'DONE', TUI.cyan);
+        TUI.footer(TUI.cyan);
+      }
 
     } catch (err: any) {
-      TUI.step(`Project ${label}`, 'FAIL');
+      if (!opts.quiet) {
+        TUI.step(`Project ${label} build failed`, 'FAIL', TUI.cyan);
+        TUI.footer(TUI.cyan);
+      }
       TUI.error(`Build failed for ${label}`, err.message);
       if (!opts.isDev) throw err;
     } finally {
@@ -261,12 +286,9 @@ export async function buildMultiProject(
   }
 
   // Final summary
-  if (!opts.isDev && !opts.quiet) {
+  if (!opts.quiet) {
     const totalSize = await getDirectorySize(rootOutDir);
-    TUI.footer();
-    TUI.success(`Multi-project build complete → ${path.relative(CWD, rootOutDir)}/ (${formatBytes(totalSize)})`);
-  } else {
-    TUI.footer();
+    TUI.success(`Multi-project build complete. ${sorted.length} projects → ${path.relative(CWD, rootOutDir)}/ (${formatBytes(totalSize)}) in ${totalElapsed()}.`);
   }
 }
 
@@ -337,8 +359,14 @@ export async function devMultiProject(
   multiConfig: MultiProjectConfig,
   opts: { port?: string; preserve?: boolean } = {}
 ): Promise<void> {
-  // For dev mode, do a full multi-project build first
-  await buildMultiProject(multiConfig, { isDev: true });
+  // For dev mode, do a full multi-project build first.
+  // isDev: true affects build behaviour (no minification etc),
+  // quiet is NOT set so we get full TUI output (sections, stats, progress).
+  try {
+    await buildMultiProject(multiConfig, { isDev: true });
+  } catch (err: any) {
+    TUI.error('Initial build failed', err.message);
+  }
 
   // Then start a simple static server on the combined output
   const CWD = process.cwd();
@@ -367,27 +395,27 @@ export async function devMultiProject(
 
   server.listen(port, '0.0.0.0', () => {
     wss = new WebSocketServer({ server });
-    wss.on('error', (e: any) => console.error('WebSocket Error:', e.message));
+    wss.on('error', (e: any) => TUI.error('WebSocket Error', e.message));
 
     const networkIp = getNetworkIp();
     const localUrl = `http://127.0.0.1:${port}`;
     const networkUrl = networkIp ? `http://${networkIp}:${port}` : null;
 
-    // TUI.banner(undefined, 'MULTI-PROJECT');
-    TUI.section('DEV SERVER');
-    console.log('');
-    TUI.item('Local', localUrl, TUI.bold);
+    TUI.section('Development Server Running', TUI.green);
+    TUI.item('', '', TUI.dim, TUI.green);
+    TUI.item('Local Access', localUrl, TUI.bold, TUI.green);
     if (networkUrl) {
-      TUI.item('Network', networkUrl, TUI.bold);
+      TUI.item('Network Access', networkUrl, TUI.bold, TUI.green);
     }
-    console.log('');
+    TUI.item('Serving from', formatPathForDisplay(rootOutDir, CWD), TUI.dim, TUI.green);
+    TUI.item('', '', TUI.dim, TUI.green);
 
     for (const project of multiConfig.projects) {
       const prefix = project.prefix === '/' ? '/' : project.prefix;
-      TUI.item('Project', localUrl + prefix);
+      TUI.item('Project', localUrl + prefix, TUI.dim, TUI.green);
     }
-
-    TUI.footer();
+    TUI.item('', '', TUI.dim, TUI.green);
+    TUI.footer(TUI.green);
   });
 
   // Watch each project's source directory for changes
@@ -411,25 +439,18 @@ export async function devMultiProject(
         if (isRebuilding) return;
         isRebuilding = true;
 
-        // Build only this project, not all - show file path relative to project
         const label = project.prefix === '/' ? '/' : project.prefix;
-        // Show [WAIT] [project-name] path/to/file.md - strip project folder name
         const displayPath = filename.replace(/^[^/]+\//, '');
-        // Use a single line that gets updated
-        console.log(`\x1b[34m│\x1b[0m  \x1b[36m[ WAIT ]\x1b[0m \x1b[33m[${label}]\x1b[0m ${displayPath}`);
-        const stepLineStart = `\x1b[34m│\x1b[0m  `;
+        const rebuildElapsed = TUI.timer();
+
+        TUI.step(`Rebuilding [${label}] ${displayPath}`, 'WAIT', TUI.blue);
 
         try {
           await buildSingleProject(project, multiConfig, { isDev: true });
           broadcastReload();
-          // Overwrite the WAIT line with DONE
-          if (process.stdout.isTTY) {
-            process.stdout.write(`\x1b[1A\r${stepLineStart}\x1b[32m[ DONE ]\x1b[0m \x1b[33m[${label}]\x1b[0m ${displayPath}\n`);
-          } else {
-            console.log(`${stepLineStart}\x1b[32m[ DONE ]\x1b[0m \x1b[33m[${label}]\x1b[0m ${displayPath}`);
-          }
+          TUI.step(`Rebuilt [${label}] ${displayPath} in ${rebuildElapsed()}`, 'DONE', TUI.blue);
         } catch (err: any) {
-          console.log(`${stepLineStart}\x1b[31m[ FAIL ]\x1b[0m \x1b[33m[${label}]\x1b[0m ${displayPath}`);
+          TUI.step(`Rebuild [${label}] ${displayPath}`, 'FAIL', TUI.blue);
           TUI.error('Rebuild failed', err.message);
         } finally {
           isRebuilding = false;
@@ -445,12 +466,16 @@ export async function devMultiProject(
       rebuildTimeout = setTimeout(async () => {
         if (isRebuilding) return;
         isRebuilding = true;
-        TUI.step('Shared assets changed');
+
+        const rebuildElapsed = TUI.timer();
+        TUI.step('Shared assets changed — rebuilding all', 'WAIT', TUI.blue);
+
         try {
-          await buildMultiProject(multiConfig, { isDev: true });
+          await buildMultiProject(multiConfig, { isDev: true, quiet: true });
           broadcastReload();
-          TUI.step('All Projects', 'DONE');
+          TUI.step(`All projects rebuilt in ${rebuildElapsed()}`, 'DONE', TUI.blue);
         } catch (err: any) {
+          TUI.step('Rebuild all projects', 'FAIL', TUI.blue);
           TUI.error('Rebuild failed', err.message);
         } finally {
           isRebuilding = false;
@@ -477,7 +502,6 @@ export async function devMultiProject(
 
     if (process.stdin.isTTY) process.stdin.setRawMode(false);
 
-    console.log('');
     TUI.success('Shutting down...');
 
     server.close();

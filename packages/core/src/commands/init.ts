@@ -265,7 +265,7 @@ export async function initProject() {
   let shouldOverride = false;
   if (existingFiles.length > 0) {
     TUI.warn('Existing files detected:');
-    existingFiles.forEach(file => console.log(`   - ${file}`));
+    existingFiles.forEach(file => TUI.item('', file));
 
     const rl = readline.createInterface({
       input: process.stdin,
