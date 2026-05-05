@@ -369,7 +369,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
     // Inject Assets
     const assetHeadHtml = assetTags.head.map((gen: any) => gen(relativePathToRoot)).join('\n');
     const assetBodyHtml = assetTags.body.map((gen: any) => gen(relativePathToRoot)).join('\n');
-    const pageContext = { frontmatter: page.frontmatter, outputPath: page.outputPath, urls: pageUrls };
+    const pageContext = { frontmatter: page.frontmatter, outputPath: page.outputPath, sourcePath: page.sourcePath, urls: pageUrls };
 
     const headInjections = await Promise.all(hooks.injectHead.map((fn: any) => fn(config, pageContext, relativePathToRoot)));
     const bodyInjections = await Promise.all(hooks.injectBody.map((fn: any) => fn(config, pageContext)));

@@ -21,7 +21,7 @@ import type { PluginDescriptor } from '@docmd/api';
 export const plugin: PluginDescriptor = {
   name: 'git',
   version: '0.7.8',
-  capabilities: ['build', 'body', 'assets', 'translations']
+  capabilities: ['build', 'body', 'assets', 'translations', 'head']
 };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -52,15 +52,17 @@ export interface GitFileInfo {
 }
 
 /**
- * Check if the current directory is inside a git repository.
- * Caches the result for the entire build.
+ * Check if the project is inside a git repository.
+ * Uses process.cwd() as the project root.
  */
-function checkGitRepo(cwd: string): boolean {
+function checkGitRepo(cwd?: string): boolean {
   if (_isGitRepoChecked) return _isGitRepo;
+  
+  const checkDir = cwd || process.cwd();
   
   try {
     const result = execSync('git rev-parse --show-toplevel', { 
-      cwd, 
+      cwd: checkDir, 
       stdio: 'pipe', 
       encoding: 'utf8' 
     }).trim();
@@ -73,6 +75,14 @@ function checkGitRepo(cwd: string): boolean {
   
   _isGitRepoChecked = true;
   return _isGitRepo;
+}
+
+/**
+ * Get the git root path.
+ */
+function getGitRoot(): string | null {
+  checkGitRepo();
+  return _gitRootPath;
 }
 
 /**
@@ -89,12 +99,14 @@ function isGitAvailable(): boolean {
 
 /**
  * Get git information for a specific file.
+ * Uses process.cwd() as the git root to handle monorepo/workspace setups.
  */
 function getGitFileInfo(filePath: string, maxCommits: number = 6): GitFileInfo | null {
-  const cwd = path.dirname(filePath);
+  // Use process.cwd() as the project root - this is where docmd runs from
+  const projectRoot = process.cwd();
   
   // Quick exit if not in a git repo
-  if (!checkGitRepo(cwd)) {
+  if (!checkGitRepo(projectRoot)) {
     return null;
   }
 
@@ -105,11 +117,13 @@ function getGitFileInfo(filePath: string, maxCommits: number = 6): GitFileInfo |
   }
 
   try {
-    // Get commit history for the file
-    // Format: hash|shortHash|author|email|timestamp|message
+    // Get relative path from project root
+    const relPath = path.relative(projectRoot, filePath);
+    
+    // Get commit history using the relative path from project root
     const logOutput = execSync(
-      `git log -n ${maxCommits} --format="%H|%h|%an|%ae|%at|%s" -- "${path.basename(filePath)}"`,
-      { cwd, stdio: 'pipe', encoding: 'utf8' }
+      `git log -n ${maxCommits} --format="%H|%h|%an|%ae|%at|%s" -- "${relPath}"`,
+      { cwd: projectRoot, stdio: 'pipe', encoding: 'utf8' }
     ).trim();
 
     if (!logOutput) {
@@ -238,26 +252,52 @@ export async function onPageReady({ html, sourcePath, frontmatter, config }: any
   if (gitInfo) {
     // Store git info in frontmatter for template access
     frontmatter._git = gitInfo;
+    // Also store in config so generateScripts can access it
+    config._pageGit = gitInfo;
   }
 }
 
 /**
+ * Inject git data into page context BEFORE template rendering.
+ * This ensures the data is available when the template is rendered.
+ * Uses the 'head' capability which runs during render.
+ */
+export function generateMetaTags(config: any, pageContext: any, _relativePathToRoot: string): string {
+  const sourcePath = pageContext?.sourcePath;
+  if (!sourcePath) return '';
+  
+  // Skip if not in a git repo
+  if (!checkGitRepo(path.dirname(sourcePath))) {
+    return '';
+  }
+  
+  const gitInfo = getGitFileInfo(sourcePath);
+  if (!gitInfo || !pageContext?.frontmatter) {
+    return '';
+  }
+  
+  // Inject git data into frontmatter BEFORE rendering
+  pageContext.frontmatter._git = gitInfo;
+  
+  return '';
+}
+
+/**
  * Generate scripts to inject git UI components.
- * Returns empty if not in a git repo (graceful degradation).
  */
 export function generateScripts(config: any, options?: any): { headScriptsHtml: string; bodyScriptsHtml: string } {
-  // Graceful degradation: if not in a git repo, don't inject anything
-  if (!isGitAvailable() || !_isGitRepo) {
-    return { headScriptsHtml: '', bodyScriptsHtml: '' };
-  }
-
+  // Check if we have git data available from the page rendering
+  // The onPageReady hook injects _git into frontmatter, which is accessible via config._pageGit
+  const gitData = (config as any)._pageGit || null;
+  
   const gitConfig = {
     repo: options?.repo || config.editLink?.baseUrl || null,
     branch: options?.branch || 'main',
     editLink: options?.editLink !== false && !!(options?.repo || config.editLink?.baseUrl),
     lastUpdated: options?.lastUpdated !== false,
     commitHistory: options?.commitHistory !== false,
-    maxCommits: options?.maxCommits || 6
+    maxCommits: options?.maxCommits || 6,
+    hasGitData: !!gitData
   };
 
   const localeId = config._activeLocale?.id || 'en';
@@ -265,20 +305,16 @@ export function generateScripts(config: any, options?: any): { headScriptsHtml: 
 
   return {
     headScriptsHtml: '',
-    bodyScriptsHtml: `<script>window.__git_config=${JSON.stringify(gitConfig)};window.__git_i18n=${i18nStrings}</script>`
+    bodyScriptsHtml: `<script>window.__git_config=${JSON.stringify(gitConfig)};window.__git_page_data=${JSON.stringify(gitData)};window.__git_i18n=${i18nStrings}</script>`
   };
 }
 
 /**
  * Provide client-side assets.
- * Returns empty array if not in a git repo (graceful degradation).
+ * Always returns assets - client-side JS handles graceful degradation.
  */
 export function getAssets(_options?: any): any[] {
-  // Graceful degradation: if not in a git repo, don't inject assets
-  if (!_isGitRepo) {
-    return [];
-  }
-
+  // Always include assets - client-side JS handles visibility based on git status
   const distDir = path.resolve(__dirname, '..', 'dist', 'client');
   return [
     {

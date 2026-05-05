@@ -50,6 +50,8 @@
     </title>
     <%- faviconLinkHtml || '' %>
     <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-main.css?v=<%= buildHash %>">
+    <%# Git Plugin core CSS (injected directly since git is a core plugin) %>
+    <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-git.css?v=<%= buildHash %>">
     <% if (config.theme?.codeHighlight !==false) { const isDarkDefault=appearance==='dark' ; %>
     <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-light.css?v=<%= buildHash %>" id="hljs-light" <%=isDarkDefault ? 'disabled' : '' %>>
     <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-dark.css?v=<%= buildHash %>" id="hljs-dark" <%=isDarkDefault ? '' : 'disabled' %>>
@@ -223,6 +225,38 @@
               </div>
             </div>
             <div class="page-footer-actions">
+              <%# Git Plugin: Last updated timestamp (core plugin, always inject) %>
+              <% if (locals.frontmatter && locals.frontmatter._git && locals.frontmatter._git.lastUpdatedTimestamp) { %>
+                <span class="git-last-updated" data-timestamp="<%= locals.frontmatter._git.lastUpdatedTimestamp %>">
+                  <svg class="git-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <span class="git-label"><%= typeof t === 'function' ? t('lastUpdated') : 'Last updated' %>:</span>
+                  <span class="git-time" data-timestamp="<%= locals.frontmatter._git.lastUpdatedTimestamp %>"></span>
+                  <% if (locals.frontmatter._git.commits && locals.frontmatter._git.commits.length > 0) { %>
+                  <div class="git-commit-tooltip" role="tooltip">
+                    <div class="git-tooltip-title"><%= typeof t === 'function' ? t('recentCommits') : 'Recent commits' %></div>
+                    <ul class="git-commit-list">
+                      <% locals.frontmatter._git.commits.slice(0, 6).forEach(function(commit) { %>
+                        <li class="git-commit-item">
+                          <div class="git-commit-avatar" title="<%= commit.author %>"><%= commit.author.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() %></div>
+                          <div class="git-commit-details">
+                            <div class="git-commit-message" title="<%= commit.message %>"><%= commit.message.length > 40 ? commit.message.substring(0, 37) + '...' : commit.message %></div>
+                            <div class="git-commit-meta">
+                              <span class="git-commit-author"><%= commit.author %></span>
+                              <span class="git-commit-date" data-timestamp="<%= commit.timestamp %>"></span>
+                            </div>
+                          </div>
+                        </li>
+                      <% }); %>
+                    </ul>
+                  </div>
+                  <% } %>
+                </span>
+              <% } %>
+              <span class="git-spacer"></span>
+              <%# Edit link (either from config.editLink or git plugin) %>
               <% if (locals.editUrl) { %>
                 <a href="<%= editUrl %>" target="_blank" rel="noopener noreferrer" class="edit-link">
                   <%- renderIcon('pencil') %>
@@ -239,6 +273,8 @@
       <script src="<%= relativePathToRoot %>assets/js/docmd-i18n-manifest.js?v=<%= buildHash %>"></script>
       <% } %>
       <script src="<%= relativePathToRoot %>assets/js/docmd-main.js?v=<%= buildHash %>"></script>
+      <%# Git Plugin core JS (injected directly since git is a core plugin) %>
+      <script src="<%= relativePathToRoot %>assets/js/docmd-git.js?v=<%= buildHash %>"></script>
       <%- pluginBodyScriptsHtml || '' %>
       <% (customJsFiles || []).forEach(jsFile=> {
         if (jsFile && jsFile.trim() !== '') { %>
