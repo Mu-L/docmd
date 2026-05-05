@@ -10,11 +10,6 @@
   },
   "files": [
     "dist",
-    "i18n",
-    "src/client"
-  ],
-  "files": [
-    "dist",
     "i18n"
   ],
   "exports": {
