@@ -2,7 +2,7 @@
  * --------------------------------------------------------------------
  * docmd : the zero-config documentation engine.
  *
- * @package     @docmd/plugin-git (styles)
+ * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
@@ -46,7 +46,7 @@
   background: var(--bg-color);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg, 0.5rem);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
   padding: 0.75rem;
   z-index: 100;
   opacity: 0;
@@ -85,7 +85,7 @@
   position: absolute;
   top: 100%;
   left: 1.5rem;
-  border: 6px solid transparent;
+  border: 10px solid transparent;
   border-top-color: var(--border-color);
   pointer-events: none;
 }
