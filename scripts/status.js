@@ -87,7 +87,7 @@ if (TYPE === 'start:reset') {
 } else if (TYPE === 'start:verify') {
     TUI.section('Failsafe Verification', C.blue);
 } else if (TYPE === 'verify') {
-    TUI.footer(C.blue);
+    //TUI.footer(C.blue);
     TUI.alert('docmd is production-ready.');
 } else if (TYPE === 'error') {
     TUI.error(process.argv[3], process.argv[4]);

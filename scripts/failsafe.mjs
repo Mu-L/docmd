@@ -99,6 +99,7 @@ function runCmd(cmd, cwd, silent = true) {
     const tempRoot = path.join(os.tmpdir(), `docmd-failsafe-${Math.random().toString(36).slice(2, 8)}`);
     console.log(`\x1b[34m│\x1b[0m  \x1b[2mWorkspace: ${tempRoot}\x1b[0m\n\x1b[34m│\x1b[0m`);
     nativeFs.mkdirSync(tempRoot);
+    console.log(`\x1b[34m└────────────────────────────\x1b[0m`);
 
     if (!skipSetup) {
         TUI.section('Monorepo Foundations');
@@ -413,9 +414,9 @@ All available API endpoints.`);
     // ═════════════════════════════════════════════════════════════
     
     if (TUI.success) {
-        TUI.success('Docmd Universal Failsafe V4.0 Passed!');
+        TUI.success('Universal Failsafe V4.0 Passed!');
     } else {
-        console.log(`\n\x1b[32m\x1b[1m⬢ Docmd Universal Failsafe V4.0 Passed!\x1b[0m\n`);
+        console.log(`\n\x1b[32m\x1b[1m⬢ Universal Failsafe V4.0 Passed!\x1b[0m\n`);
     }
 
     // Clean up

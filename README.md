@@ -213,6 +213,7 @@ Plugins are only needed when you want to extend functionality.
 | `analytics` | ✓        | Lightweight analytics integration                  |
 | `llms`      | ✓        | AI context generation (`llms.txt`)                 |
 | `mermaid`   | ✓        | Mermaid diagrams in Markdown                       |
+| `git`       | ✓        | Git commit history logger
 | `pwa`       | Optional | Progressive Web App support for offline navigation |
 | `threads`   | Optional | Inline discussion threads *(by @svallory)*         |
 | `math`      | Optional | KaTeX/LaTeX math rendering                         |
