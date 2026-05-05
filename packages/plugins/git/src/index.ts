@@ -235,26 +235,12 @@ export function onBeforeParse({ config }: any): void {
 }
 
 /**
- * Page ready hook: Inject git data into page context.
+ * Page ready hook: no-op for git plugin.
+ * Data is injected via generateMetaTags (runs before template render).
+ * This hook is kept for API completeness and future post-render use.
  */
-export async function onPageReady({ html, sourcePath, frontmatter, config }: any): Promise<void> {
-  // Skip if git plugin is disabled for this page
-  if (frontmatter?.plugins?.git === false) {
-    return;
-  }
-
-  // Skip if not in a git repo (graceful degradation)
-  if (!checkGitRepo(path.dirname(sourcePath))) {
-    return;
-  }
-
-  const gitInfo = getGitFileInfo(sourcePath);
-  if (gitInfo) {
-    // Store git info in frontmatter for template access
-    frontmatter._git = gitInfo;
-    // Also store in config so generateScripts can access it
-    config._pageGit = gitInfo;
-  }
+export async function onPageReady(_ctx: any): Promise<void> {
+  // intentionally empty - git data injected in generateMetaTags
 }
 
 /**
@@ -283,21 +269,16 @@ export function generateMetaTags(config: any, pageContext: any, _relativePathToR
 }
 
 /**
- * Generate scripts to inject git UI components.
+ * Generate scripts to inject git i18n strings for the client widget.
  */
 export function generateScripts(config: any, options?: any): { headScriptsHtml: string; bodyScriptsHtml: string } {
-  // Check if we have git data available from the page rendering
-  // The onPageReady hook injects _git into frontmatter, which is accessible via config._pageGit
-  const gitData = (config as any)._pageGit || null;
-  
   const gitConfig = {
     repo: options?.repo || config.editLink?.baseUrl || null,
     branch: options?.branch || 'main',
     editLink: options?.editLink !== false && !!(options?.repo || config.editLink?.baseUrl),
     lastUpdated: options?.lastUpdated !== false,
     commitHistory: options?.commitHistory !== false,
-    maxCommits: options?.maxCommits || 6,
-    hasGitData: !!gitData
+    maxCommits: options?.maxCommits || 6
   };
 
   const localeId = config._activeLocale?.id || 'en';
@@ -305,7 +286,7 @@ export function generateScripts(config: any, options?: any): { headScriptsHtml: 
 
   return {
     headScriptsHtml: '',
-    bodyScriptsHtml: `<script>window.__git_config=${JSON.stringify(gitConfig)};window.__git_page_data=${JSON.stringify(gitData)};window.__git_i18n=${i18nStrings}</script>`
+    bodyScriptsHtml: `<script>window.__git_config=${JSON.stringify(gitConfig)};window.__git_i18n=${i18nStrings}</script>`
   };
 }
 
