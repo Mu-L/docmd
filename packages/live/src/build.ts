@@ -41,7 +41,8 @@ const SOURCE_ASSETS_DIR = (async () => {
 })();
 
 async function build(outputPath?: string) {
-    TUI.info('Building Live Editor...');
+    const elapsed = TUI.timer();
+    const sp = TUI.spinner('Building Live Editor');
 
     const finalOutputDir = outputPath ? path.join(outputPath, 'dist') : PUBLIC_DIR;
 
@@ -172,8 +173,9 @@ async function build(outputPath?: string) {
         }
 
         const relPath = path.relative(process.cwd(), finalOutputDir);
-        TUI.success(`Live Editor built in ./${relPath}`);
+        sp.done(`Live Editor built in ./${relPath} (${elapsed()})`);
     } catch (e) {
+        sp.fail('Live build failed');
         TUI.error('Live build failed', e.message);
         process.exit(1);
     }

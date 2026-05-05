@@ -29,6 +29,8 @@ export async function buildSite(configPath: string, opts: any = {}) {
     isDev: opts.isDev || false,
     offline: opts.offline || false,
     quiet: opts.quiet || false,
+    showStats: opts.showStats || false,   // Show version/locale stats even when quiet
+    onProgress: opts.onProgress || null,  // External progress callback
   };
 
   const CWD = process.cwd();
@@ -45,6 +47,9 @@ export async function buildSite(configPath: string, opts: any = {}) {
     }
   }
 
+  // Start build timer
+  const elapsed = TUI.timer();
+
   // 1. Load Config (Zero-Config aware)
   try {
     const config = await loadConfig(configPath, { isDev: options.isDev });
@@ -60,6 +65,25 @@ export async function buildSite(configPath: string, opts: any = {}) {
     // Use V3 labels (config.out / config.src) which are normalized by config-schema
     const rootOutputDir = path.resolve(CWD, config.out);
     await fs.ensureDir(rootOutputDir);
+
+    // ── TUI: Build section header ──────────────────────────
+    if (!options.quiet) {
+      TUI.section('Build');
+      TUI.item('Source', config.src + '/', TUI.dim, TUI.cyan);
+      TUI.item('Output', path.relative(CWD, rootOutputDir) + '/', TUI.dim, TUI.cyan);
+    }
+
+    // Show stats (versions/locales) when not quiet OR when explicitly requested
+    if (!options.quiet || options.showStats) {
+      if (config.versions?.all?.length > 0) {
+        const vLabels = config.versions.all.map((v: any) => v.id).join(', ');
+        TUI.item('Versions', `${config.versions.all.length} (${vLabels})`, TUI.dim, TUI.cyan);
+      }
+      if (config.i18n?.locales?.length > 0) {
+        const lLabels = config.i18n.locales.map((l: any) => l.id).join(', ');
+        TUI.item('Locales', `${config.i18n.locales.length} (${lLabels})`, TUI.dim, TUI.cyan);
+      }
+    }
 
     // Helper: Build Assets for a specific output directory
     const buildAssetsForDir = async (targetOutDir: string) => {
@@ -83,16 +107,33 @@ export async function buildSite(configPath: string, opts: any = {}) {
     // Build assets ONCE for the root site
     await buildAssetsForDir(rootOutputDir);
 
-    // --- BUILD ALL LOCALES + VERSIONS ---
-    // i18n.buildLocales handles the outer locale loop, inner version loop,
-    // ghost version filtering, and standard (non-versioned) builds.
+    // Build a cumulative progress tracker across all locale/version passes.
+    // Each renderPages call reports its own (current, total).
+    // We accumulate so the bar shows 0 → grandTotal across ALL passes.
+    let accumulatedPages = 0;
+    let lastPassTotal = 0;
+
+    const baseCallback = options.onProgress || (!options.quiet ? (current: number, total: number) => {
+      TUI.progress('Processing pages', current, total);
+    } : undefined);
+
+    const cumulativeProgress = baseCallback ? (current: number, total: number) => {
+      // Detect a new renderPages pass: total changed means new batch of files
+      if (total !== lastPassTotal) {
+        accumulatedPages += lastPassTotal;
+        lastPassTotal = total;
+      }
+      baseCallback(accumulatedPages + current, accumulatedPages + total);
+    } : undefined;
+
     const allGeneratedPages = await buildLocales({
       config,
       rootOutputDir,
       hooks,
       buildHash,
       options,
-      CWD
+      CWD,
+      onProgress: cumulativeProgress
     });
 
     // --- i18n ROOT REDIRECT ---
@@ -192,7 +233,10 @@ export async function buildSite(configPath: string, opts: any = {}) {
     }
 
     // --- 5. Post Build Hooks (Search, Sitemap, LLMs) ---
-    if (!options.quiet) TUI.section('Post-Build Tasks', TUI.blue);
+    if (!options.quiet) {
+      TUI.footer(TUI.cyan);
+      TUI.section('Post-Build Tasks', TUI.blue);
+    }
     await Promise.all(hooks.onPostBuild.map(fn => fn({
       config,
       pages: allGeneratedPages,
@@ -200,9 +244,9 @@ export async function buildSite(configPath: string, opts: any = {}) {
       log: (msg: string) => !options.quiet && TUI.step(msg, 'DONE', TUI.blue)
     })));
 
-    if (!options.isDev) {
+    if (!options.isDev && !options.quiet) {
       TUI.footer(TUI.blue);
-      TUI.success(`Build complete. Generated ${allGeneratedPages.length} pages.`);
+      TUI.success(`Build complete. Generated ${allGeneratedPages.length} pages in ${elapsed()}.`);
     }
 
   } catch (e: any) {

@@ -104,9 +104,12 @@ async function start() {
 
   // 3. Start Listening
   server.listen(port, '0.0.0.0', () => {
-    TUI.success(`Launching Live Editor at http://localhost:${port}`);
-    TUI.info(`Serving from: ${publicDir}`);
-    TUI.info('(Press Ctrl+C to stop)');
+    TUI.section('Live Editor Running', TUI.green);
+    TUI.item('', '', TUI.dim, TUI.green);
+    TUI.item('Local Access', `http://localhost:${port}`, TUI.bold, TUI.green);
+    TUI.item('Serving from', path.relative(process.cwd(), publicDir) || '.', TUI.dim, TUI.green);
+    TUI.item('', '', TUI.dim, TUI.green);
+    TUI.footer(TUI.green);
   });
 
   server.on('error', (err: any) => {
@@ -114,11 +117,27 @@ async function start() {
     process.exit(1);
   });
 
+  // Graceful shutdown - suppress ^C display
+  if (process.stdin.isTTY) {
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    process.stdin.on('data', (data) => {
+      if (data[0] === 0x03) {
+        process.emit('SIGINT' as any);
+      }
+    });
+  }
+
+  let isShuttingDown = false;
   process.on('SIGINT', () => {
-    console.log('\n');
-    TUI.warn('Shutting down Live Editor...\n');
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
+    if (process.stdin.isTTY) process.stdin.setRawMode(false);
+
+    TUI.success('Shutting down Live Editor...');
     server.close();
-    process.exit();
+    process.exit(0);
   });
 }
 

@@ -91,20 +91,24 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
     }
   }
 
-  // Initial Build
-  TUI.info('Performing initial build...');
+  // ── Initial Build ────────────────────────────────────
+  const initialElapsed = TUI.timer();
+  const sp = TUI.spinner('Performing initial build');
+
   try {
-    await buildSite(configPathOption, { isDev: true, preserve: options.preserve });
+    await buildSite(configPathOption, { isDev: true, preserve: options.preserve, quiet: true });
+    sp.done(`Initial build complete in ${initialElapsed()}`);
   } catch (error) {
+    sp.fail('Initial build failed');
     TUI.error('Initial build failed', error.message);
   }
 
-  // Watcher Setup
+  // ── Watcher Setup ────────────────────────────────────
   const userAssetsDirExists = await fs.pathExists(paths.userAssetsDir);
   const configWatchPath = paths.configFileToWatch;
   const hasConfigFile = await fs.pathExists(configWatchPath);
 
-  TUI.info('Watching for changes:');
+  TUI.section('Watching', TUI.blue);
   TUI.item('Source', formatPathForDisplay(paths.srcDirToWatch, CWD), TUI.dim, TUI.blue);
   if (hasConfigFile) {
     TUI.item('Config', formatPathForDisplay(configWatchPath, CWD), TUI.dim, TUI.blue);
@@ -112,7 +116,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
   if (userAssetsDirExists) {
     TUI.item('Assets', formatPathForDisplay(paths.userAssetsDir, CWD), TUI.dim, TUI.blue);
   }
-  TUI.divider('Watchers');
+  TUI.footer(TUI.blue);
 
   const watchers: nativeFs.FSWatcher[] = [];
   let isRebuilding = false;
@@ -156,7 +160,8 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
           const executeBuildFn = async () => {
             if (isRebuilding) { rebuildQueued = true; return; }
             
-            TUI.step(`Rebuilding: ${relativeFilePath}`, 'WAIT');
+            const rebuildElapsed = TUI.timer();
+            const sp = TUI.spinner(`Rebuilding: ${relativeFilePath}`, TUI.blue);
             isRebuilding = true;
             rebuildQueued = false;
             try {
@@ -165,10 +170,10 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
                 preserve: options.preserve,
                 quiet: true 
               });
-              TUI.step(`Rebuilding: ${relativeFilePath}`, 'DONE');
+              sp.done(`Rebuilt: ${relativeFilePath} in ${rebuildElapsed()}`);
               broadcastReload();
             } catch (error: any) {
-              TUI.step(`Rebuilding: ${relativeFilePath}`, 'FAIL');
+              sp.fail(`Rebuild: ${relativeFilePath}`);
               TUI.error('Rebuild failed', error.message);
             } finally {
               isRebuilding = false;
@@ -194,7 +199,8 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
 
         setTimeout(async () => {
           const configName = path.basename(configWatchPath);
-          TUI.step(`Reloading config: ${configName}`, 'WAIT');
+          const configElapsed = TUI.timer();
+          TUI.step(`Reloading config: ${configName}`, 'WAIT', TUI.blue);
           try {
             // Tear down all watchers (including this config watcher)
             watchers.forEach(w => w.close());
@@ -215,7 +221,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
               quiet: true 
             });
 
-            TUI.step(`Reloading config: ${configName}`, 'DONE');
+            TUI.step(`Config reloaded and rebuilt in ${configElapsed()}`, 'DONE', TUI.blue);
 
             // Re-setup all watchers
             setupContentWatchers();
@@ -223,6 +229,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
 
             broadcastReload();
           } catch (error: any) {
+            TUI.step(`Config reload: ${configName}`, 'FAIL', TUI.blue);
             TUI.error('Config reload failed', error.message);
             // Recover
             setupContentWatchers();
@@ -341,7 +348,6 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
 
     if (process.stdin.isTTY) process.stdin.setRawMode(false);
 
-    console.log('');
     TUI.success('Shutting down...');
 
     // Force exit after a shorter timeout if graceful shutdown hangs
