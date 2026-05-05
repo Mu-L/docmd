@@ -24,7 +24,30 @@ import * as parser from '@docmd/parser';
 import { findPageNeighbors, findBreadcrumbs, normalizeNavPaths, createUrlContext, buildContextualUrl, computePageUrls, buildAbsoluteUrl, sanitizeUrl } from '@docmd/parser';
 import * as ui from '@docmd/ui';
 
-export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, hooks, buildHash, options, outputPrefix = '' }: any) {
+/* ── Constants ────────────────────────────────────────────────── */
+
+/** Number of pages to process concurrently in each batch. */
+const BATCH_SIZE = 64;
+
+/** Number of pages to write to disk concurrently. */
+const WRITE_BATCH_SIZE = 128;
+
+/* ── Types ────────────────────────────────────────────────────── */
+
+interface RenderPagesOptions {
+  config: any;
+  srcDir: string;
+  fallbackSrcDir: string | null;
+  outputDir: string;
+  hooks: any;
+  buildHash: string;
+  options: any;
+  outputPrefix?: string;
+  /** Progress callback: (current, total) called after each batch completes. */
+  onProgress?: (current: number, total: number) => void;
+}
+
+export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, hooks, buildHash, options, outputPrefix = '', onProgress }: RenderPagesOptions) {
   // Load Translations for the active locale
   const localeId = config._activeLocale?.id || null;
   const pluginTranslations = hooks.translations
@@ -136,12 +159,26 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
   // This prevents locale subdirs inside old version dirs from being rendered as regular pages
   const localeIds = new Set((config._allLocales || []).map((l: any) => l.id));
 
-  const pages = [];
+  // ── Phase 2A: Parallel file reading + content processing ──────
+  //
+  // Instead of sequential read→parse→render per file, we batch the work:
+  //   1. Read files in parallel (I/O bound — benefits from concurrency)
+  //   2. Parse + render markdown (CPU bound — still sequential per-file but batched)
+  //   3. Collect all pages, then render HTML templates + write in parallel
+
+  interface PageEntry {
+    relativePath: string;
+    targetFilePath: string;
+    isFallback: boolean;
+  }
+
+  // Build the file manifest (fast — just path resolution, no I/O)
+  const fileManifest: PageEntry[] = [];
+
   for (const filePath of mdFiles) {
     const relativePath = path.relative(scanDir, filePath);
 
     // Skip files inside locale subdirectories when scanning a non-locale dir
-    // e.g., docs-v1/hi/index.md should not be rendered during the main EN pass
     if (localeIds.size > 0 && !fallbackSrcDir) {
       const topDir = relativePath.split(path.sep)[0];
       if (localeIds.has(topDir)) continue;
@@ -160,117 +197,63 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       }
     }
 
-    let rawContent = await nativeFs.promises.readFile(targetFilePath, 'utf8');
-
-    // Prepend a warning callout when falling back to default language
-    if (isFallback) {
-        const defaultLabel = config._allLocales?.find((l: any) => l.id === config._defaultLocale)?.label || config._defaultLocale;
-        const activeLabel = config._activeLocale.label;
-        const fallbackMsg = t('fallbackMessage', { active: activeLabel, default: defaultLabel });
-        const callout = `\n::: callout warning\n${fallbackMsg}\n:::\n\n`;
-        // Insert after frontmatter if present, otherwise prepend
-        const fmEnd = rawContent.indexOf('\n---', 1);
-        if (rawContent.startsWith('---') && fmEnd > 0) {
-            const afterFm = fmEnd + 4; // skip \n---
-            rawContent = rawContent.slice(0, afterFm) + '\n' + callout + rawContent.slice(afterFm);
-        } else {
-            rawContent = callout + rawContent;
-        }
-    }
-
-    const filename = path.basename(relativePath).toLowerCase();
-    const ext = path.extname(filename);
-    const isIndex = filename.startsWith('index.');
-    const isReadme = filename === 'readme.md';
-
-    // Pre-render .ejs content files through lite-template before passing to markdown
-    // 1. Extract frontmatter first so variables like `depth` are available to the template
-    // 2. Render the EJS body with frontmatter data + helpers
-    // 3. Re-prepend frontmatter so processContent can parse it normally
-    if (ext === '.ejs') {
-      try {
-        // Inline frontmatter extraction (avoids dependency on lite-matter in core)
-        const fmRegex = /^(?:---[\r\n]+)([\s\S]*?)(?:[\r\n]+---(?:[\r\n]+|$))/;
-        const fmMatch = rawContent.match(fmRegex);
-        let ejsBody = rawContent;
-        const fmData: Record<string, any> = {};
-        let fmRaw = '';
-
-        if (fmMatch) {
-          fmRaw = fmMatch[0];
-          ejsBody = rawContent.slice(fmRaw.length);
-          // Parse simple YAML key-values for template variables
-          const yamlStr = fmMatch[1];
-          for (const line of yamlStr.split('\n')) {
-            const kv = line.match(/^(\w+)\s*:\s*(.+)$/);
-            if (kv) {
-              let val: any = kv[2].trim();
-              // Attempt to parse numbers and booleans
-              if (/^\d+$/.test(val)) val = parseInt(val, 10);
-              else if (val === 'true') val = true;
-              else if (val === 'false') val = false;
-              else val = val.replace(/^["']|["']$/g, ''); // strip quotes
-              fmData[kv[1]] = val;
-            }
-          }
-        }
-
-        // Render the EJS body with frontmatter data + core helpers (include, renderIcon)
-        const renderedBody = await parser.renderTemplateAsync(ejsBody, {
-          ...fmData
-        }, { filename: filePath });
-
-        // Re-prepend original frontmatter for processContent
-        if (fmRaw) {
-          rawContent = fmRaw + '\n' + renderedBody;
-        } else {
-          rawContent = renderedBody;
-        }
-      } catch (e) {
-        console.warn(`[docmd] Skipping EJS render error in ${relativePath}: ${e.message}`);
-        continue;
-      }
-    }
-
-    // Treat README.md as index only if no index.md exists in the same folder
-    const hasIndexInFolder = mdFiles.some(f => {
-      const b = path.basename(f).toLowerCase();
-      return b.startsWith('index.') && path.dirname(f) === path.dirname(filePath);
-    });
-
-    // Check if the auto-router designated this file as a folder-level index
-    // This handles zero-config's "first file becomes index" when no index.md exists
-    const relWithoutExt = relativePath.replace(/\.(md|markdown|ejs)$/i, '').replace(/\\/g, '/');
-    const isNavDesignatedIndex = navDesignatedIndexFiles.has(relWithoutExt);
-
-    const effectivelyIndex = isIndex || (isReadme && !hasIndexInFolder) || (isNavDesignatedIndex && !hasIndexInFolder);
-
-    const processed = await parser.processContentAsync(rawContent, mdProcessor, config, { isIndex: effectivelyIndex }, hooks);
-    if (!processed) continue;
-
-    // Determine output path - .ejs files map like .md files
-    const withoutExt = relativePath.replace(/\.(md|markdown|ejs)$/, '');
-    const htmlOutputPath = effectivelyIndex
-      ? path.posix.join(outputPrefix, path.dirname(relativePath), 'index.html').replace(/^\/?/, '')
-      : path.posix.join(outputPrefix, withoutExt, 'index.html').replace(/^\/?/, '');
-    pages.push({ ...processed, sourcePath: targetFilePath, outputPath: htmlOutputPath });
+    fileManifest.push({ relativePath, targetFilePath, isFallback });
   }
 
   // Scan for locale-exclusive pages (exist only in the locale dir, not in fallback)
   if (fallbackSrcDir && nativeFs.existsSync(srcDir)) {
     const localeFiles = await findFilesRecursive(srcDir, ['.md', '.markdown', '.ejs']);
     const fallbackRelPaths = new Set(mdFiles.map(f => path.relative(scanDir, f)));
-    
+
     for (const filePath of localeFiles) {
       const relativePath = path.relative(srcDir, filePath);
-      if (fallbackRelPaths.has(relativePath)) continue; // Already handled above
+      if (fallbackRelPaths.has(relativePath)) continue;
+      fileManifest.push({ relativePath, targetFilePath: filePath, isFallback: false });
+    }
+  }
 
-      let rawContent = await nativeFs.promises.readFile(filePath, 'utf8');
+  // Total page count for progress reporting
+  const totalFiles = fileManifest.length;
+  let processedCount = 0;
+
+  // ── Process files in batches ──────────────────────────────────
+  const pages: any[] = [];
+
+  for (let batchStart = 0; batchStart < fileManifest.length; batchStart += BATCH_SIZE) {
+    const batch = fileManifest.slice(batchStart, batchStart + BATCH_SIZE);
+
+    // 1. Read all files in this batch concurrently
+    const fileContents = await Promise.all(
+      batch.map(entry => nativeFs.promises.readFile(entry.targetFilePath, 'utf8'))
+    );
+
+    // 2. Process each file in the batch
+    for (let j = 0; j < batch.length; j++) {
+      const { relativePath, targetFilePath, isFallback } = batch[j];
+      let rawContent = fileContents[j];
+
+      // Prepend a warning callout when falling back to default language
+      if (isFallback) {
+          const defaultLabel = config._allLocales?.find((l: any) => l.id === config._defaultLocale)?.label || config._defaultLocale;
+          const activeLabel = config._activeLocale.label;
+          const fallbackMsg = t('fallbackMessage', { active: activeLabel, default: defaultLabel });
+          const callout = `\n::: callout warning\n${fallbackMsg}\n:::\n\n`;
+          // Insert after frontmatter if present, otherwise prepend
+          const fmEnd = rawContent.indexOf('\n---', 1);
+          if (rawContent.startsWith('---') && fmEnd > 0) {
+              const afterFm = fmEnd + 4; // skip \n---
+              rawContent = rawContent.slice(0, afterFm) + '\n' + callout + rawContent.slice(afterFm);
+          } else {
+              rawContent = callout + rawContent;
+          }
+      }
+
       const filename = path.basename(relativePath).toLowerCase();
       const ext = path.extname(filename);
       const isIndex = filename.startsWith('index.');
       const isReadme = filename === 'readme.md';
 
+      // Pre-render .ejs content files through lite-template before passing to markdown
       if (ext === '.ejs') {
         try {
           const fmRegex = /^(?:---[\r\n]+)([\s\S]*?)(?:[\r\n]+---(?:[\r\n]+|$))/;
@@ -278,6 +261,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
           let ejsBody = rawContent;
           const fmData: Record<string, any> = {};
           let fmRaw = '';
+
           if (fmMatch) {
             fmRaw = fmMatch[0];
             ejsBody = rawContent.slice(fmRaw.length);
@@ -294,32 +278,52 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
               }
             }
           }
-          const renderedBody = await parser.renderTemplateAsync(ejsBody, { ...fmData }, { filename: filePath });
-          rawContent = fmRaw ? fmRaw + '\n' + renderedBody : renderedBody;
+
+          const renderedBody = await parser.renderTemplateAsync(ejsBody, {
+            ...fmData
+          }, { filename: targetFilePath });
+
+          if (fmRaw) {
+            rawContent = fmRaw + '\n' + renderedBody;
+          } else {
+            rawContent = renderedBody;
+          }
         } catch (e) {
           console.warn(`[docmd] Skipping EJS render error in ${relativePath}: ${e.message}`);
           continue;
         }
       }
 
-      const hasIndexInFolder = localeFiles.some(f => {
-        const b = path.basename(f).toLowerCase();
-        return b.startsWith('index.') && path.dirname(f) === path.dirname(filePath);
+      // Treat README.md as index only if no index.md exists in the same folder
+      const hasIndexInFolder = fileManifest.some(entry => {
+        const b = path.basename(entry.targetFilePath).toLowerCase();
+        return b.startsWith('index.') && path.dirname(entry.targetFilePath) === path.dirname(targetFilePath);
       });
 
-      const effectivelyIndex = isIndex || (isReadme && !hasIndexInFolder);
+      // Check if the auto-router designated this file as a folder-level index
+      const relWithoutExt = relativePath.replace(/\.(md|markdown|ejs)$/i, '').replace(/\\/g, '/');
+      const isNavDesignatedIndex = navDesignatedIndexFiles.has(relWithoutExt);
+      const effectivelyIndex = isIndex || (isReadme && !hasIndexInFolder) || (isNavDesignatedIndex && !hasIndexInFolder);
+
       const processed = await parser.processContentAsync(rawContent, mdProcessor, config, { isIndex: effectivelyIndex }, hooks);
       if (!processed) continue;
 
+      // Determine output path
       const withoutExt = relativePath.replace(/\.(md|markdown|ejs)$/, '');
       const htmlOutputPath = effectivelyIndex
         ? path.posix.join(outputPrefix, path.dirname(relativePath), 'index.html').replace(/^\/?/, '')
         : path.posix.join(outputPrefix, withoutExt, 'index.html').replace(/^\/?/, '');
-      pages.push({ ...processed, sourcePath: filePath, outputPath: htmlOutputPath });
+      pages.push({ ...processed, sourcePath: targetFilePath, outputPath: htmlOutputPath });
     }
+
+    // Report progress after each batch
+    processedCount += batch.length;
+    if (onProgress) onProgress(processedCount, totalFiles);
   }
 
-  // --- 3. Render HTML ---
+  // --- 3. Render HTML (parallel template rendering + batched writes) ---
+  const writeQueue: { finalPath: string; html: string }[] = [];
+
   for (const page of pages) {
     const finalPath = path.join(outputDir, page.outputPath);
     const fileDir = path.dirname(page.outputPath);
@@ -344,7 +348,6 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
     const breadcrumbs = config.layout?.breadcrumbs !== false ? findBreadcrumbs(config.navigation, navPath) : [];
 
     // ── Centralized URL Context ──
-    // Created once per page, consumed by ALL templates and helpers.
     const urlContext = createUrlContext({
       relativePathToRoot,
       outputPrefix,
@@ -356,8 +359,6 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
     // Pre-compute page URLs for plugin consumption
     const pageUrls = computePageUrls(page.outputPath, config.url || '');
 
-    // Single URL builder - delegates to the centralized engine.
-    // Passed to EJS templates as `buildRelativeUrl`.
     const buildRelativeUrl = (href: string) => buildContextualUrl(href, urlContext);
 
     // Fix Neighbor Links
@@ -385,7 +386,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       bodyInjections.join('\n')
     ].join('\n');
 
-    // Source file path relative to srcDir - used by plugins (e.g. threads) to identify the file
+    // Source file path relative to srcDir
     const sourceRelative = path.relative(process.cwd(), page.sourcePath).replace(/\\/g, '/');
 
     let editUrl = null;
@@ -393,7 +394,6 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
 
     if (config.editLink && config.editLink.enabled && config.editLink.baseUrl) {
       const cleanBase = config.editLink.baseUrl.replace(/\/$/, '');
-      // For locale-aware edits, resolve relative to the actual file that was used
       const editRelative = path.relative(path.resolve(process.cwd(), config.src || '.'), page.sourcePath).replace(/\\/g, '/');
       editUrl = `${cleanBase}/${editRelative}`;
     }
@@ -495,11 +495,23 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
 
     fullHtml = pageObj.html;
 
-    await fs.ensureDir(path.dirname(finalPath));
-    await nativeFs.promises.writeFile(finalPath, fullHtml);
+    // Queue the write instead of writing immediately
+    writeQueue.push({ finalPath, html: fullHtml });
 
     // Attach pre-computed URLs to the page for post-build plugin consumption
     (page as any).urls = pageUrls;
+  }
+
+  // --- 4. Parallel file writes ───────────────────────────────────
+  // Write all rendered HTML files in batches for maximum I/O throughput
+  for (let i = 0; i < writeQueue.length; i += WRITE_BATCH_SIZE) {
+    const writeBatch = writeQueue.slice(i, i + WRITE_BATCH_SIZE);
+    await Promise.all(
+      writeBatch.map(async ({ finalPath, html }) => {
+        await fs.ensureDir(path.dirname(finalPath));
+        await nativeFs.promises.writeFile(finalPath, html);
+      })
+    );
   }
 
   return pages;

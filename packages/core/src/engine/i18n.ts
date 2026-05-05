@@ -90,7 +90,8 @@ export async function buildLocales({
   hooks,
   buildHash,
   options,
-  CWD
+  CWD,
+  onProgress
 }: {
   config: any;
   rootOutputDir: string;
@@ -98,6 +99,7 @@ export async function buildLocales({
   buildHash: string;
   options: any;
   CWD: string;
+  onProgress?: (current: number, total: number) => void;
 }): Promise<any[]> {
   const allGeneratedPages = [];
 
@@ -203,7 +205,8 @@ export async function buildLocales({
         buildHash,
         options,
         CWD,
-        pathPrefix
+        pathPrefix,
+        onProgress
       });
       allGeneratedPages.push(...pages);
       if (isStringMode && isDefault) defaultPassPages = pages;
@@ -232,7 +235,8 @@ export async function buildLocales({
         hooks, 
         buildHash, 
         options,
-        outputPrefix: pathPrefix
+        outputPrefix: pathPrefix,
+        onProgress
       });
       allGeneratedPages.push(...pages);
       if (isStringMode && (isDefault || !localeId)) defaultPassPages = pages;
