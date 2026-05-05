@@ -20,10 +20,8 @@
   color: var(--text-light);
   font-size: 0.875rem;
   position: relative;
-  /* Extend hover area downward to bridge the gap to the tooltip,
-     preventing mouseout firing when cursor travels from text to tooltip */
-  padding-bottom: 0.75rem;
-  margin-bottom: -0.75rem;
+  /* Consistent cursor - no flicker between text-cursor and pointer */
+  cursor: default;
 }
 
 .git-last-updated.has-history {
@@ -61,8 +59,8 @@
 /* ── Tooltip ─────────────────────────────────────────────────────── */
 .git-commit-tooltip {
   position: absolute;
-  /* Sit flush against the bottom of the wrapper's padded area */
-  bottom: 0;
+  /* 10px above the wrapper — gives visual breathing room */
+  bottom: calc(100% + 10px);
   left: 0;
   min-width: 280px;
   max-width: 360px;
@@ -74,13 +72,25 @@
   z-index: 100;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-4px);
+  transform: translateY(4px);
   transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s linear 0.15s;
   pointer-events: none;
 }
 
-/* Show via CSS :hover so mouse movement within the extended area never
-   triggers a hide — JS .visible class is the fallback for keyboard */
+/* Invisible bridge fills the 10px gap between tooltip and wrapper text.
+   Keeps :hover active so the tooltip never disappears mid-travel. */
+.git-commit-tooltip::before {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 14px; /* gap + arrow height */
+  background: transparent;
+  pointer-events: auto;
+}
+
+/* Show via CSS :hover — JS .visible is keyboard fallback only */
 .git-last-updated.has-history:hover .git-commit-tooltip,
 .git-last-updated.has-history:focus-within .git-commit-tooltip,
 .git-commit-tooltip.visible {
@@ -91,25 +101,15 @@
   pointer-events: auto;
 }
 
-/* ── Arrow ───────────────────────────────────────────────────────── */
-.git-commit-tooltip::after,
-.git-commit-tooltip::before {
+/* ── Arrow (points downward toward the text) ─────────────────────── */
+.git-commit-tooltip::after {
   content: '';
   position: absolute;
-  bottom: 100%;
+  top: 100%;
   left: 1.5rem;
   border: 6px solid transparent;
+  border-top-color: var(--border-color);
   pointer-events: none;
-}
-
-.git-commit-tooltip::after {
-  border-bottom-color: var(--border-color);
-  margin-bottom: -1px;
-}
-
-.git-commit-tooltip::before {
-  border-bottom-color: var(--bg-color);
-  z-index: 1;
 }
 
 /* ── Header ──────────────────────────────────────────────────────── */
