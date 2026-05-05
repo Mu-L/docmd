@@ -78,8 +78,8 @@
     init();
   }
 
-  // Re-run after SPA navigation (docmd live-reload)
-  if (window.docmd && typeof window.docmd.afterReload === 'function') {
-    window.docmd.afterReload(init);
-  }
+  // Re-run after SPA navigation — the SPA router swaps .page-footer-actions
+  // innerHTML on every page change, so we must re-hydrate timestamps and
+  // re-wire tooltip accessibility on the freshly injected elements.
+  document.addEventListener('docmd:page-mounted', init);
 })();

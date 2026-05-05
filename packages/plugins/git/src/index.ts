@@ -117,13 +117,22 @@ function getGitFileInfo(filePath: string, maxCommits: number = 6): GitFileInfo |
   }
 
   try {
-    // Get relative path from project root
-    const relPath = path.relative(projectRoot, filePath);
-    
-    // Get commit history using the relative path from project root
+    // Always run git log from the git root with a root-relative path.
+    // Running from a subdirectory causes git to scope history to that
+    // subtree only, which can return repo-wide commits instead of
+    // file-specific ones when the path resolves unexpectedly.
+    const gitRoot = _gitRootPath || projectRoot;
+    const relPath = path.relative(gitRoot, filePath).replace(/\\/g, '/');
+
+    if (!relPath || relPath.startsWith('..')) {
+      // File is outside the git root — skip
+      return null;
+    }
+
+    // Get commit history using the root-relative path from the git root
     const logOutput = execSync(
       `git log -n ${maxCommits} --format="%H|%h|%an|%ae|%at|%s" -- "${relPath}"`,
-      { cwd: projectRoot, stdio: 'pipe', encoding: 'utf8' }
+      { cwd: gitRoot, stdio: 'pipe', encoding: 'utf8' }
     ).trim();
 
     if (!logOutput) {
