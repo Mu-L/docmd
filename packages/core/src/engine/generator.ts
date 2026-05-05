@@ -15,6 +15,7 @@
 import path from 'path';
 import fs from '../utils/fs-utils.js';
 import { createRequire } from 'module';
+import { execSync } from 'child_process';
 import { generateAssetTag, findFilesRecursive } from './assets.js';
 import { generateHreflangTags } from './i18n.js';
 import nativeFs from 'fs';
@@ -32,6 +33,33 @@ const BATCH_SIZE = 64;
 /** Number of pages to write to disk concurrently. */
 const WRITE_BATCH_SIZE = 128;
 
+/* ── Git Root Detection (for edit links) ─────────────────────── */
+
+/** Cached git root path (null = not yet detected, '' = not a git repo). */
+let _cachedGitRoot: string | null = null;
+
+/**
+ * Detect the git repository root for the current working directory.
+ * Returns the absolute path to the git root, or null if not in a git repo.
+ * Result is cached per build (cache resets when cwd changes).
+ */
+function getGitRoot(): string | null {
+  if (_cachedGitRoot !== null) {
+    return _cachedGitRoot || null;
+  }
+  try {
+    _cachedGitRoot = execSync('git rev-parse --show-toplevel', {
+      cwd: process.cwd(),
+      stdio: 'pipe',
+      encoding: 'utf8'
+    }).trim();
+    return _cachedGitRoot;
+  } catch {
+    _cachedGitRoot = '';
+    return null;
+  }
+}
+
 /* ── Types ────────────────────────────────────────────────────── */
 
 interface RenderPagesOptions {
@@ -48,6 +76,9 @@ interface RenderPagesOptions {
 }
 
 export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, hooks, buildHash, options, outputPrefix = '', onProgress }: RenderPagesOptions) {
+  // Reset git root cache (cwd may have changed between multi-project builds)
+  _cachedGitRoot = null;
+
   // Load Translations for the active locale
   const localeId = config._activeLocale?.id || null;
   const pluginTranslations = hooks.translations
@@ -389,12 +420,31 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
     // Source file path relative to srcDir
     const sourceRelative = path.relative(process.cwd(), page.sourcePath).replace(/\\/g, '/');
 
+    // Compute edit URL from git plugin config (preferred) or legacy config.editLink
     let editUrl = null;
-    const editLinkText = config.editLink?.text || t('editThisPage');
+    const editLinkText = config.plugins?.git?.editLinkText || config.editLink?.text || t('editThisPage');
+    const gitPluginConfig = config.plugins?.git;
 
-    if (config.editLink && config.editLink.enabled && config.editLink.baseUrl) {
+    if (gitPluginConfig?.repo && gitPluginConfig?.editLink !== false) {
+      // Git plugin config (modern approach)
+      // Works with any git provider: GitHub, GitLab, Bitbucket, Gitea, etc.
+      const gitRoot = getGitRoot();
+      const editRelative = gitRoot
+        ? path.relative(gitRoot, page.sourcePath).replace(/\\/g, '/')
+        : sourceRelative;
+      const repo = gitPluginConfig.repo.replace(/\/$/, '');
+      const branch = gitPluginConfig.branch || 'main';
+      // Default pattern works for GitHub/GitLab/Gitea. User can override with editPath.
+      const editPath = gitPluginConfig.editPath || 'edit';
+      editUrl = `${repo}/${editPath}/${branch}/${editRelative}`;
+    } else if (config.editLink?.enabled && config.editLink?.baseUrl) {
+      // DEPRECATED: Legacy config.editLink support
+      console.warn('[docmd] config.editLink is deprecated. Use: plugins: { git: { repo: "...", branch: "..." } }');
       const cleanBase = config.editLink.baseUrl.replace(/\/$/, '');
-      const editRelative = path.relative(path.resolve(process.cwd(), config.src || '.'), page.sourcePath).replace(/\\/g, '/');
+      const gitRoot = getGitRoot();
+      const editRelative = gitRoot
+        ? path.relative(gitRoot, page.sourcePath).replace(/\\/g, '/')
+        : path.relative(path.resolve(process.cwd(), config.src || '.'), page.sourcePath).replace(/\\/g, '/');
       editUrl = `${cleanBase}/${editRelative}`;
     }
 
