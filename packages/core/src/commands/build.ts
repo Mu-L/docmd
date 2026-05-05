@@ -20,7 +20,7 @@ import { TUI, loadPlugins } from '@docmd/api';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { prepareAssets } from '../engine/assets.js';
-import { buildLocales, generateLocaleRedirect } from '../engine/i18n.js';
+import { buildLocales, generateLocaleRedirect, preCountPages } from '../engine/i18n.js';
 
 export async function buildSite(configPath: string, opts: any = {}) {
 
@@ -107,23 +107,32 @@ export async function buildSite(configPath: string, opts: any = {}) {
     // Build assets ONCE for the root site
     await buildAssetsForDir(rootOutputDir);
 
-    // Build a cumulative progress tracker across all locale/version passes.
-    // Each renderPages call reports its own (current, total).
-    // We accumulate so the bar shows 0 → grandTotal across ALL passes.
-    let accumulatedPages = 0;
-    let lastPassTotal = 0;
+    // Pre-count all pages across all locales and versions.
+    // This gives us the exact total BEFORE processing starts, so the
+    // progress bar can show accurate 0 → N from the very first page.
+    const expectedTotal = await preCountPages(config, CWD);
+    let processedSoFar = 0;
 
-    const baseCallback = options.onProgress || (!options.quiet ? (current: number, total: number) => {
-      TUI.progress('Processing pages', current, total);
+    const displayProgress = options.onProgress || (!options.quiet ? (current: number, total: number) => {
+      TUI.progress('Processing     ', current, total);
     } : undefined);
 
-    const cumulativeProgress = baseCallback ? (current: number, total: number) => {
-      // Detect a new renderPages pass: total changed means new batch of files
-      if (total !== lastPassTotal) {
-        accumulatedPages += lastPassTotal;
-        lastPassTotal = total;
+    // Each renderPages call reports (current, total) for its own pass.
+    // We ignore its `total` and use our pre-counted expectedTotal instead.
+    // Track pass transitions by watching when the per-pass total changes
+    // OR when current resets (drops below last value = new pass started).
+    let processedBeforeThisPass = 0;
+    let currentPassTotal = -1;
+    let lastCurrent = 0;
+    const fixedTotalProgress = displayProgress ? (current: number, passTotal: number) => {
+      // Detect new renderPages pass: passTotal changes, or current reset
+      const isNewPass = passTotal !== currentPassTotal || current < lastCurrent;
+      if (isNewPass) {
+        processedBeforeThisPass += currentPassTotal > 0 ? currentPassTotal : 0;
+        currentPassTotal = passTotal;
       }
-      baseCallback(accumulatedPages + current, accumulatedPages + total);
+      lastCurrent = current;
+      displayProgress(processedBeforeThisPass + current, expectedTotal);
     } : undefined;
 
     const allGeneratedPages = await buildLocales({
@@ -133,7 +142,7 @@ export async function buildSite(configPath: string, opts: any = {}) {
       buildHash,
       options,
       CWD,
-      onProgress: cumulativeProgress
+      onProgress: fixedTotalProgress
     });
 
     // --- i18n ROOT REDIRECT ---

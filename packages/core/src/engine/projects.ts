@@ -261,7 +261,7 @@ export async function buildMultiProject(
         quiet: true,          // Suppress child's own section headers/summary
         showStats: !opts.quiet,    // But still show versions/locales in parent's section
         onProgress: !opts.quiet ? (current: number, total: number) => {
-          TUI.progress(`Processing pages`, current, total);
+          TUI.progress(`Processing     `, current, total);
         } : undefined,
       });
 

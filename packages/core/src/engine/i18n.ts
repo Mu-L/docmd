@@ -19,6 +19,59 @@ import fs from '../utils/fs-utils.js';
 import { renderPages } from './generator.js';
 import { buildVersions, filterGhostVersions } from './versioning.js';
 import { sanitizeUrl } from '@docmd/parser';
+import { findFilesRecursive } from './assets.js';
+
+/**
+ * Pre-count total pages across all locale × version passes.
+ * Fast scan (just directory walks, no file reads) so the progress bar
+ * knows the exact denominator from the very first page.
+ */
+export async function preCountPages(config: any, CWD: string): Promise<number> {
+  const locales = getLocales(config);
+  const isStringMode = config.i18n?.stringMode === true;
+  let total = 0;
+
+  for (const locale of locales) {
+    const localeId = locale ? locale.id : null;
+    const isDefault = localeId ? localeId === config.i18n.default : false;
+    if (isStringMode && localeId && !isDefault) continue;
+
+    const localeConfig = createLocaleConfig(config, locale);
+    const versions = localeConfig.versions?.all?.length > 0
+      ? localeConfig.versions.all
+      : [null];
+
+    for (const v of versions) {
+      const baseSrcDir = v
+        ? path.resolve(CWD, v.dir)
+        : path.resolve(CWD, localeConfig.src);
+
+      const localeSrcDir = resolveLocaleSrcDir(baseSrcDir, localeConfig);
+      const fallbackSrcDir = resolveFallbackSrcDir(baseSrcDir, localeConfig);
+
+      // Match the skip logic from buildVersions (line 164-169) and buildLocales (line 271-274):
+      // If the locale-specific dir doesn't exist, only the default locale processes.
+      if (!nativeFs.existsSync(localeSrcDir)) {
+        if (!isDefault && localeId) continue; // non-default locale: skip
+        // Default locale: try the base dir directly (old versions without locale dirs)
+        if (v && nativeFs.existsSync(baseSrcDir)) {
+          const files = await findFilesRecursive(baseSrcDir, ['.md', '.markdown', '.ejs']);
+          total += files.length;
+        }
+        continue;
+      }
+
+      // Scan fallback dir when set (non-default locale uses default locale as canonical list)
+      const scanDir = fallbackSrcDir || localeSrcDir;
+      if (!nativeFs.existsSync(scanDir)) continue;
+
+      const files = await findFilesRecursive(scanDir, ['.md', '.markdown', '.ejs']);
+      total += files.length;
+    }
+  }
+
+  return total;
+}
 
 /**
  * Prepare locale context to inject into config for a build pass.
