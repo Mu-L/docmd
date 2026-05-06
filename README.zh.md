@@ -205,17 +205,19 @@ await buildLive();
 
 仅当需要扩展功能时才需要插件。
 
-| 插件 | 包含 | 说明 |
-| :---------- | :------- | :------------------------------------------------- |
-| `search` | ✓ | 支持模糊匹配的离线全文搜索 |
-| `seo` | ✓ | SEO 标签与 Open Graph 元数据 |
-| `sitemap` | ✓ | 生成 `sitemap.xml` |
-| `analytics` | ✓ | 轻量级数据分析集成 |
-| `llms` | ✓ | AI 上下文生成（`llms.txt`） |
-| `mermaid` | ✓ | Markdown 中的 Mermaid 图表 |
-| `pwa` | 可选 | 支持离线浏览的渐进式 Web 应用 |
-| `threads` | 可选 | 内联讨论线程 *(by @svallory)* |
-| `math` | 可选 | KaTeX/LaTeX 数学公式渲染 |
+| 插件        | 已包含   | 描述                                                 |
+| :---------- | :------- | :--------------------------------------------------- |
+| `search`    | ✓        | 支持模糊匹配的离线全文搜索                           |
+| `seo`       | ✓        | SEO 标签和 Open Graph 元数据                         |
+| `sitemap`   | ✓        | 生成 `sitemap.xml`                                   |
+| `git`       | ✓        | Git 提交历史记录器                                   |
+| `analytics` | ✓        | 轻量级分析集成                                       |
+| `llms`      | ✓        | AI 上下文生成 (`llms.txt`)                           |
+| `mermaid`   | ✓        | Markdown 中的 Mermaid 图表                           |
+| `openapi`   | ✓        | 构建时 OpenAPI 3.x 规范渲染器                        |
+| `pwa`       | 可选     | 用于离线导航的 PWA 支持                              |
+| `threads`   | 可选     | 内联讨论线程 *(由 @svallory 提供)*                   |
+| `math`      | 可选     | KaTeX/LaTeX 数学公式渲染                             |
 
 安装可选插件：
 

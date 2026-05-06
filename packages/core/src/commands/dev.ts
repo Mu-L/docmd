@@ -171,10 +171,10 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
                 quiet: true,
                 targetFiles: [filePath]
               });
-              sp.done(`Rebuilt: ${relativeFilePath} in ${rebuildElapsed()}`);
+              sp.done(`Rebuilt: ${relativeFilePath} in ${rebuildElapsed()}`, true);
               broadcastReload();
             } catch (error: any) {
-              sp.fail(`Rebuild: ${relativeFilePath}`);
+              sp.fail(`Rebuild: ${relativeFilePath}`, true);
               TUI.error('Rebuild failed', error.message);
             } finally {
               isRebuilding = false;
@@ -201,7 +201,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
         setTimeout(async () => {
           const configName = path.basename(configWatchPath);
           const configElapsed = TUI.timer();
-          TUI.step(`Reloading config: ${configName}`, 'WAIT', TUI.blue);
+          TUI.step(`Reloading config: ${configName}`, 'WAIT', TUI.blue, true);
           try {
             // Tear down all watchers (including this config watcher)
             watchers.forEach(w => w.close());
@@ -222,7 +222,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
               quiet: true 
             });
 
-            TUI.step(`Config reloaded and rebuilt in ${configElapsed()}`, 'DONE', TUI.blue);
+            TUI.step(`Config reloaded and rebuilt in ${configElapsed()}`, 'DONE', TUI.blue, true);
 
             // Re-setup all watchers
             setupContentWatchers();
@@ -230,7 +230,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
 
             broadcastReload();
           } catch (error: any) {
-            TUI.step(`Config reload: ${configName}`, 'FAIL', TUI.blue);
+            TUI.step(`Config reload: ${configName}`, 'FAIL', TUI.blue, true);
             TUI.error('Config reload failed', error.message);
             // Recover
             setupContentWatchers();

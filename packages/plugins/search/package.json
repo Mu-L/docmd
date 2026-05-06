@@ -15,6 +15,9 @@
   "dependencies": {
     "minisearch": "^7.2.0"
   },
+  "devDependencies": {
+    "@docmd/api": "workspace:*"
+  },
   "keywords": [
     "docmd",
     "plugin",
@@ -43,8 +46,5 @@
   },
   "homepage": "https://docmd.io",
   "funding": "https://github.com/sponsors/mgks",
-  "license": "MIT",
-  "devDependencies": {
-    "@docmd/api": "workspace:*"
-  }
+  "license": "MIT"
 }

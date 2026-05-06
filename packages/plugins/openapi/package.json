@@ -5,17 +5,25 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json"
   },
   "files": [
     "dist"
   ],
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    }
+  "peerDependencies": {
+    "@docmd/api": "workspace:*"
+  },
+  "devDependencies": {
+    "@docmd/api": "workspace:*",
+    "@types/node": "^25.6.0",
+    "typescript": "^5.9.3"
   },
   "keywords": [
     "docmd",
@@ -43,13 +51,5 @@
   },
   "homepage": "https://docmd.io",
   "funding": "https://github.com/sponsors/mgks",
-  "license": "MIT",
-  "peerDependencies": {
-    "@docmd/api": "workspace:*"
-  },
-  "devDependencies": {
-    "@docmd/api": "workspace:*",
-    "@types/node": "^25.6.0",
-    "typescript": "^5.9.3"
-  }
+  "license": "MIT"
 }

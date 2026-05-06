@@ -444,7 +444,7 @@ export async function devMultiProject(
         const displayPath = filename.replace(/^[^/]+\//, '');
         const rebuildElapsed = TUI.timer();
 
-        TUI.step(`Rebuilding [${label}] ${displayPath}`, 'WAIT', TUI.blue);
+        TUI.step(`Rebuilding [${label}] ${displayPath}`, 'WAIT', TUI.blue, true);
 
         try {
           const fullChangedPath = path.resolve(projectSrcDir, filename);
@@ -453,9 +453,9 @@ export async function devMultiProject(
             targetFiles: [fullChangedPath]
           });
           broadcastReload();
-          TUI.step(`Rebuilt [${label}] ${displayPath} in ${rebuildElapsed()}`, 'DONE', TUI.blue);
+          TUI.step(`Rebuilt [${label}] ${displayPath} in ${rebuildElapsed()}`, 'DONE', TUI.blue, true);
         } catch (err: any) {
-          TUI.step(`Rebuild [${label}] ${displayPath}`, 'FAIL', TUI.blue);
+          TUI.step(`Rebuild [${label}] ${displayPath}`, 'FAIL', TUI.blue, true);
           TUI.error('Rebuild failed', err.message);
         } finally {
           isRebuilding = false;
@@ -473,14 +473,14 @@ export async function devMultiProject(
         isRebuilding = true;
 
         const rebuildElapsed = TUI.timer();
-        TUI.step('Shared assets changed — rebuilding all', 'WAIT', TUI.blue);
+        TUI.step('Shared assets changed — rebuilding all', 'WAIT', TUI.blue, true);
 
         try {
           await buildMultiProject(multiConfig, { isDev: true, quiet: true });
           broadcastReload();
-          TUI.step(`All projects rebuilt in ${rebuildElapsed()}`, 'DONE', TUI.blue);
+          TUI.step(`All projects rebuilt in ${rebuildElapsed()}`, 'DONE', TUI.blue, true);
         } catch (err: any) {
-          TUI.step('Rebuild all projects', 'FAIL', TUI.blue);
+          TUI.step('Rebuild all projects', 'FAIL', TUI.blue, true);
           TUI.error('Rebuild failed', err.message);
         } finally {
           isRebuilding = false;
