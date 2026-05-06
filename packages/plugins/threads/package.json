@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-threads",
-  "version": "0.7.8",
+  "version": "0.7.9",
   "type": "module",
   "description": "Inline discussion threads for docmd documentation sites.",
   "main": "dist/index.js",

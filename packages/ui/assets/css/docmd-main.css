@@ -523,6 +523,7 @@ body.sidebar-collapsed .main-content-wrapper {
     display: flex;
     flex-direction: column;
     min-width: 0;
+    min-height: 100vh;
 }
 
 @media (max-width: 768px) {
@@ -1256,12 +1257,19 @@ blockquote.docmd-embed {
     border-bottom: 1px solid var(--border-color)
 }
 
+.content-theme-cover {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
 .content-area {
     padding: 1rem 2.5rem;
     max-width: 1200px;
     margin: 0 auto;
     width: 100%;
-    box-sizing: border-box
+    box-sizing: border-box;
+    flex-grow: 1;
 }
 
 pre {

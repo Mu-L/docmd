@@ -20,7 +20,7 @@ import type { PluginDescriptor } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'analytics',
-  version: '0.7.8',
+  version: '0.7.9',
   capabilities: ['head', 'body']
 };
 

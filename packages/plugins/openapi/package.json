@@ -1,0 +1,16 @@
+{
+  "name": "@docmd/plugin-openapi",
+  "version": "0.7.9",
+  "description": "OpenAPI documentation generator plugin for docmd",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@docmd/api": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

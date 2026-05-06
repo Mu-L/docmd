@@ -16,11 +16,12 @@ import path from 'path';
 import fs from 'fs';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
 import type { PluginDescriptor } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'git',
-  version: '0.7.8',
+  version: '0.7.9',
   capabilities: ['build', 'body', 'assets', 'translations', 'head']
 };
 
@@ -43,6 +44,7 @@ export interface GitCommit {
   date: string;
   timestamp: number;
   message: string;
+  avatarUrl: string;
 }
 
 export interface GitFileInfo {
@@ -142,6 +144,7 @@ function getGitFileInfo(filePath: string, maxCommits: number = 6): GitFileInfo |
     const commits: GitCommit[] = logOutput.split('\n').filter(Boolean).map((line: string) => {
       const [hash, shortHash, author, email, timestamp, ...messageParts] = line.split('|');
       const ts = parseInt(timestamp, 10) * 1000;
+      const hashEmail = crypto.createHash('md5').update(email.trim().toLowerCase()).digest('hex');
       return {
         hash,
         shortHash,
@@ -149,7 +152,8 @@ function getGitFileInfo(filePath: string, maxCommits: number = 6): GitFileInfo |
         email,
         date: new Date(ts).toISOString(),
         timestamp: ts,
-        message: messageParts.join('|') // In case message contains |
+        message: messageParts.join('|'), // In case message contains |
+        avatarUrl: `https://www.gravatar.com/avatar/${hashEmail}?d=mp&s=64`
       };
     });
 
@@ -287,7 +291,8 @@ export function generateScripts(config: any, options?: any): { headScriptsHtml: 
     editLink: options?.editLink !== false && !!(options?.repo || config.editLink?.baseUrl),
     lastUpdated: options?.lastUpdated !== false,
     commitHistory: options?.commitHistory !== false,
-    maxCommits: options?.maxCommits || 6
+    maxCommits: options?.maxCommits || 5,
+    dateFormat: options?.dateFormat || 'relative'
   };
 
   const localeId = config._activeLocale?.id || 'en';

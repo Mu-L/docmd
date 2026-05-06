@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-git",
-  "version": "0.7.8",
+  "version": "0.7.9",
   "description": "Git integration plugin for docmd: last-updated timestamps, contributor history, and edit links.",
   "type": "module",
   "main": "dist/index.js",

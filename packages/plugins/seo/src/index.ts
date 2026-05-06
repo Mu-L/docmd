@@ -17,7 +17,7 @@ import { outputPathToPathname, sanitizeUrl } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'seo',
-  version: '0.7.8',
+  version: '0.7.9',
   capabilities: ['head']
 };
 

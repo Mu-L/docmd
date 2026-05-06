@@ -21,7 +21,7 @@ const __dirname = path.dirname(__filename);
 
 export const plugin: PluginDescriptor = {
   name: 'mermaid',
-  version: '0.7.8',
+  version: '0.7.9',
   capabilities: ['markdown', 'assets']
 };
 

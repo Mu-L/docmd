@@ -19,6 +19,18 @@
    * Format a Unix ms timestamp into a human-readable relative or absolute string.
    */
   function formatTime(ts) {
+    const config = window.__git_config || {};
+    const format = config.dateFormat || 'relative';
+    const dateObj = new Date(ts);
+
+    if (format === 'iso') {
+      return dateObj.toISOString();
+    }
+    
+    if (format === 'locale-aware') {
+      return dateObj.toLocaleString(document.documentElement.lang || 'en');
+    }
+
     const diff = Date.now() - ts;
     const s = Math.floor(diff / 1000);
     const m = Math.floor(s / 60);
@@ -32,7 +44,7 @@
     }
     if (d < 7) return (i18n.daysAgo || '{n}d ago').replace('{n}', d);
 
-    return new Date(ts).toLocaleDateString(
+    return dateObj.toLocaleDateString(
       document.documentElement.lang || 'en',
       { year: 'numeric', month: 'short', day: 'numeric' }
     );

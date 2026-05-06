@@ -240,7 +240,13 @@
                     <ul class="git-commit-list">
                       <% locals.frontmatter._git.commits.slice(0, 6).forEach(function(commit) { %>
                         <li class="git-commit-item">
-                          <div class="git-commit-avatar" title="<%= commit.author %>"><%= commit.author.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() %></div>
+                          <div class="git-commit-avatar" title="<%= commit.author %>">
+                            <% if (commit.avatarUrl) { %>
+                              <img src="<%= commit.avatarUrl %>" alt="<%= commit.author %>">
+                            <% } else { %>
+                              <%= commit.author.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() %>
+                            <% } %>
+                          </div>
                           <div class="git-commit-details">
                             <div class="git-commit-message" title="<%= commit.message %>"><%= commit.message.length > 40 ? commit.message.substring(0, 37) + '...' : commit.message %></div>
                             <div class="git-commit-meta">
