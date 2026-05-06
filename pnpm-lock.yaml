@@ -80,6 +80,9 @@ importers:
       '@docmd/plugin-mermaid':
         specifier: workspace:*
         version: link:../plugins/mermaid
+      '@docmd/plugin-openapi':
+        specifier: workspace:*
+        version: link:../plugins/openapi
       '@docmd/plugin-pwa':
         specifier: workspace:*
         version: link:../plugins/pwa
@@ -266,11 +269,13 @@ importers:
         version: 5.9.3
 
   packages/plugins/openapi:
-    dependencies:
+    devDependencies:
       '@docmd/api':
         specifier: workspace:*
         version: link:../../api
-    devDependencies:
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3

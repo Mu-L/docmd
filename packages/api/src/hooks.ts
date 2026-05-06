@@ -301,7 +301,7 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
   const searchEnabled = config.optionsMenu ? config.optionsMenu.components.search !== false : config.search !== false;
 
   // A. Core Plugins - always loaded by default.
-  const corePlugins = ['search', 'seo', 'sitemap', 'analytics', 'llms', 'mermaid', 'git'];
+  const corePlugins = ['search', 'seo', 'sitemap', 'analytics', 'llms', 'mermaid', 'git', 'openapi'];
 
   for (const name of corePlugins) {
     const resolved = `@docmd/plugin-${name}`;

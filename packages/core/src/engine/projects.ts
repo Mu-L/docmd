@@ -204,8 +204,6 @@ export async function buildMultiProject(
     TUI.footer(TUI.cyan);
   }
 
-  let totalPages = 0;
-
   for (const project of sorted) {
     const prefix = project.prefix === '/' ? '/' : project.prefix.replace(/\/$/, '');
     const projectSrcDir = path.resolve(CWD, project.src);

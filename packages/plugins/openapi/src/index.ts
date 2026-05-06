@@ -14,9 +14,12 @@
 
 import fs from 'fs';
 import path from 'path';
+import { createRequire } from 'module';
+import { fileURLToPath } from 'url';
 import type { PluginDescriptor } from '@docmd/api';
 
-// __dirname is available natively in CommonJS output
+const require = createRequire(import.meta.url);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const plugin: PluginDescriptor = {
   name: 'openapi',

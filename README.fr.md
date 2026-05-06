@@ -203,7 +203,7 @@ Les plugins ne sont nécessaires que lorsque vous souhaitez étendre les fonctio
 
 | Plugin      | Inclus   | Description                                          |
 | :---------- | :------- | :--------------------------------------------------- |
-| `search`    | ✓        | Recherche plein texte hors ligne                      |
+| `search`    | ✓        | Recherche plein texte hors ligne                     |
 | `seo`       | ✓        | Balises SEO et métadonnées Open Graph                |
 | `sitemap`   | ✓        | Génère `sitemap.xml`                                 |
 | `git`       | ✓        | Journal d'historique des commits Git                 |

@@ -114,7 +114,7 @@ export async function buildSite(configPath: string, opts: any = {}) {
     // This gives us the exact total BEFORE processing starts, so the
     // progress bar can show accurate 0 → N from the very first page.
     const expectedTotal = await preCountPages(config, CWD, options.targetFiles);
-    let processedSoFar = 0;
+    const processedSoFar = 0;
 
     const displayProgress = options.onProgress || (!options.quiet ? (current: number, total: number) => {
       TUI.progress('Processing     ', current, total);
