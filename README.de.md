@@ -45,7 +45,7 @@
       <img width="800" alt="docmd preview" src="https://raw.githubusercontent.com/docmd-io/docmd/refs/heads/main/assets/docmd-cover.webp" />
     </a>
     <br/>
-    <sup><i>docmd `default` Theme — Vorschau im Hell- und Dunkelmodus</i></sup>
+    <sup><i>docmd `default` Theme  -  Vorschau im Hell- und Dunkelmodus</i></sup>
   </p>
 
 </div>
