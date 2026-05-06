@@ -14,15 +14,18 @@
 
 import path from 'path';
 import fs from 'fs';
-import { execSync } from 'child_process';
+import { execFile, execSync } from 'child_process';
+import { promisify } from 'util';
 import { fileURLToPath } from 'url';
+
+const execFileAsync = promisify(execFile);
 import crypto from 'crypto';
-import type { PluginDescriptor } from '@docmd/api';
+import type { PluginDescriptor, PageContext } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'git',
   version: '0.7.9',
-  capabilities: ['build', 'body', 'assets', 'translations', 'head']
+  capabilities: ['build', 'body', 'assets', 'translations', 'init']
 };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -55,14 +58,15 @@ export interface GitFileInfo {
  * Resolve the git root for a given directory.
  * Cached per directory so multi-project builds never share roots.
  */
-function resolveGitRoot(dir: string): string | null {
+async function resolveGitRoot(dir: string): Promise<string | null> {
   if (gitRootCache.has(dir)) return gitRootCache.get(dir)!;
   try {
-    const result = execSync('git rev-parse --show-toplevel', {
-      cwd: dir,
-      stdio: 'pipe',
-      encoding: 'utf8'
-    }).trim();
+    // Normalize to real path to avoid case-sensitivity issues on Mac
+    const realDir = fs.realpathSync(dir);
+    const { stdout } = await execFileAsync('git', ['rev-parse', '--show-toplevel'], {
+      cwd: realDir
+    });
+    const result = stdout.trim();
     gitRootCache.set(dir, result);
     return result;
   } catch {
@@ -87,24 +91,39 @@ function isGitAvailable(): boolean {
  * Get git information for a specific file.
  * Resolves the git root from the file's own directory — safe for multi-project builds.
  */
-function getGitFileInfo(filePath: string, maxCommits: number = 6): GitFileInfo | null {
+async function getGitFileInfo(filePath: string, maxCommits: number = 6): Promise<GitFileInfo | null> {
   // Check cache first (keyed by absolute file path)
   if (gitCache.has(filePath)) return gitCache.get(filePath)!;
 
   // Resolve git root from the file's directory, not process.cwd()
   const fileDir = path.dirname(filePath);
-  const gitRoot = resolveGitRoot(fileDir);
+  const gitRoot = await resolveGitRoot(fileDir);
   if (!gitRoot) return null;
 
-  const relPath = path.relative(gitRoot, filePath).replace(/\\/g, '/');
-  if (!relPath || relPath.startsWith('..')) return null;
+  // Ensure gitRoot and filePath are normalized for comparison
+  const normalizedRoot = fs.realpathSync(gitRoot);
+  const normalizedFile = fs.realpathSync(filePath);
+
+  const relPath = path.relative(normalizedRoot, normalizedFile).replace(/\\/g, '/');
+  
+  // Security/Correctness check: file MUST be inside the git root
+  if (!relPath || relPath.startsWith('..') || path.isAbsolute(relPath)) return null;
 
   try {
-    const logOutput = execSync(
-      `git log -n ${maxCommits} --format="%H|%h|%an|%ae|%at|%s" -- "${relPath}"`,
-      { cwd: gitRoot, stdio: 'pipe', encoding: 'utf8' }
-    ).trim();
+    // Use execFile with array arguments to avoid shell injection and path escaping issues.
+    // Added --follow to track renames and -- "path" to isolate commits to THIS file only.
+    const { stdout } = await execFileAsync('git', [
+      'log',
+      '--follow',
+      '-n', maxCommits.toString(),
+      '--format=%H|%h|%an|%ae|%at|%s',
+      '--',
+      relPath
+    ], { 
+      cwd: normalizedRoot 
+    });
 
+    const logOutput = stdout.trim();
     if (!logOutput) return null;
 
     const commits: GitCommit[] = logOutput.split('\n').filter(Boolean).map((line: string) => {
@@ -202,32 +221,30 @@ export function translations(localeId: string): Record<string, string> {
 
 /**
  * Build hook: Reset file-level cache at the start of each build.
- * Root cache is safe to keep — git roots don't change during a build.
+ * This runs once per build, ensuring the cache persists across all pages.
  */
-export function onBeforeParse(_ctx: any): void {
+export function onConfigResolved(_config: any): void {
   gitCache.clear();
 }
 
 /**
- * Page ready hook: no-op for git plugin.
- * Data is injected via generateMetaTags (runs before template render).
- * This hook is kept for API completeness and future post-render use.
+ * onBeforeParse: stub for future use (per-page processing).
  */
-export async function onPageReady(_ctx: any): Promise<void> {
-  // intentionally empty - git data injected in generateMetaTags
+export function onBeforeParse(_ctx: any): void {
+  // Logic removed (moved to onConfigResolved for better performance)
 }
 
 /**
- * Inject git data into page context BEFORE template rendering.
+ * onBeforeRender: inject git data into frontmatter before the template runs.
+ * This is the correct hook for plugins that need source-file-derived data
+ * available during template rendering.
  */
-export function generateMetaTags(_config: any, pageContext: any, _relativePathToRoot: string): string {
-  const sourcePath = pageContext?.sourcePath;
-  if (!sourcePath || !pageContext?.frontmatter) return '';
+export async function onBeforeRender(page: PageContext): Promise<void> {
+  const sourcePath = page?.sourcePath;
+  if (!sourcePath || !page?.frontmatter) return;
 
-  const gitInfo = getGitFileInfo(sourcePath);
-  if (gitInfo) pageContext.frontmatter._git = gitInfo;
-
-  return '';
+  const gitInfo = await getGitFileInfo(sourcePath);
+  if (gitInfo) page.frontmatter._git = gitInfo;
 }
 
 /**

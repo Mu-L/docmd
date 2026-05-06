@@ -168,7 +168,8 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
               await buildSite(configPathOption, { 
                 isDev: true, 
                 preserve: options.preserve,
-                quiet: true 
+                quiet: true,
+                targetFiles: [filePath]
               });
               sp.done(`Rebuilt: ${relativeFilePath} in ${rebuildElapsed()}`);
               broadcastReload();

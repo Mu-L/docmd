@@ -1,9 +1,9 @@
 # @docmd/plugin-openapi
 
-Adds Git-based metadata to your docmd site: last-updated timestamps, contributor history, and edit links derived directly from your repository. An optional plugin, installed separately.
+Render OpenAPI 3.x API reference documentation directly from JSON or YAML spec files inside your Markdown pages at build time. Core plugin, already included in the core.
 
 ```bash
-docmd add git
+docmd add openapi
 ```
 
 Part of the **[docmd](https://github.com/docmd-io/docmd)** documentation engine.

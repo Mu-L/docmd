@@ -49,6 +49,7 @@ export type {
   PluginModule,
   PluginHooks,
   Capability,
+  PageContext,
   // Action/Event system
   ActionContext,
   ActionHandler,

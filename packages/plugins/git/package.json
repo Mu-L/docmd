@@ -22,6 +22,8 @@
     "docmd",
     "plugin",
     "git",
+    "github",
+    "gitlab",
     "last-updated",
     "contributors",
     "edit-link",

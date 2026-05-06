@@ -26,7 +26,8 @@ import { findFilesRecursive } from './assets.js';
  * Fast scan (just directory walks, no file reads) so the progress bar
  * knows the exact denominator from the very first page.
  */
-export async function preCountPages(config: any, CWD: string): Promise<number> {
+export async function preCountPages(config: any, CWD: string, targetFiles?: string[] | null): Promise<number> {
+  if (targetFiles && targetFiles.length > 0) return targetFiles.length;
   const locales = getLocales(config);
   const isStringMode = config.i18n?.stringMode === true;
   let total = 0;
@@ -144,7 +145,8 @@ export async function buildLocales({
   buildHash,
   options,
   CWD,
-  onProgress
+  onProgress,
+  targetFiles
 }: {
   config: any;
   rootOutputDir: string;
@@ -153,6 +155,7 @@ export async function buildLocales({
   options: any;
   CWD: string;
   onProgress?: (current: number, total: number) => void;
+  targetFiles?: string[];
 }): Promise<any[]> {
   const allGeneratedPages = [];
 
@@ -259,7 +262,8 @@ export async function buildLocales({
         options,
         CWD,
         pathPrefix,
-        onProgress
+        onProgress,
+        targetFiles
       });
       allGeneratedPages.push(...pages);
       if (isStringMode && isDefault) defaultPassPages = pages;
@@ -289,7 +293,8 @@ export async function buildLocales({
         buildHash, 
         options,
         outputPrefix: pathPrefix,
-        onProgress
+        onProgress,
+        targetFiles
       });
       allGeneratedPages.push(...pages);
       if (isStringMode && (isDefault || !localeId)) defaultPassPages = pages;

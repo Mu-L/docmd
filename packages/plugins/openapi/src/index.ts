@@ -122,6 +122,11 @@ function esc(str: string): string {
     .replace(/"/g, '&quot;');
 }
 
+function describe(str: string | undefined, options: any): string {
+  if (!str) return '';
+  return options?.allowRawHtml ? str : esc(str);
+}
+
 /** Resolve a $ref like #/components/schemas/Foo against the spec */
 function resolveRef(ref: string, spec: OASpec): OASchema | null {
   if (!ref.startsWith('#/')) return null;
@@ -153,7 +158,7 @@ function typeLabel(schema: OASchema | undefined, spec: OASpec): string {
 }
 
 /** Render schema properties as an HTML table */
-function renderSchemaTable(schema: OASchema | undefined, spec: OASpec, depth = 0): string {
+function renderSchemaTable(schema: OASchema | undefined, spec: OASpec, options: any): string {
   if (!schema) return '';
   const resolved = resolveSchema(schema, spec);
   const props = resolved.properties;
@@ -165,7 +170,7 @@ function renderSchemaTable(schema: OASchema | undefined, spec: OASpec, depth = 0
     return `<tr>
       <td><code>${esc(name)}</code>${required.has(name) ? ' <span class="oa-required">*</span>' : ''}</td>
       <td><span class="oa-type">${esc(typeLabel(prop, spec))}</span></td>
-      <td>${esc(r.description || '')}</td>
+      <td>${describe(r.description, options)}</td>
       <td>${r.default !== undefined ? `<code>${esc(String(r.default))}</code>` : ''}</td>
     </tr>`;
   }).join('');
@@ -177,20 +182,21 @@ function renderSchemaTable(schema: OASchema | undefined, spec: OASpec, depth = 0
 }
 
 /** Render a single operation */
-function renderOperation(method: string, path_: string, op: OAOperation, spec: OASpec): string {
+function renderOperation(method: string, path_: string, op: OAOperation, spec: OASpec, options: any): string {
   const color = METHOD_COLORS[method] || '#6b7280';
   const deprecated = op.deprecated ? '<span class="oa-deprecated">DEPRECATED</span>' : '';
+  const summaryOnly = options?.summaryOnly === true;
 
   // Parameters
   let paramsHtml = '';
-  if (op.parameters && op.parameters.length > 0) {
+  if (!summaryOnly && op.parameters && op.parameters.length > 0) {
     const rows = op.parameters.map(p => {
       const r = resolveSchema(p.schema, spec);
       return `<tr>
         <td><code>${esc(p.name)}</code>${p.required ? ' <span class="oa-required">*</span>' : ''}</td>
         <td><span class="oa-param-in">${esc(p.in)}</span></td>
         <td><span class="oa-type">${esc(typeLabel(p.schema, spec))}</span></td>
-        <td>${esc(p.description || '')}</td>
+        <td>${describe(p.description, options)}</td>
       </tr>`;
     }).join('');
     paramsHtml = `<h5>Parameters</h5>
@@ -207,13 +213,13 @@ function renderOperation(method: string, path_: string, op: OAOperation, spec: O
     requestHtml = `<h5>Request Body${op.requestBody.required ? ' <span class="oa-required">*</span>' : ''}</h5>`;
     for (const [contentType, media] of entries) {
       requestHtml += `<p class="oa-content-type"><code>${esc(contentType)}</code></p>`;
-      requestHtml += renderSchemaTable(media.schema, spec);
+      requestHtml += renderSchemaTable(media.schema, spec, options);
     }
   }
 
   // Responses
   let responsesHtml = '';
-  if (op.responses) {
+  if (!summaryOnly && op.responses) {
     const statusCodes = Object.entries(op.responses);
     const rows = statusCodes.map(([code, resp]) => {
       const cls = code.startsWith('2') ? 'oa-status-ok' : code.startsWith('4') ? 'oa-status-err' : 'oa-status-other';
@@ -224,7 +230,7 @@ function renderOperation(method: string, path_: string, op: OAOperation, spec: O
       }
       return `<tr>
         <td><span class="oa-status-badge ${cls}">${esc(code)}</span></td>
-        <td>${esc(resp.description || '')}${schemaInfo}</td>
+        <td>${describe(resp.description, options)}${schemaInfo}</td>
       </tr>`;
     }).join('');
     responsesHtml = `<h5>Responses</h5>
@@ -243,7 +249,7 @@ function renderOperation(method: string, path_: string, op: OAOperation, spec: O
     ${deprecated}
   </div>
   ${op.summary ? `<p class="oa-summary">${esc(op.summary)}</p>` : ''}
-  ${op.description ? `<p class="oa-description">${esc(op.description)}</p>` : ''}
+  ${op.description ? `<p class="oa-description">${describe(op.description, options)}</p>` : ''}
   ${paramsHtml}
   ${requestHtml}
   ${responsesHtml}
@@ -271,7 +277,7 @@ function parseSpec(specPath: string): OASpec {
 }
 
 /** Render full spec as HTML */
-function renderSpec(specPath: string, rootDir: string): string {
+function renderSpec(specPath: string, rootDir: string, options: any): string {
   const absPath = path.isAbsolute(specPath) ? specPath : path.resolve(rootDir, specPath);
 
   if (!fs.existsSync(absPath)) {
@@ -288,14 +294,18 @@ function renderSpec(specPath: string, rootDir: string): string {
   const info = spec.info || {};
   let html = `<div class="oa-spec">`;
 
-  if (info.title) {
+  if (options?.info !== false && info.title) {
+    const downloadLink = options?.download ? `<a href="${esc(specPath)}" class="oa-download-link" title="Download OpenAPI Spec" target="_blank">JSON / YAML</a>` : '';
     html += `<div class="oa-spec-header">
       <h2 class="oa-spec-title">${esc(info.title)}</h2>
-      ${info.version ? `<span class="oa-spec-version">v${esc(info.version)}</span>` : ''}
+      <div class="oa-spec-meta">
+        ${info.version ? `<span class="oa-spec-version">v${esc(info.version)}</span>` : ''}
+        ${downloadLink}
+      </div>
     </div>`;
   }
   if (info.description) {
-    html += `<p class="oa-spec-description">${esc(info.description)}</p>`;
+    html += `<p class="oa-spec-description">${describe(info.description, options)}</p>`;
   }
 
   if (spec.paths) {
@@ -303,7 +313,7 @@ function renderSpec(specPath: string, rootDir: string): string {
       for (const method of HTTP_METHODS) {
         const op = pathItem[method];
         if (op) {
-          html += renderOperation(method, pathStr, op, spec);
+          html += renderOperation(method, pathStr, op, spec, options);
         }
       }
     }
@@ -341,7 +351,8 @@ export function markdownSetup(md: any, options: any): void {
     }
 
     const specPath = token.content.trim();
-    return renderSpec(specPath, srcDir);
+    const pluginOptions = options?.config?.plugins?.openapi || {};
+    return renderSpec(specPath, srcDir, pluginOptions);
   };
 }
 
@@ -349,7 +360,9 @@ export function markdownSetup(md: any, options: any): void {
  * Provide OpenAPI CSS asset.
  */
 export function getAssets(_options?: any): any[] {
-  const cssPath = path.resolve(__dirname, '..', 'dist', 'openapi.css');
+  const distCssPath = path.resolve(__dirname, '..', 'dist', 'openapi.css');
+  const srcCssPath = path.resolve(__dirname, '..', 'src', 'openapi.css');
+  const cssPath = fs.existsSync(distCssPath) ? distCssPath : srcCssPath;
 
   // Only inject if our bundled CSS exists
   if (!fs.existsSync(cssPath)) return [];

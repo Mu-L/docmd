@@ -73,9 +73,11 @@ interface RenderPagesOptions {
   outputPrefix?: string;
   /** Progress callback: (current, total) called after each batch completes. */
   onProgress?: (current: number, total: number) => void;
+  /** Optional: only render specific files (relative to srcDir). Used for incremental dev rebuilds. */
+  targetFiles?: string[];
 }
 
-export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, hooks, buildHash, options, outputPrefix = '', onProgress }: RenderPagesOptions) {
+export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, hooks, buildHash, options, outputPrefix = '', onProgress, targetFiles }: RenderPagesOptions) {
   // Reset git root cache (cwd may have changed between multi-project builds)
   _cachedGitRoot = null;
 
@@ -243,15 +245,27 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
     }
   }
 
+  // --- 2. Filter by targetFiles (Incremental Build) ---
+  const filteredManifest = targetFiles && targetFiles.length > 0
+    ? fileManifest.filter(entry => {
+        // targetFiles are usually absolute or relative to CWD.
+        // We check if the entry's targetFilePath matches any of the targetFiles.
+        return targetFiles.some(t => {
+            const absTarget = path.resolve(process.cwd(), t);
+            return entry.targetFilePath === absTarget || entry.relativePath === t;
+        });
+      })
+    : fileManifest;
+
   // Total page count for progress reporting
-  const totalFiles = fileManifest.length;
+  const totalFiles = filteredManifest.length;
   let processedCount = 0;
 
   // ── Process files in batches ──────────────────────────────────
   const pages: any[] = [];
 
-  for (let batchStart = 0; batchStart < fileManifest.length; batchStart += BATCH_SIZE) {
-    const batch = fileManifest.slice(batchStart, batchStart + BATCH_SIZE);
+  for (let batchStart = 0; batchStart < filteredManifest.length; batchStart += BATCH_SIZE) {
+    const batch = filteredManifest.slice(batchStart, batchStart + BATCH_SIZE);
 
     // 1. Read all files in this batch concurrently
     const fileContents = await Promise.all(
@@ -355,201 +369,209 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
   // --- 3. Render HTML (parallel template rendering + batched writes) ---
   const writeQueue: { finalPath: string; html: string }[] = [];
 
-  for (const page of pages) {
-    const finalPath = path.join(outputDir, page.outputPath);
-    const fileDir = path.dirname(page.outputPath);
-    let relativePathToRoot = path.relative(fileDir, '.');
-    if (relativePathToRoot === '') relativePathToRoot = './';
-    else relativePathToRoot += '/';
-    relativePathToRoot = relativePathToRoot.replace(/\\/g, '/');
-
-    // Navigation Context
-    let navPath = '/' + page.outputPath.replace(/\\/g, '/').replace(/\/index\.html$/, '').replace(/^index\.html$/, '');
-    if (navPath === '/.') navPath = '/';
+  // Process pages in batches to allow concurrent hook execution (e.g. Git log calls)
+  for (let i = 0; i < pages.length; i += BATCH_SIZE) {
+    const batch = pages.slice(i, i + BATCH_SIZE);
     
-    // Strip outputPrefix (locale + version) from navPath so it matches navigation.json paths
-    if (outputPrefix) {
-      const prefixStr = '/' + outputPrefix.replace(/\/$/, '');
-      if (navPath.startsWith(prefixStr + '/') || navPath === prefixStr) {
-        navPath = navPath.substring(prefixStr.length) || '/';
+    await Promise.all(batch.map(async (page) => {
+      const finalPath = path.join(outputDir, page.outputPath);
+      const fileDir = path.dirname(page.outputPath);
+      let relativePathToRoot = path.relative(fileDir, '.');
+      if (relativePathToRoot === '') relativePathToRoot = './';
+      else relativePathToRoot += '/';
+      relativePathToRoot = relativePathToRoot.replace(/\\/g, '/');
+
+      // Navigation Context
+      let navPath = '/' + page.outputPath.replace(/\\/g, '/').replace(/\/index\.html$/, '').replace(/^index\.html$/, '');
+      if (navPath === '/.') navPath = '/';
+      
+      // Strip outputPrefix (locale + version) from navPath so it matches navigation.json paths
+      if (outputPrefix) {
+        const prefixStr = '/' + outputPrefix.replace(/\/$/, '');
+        if (navPath.startsWith(prefixStr + '/') || navPath === prefixStr) {
+          navPath = navPath.substring(prefixStr.length) || '/';
+        }
       }
-    }
-    
-    const { prevPage, nextPage } = findPageNeighbors(config.navigation, navPath);
-    const breadcrumbs = config.layout?.breadcrumbs !== false ? findBreadcrumbs(config.navigation, navPath) : [];
+      
+      const { prevPage, nextPage } = findPageNeighbors(config.navigation, navPath);
+      const breadcrumbs = config.layout?.breadcrumbs !== false ? findBreadcrumbs(config.navigation, navPath) : [];
 
-    // ── Centralized URL Context ──
-    const urlContext = createUrlContext({
-      relativePathToRoot,
-      outputPrefix,
-      offline: options.offline,
-      base: config.base || '/',
-      siteUrl: config.url || '',
-    });
+      // ── Centralized URL Context ──
+      const urlContext = createUrlContext({
+        relativePathToRoot,
+        outputPrefix,
+        offline: options.offline,
+        base: config.base || '/',
+        siteUrl: config.url || '',
+      });
 
-    // Pre-compute page URLs for plugin consumption
-    const pageUrls = computePageUrls(page.outputPath, config.url || '');
+      // Pre-compute page URLs for plugin consumption
+      const pageUrls = computePageUrls(page.outputPath, config.url || '');
 
-    const buildRelativeUrl = (href: string) => buildContextualUrl(href, urlContext);
+      const buildRelativeUrl = (href: string) => buildContextualUrl(href, urlContext);
 
-    // Fix Neighbor Links
-    const fixNeighbor = (node: any) => {
-      if (!node) return null;
-      return { ...node, url: buildRelativeUrl(node.path) };
-    };
+      // Fix Neighbor Links
+      const fixNeighbor = (node: any) => {
+        if (!node) return null;
+        return { ...node, url: buildRelativeUrl(node.path) };
+      };
 
-    // Inject Assets
-    const assetHeadHtml = assetTags.head.map((gen: any) => gen(relativePathToRoot)).join('\n');
-    const assetBodyHtml = assetTags.body.map((gen: any) => gen(relativePathToRoot)).join('\n');
-    const pageContext = { frontmatter: page.frontmatter, outputPath: page.outputPath, sourcePath: page.sourcePath, urls: pageUrls };
+      // Inject Assets
+      const assetHeadHtml = assetTags.head.map((gen: any) => gen(relativePathToRoot)).join('\n');
+      const assetBodyHtml = assetTags.body.map((gen: any) => gen(relativePathToRoot)).join('\n');
+      
+      // ── Phase 3A: Invoke onBeforeRender Hook ──
+      const pageContext = { 
+        frontmatter: page.frontmatter, 
+        outputPath: page.outputPath, 
+        sourcePath: page.sourcePath, 
+        urls: pageUrls,
+        html: page.htmlContent
+      };
 
-    const headInjections = await Promise.all(hooks.injectHead.map((fn: any) => fn(config, pageContext, relativePathToRoot)));
-    const bodyInjections = await Promise.all(hooks.injectBody.map((fn: any) => fn(config, pageContext)));
+      if (hooks.onBeforeRender) {
+        for (const fn of hooks.onBeforeRender) {
+          await fn(pageContext);
+        }
+      }
 
-    const fullHeadHtml = [
-      headInjections.join('\n'),
-      assetHeadHtml,
-      generateHreflangTags(config, page.outputPath)
-    ].join('\n');
+      // Reflect any mutations from plugins
+      page.htmlContent = pageContext.html;
+      page.frontmatter = pageContext.frontmatter;
 
-    const fullBodyHtml = [
-      assetBodyHtml,
-      bodyInjections.join('\n')
-    ].join('\n');
+      const headInjections = await Promise.all(hooks.injectHead.map((fn: any) => fn(config, pageContext, relativePathToRoot)));
+      const bodyInjections = await Promise.all(hooks.injectBody.map((fn: any) => fn(config, pageContext)));
 
-    // Source file path relative to srcDir
-    const sourceRelative = path.relative(process.cwd(), page.sourcePath).replace(/\\/g, '/');
+      const fullHeadHtml = [
+        headInjections.join('\n'),
+        assetHeadHtml,
+        generateHreflangTags(config, page.outputPath)
+      ].join('\n');
 
-    // Compute edit URL from git plugin config (preferred) or legacy config.editLink
-    let editUrl = null;
-    const editLinkText = config.plugins?.git?.editLinkText || config.editLink?.text || t('editThisPage');
-    const gitPluginConfig = config.plugins?.git;
+      const fullBodyHtml = [
+        assetBodyHtml,
+        bodyInjections.join('\n')
+      ].join('\n');
 
-    if (gitPluginConfig?.repo && gitPluginConfig?.editLink !== false) {
-      // Git plugin config (modern approach)
-      // Works with any git provider: GitHub, GitLab, Bitbucket, Gitea, etc.
-      const gitRoot = getGitRoot();
-      const editRelative = gitRoot
-        ? path.relative(gitRoot, page.sourcePath).replace(/\\/g, '/')
-        : sourceRelative;
-      const repo = gitPluginConfig.repo.replace(/\/$/, '');
-      const branch = gitPluginConfig.branch || 'main';
-      // Default pattern works for GitHub/GitLab/Gitea. User can override with editPath.
-      const editPath = gitPluginConfig.editPath || 'edit';
-      editUrl = `${repo}/${editPath}/${branch}/${editRelative}`;
-    } else if (config.editLink?.enabled && config.editLink?.baseUrl) {
-      // DEPRECATED: Legacy config.editLink support
-      console.warn('[docmd] config.editLink is deprecated. Use: plugins: { git: { repo: "...", branch: "..." } }');
-      const cleanBase = config.editLink.baseUrl.replace(/\/$/, '');
-      const gitRoot = getGitRoot();
-      const editRelative = gitRoot
-        ? path.relative(gitRoot, page.sourcePath).replace(/\\/g, '/')
-        : path.relative(path.resolve(process.cwd(), config.src || '.'), page.sourcePath).replace(/\\/g, '/');
-      editUrl = `${cleanBase}/${editRelative}`;
-    }
+      // Source file path relative to srcDir
+      const sourceRelative = path.relative(process.cwd(), page.sourcePath).replace(/\\/g, '/');
 
-    // Navigation HTML
-    const navigationHtml = await parser.renderTemplateAsync(templates.navigation, {
-      config,
-      navItems: config.navigation,
-      currentPagePath: navPath,
-      relativePathToRoot,
-      outputPrefix,
-      isOfflineMode: options.offline,
-      buildRelativeUrl,
-      t
-    }, { filename: ui.getTemplatePath('navigation') });
+      // Compute edit URL from git plugin config (preferred) or legacy config.editLink
+      let editUrl = null;
+      const editLinkText = config.plugins?.git?.editLinkText || config.editLink?.text || t('editThisPage');
+      const gitPluginConfig = config.plugins?.git;
 
-    // Render Full Page
-    const templateString = page.frontmatter.noStyle ? templates.noStyle : templates.layout;
-    let fullHtml = await parser.renderTemplateAsync(templateString, {
-      content: page.htmlContent,
-      frontmatter: page.frontmatter,
-      headings: page.headings,
-      config,
-      buildHash,
-      siteTitle: config.title,
-      pageTitle: page.frontmatter.title,
-      description: page.frontmatter.description || '',
-      appearance: config.theme?.appearance || config.theme?.defaultMode || 'system',
-      defaultMode: config.theme?.appearance || config.theme?.defaultMode || 'system',
-      relativePathToRoot,
-      isOfflineMode: options.offline,
-      buildRelativeUrl,
-      navigationHtml,
-      prevPage: fixNeighbor(prevPage),
-      nextPage: fixNeighbor(nextPage),
-      logo: config.logo,
-      theme: config.theme,
+      if (gitPluginConfig?.repo && gitPluginConfig?.editLink !== false) {
+        // Git plugin config (modern approach)
+        const gitRoot = getGitRoot();
+        const editRelative = gitRoot
+          ? path.relative(gitRoot, page.sourcePath).replace(/\\/g, '/')
+          : sourceRelative;
+        const repo = gitPluginConfig.repo.replace(/\/$/, '');
+        const branch = gitPluginConfig.branch || 'main';
+        const editPath = gitPluginConfig.editPath || 'edit';
+        editUrl = `${repo}/${editPath}/${branch}/${editRelative}`;
+      } else if (config.editLink?.enabled && config.editLink?.baseUrl) {
+        // Legacy fallback
+        const cleanBase = config.editLink.baseUrl.replace(/\/$/, '');
+        const gitRoot = getGitRoot();
+        const editRelative = gitRoot
+          ? path.relative(gitRoot, page.sourcePath).replace(/\\/g, '/')
+          : path.relative(path.resolve(process.cwd(), config.src || '.'), page.sourcePath).replace(/\\/g, '/');
+        editUrl = `${cleanBase}/${editRelative}`;
+      }
 
-      headerConfig: config.header,
-      sidebarConfig: config.sidebar,
-      footerConfig: config.footer,
-      menubarConfig: config.menubar,
-      optionsMenu: config.optionsMenu,
+      // Navigation HTML
+      const navigationHtml = await parser.renderTemplateAsync(templates.navigation, {
+        config,
+        navItems: config.navigation,
+        currentPagePath: navPath,
+        relativePathToRoot,
+        outputPrefix,
+        isOfflineMode: options.offline,
+        buildRelativeUrl,
+        t
+      }, { filename: ui.getTemplatePath('navigation') });
 
-      customCssFiles: config.theme.customCss || [],
-      customJsFiles: config.customJs || [],
+      // Render Full Page
+      const templateString = page.frontmatter.noStyle ? templates.noStyle : templates.layout;
+      let fullHtml = await parser.renderTemplateAsync(templateString, {
+        content: page.htmlContent,
+        frontmatter: page.frontmatter,
+        headings: page.headings,
+        config,
+        buildHash,
+        siteTitle: config.title,
+        pageTitle: page.frontmatter.title,
+        description: page.frontmatter.description || '',
+        appearance: config.theme?.appearance || config.theme?.defaultMode || 'system',
+        defaultMode: config.theme?.appearance || config.theme?.defaultMode || 'system',
+        relativePathToRoot,
+        isOfflineMode: options.offline,
+        buildRelativeUrl,
+        navigationHtml,
+        prevPage: fixNeighbor(prevPage),
+        nextPage: fixNeighbor(nextPage),
+        logo: config.logo,
+        theme: config.theme,
 
-      pluginHeadScriptsHtml: fullHeadHtml,
-      pluginBodyScriptsHtml: fullBodyHtml,
+        headerConfig: config.header,
+        sidebarConfig: config.sidebar,
+        footerConfig: config.footer,
+        menubarConfig: config.menubar,
+        optionsMenu: config.optionsMenu,
 
-      faviconLinkHtml: config.favicon ? `<link id="site-favicon" rel="icon" href="${relativePathToRoot}${config.favicon.replace(/^\//, '')}?v=${buildHash}">` : '',
-      themeInitScript,
-      footerHtml,
-      isActivePage: page.htmlContent && page.htmlContent.trim().length > 0,
-      editUrl,
-      editLinkText,
-      breadcrumbs,
+        customCssFiles: config.theme.customCss || [],
+        customJsFiles: config.customJs || [],
 
-      // Source file path for plugin use (e.g. threads RPC)
-      sourceFile: sourceRelative,
+        pluginHeadScriptsHtml: fullHeadHtml,
+        pluginBodyScriptsHtml: fullBodyHtml,
 
-      // i18n locale context
-      activeLocale: config._activeLocale || null,
-      allLocales: config._allLocales || null,
-      builtLocales: config._builtLocales ? [...config._builtLocales] : null,
-      defaultLocale: config._defaultLocale || null,
-      i18nInPlace: config.i18n?.inPlace || false,
-      i18nStringMode: config.i18n?.stringMode || false,
-      localePrefix: config._localeOutputPrefix || '',
-      currentPagePath: navPath,
-      outputPrefix,
+        faviconLinkHtml: config.favicon ? `<link id="site-favicon" rel="icon" href="${relativePathToRoot}${config.favicon.replace(/^\//, '')}?v=${buildHash}">` : '',
+        themeInitScript,
+        footerHtml,
+        isActivePage: page.htmlContent && page.htmlContent.trim().length > 0,
+        editUrl,
+        editLinkText,
+        breadcrumbs,
+        sourceFile: sourceRelative,
+        activeLocale: config._activeLocale || null,
+        allLocales: config._allLocales || null,
+        builtLocales: config._builtLocales ? [...config._builtLocales] : null,
+        defaultLocale: config._defaultLocale || null,
+        i18nInPlace: config.i18n?.inPlace || false,
+        i18nStringMode: config.i18n?.stringMode || false,
+        localePrefix: config._localeOutputPrefix || '',
+        currentPagePath: navPath,
+        outputPrefix,
+        t,
+        buildAbsoluteUrl,
+        sanitizeUrl,
+        themeCssLinkHtml: '',
+        metaTagsHtml: '',
+        pluginStylesHtml: ''
+      }, { filename: ui.getTemplatePath('layout') });
 
-      // Translation function
-      t,
+      const pageObj = {
+        html: fullHtml,
+        frontmatter: page.frontmatter,
+        outputPath: page.outputPath,
+        sourcePath: page.sourcePath,
+        urls: pageUrls,
+        urlContext,
+        config
+      };
 
-      // Centralised URL utilities - available in all templates
-      buildAbsoluteUrl,
-      sanitizeUrl,
+      for (const fn of hooks.onPageReady) {
+        await fn(pageObj);
+      }
 
-      // Placeholders for template compatibility
-      themeCssLinkHtml: '',
-      metaTagsHtml: '',
-      pluginStylesHtml: ''
-    }, { filename: ui.getTemplatePath('layout') });
+      fullHtml = pageObj.html;
 
-    const pageObj = {
-      html: fullHtml,
-      frontmatter: page.frontmatter,
-      outputPath: page.outputPath,
-      sourcePath: page.sourcePath,
-      urls: pageUrls,
-      urlContext,
-      config
-    };
-
-    for (const fn of hooks.onPageReady) {
-      await fn(pageObj);
-    }
-
-    fullHtml = pageObj.html;
-
-    // Queue the write instead of writing immediately
-    writeQueue.push({ finalPath, html: fullHtml });
-
-    // Attach pre-computed URLs to the page for post-build plugin consumption
-    (page as any).urls = pageUrls;
+      // Queue the write
+      writeQueue.push({ finalPath, html: fullHtml });
+      (page as any).urls = pageUrls;
+    }));
   }
 
   // --- 4. Parallel file writes ───────────────────────────────────

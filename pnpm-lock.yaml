@@ -306,8 +306,8 @@ importers:
   packages/plugins/threads:
     dependencies:
       '@awesome.me/webawesome':
-        specifier: ^3.5.0
-        version: 3.5.0(@floating-ui/utils@0.2.11)(@types/react@19.2.14)
+        specifier: ^3.6.0
+        version: 3.6.0(@floating-ui/utils@0.2.11)(@types/react@19.2.14)
       '@docmd/parser':
         specifier: workspace:*
         version: link:../../parser
@@ -353,8 +353,8 @@ packages:
   '@antfu/install-pkg@1.1.0':
     resolution: {integrity: sha512-MGQsmw10ZyI+EJo45CdSER4zEb+p31LpDAFp2Z3gkSd1yqVZGi0Ebx++YTEMonJy4oChEMLsxZ64j8FH6sSqtQ==}
 
-  '@awesome.me/webawesome@3.5.0':
-    resolution: {integrity: sha512-/hJOe5vsKu9GejyTB3xFyQvvGRzXCLqdOGtBa4a+ifDNPRwzQLR3bzxcEpJsLmVfOhhem1XGbyOD9cMwefuAlA==}
+  '@awesome.me/webawesome@3.6.0':
+    resolution: {integrity: sha512-cUQWAq5KwQzy1fsMFUSJqGL6z/s9/VFOqnypOZOXZdpsfnD7gVFKnY6if9EbgzxtCXiHTOnEZ8N3mnwW2Z/Sww==}
     engines: {node: '>=14.17.0'}
 
   '@braintree/sanitize-url@7.1.2':
@@ -1559,7 +1559,7 @@ snapshots:
       package-manager-detector: 1.6.0
       tinyexec: 1.1.2
 
-  '@awesome.me/webawesome@3.5.0(@floating-ui/utils@0.2.11)(@types/react@19.2.14)':
+  '@awesome.me/webawesome@3.6.0(@floating-ui/utils@0.2.11)(@types/react@19.2.14)':
     dependencies:
       '@ctrl/tinycolor': 4.1.0
       '@floating-ui/dom': 1.7.6
