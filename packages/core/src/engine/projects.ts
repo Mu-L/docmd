@@ -297,7 +297,7 @@ export async function buildMultiProject(
 async function buildSingleProject(
   project: ProjectEntry,
   multiConfig: MultiProjectConfig,
-  opts: { isDev?: boolean; offline?: boolean; quiet?: boolean } = {}
+  opts: { isDev?: boolean; offline?: boolean; quiet?: boolean; targetFiles?: string[] } = {}
 ): Promise<void> {
   const CWD = process.cwd();
   const rootOutDir = path.resolve(CWD, multiConfig.out || 'site');
@@ -335,6 +335,7 @@ async function buildSingleProject(
       isDev: opts.isDev || false,
       offline: opts.offline || false,
       quiet: true, // Suppress output in dev mode
+      targetFiles: opts.targetFiles
     });
 
   } catch (err: any) {
@@ -446,7 +447,11 @@ export async function devMultiProject(
         TUI.step(`Rebuilding [${label}] ${displayPath}`, 'WAIT', TUI.blue);
 
         try {
-          await buildSingleProject(project, multiConfig, { isDev: true });
+          const fullChangedPath = path.resolve(projectSrcDir, filename);
+          await buildSingleProject(project, multiConfig, { 
+            isDev: true,
+            targetFiles: [fullChangedPath]
+          });
           broadcastReload();
           TUI.step(`Rebuilt [${label}] ${displayPath} in ${rebuildElapsed()}`, 'DONE', TUI.blue);
         } catch (err: any) {

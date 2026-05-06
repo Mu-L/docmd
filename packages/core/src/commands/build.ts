@@ -31,6 +31,7 @@ export async function buildSite(configPath: string, opts: any = {}) {
     quiet: opts.quiet || false,
     showStats: opts.showStats || false,   // Show version/locale stats even when quiet
     onProgress: opts.onProgress || null,  // External progress callback
+    targetFiles: opts.targetFiles || null, // Optional: only rebuild specific files
   };
 
   const CWD = process.cwd();
@@ -104,13 +105,15 @@ export async function buildSite(configPath: string, opts: any = {}) {
       }
     };
 
-    // Build assets ONCE for the root site
-    await buildAssetsForDir(rootOutputDir);
+    // Build assets ONCE for the root site (skip on targeted incremental rebuilds)
+    if (!options.targetFiles) {
+      await buildAssetsForDir(rootOutputDir);
+    }
 
     // Pre-count all pages across all locales and versions.
     // This gives us the exact total BEFORE processing starts, so the
     // progress bar can show accurate 0 → N from the very first page.
-    const expectedTotal = await preCountPages(config, CWD);
+    const expectedTotal = await preCountPages(config, CWD, options.targetFiles);
     let processedSoFar = 0;
 
     const displayProgress = options.onProgress || (!options.quiet ? (current: number, total: number) => {
@@ -142,7 +145,8 @@ export async function buildSite(configPath: string, opts: any = {}) {
       buildHash,
       options,
       CWD,
-      onProgress: fixedTotalProgress
+      onProgress: fixedTotalProgress,
+      targetFiles: options.targetFiles
     });
 
     // --- i18n ROOT REDIRECT ---
@@ -242,16 +246,19 @@ export async function buildSite(configPath: string, opts: any = {}) {
     }
 
     // --- 5. Post Build Hooks (Search, Sitemap, LLMs) ---
-    if (!options.quiet) {
-      TUI.footer(TUI.cyan);
-      TUI.section('Post-Build Tasks', TUI.blue);
+    // Only run on full builds to prevent partial data from corrupting global indexes
+    if (!options.targetFiles) {
+      if (!options.quiet) {
+        TUI.footer(TUI.cyan);
+        TUI.section('Post-Build Tasks', TUI.blue);
+      }
+      await Promise.all(hooks.onPostBuild.map((fn: any) => fn({
+        config,
+        pages: allGeneratedPages,
+        outputDir: rootOutputDir,
+        log: (msg: string) => !options.quiet && TUI.step(msg, 'DONE', TUI.blue)
+      })));
     }
-    await Promise.all(hooks.onPostBuild.map(fn => fn({
-      config,
-      pages: allGeneratedPages,
-      outputDir: rootOutputDir,
-      log: (msg: string) => !options.quiet && TUI.step(msg, 'DONE', TUI.blue)
-    })));
 
     if (!options.isDev && !options.quiet) {
       TUI.footer(TUI.blue);

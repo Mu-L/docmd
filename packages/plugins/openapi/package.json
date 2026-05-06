@@ -1,16 +1,55 @@
 {
   "name": "@docmd/plugin-openapi",
   "version": "0.7.9",
-  "description": "OpenAPI documentation generator plugin for docmd",
+  "description": "OpenAPI documentation generator plugin for docmd: render API references at build-time with zero JS.",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json"
   },
-  "dependencies": {
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "keywords": [
+    "docmd",
+    "plugin",
+    "openapi",
+    "swagger",
+    "rest",
+    "api-docs",
+    "documentation",
+    "markdown",
+    "static-site-generator",
+    "zero-config",
+    "docs"
+  ],
+  "author": {
+    "name": "Ghazi",
+    "url": "https://mgks.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/docmd-io/docmd.git"
+  },
+  "bugs": {
+    "url": "https://github.com/docmd-io/docmd/issues"
+  },
+  "homepage": "https://docmd.io",
+  "funding": "https://github.com/sponsors/mgks",
+  "license": "MIT",
+  "peerDependencies": {
     "@docmd/api": "workspace:*"
   },
   "devDependencies": {
+    "@docmd/api": "workspace:*",
+    "@types/node": "^25.6.0",
     "typescript": "^5.9.3"
   }
 }

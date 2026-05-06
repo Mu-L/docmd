@@ -33,26 +33,16 @@ function run(cmd, silent = true) {
 function deepWipe() {
     const bins = ['docmd', 'docmd-live'];
     for (const bin of bins) {
-        let found = true;
-        while (found) {
-            try {
-                const paths = execSync(`which -a ${bin}`, { stdio: 'pipe' }).toString().split('\n').filter(Boolean);
-                if (paths.length === 0) {
-                    found = false;
-                } else {
-                    for (const p of paths) {
-                        try {
-                            if (fs.existsSync(p)) fs.unlinkSync(p);
-                        } catch {
-                            // If unlink fails (permissions), try rm -f
-                            try { execSync(`rm -f "${p}"`, { stdio: 'ignore' }); } catch { /* ignore rm failure */ }
-                        }
-                    }
+        try {
+            const paths = execSync(`which -a ${bin}`, { stdio: 'pipe' }).toString().split('\n').filter(Boolean);
+            for (const p of paths) {
+                try {
+                    if (fs.existsSync(p)) fs.unlinkSync(p);
+                } catch {
+                    try { execSync(`rm -f "${p}"`, { stdio: 'ignore' }); } catch { /* ignore */ }
                 }
-            } catch {
-                found = false;
             }
-        }
+        } catch { /* ignore which failure */ }
     }
 }
 

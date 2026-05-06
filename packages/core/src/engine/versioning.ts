@@ -127,7 +127,8 @@ export async function buildVersions({
   options,
   CWD,
   pathPrefix = '',
-  onProgress
+  onProgress,
+  targetFiles
 }: {
   config: any;
   outputDir: string;
@@ -137,6 +138,7 @@ export async function buildVersions({
   CWD: string;
   pathPrefix?: string;
   onProgress?: (current: number, total: number) => void;
+  targetFiles?: string[];
 }): Promise<any[]> {
   const allPages = [];
 
@@ -202,7 +204,8 @@ export async function buildVersions({
       buildHash,
       options,
       outputPrefix: combinedOutputPrefix,
-      onProgress
+      onProgress,
+      targetFiles
     });
 
     allPages.push(...pages);

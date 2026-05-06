@@ -123,6 +123,22 @@ export async function loadConfig(configPath: string, options: any = {}) {
     }
   }
 
+  // Cleanup any orphaned temp config files from previous failed reloads
+  try {
+      const configDir = path.dirname(absoluteConfigPath);
+      const baseName = path.basename(absoluteConfigPath).split('.')[0];
+      const files = fs.readdirSync(configDir);
+      for (const file of files) {
+          if (file.startsWith(`${baseName}-`) && (file.endsWith('.js') || file.endsWith('.mjs'))) {
+              const fullPath = path.join(configDir, file);
+              // If it has a timestamp-like suffix, it's one of ours
+              if (/-[0-9]{13}\.(js|mjs)$/.test(file)) {
+                  fs.unlinkSync(fullPath);
+              }
+          }
+      }
+  } catch { /* ignore cleanup errors */ }
+
   try {
     // Polyfill defineConfig globally so the config file works 
     // even if @docmd/core isn't installed locally in the target project.
@@ -155,85 +171,86 @@ export async function loadConfig(configPath: string, options: any = {}) {
         configUrl = pathToFileURL(tempConfigPath).href;
     }
 
-    const rawModule = await import(configUrl);
-    const rawConfig = rawModule.default || rawModule;
+    try {
+      const rawModule = await import(configUrl);
+      const rawConfig = rawModule.default || rawModule;
+      
+      // If user has 'search' or 'theme' at root, but no 'layout' object, they are legacy.
+      const isLegacy = !rawConfig.layout && (
+        rawConfig.search !== undefined ||
+        (rawConfig.theme && rawConfig.theme.enableModeToggle !== undefined) ||
+        rawConfig.sponsor
+      );
 
-    if (tempConfigPath && fs.existsSync(tempConfigPath)) {
-        fs.unlinkSync(tempConfigPath);
-    }
-
-    // Clean up global to avoid pollution
-    delete (global as any).defineConfig;
-
-    // If user has 'search' or 'theme' at root, but no 'layout' object, they are legacy.
-    const isLegacy = !rawConfig.layout && (
-      rawConfig.search !== undefined ||
-      (rawConfig.theme && rawConfig.theme.enableModeToggle !== undefined) ||
-      rawConfig.sponsor
-    );
-
-    if (isLegacy) {
-      TUI.error('Legacy Configuration Detected', 'Your docmd.config.js uses an outdated structure.');
-      TUI.info(`Run ${TUI.cyan('docmd migrate')} to automatically upgrade your configuration.`);
-    }
-
-    validateConfig(rawConfig);
-    const hasExplicitNav = 'navigation' in rawConfig;
-    const normalized = normalizeConfig(rawConfig);
-
-    // Ensure we have a navigation array, fallback to Auto-Router if empty (unless explicitly set to empty)
-    if (!normalized.navigation || (normalized.navigation.length === 0 && !hasExplicitNav)) {
-      // When i18n or versioning is enabled, check if navigation.json exists
-      // in locale/version dirs before warning - it will be loaded later per-locale/version
-      let navScanDir = path.resolve(cwd, normalized.srcDir);
-      let hasNavInSubdirs = false;
-
-      if (normalized.i18n?.default) {
-        const localeScanDir = path.join(navScanDir, normalized.i18n.default);
-        if (fs.existsSync(localeScanDir)) {
-          navScanDir = localeScanDir;
-        }
-        // Check if any locale dir has navigation.json
-        hasNavInSubdirs = (normalized.i18n.locales || []).some((l: any) =>
-          fs.existsSync(path.join(path.resolve(cwd, normalized.srcDir), l.id, 'navigation.json'))
-        );
+      if (isLegacy) {
+        TUI.error('Legacy Configuration Detected', 'Your docmd.config.js uses an outdated structure.');
+        TUI.info(`Run ${TUI.cyan('docmd migrate')} to automatically upgrade your configuration.`);
       }
 
-      // Check if any version dir has navigation.json
-      if (!hasNavInSubdirs && normalized.versions?.all?.length > 0) {
-        hasNavInSubdirs = normalized.versions.all.some((v: any) => {
-          const vDir = path.resolve(cwd, v.dir);
-          // Check base dir and locale subdirs
-          if (fs.existsSync(path.join(vDir, 'navigation.json'))) return true;
-          if (normalized.i18n?.default) {
-            return fs.existsSync(path.join(vDir, normalized.i18n.default, 'navigation.json'));
+      validateConfig(rawConfig);
+      const hasExplicitNav = 'navigation' in rawConfig;
+      const normalized = normalizeConfig(rawConfig);
+
+      // Ensure we have a navigation array, fallback to Auto-Router if empty (unless explicitly set to empty)
+      if (!normalized.navigation || (normalized.navigation.length === 0 && !hasExplicitNav)) {
+        // When i18n or versioning is enabled, check if navigation.json exists
+        // in locale/version dirs before warning - it will be loaded later per-locale/version
+        let navScanDir = path.resolve(cwd, normalized.srcDir);
+        let hasNavInSubdirs = false;
+
+        if (normalized.i18n?.default) {
+          const localeScanDir = path.join(navScanDir, normalized.i18n.default);
+          if (fs.existsSync(localeScanDir)) {
+            navScanDir = localeScanDir;
           }
-          return false;
-        });
-      }
+          // Check if any locale dir has navigation.json
+          hasNavInSubdirs = (normalized.i18n.locales || []).some((l: any) =>
+            fs.existsSync(path.join(path.resolve(cwd, normalized.srcDir), l.id, 'navigation.json'))
+          );
+        }
 
-      if (!hasNavInSubdirs) {
-        // Check if navigation.json exists directly in the source root
-        const rootNavPath = path.join(navScanDir, 'navigation.json');
-        if (fs.existsSync(rootNavPath)) {
-          hasNavInSubdirs = true;
-          try {
-            normalized.navigation = JSON.parse(fs.readFileSync(rootNavPath, 'utf-8'));
-          } catch { /* fall through to auto-nav */ }
+        // Check if any version dir has navigation.json
+        if (!hasNavInSubdirs && normalized.versions?.all?.length > 0) {
+          hasNavInSubdirs = normalized.versions.all.some((v: any) => {
+            const vDir = path.resolve(cwd, v.dir);
+            // Check base dir and locale subdirs
+            if (fs.existsSync(path.join(vDir, 'navigation.json'))) return true;
+            if (normalized.i18n?.default) {
+              return fs.existsSync(path.join(vDir, normalized.i18n.default, 'navigation.json'));
+            }
+            return false;
+          });
+        }
+
+        if (!hasNavInSubdirs) {
+          // Check if navigation.json exists directly in the source root
+          const rootNavPath = path.join(navScanDir, 'navigation.json');
+          if (fs.existsSync(rootNavPath)) {
+            hasNavInSubdirs = true;
+            try {
+              normalized.navigation = JSON.parse(fs.readFileSync(rootNavPath, 'utf-8'));
+            } catch { /* fall through to auto-nav */ }
+          }
+        }
+
+        if (!hasNavInSubdirs) {
+          if (!options.quiet && !(global as any).__DOCMD_ZERO_NAV_LOGGED) {
+            TUI.info('No navigation settings found. Auto-generating with Zero-Config...');
+            if (options.isDev) (global as any).__DOCMD_ZERO_NAV_LOGGED = true;
+          }
+
+          normalized.navigation = buildAutoNav(navScanDir);
         }
       }
 
-      if (!hasNavInSubdirs) {
-        if (!options.quiet && !(global as any).__DOCMD_ZERO_NAV_LOGGED) {
-          TUI.info('No navigation settings found. Auto-generating with Zero-Config...');
-          if (options.isDev) (global as any).__DOCMD_ZERO_NAV_LOGGED = true;
-        }
-
-        normalized.navigation = buildAutoNav(navScanDir);
+      return normalized;
+    } finally {
+      if (tempConfigPath && fs.existsSync(tempConfigPath)) {
+          fs.unlinkSync(tempConfigPath);
       }
+      // Clean up global to avoid pollution
+      delete (global as any).defineConfig;
     }
-
-    return normalized;
 
   } catch (e: any) {
     if (e.message === 'Invalid configuration file.') throw e;
