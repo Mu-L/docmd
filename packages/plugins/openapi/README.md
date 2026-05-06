@@ -1,6 +1,6 @@
-# @docmd/plugin-git
+# @docmd/plugin-openapi
 
-Adds Git-based metadata to your docmd site: last-updated timestamps, contributor history, and edit links derived directly from your repository. Core plugin, already included in the core.
+Adds Git-based metadata to your docmd site: last-updated timestamps, contributor history, and edit links derived directly from your repository. An optional plugin, installed separately.
 
 ```bash
 docmd add git

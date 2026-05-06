@@ -47,7 +47,7 @@ const CAPABILITY_HOOKS: Record<Capability, string[]> = {
   events:       ['events'],
   translations: ['translations'],
   init:         ['onConfigResolved'],
-  build:        ['onBeforeParse', 'onAfterParse', 'onPageReady'],
+  build:        ['onBeforeParse', 'onAfterParse', 'onBeforeRender', 'onPageReady'],
   dev:          ['onDevServerReady'],
 };
 
@@ -70,6 +70,7 @@ export const hooks: PluginHooks = {
   onDevServerReady: [],
   onBeforeParse: [],
   onAfterParse: [],
+  onBeforeRender: [],
   onPageReady: [],
 };
 
@@ -291,6 +292,7 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
   hooks.onDevServerReady = [];
   hooks.onBeforeParse = [];
   hooks.onAfterParse = [];
+  hooks.onBeforeRender = [];
   hooks.onPageReady = [];
   pluginErrors.length = 0;
 
@@ -613,6 +615,23 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
       });
     } else {
       TUI.warn(`Plugin "${shortName}" exports onAfterParse but didn't declare "build" capability - skipped`);
+    }
+  }
+
+  // onBeforeRender
+  if (typeof (plugin as any).onBeforeRender === 'function') {
+    if (hasCapabilityForHook(descriptor, 'onBeforeRender')) {
+      const fn = (plugin as any).onBeforeRender;
+      hooks.onBeforeRender.push(async (page: any) => {
+        try {
+          await fn(page);
+        } catch (err: any) {
+          TUI.error(`Plugin "${name}" threw in onBeforeRender`, err.message);
+          pluginErrors.push({ plugin: name, hook: 'onBeforeRender', message: err.message });
+        }
+      });
+    } else {
+      TUI.warn(`Plugin "${shortName}" exports onBeforeRender but didn't declare "build" capability - skipped`);
     }
   }
 

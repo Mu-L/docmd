@@ -169,17 +169,51 @@ export interface PluginModule {
   /** Whether this plugin should run on noStyle pages (default: true). */
   noStyle?: boolean;
 
-  // --- Expanded Lifecycle Hooks ---
+  // --- Lifecycle Hooks ---
   /** Read/modify normalized config right after initialization. */
   onConfigResolved?(config: any): void | Promise<void>;
   /** Access the dev server instance. */
   onDevServerReady?(server: any, wss: any): void | Promise<void>;
-  /** Modify raw markdown before parsing. */
+  /** Modify raw markdown before parsing. Called per page. */
   onBeforeParse?(src: string, frontmatter: any): string | Promise<string>;
   /** Modify rendered HTML after parsing. */
   onAfterParse?(html: string, frontmatter: any): string | Promise<string>;
+  /**
+   * Called BEFORE template rendering. Receives the page context including
+   * `sourcePath` (absolute path to the source .md file), `frontmatter`,
+   * and `html`. Mutations are reflected in the rendered output.
+   *
+   * This is the right hook for plugins that need to inject data derived
+   * from the source file (e.g. reading frontmatter, computing metadata)
+   * before the template runs.
+   */
+  onBeforeRender?(page: PageContext): void | Promise<void>;
   /** Access fully assembled page object before write. */
   onPageReady?(page: any): void | Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
+// Page Context — available in onBeforeRender
+// ---------------------------------------------------------------------------
+
+/**
+ * Page context object passed to `onBeforeRender`.
+ * Always includes `sourcePath` so plugins can read the source file,
+ * compute file-based metadata, and inject it before templating.
+ */
+export interface PageContext {
+  /** Absolute path to the source .md file. Always set. */
+  sourcePath: string;
+  /** Parsed frontmatter object. Plugins may mutate this. */
+  frontmatter: Record<string, any>;
+  /** Rendered HTML body (between template slots). Plugins may mutate this. */
+  html: string;
+  /** Locale id active for this page. */
+  localeId?: string;
+  /** Version id active for this page (if versioning enabled). */
+  versionId?: string;
+  /** Relative path from the output file to the site root. */
+  relativePathToRoot?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -196,11 +230,13 @@ export interface PluginHooks {
   translations: ((localeId: string) => Record<string, string>)[];
   actions: Record<string, ActionHandler>;
   events: Record<string, EventHandler>;
-  
-  // Expanded Lifecycle Hooks
+
+  // Lifecycle Hooks
   onConfigResolved: ((config: any) => void | Promise<void>)[];
   onDevServerReady: ((server: any, wss: any) => void | Promise<void>)[];
   onBeforeParse: ((src: string, frontmatter: any) => string | Promise<string>)[];
   onAfterParse: ((html: string, frontmatter: any) => string | Promise<string>)[];
+  /** Called before template rendering. Receives full PageContext. */
+  onBeforeRender: ((page: PageContext) => void | Promise<void>)[];
   onPageReady: ((page: any) => void | Promise<void>)[];
 }

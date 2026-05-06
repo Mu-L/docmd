@@ -28,13 +28,11 @@ export const plugin: PluginDescriptor = {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const i18nDir = path.resolve(__dirname, '..', 'i18n');
 
-// Cache for git data to avoid repeated shell calls
+// Cache for git data to avoid repeated shell calls (keyed by absolute file path)
 const gitCache = new Map<string, GitFileInfo>();
 
-// Track if we're in a git repo (checked once per build)
-let _isGitRepoChecked = false;
-let _isGitRepo = false;
-let _gitRootPath: string | null = null;
+// Cache git root per directory (keyed by directory path)
+const gitRootCache = new Map<string, string | null>();
 
 export interface GitCommit {
   hash: string;
@@ -54,37 +52,23 @@ export interface GitFileInfo {
 }
 
 /**
- * Check if the project is inside a git repository.
- * Uses process.cwd() as the project root.
+ * Resolve the git root for a given directory.
+ * Cached per directory so multi-project builds never share roots.
  */
-function checkGitRepo(cwd?: string): boolean {
-  if (_isGitRepoChecked) return _isGitRepo;
-  
-  const checkDir = cwd || process.cwd();
-  
+function resolveGitRoot(dir: string): string | null {
+  if (gitRootCache.has(dir)) return gitRootCache.get(dir)!;
   try {
-    const result = execSync('git rev-parse --show-toplevel', { 
-      cwd: checkDir, 
-      stdio: 'pipe', 
-      encoding: 'utf8' 
+    const result = execSync('git rev-parse --show-toplevel', {
+      cwd: dir,
+      stdio: 'pipe',
+      encoding: 'utf8'
     }).trim();
-    _isGitRepo = true;
-    _gitRootPath = result;
+    gitRootCache.set(dir, result);
+    return result;
   } catch {
-    _isGitRepo = false;
-    _gitRootPath = null;
+    gitRootCache.set(dir, null);
+    return null;
   }
-  
-  _isGitRepoChecked = true;
-  return _isGitRepo;
-}
-
-/**
- * Get the git root path.
- */
-function getGitRoot(): string | null {
-  checkGitRepo();
-  return _gitRootPath;
 }
 
 /**
@@ -101,45 +85,27 @@ function isGitAvailable(): boolean {
 
 /**
  * Get git information for a specific file.
- * Uses process.cwd() as the git root to handle monorepo/workspace setups.
+ * Resolves the git root from the file's own directory — safe for multi-project builds.
  */
 function getGitFileInfo(filePath: string, maxCommits: number = 6): GitFileInfo | null {
-  // Use process.cwd() as the project root - this is where docmd runs from
-  const projectRoot = process.cwd();
-  
-  // Quick exit if not in a git repo
-  if (!checkGitRepo(projectRoot)) {
-    return null;
-  }
+  // Check cache first (keyed by absolute file path)
+  if (gitCache.has(filePath)) return gitCache.get(filePath)!;
 
-  // Check cache first
-  const cacheKey = filePath;
-  if (gitCache.has(cacheKey)) {
-    return gitCache.get(cacheKey)!;
-  }
+  // Resolve git root from the file's directory, not process.cwd()
+  const fileDir = path.dirname(filePath);
+  const gitRoot = resolveGitRoot(fileDir);
+  if (!gitRoot) return null;
+
+  const relPath = path.relative(gitRoot, filePath).replace(/\\/g, '/');
+  if (!relPath || relPath.startsWith('..')) return null;
 
   try {
-    // Always run git log from the git root with a root-relative path.
-    // Running from a subdirectory causes git to scope history to that
-    // subtree only, which can return repo-wide commits instead of
-    // file-specific ones when the path resolves unexpectedly.
-    const gitRoot = _gitRootPath || projectRoot;
-    const relPath = path.relative(gitRoot, filePath).replace(/\\/g, '/');
-
-    if (!relPath || relPath.startsWith('..')) {
-      // File is outside the git root — skip
-      return null;
-    }
-
-    // Get commit history using the root-relative path from the git root
     const logOutput = execSync(
       `git log -n ${maxCommits} --format="%H|%h|%an|%ae|%at|%s" -- "${relPath}"`,
       { cwd: gitRoot, stdio: 'pipe', encoding: 'utf8' }
     ).trim();
 
-    if (!logOutput) {
-      return null;
-    }
+    if (!logOutput) return null;
 
     const commits: GitCommit[] = logOutput.split('\n').filter(Boolean).map((line: string) => {
       const [hash, shortHash, author, email, timestamp, ...messageParts] = line.split('|');
@@ -152,14 +118,12 @@ function getGitFileInfo(filePath: string, maxCommits: number = 6): GitFileInfo |
         email,
         date: new Date(ts).toISOString(),
         timestamp: ts,
-        message: messageParts.join('|'), // In case message contains |
+        message: messageParts.join('|'),
         avatarUrl: `https://www.gravatar.com/avatar/${hashEmail}?d=mp&s=64`
       };
     });
 
-    if (commits.length === 0) {
-      return null;
-    }
+    if (commits.length === 0) return null;
 
     const info: GitFileInfo = {
       lastUpdated: commits[0]?.date || '',
@@ -167,7 +131,7 @@ function getGitFileInfo(filePath: string, maxCommits: number = 6): GitFileInfo |
       commits
     };
 
-    gitCache.set(cacheKey, info);
+    gitCache.set(filePath, info);
     return info;
   } catch {
     return null;
@@ -237,14 +201,11 @@ export function translations(localeId: string): Record<string, string> {
 }
 
 /**
- * Build hook: Reset caches at the start of each build.
+ * Build hook: Reset file-level cache at the start of each build.
+ * Root cache is safe to keep — git roots don't change during a build.
  */
-export function onBeforeParse({ config }: any): void {
-  // Clear all caches at the start of each build
+export function onBeforeParse(_ctx: any): void {
   gitCache.clear();
-  _isGitRepoChecked = false;
-  _isGitRepo = false;
-  _gitRootPath = null;
 }
 
 /**
@@ -258,26 +219,14 @@ export async function onPageReady(_ctx: any): Promise<void> {
 
 /**
  * Inject git data into page context BEFORE template rendering.
- * This ensures the data is available when the template is rendered.
- * Uses the 'head' capability which runs during render.
  */
-export function generateMetaTags(config: any, pageContext: any, _relativePathToRoot: string): string {
+export function generateMetaTags(_config: any, pageContext: any, _relativePathToRoot: string): string {
   const sourcePath = pageContext?.sourcePath;
-  if (!sourcePath) return '';
-  
-  // Skip if not in a git repo
-  if (!checkGitRepo(path.dirname(sourcePath))) {
-    return '';
-  }
-  
+  if (!sourcePath || !pageContext?.frontmatter) return '';
+
   const gitInfo = getGitFileInfo(sourcePath);
-  if (!gitInfo || !pageContext?.frontmatter) {
-    return '';
-  }
-  
-  // Inject git data into frontmatter BEFORE rendering
-  pageContext.frontmatter._git = gitInfo;
-  
+  if (gitInfo) pageContext.frontmatter._git = gitInfo;
+
   return '';
 }
 
@@ -328,4 +277,4 @@ export function getAssets(_options?: any): any[] {
   ];
 }
 
-export { getGitFileInfo, formatLastUpdated, checkGitRepo as isGitRepo };
+export { getGitFileInfo, formatLastUpdated };
