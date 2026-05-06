@@ -126,14 +126,16 @@ export const TUI = {
    *   │  Checking consistency                        [ WAIT ]
    *   │  Checking consistency                        [ DONE ]  ← replaces WAIT
    */
-  step: (label: string, status: 'DONE' | 'WAIT' | 'SKIP' | 'FAIL' | string = 'WAIT', barColor = chalk.cyan) => {
+  step: (label: string, status: 'DONE' | 'WAIT' | 'SKIP' | 'FAIL' | string = 'WAIT', barColor = chalk.cyan, statusFirst = false) => {
     flushProgress();
     const statusText = status === 'DONE' ? chalk.green('[ DONE ]') : 
                        status === 'SKIP' ? chalk.yellow('[ SKIP ]') : 
                        status === 'FAIL' ? chalk.red('[ FAIL ]') :
                        chalk.blue(`[ ${status} ]`);
     
-    const line = `${barColor('│')}  ${chalk.dim(label.padEnd(45))} ${statusText}`;
+    const line = statusFirst 
+      ? `${barColor('│')}  ${statusText} ${label}`
+      : `${barColor('│')}  ${chalk.dim(label.padEnd(45))} ${statusText}`;
 
     // If the previous output was a WAIT step, overwrite it in-place
     if (isTTY() && status !== 'WAIT' && _lastOutputWasWaitStep) {
@@ -236,6 +238,7 @@ export const TUI = {
     const render = () => {
       if (stopped) return;
       const frame = chalk.cyan(SPINNER_FRAMES[frameIndex % SPINNER_FRAMES.length]);
+      // For spinners, we always put the frame at the end for animation stability
       writeLine(`${barColor('│')}  ${chalk.dim(currentLabel)} ${frame}`);
       frameIndex++;
     };
@@ -255,11 +258,15 @@ export const TUI = {
       },
 
       /** Stop spinner with success. */
-      done: (doneLabel?: string) => {
+      done: (doneLabel?: string, statusFirst = false) => {
         stopped = true;
         if (interval) clearInterval(interval);
         const finalLabel = doneLabel || currentLabel;
-        const line = `${barColor('│')}  ${chalk.dim(finalLabel.padEnd(45))} ${chalk.green('[ DONE ]')}`;
+        const statusText = chalk.green('[ DONE ]');
+        const line = statusFirst
+          ? `${barColor('│')}  ${statusText} ${finalLabel}`
+          : `${barColor('│')}  ${chalk.dim(finalLabel.padEnd(45))} ${statusText}`;
+        
         if (isTTY()) {
           process.stdout.write(`\r\x1b[K${line}\n`);
         } else {
@@ -268,11 +275,15 @@ export const TUI = {
       },
 
       /** Stop spinner with failure. */
-      fail: (failLabel?: string) => {
+      fail: (failLabel?: string, statusFirst = false) => {
         stopped = true;
         if (interval) clearInterval(interval);
         const finalLabel = failLabel || currentLabel;
-        const line = `${barColor('│')}  ${chalk.dim(finalLabel.padEnd(45))} ${chalk.red('[ FAIL ]')}`;
+        const statusText = chalk.red('[ FAIL ]');
+        const line = statusFirst
+          ? `${barColor('│')}  ${statusText} ${finalLabel}`
+          : `${barColor('│')}  ${chalk.dim(finalLabel.padEnd(45))} ${statusText}`;
+
         if (isTTY()) {
           process.stdout.write(`\r\x1b[K${line}\n`);
         } else {

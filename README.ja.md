@@ -201,17 +201,19 @@ await buildLive();
 
 機能を拡張したい場合にのみ、プラグインが必要です。
 
-| プラグイン  | 含まれる | 説明                                               |
-| :---------- | :------- | :------------------------------------------------- |
-| `search`    | ✓        | あいまい検索対応のオフライン全文検索               |
-| `seo`       | ✓        | SEOタグとOpen Graphメタデータ                      |
-| `sitemap`   | ✓        | `sitemap.xml` を生成                               |
-| `analytics` | ✓        | 軽量なアナリティクス統合                           |
-| `llms`      | ✓        | AI文脈生成 (`llms.txt`)                            |
-| `mermaid`   | ✓        | Markdown内でのMermaid図表                          |
-| `pwa`       | オプション | オフラインナビゲーションのためのPWA対応            |
-| `threads`   | オプション | インラインディスカッションスレッド *(by @svallory)* |
-| `math`      | オプション | KaTeX/LaTeX 数式レンダリング                        |
+| プラグイン    | 同梱     | 説明                                                 |
+| :---------- | :------- | :--------------------------------------------------- |
+| `search`    | ✓        | あいまい検索対応のオフライン全文検索                   |
+| `seo`       | ✓        | SEOタグとOpen Graphメタデータ                        |
+| `sitemap`   | ✓        | `sitemap.xml`を生成                                  |
+| `git`       | ✓        | Gitコミット履歴ロガー                                 |
+| `analytics` | ✓        | 軽量なアナリティクス統合                              |
+| `llms`      | ✓        | AIコンテキスト生成 (`llms.txt`)                      |
+| `mermaid`   | ✓        | Markdown内のMermaidダイアグラム                      |
+| `openapi`   | ✓        | ビルド時のOpenAPI 3.xスペックレンダラー              |
+| `pwa`       | Optional | オフラインナビゲーション用PWAサポート                |
+| `threads`   | Optional | インラインディスカッションスレッド *(by @svallory)*  |
+| `math`      | Optional | KaTeX/LaTeXによる数式レンダリング                    |
 
 オプションのプラグインをインストールする：
 

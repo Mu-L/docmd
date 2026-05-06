@@ -1,3 +1,4 @@
+
 <div align="center">
 
   <!-- PROJECT TITLE -->
@@ -204,9 +205,11 @@ Plugins are only needed when you want to extend functionality.
 | `search`    | ✓        | Offline full-text search with fuzzy matching       |
 | `seo`       | ✓        | SEO tags and Open Graph metadata                   |
 | `sitemap`   | ✓        | Generates `sitemap.xml`                            |
+| `git`       | ✓        | Git commit history logger                          |
 | `analytics` | ✓        | Lightweight analytics integration                  |
 | `llms`      | ✓        | AI context generation (`llms.txt`)                 |
 | `mermaid`   | ✓        | Mermaid diagrams in Markdown                       |
+| `openapi`   | ✓        | Build-time OpenAPI 3.x spec renderer               |
 | `pwa`       | Optional | Progressive Web App support for offline navigation |
 | `threads`   | Optional | Inline discussion threads *(by @svallory)*         |
 | `math`      | Optional | KaTeX/LaTeX math rendering                         |

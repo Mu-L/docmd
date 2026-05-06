@@ -203,15 +203,17 @@ Los plugins solo son necesarios cuando quieres extender la funcionalidad.
 
 | Plugin      | Incluido | Descripción                                           |
 | :---------- | :------- | :---------------------------------------------------- |
-| `search`    | ✓        | Búsqueda de texto completo con coincidencia difusa    |
-| `seo`       | ✓        | Etiquetas SEO y metadatos Open Graph                  |
+| `search`    | ✓        | Búsqueda de texto completo con coincidencia aproximada |
+| `seo`       | ✓        | Etiquetas SEO y metadatos de Open Graph               |
 | `sitemap`   | ✓        | Genera `sitemap.xml`                                  |
-| `analytics` | ✓        | Integración de analítica ligera                       |
-| `llms`      | ✓        | Generación de contexto para AI (`llms.txt`)           |
-| `mermaid`   | ✓        | Diagramas Mermaid en Markdown                         |
-| `pwa`       | Opcional | Soporte PWA para navegación fuera de línea            |
-| `threads`   | Opcional | Hilos de discusión en línea *(por @svallory)*         |
-| `math`      | Opcional | Renderizado matemático KaTeX/LaTeX                   |
+| `git`       | ✓        | Registrador de historial de commits de Git            |
+| `analytics` | ✓        | Integración de análisis ligera                        |
+| `llms`      | ✓        | Generación de contexto para IA (`llms.txt`)           |
+| `mermaid`   | ✓        | Diagramas de Mermaid en Markdown                      |
+| `openapi`   | ✓        | Renderizador de OpenAPI 3.x en tiempo de construcción |
+| `pwa`       | Optional | Soporte de PWA para navegación sin conexión           |
+| `threads`   | Optional | Hilos de discusión en línea *(por @svallory)*         |
+| `math`      | Optional | Renderizado de matemáticas KaTeX/LaTeX                |
 
 Instalar plugins opcionales:
 

@@ -5,16 +5,16 @@
   "description": "Inline discussion threads for docmd documentation sites.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "i18n"
-  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }
   },
+  "files": [
+    "dist",
+    "i18n"
+  ],
   "scripts": {
     "build": "tsc && node build.js",
     "build:client": "node build.js",
@@ -25,7 +25,7 @@
     "@docmd/parser": "workspace:*"
   },
   "dependencies": {
-    "@awesome.me/webawesome": "^3.5.0",
+    "@awesome.me/webawesome": "^3.6.0",
     "lit": "^3.3.2"
   },
   "devDependencies": {

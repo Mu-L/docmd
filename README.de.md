@@ -206,9 +206,11 @@ Plugins werden nur benötigt, wenn Sie die Funktionalität erweitern möchten.
 | `search`    | ✓        | Offline-Volltextsuche mit Fuzzy-Matching                |
 | `seo`       | ✓        | SEO-Tags und Open-Graph-Metadaten                       |
 | `sitemap`   | ✓        | Generiert `sitemap.xml`                                 |
+| `git`       | ✓        | Git-Commit-Historie Logger                              |
 | `analytics` | ✓        | Leichtgewichtige Analytik-Integration                   |
 | `llms`      | ✓        | KI-Kontextgenerierung (`llms.txt`)                      |
 | `mermaid`   | ✓        | Mermaid-Diagramme in Markdown                           |
+| `openapi`   | ✓        | OpenAPI 3.x-Spezifikations-Renderer zur Build-Zeit      |
 | `pwa`       | Optional | PWA-Unterstützung für Offline-Navigation                |
 | `threads`   | Optional | Inline-Diskussions-Threads *(von @svallory)*            |
 | `math`      | Optional | KaTeX/LaTeX-Mathe-Rendering                             |

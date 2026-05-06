@@ -11,14 +11,14 @@
   "files": [
     "dist"
   ],
+  "dependencies": {
+    "katex": "^0.16.45",
+    "markdown-it-texmath": "^1.0.0"
+  },
   "devDependencies": {
     "@types/node": "^18.19.130",
     "typescript": "^5.9.3",
     "@docmd/api": "workspace:*"
-  },
-  "dependencies": {
-    "katex": "^0.16.45",
-    "markdown-it-texmath": "^1.0.0"
   },
   "keywords": [
     "docmd",
