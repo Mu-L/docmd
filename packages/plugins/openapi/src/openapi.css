@@ -1,10 +1,20 @@
 /**
- * OpenAPI Plugin Styles for docmd
+ * --------------------------------------------------------------------
+ * docmd : the zero-config documentation engine.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
  */
 
 .oa-spec {
   margin: 2rem 0;
-  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+  font-family: var(--font-family-sans, system-ui, -apple-system, sans-serif);
 }
 
 .oa-spec-header {
@@ -20,6 +30,7 @@
   margin: 0;
   font-size: 1.75rem;
   font-weight: 700;
+  color: var(--text-heading, #111);
 }
 
 .oa-spec-meta {
@@ -32,7 +43,7 @@
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-muted, #666);
-  background: var(--bg-muted, #f3f4f6);
+  background: var(--code-bg, #f3f4f6);
   padding: 0.125rem 0.5rem;
   border-radius: 9999px;
 }
@@ -40,17 +51,17 @@
 .oa-download-link {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--brand-color, #3b82f6);
+  color: var(--link-color, #3b82f6);
   text-decoration: none;
-  border: 1px solid var(--brand-color, #3b82f6);
+  border: 1px solid var(--link-color, #3b82f6);
   padding: 0.125rem 0.5rem;
   border-radius: 4px;
   transition: all 0.2s;
 }
 
 .oa-download-link:hover {
-  background: var(--brand-color, #3b82f6);
-  color: white;
+  background: var(--link-color, #3b82f6);
+  color: #fff;
 }
 
 .oa-spec-description {
@@ -64,7 +75,7 @@
   border: 1px solid var(--border-color, #eee);
   border-radius: 8px;
   overflow: hidden;
-  background: var(--bg-card, #fff);
+  background: var(--bg-color, #fff);
 }
 
 .oa-operation-header {
@@ -72,12 +83,12 @@
   align-items: center;
   gap: 1rem;
   padding: 0.75rem 1rem;
-  background: var(--bg-muted, #f9fafb);
+  background: var(--code-bg, #f9fafb);
   border-bottom: 1px solid var(--border-color, #eee);
 }
 
 .oa-method {
-  color: white;
+  color: #fff;
   padding: 0.25rem 0.75rem;
   border-radius: 4px;
   font-weight: 700;
@@ -88,8 +99,8 @@
 
 .oa-path {
   font-weight: 600;
-  font-family: var(--font-mono, monospace);
-  color: var(--text-color, #111);
+  font-family: var(--font-family-mono, monospace);
+  color: var(--text-heading, #111);
 }
 
 .oa-deprecated {
@@ -104,6 +115,7 @@
   margin: 0;
   font-weight: 600;
   font-size: 1.1rem;
+  color: var(--text-heading);
 }
 
 .oa-description {
@@ -114,19 +126,32 @@
   line-height: 1.5;
 }
 
-.oa-schema-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 1rem 0;
-  font-size: 0.9rem;
-}
-
 .oa-operation h5 {
   margin: 1.5rem 1rem 0.5rem;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted, #6b7280);
+  font-weight: 700;
+}
+
+.oa-content-type {
+  padding: 0 1rem;
+  margin: 0.5rem 0;
+}
+
+.oa-content-type code {
+  font-size: 0.8rem;
+  background: var(--code-bg);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
+.oa-schema-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0 0; /* Margin top only as requested */
+  font-size: 0.9rem;
 }
 
 .oa-schema-table th, .oa-schema-table td {
@@ -136,7 +161,7 @@
 }
 
 .oa-schema-table th {
-  background: var(--bg-muted, #f9fafb);
+  background: var(--code-bg, #f9fafb);
   font-weight: 600;
   color: var(--text-muted, #4b5563);
 }
@@ -148,16 +173,16 @@
 
 .oa-type {
   color: #0891b2;
-  font-family: var(--font-mono, monospace);
+  font-family: var(--font-family-mono, monospace);
   font-size: 0.85rem;
 }
 
 .oa-param-in {
   font-size: 0.75rem;
-  background: #f3f4f6;
+  background: var(--code-bg, #f3f4f6);
   padding: 0.125rem 0.375rem;
   border-radius: 4px;
-  color: #4b5563;
+  color: var(--text-muted, #4b5563);
 }
 
 .oa-status-badge {
@@ -171,6 +196,15 @@
 .oa-status-err { background: #fee2e2; color: #991b1b; }
 .oa-status-other { background: #f3f4f6; color: #4b5563; }
 
+/* Dark Mode Overrides */
+:root[data-theme=dark] .oa-type {
+  color: #22d3ee;
+}
+
+:root[data-theme=dark] .oa-status-ok { background: #065f4633; color: #34d399; }
+:root[data-theme=dark] .oa-status-err { background: #991b1b33; color: #f87171; }
+:root[data-theme=dark] .oa-status-other { background: #27272a; color: #a1a1aa; }
+
 .oa-error {
   padding: 1rem;
   background: #fef2f2;
@@ -178,4 +212,10 @@
   color: #991b1b;
   border-radius: 8px;
   margin: 1rem 0;
+}
+
+:root[data-theme=dark] .oa-error {
+  background: #991b1b22;
+  border-color: #991b1b44;
+  color: #f87171;
 }
