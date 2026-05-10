@@ -106,7 +106,6 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
     const workerScript = path.resolve(__dirname, '../engine/worker-parser.js');
     workerPool = new WorkerPool(workerScript, { config, cwd: CWD });
     await buildSite(configPathOption, { isDev: true, preserve: options.preserve, quiet: true, showStats: false, workerPool });
-    TUI.item('Serving');
     TUI.info(`Initial build complete in ${initialElapsed()}.`);
   } catch (error: any) {
     TUI.error('Initial build failed', error.message);

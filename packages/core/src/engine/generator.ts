@@ -26,10 +26,7 @@ import { TUI } from '@docmd/tui';
 import { findPageNeighbors, findBreadcrumbs, normalizeNavPaths, createUrlContext, buildContextualUrl, computePageUrls, buildAbsoluteUrl, sanitizeUrl } from '@docmd/parser';
 import * as ui from '@docmd/ui';
 
-// Per-build deduplication: ensures the Data Indexing section only prints once
-// even when buildLocales calls generateSite multiple times (locale × version).
-let _buildId       = '';
-let _indexingShown = false;
+
 
 /* ── Constants ────────────────────────────────────────────────── */
 
@@ -377,16 +374,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
   // Show the section header only ONCE per top-level build to avoid
   // reprinting it for every locale × version combination.
   if (hooks.onBeforeBuild && hooks.onBeforeBuild.length > 0) {
-    const buildId = (options as any)._buildId || '';
-    if (buildId !== _buildId) {
-      _buildId       = buildId;
-      _indexingShown = false;
-    }
-    const showSection = !options.targetFiles && !_indexingShown && !options.isDev;
-    if (showSection && TUI) {
-      _indexingShown = true;
-      TUI.section('Data Indexing', TUI.blue);  // auto-closes any open section
-    }
+    const showSection = !options.targetFiles && !options.isDev;
     const beforeBuildContext = {
       config,
       pages,
@@ -400,8 +388,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
     for (const hookFn of hooks.onBeforeBuild) {
       await hookFn(beforeBuildContext);
     }
-    // Data Indexing section stays open — build.ts will add search indexing
-    // to the same box and close it after all indexing hooks complete.
+    // Section stays open — build.ts closes it after appending search.
   }
 
   // --- 3. Render HTML (parallel template rendering + batched writes) ---
