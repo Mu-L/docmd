@@ -234,16 +234,23 @@ export async function buildSite(configPath: string, opts: any = {}) {
       }
     }
 
-    // --- 5. Post Build Hooks (Search, Sitemap, LLMs) ---
-    // Only run on full builds to prevent partial data from corrupting global indexes
-    // TUI.section() auto-closes any previously open section (Build or Data Indexing)
+    // --- 5. Post Build Hooks ---
+    // Only run on full builds. Split into two sections:
+    //   Indexing  → search (needs rendered pages but is conceptually "indexing")
+    //   Publishing → sitemap, llms, pwa, etc.
     if (!options.targetFiles) {
-      TUI.section('Post-Build Tasks', TUI.blue);
+      const INDEXING_PLUGINS = new Set(['search']);
+      const indexingHooks    = hooks.onPostBuild.filter((fn: any) => INDEXING_PLUGINS.has(fn._pluginName));
+      const publishingHooks  = hooks.onPostBuild.filter((fn: any) => !INDEXING_PLUGINS.has(fn._pluginName));
+
       const postBuildCtx = {
         config,
         pages:     allGeneratedPages,
         outputDir: rootOutputDir,
-        log:       (msg: string) => TUI.step(msg, 'DONE', TUI.blue),
+        log:       (msg: string) => {
+          const isSkip = msg.toLowerCase().startsWith('skipping');
+          TUI.step(msg, isSkip ? 'SKIP' : 'DONE', TUI.blue);
+        },
         tui:       TUI,
         options:   { ...options, quiet: false },
         runWorkerTask(modulePath: string, functionName: string, args: any[]) {
@@ -251,14 +258,23 @@ export async function buildSite(configPath: string, opts: any = {}) {
           return config._workerPool.runTask({ type: 'plugin-task', modulePath, functionName, args });
         }
       };
-      // Sequential execution keeps each plugin's WAIT→DONE transition clean in the TUI.
-      for (const fn of hooks.onPostBuild) {
-        await fn(postBuildCtx);
+
+      // Indexing phase — search runs inside the already-open Data Indexing section
+      // (opened by generator.ts for git; stays open for us to append search)
+      for (const fn of indexingHooks) await fn(postBuildCtx);
+      if (indexingHooks.length > 0 || hooks.onBeforeBuild?.length > 0) {
+        TUI.footer(TUI.blue); // close Data Indexing
+      }
+
+      // Publishing phase — sitemap, llms, pwa, etc.
+      if (publishingHooks.length > 0) {
+        TUI.section('Publishing', TUI.blue);
+        for (const fn of publishingHooks) await fn(postBuildCtx);
+        TUI.footer(TUI.blue);
       }
     }
 
     if (!options.isDev) {
-      TUI.footer(TUI.blue);
       TUI.success(`Build complete. Generated ${allGeneratedPages.length} pages in ${elapsed()}.`);
     }
 

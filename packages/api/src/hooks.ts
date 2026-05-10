@@ -497,14 +497,18 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
   if (typeof plugin.onPostBuild === 'function') {
     if (hasCapabilityForHook(descriptor, 'onPostBuild')) {
       const fn = plugin.onPostBuild;
-      hooks.onPostBuild.push(async (ctx: any) => {
+      const wrapper = async (ctx: any) => {
         try {
           await fn(ctx);
         } catch (err: any) {
           TUI.error(`Plugin "${name}" threw in onPostBuild`, err.message);
           pluginErrors.push({ plugin: name, hook: 'onPostBuild', message: err.message });
         }
-      });
+      };
+      // Tag with the plugin's own declared name (e.g. 'search', 'sitemap')
+      // so build.ts can split hooks into indexing vs publishing phases.
+      (wrapper as any)._pluginName = descriptor?.name || shortName;
+      hooks.onPostBuild.push(wrapper);
     } else {
       TUI.warn(`Plugin "${shortName}" exports onPostBuild but didn't declare "post-build" capability - skipped`);
     }

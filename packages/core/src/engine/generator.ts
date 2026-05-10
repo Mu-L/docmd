@@ -400,11 +400,8 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
     for (const hookFn of hooks.onBeforeBuild) {
       await hookFn(beforeBuildContext);
     }
-    // Close Data Indexing section BEFORE page rendering so the
-    // Processing progress bar appears in a clean context.
-    if (showSection && TUI) {
-      TUI.footer(TUI.blue);
-    }
+    // Data Indexing section stays open — build.ts will add search indexing
+    // to the same box and close it after all indexing hooks complete.
   }
 
   // --- 3. Render HTML (parallel template rendering + batched writes) ---
