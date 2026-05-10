@@ -144,11 +144,11 @@ export const TUI = {
     // Auto-close any previously open section so callers don't need to
     // manually track when to call footer()
     if (_sectionOpen) {
-      console.log(`${_sectionColor('└──────────────────────────────────────────────────────────')}\n`);
+      console.log(`${_sectionColor('└──────────────────────────────────────────────────────────')}`);
     }
     _sectionColor = color;
     _sectionOpen  = true;
-    console.log(`${color.bold(`┌─ ${label}`)}`);
+    console.log(`\n${color.bold(`┌─ ${label}`)}`);
   },
 
   divider: (label: string, color = chalk.blue) => {
@@ -199,18 +199,18 @@ export const TUI = {
 
   footer: (color = chalk.cyan) => {
     commitState();
-    console.log(`${color('└──────────────────────────────────────────────────────────')}\n`);
+    console.log(`${color('└──────────────────────────────────────────────────────────')}`);
     _sectionOpen = false;
   },
 
   info: (msg: string) => {
     commitState();
-    console.log(`${chalk.blue.bold('⬢')} ${msg}`);
+    console.log(`\n${chalk.blue.bold('⬢')} ${msg}`);
   },
 
   success: (msg: string) => {
     commitState();
-    console.log(`\n${chalk.green.bold('⬢')} ${msg}\n`);
+    console.log(`\n${chalk.green.bold('⬢')} ${msg}`);
   },
 
   warn: (msg: string) => {
@@ -225,7 +225,7 @@ export const TUI = {
     if (detail) {
       detail.split('\n').forEach(l => console.error(`${chalk.red('│')}  ${chalk.dim(l)}`));
     }
-    console.error(`${chalk.red('└──────────────────────────────────────────────────────────')}\n`);
+    console.error(`${chalk.red('└──────────────────────────────────────────────────────────')}`);
   },
 
   // ── Progress Bar ───────────────────────────────────────────
