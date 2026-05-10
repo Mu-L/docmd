@@ -374,7 +374,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
   // Show the section header only ONCE per top-level build to avoid
   // reprinting it for every locale × version combination.
   if (hooks.onBeforeBuild && hooks.onBeforeBuild.length > 0) {
-    const showSection = !options.targetFiles && !options.isDev;
+    const showSection = !options.targetFiles;
     const beforeBuildContext = {
       config,
       pages,
