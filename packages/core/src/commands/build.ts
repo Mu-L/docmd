@@ -68,21 +68,17 @@ export async function buildSite(configPath: string, opts: any = {}) {
     }
 
     const buildHash = Date.now().toString(36);
+    const _buildId   = `${buildHash}-${Math.random().toString(36).slice(2,7)}`;
 
     // Use V3 labels (config.out / config.src) which are normalized by config-schema
     const rootOutputDir = path.resolve(CWD, config.out);
     await fs.ensureDir(rootOutputDir);
 
     // ── TUI: Build section header ──────────────────────────
-    if (!options.quiet || options.showStats) {
-      if (!options.quiet) TUI.section('Build');
+    if (!options.quiet) {
+      TUI.section('Build');
       const details = TUI.extractProjectDetails(config, rootOutputDir, CWD);
-      TUI.projectDetails({
-        source: !options.quiet ? details.source : undefined,
-        output: !options.quiet ? details.output : undefined,
-        versions: details.versions,
-        locales: details.locales,
-      });
+      TUI.projectDetails(details);
     }
 
     // Helper: Build Assets for a specific output directory
@@ -142,7 +138,7 @@ export async function buildSite(configPath: string, opts: any = {}) {
       rootOutputDir,
       hooks,
       buildHash,
-      options,
+      options: { ...options, _buildId } as any,
       CWD,
       onProgress: fixedTotalProgress,
       targetFiles: options.targetFiles
@@ -246,8 +242,8 @@ export async function buildSite(configPath: string, opts: any = {}) {
 
     // --- 5. Post Build Hooks (Search, Sitemap, LLMs) ---
     // Only run on full builds to prevent partial data from corrupting global indexes
+    // TUI.section() auto-closes any previously open section (Build or Data Indexing)
     if (!options.targetFiles) {
-      TUI.footer(TUI.cyan);
       TUI.section('Post-Build Tasks', TUI.blue);
       await Promise.all(hooks.onPostBuild.map((fn: any) => fn({
         config,

@@ -26,7 +26,7 @@ export async function onPostBuild({ config, outputDir, log }: any) {
   const pwaConfig = config.plugins?.pwa || {};
   if (pwaConfig.enabled === false) return; // Enabled by default if loaded
 
-  if (log) log('📱 Generating PWA assets...');
+  if (log) log('Generating PWA assets');
 
   let icons = pwaConfig.icons;
   if (!icons) {
