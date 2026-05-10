@@ -26,7 +26,7 @@ export const plugin: PluginDescriptor = {
 export async function onPostBuild({ config, pages, outputDir, log }: any) {
   // Validation
   if (!config.url) {
-    if (log) log('Skipping llms.txt: "url" is missing in config');
+    if (log) log('Skipping llms.txt: "url" is missing in config', 'SKIP');
     return;
   }
 
@@ -95,7 +95,7 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
         fullContent += `*(Raw content unavailable)*\n\n---\n\n`;
       }
     } catch {
-      if (log) log(`Skipping raw markdown: ${page.sourcePath}`);
+      if (log) log(`Skipping raw markdown: ${page.sourcePath}`, 'SKIP');
     }
   }
 

@@ -247,9 +247,8 @@ export async function buildSite(configPath: string, opts: any = {}) {
         config,
         pages:     allGeneratedPages,
         outputDir: rootOutputDir,
-        log:       (msg: string) => {
-          const isSkip = msg.toLowerCase().startsWith('skipping');
-          TUI.step(msg, isSkip ? 'SKIP' : 'DONE', TUI.blue);
+        log: (msg: string, status: 'DONE'|'SKIP'|'FAIL'|'WAIT' = 'DONE') => {
+          TUI.step(msg, status, TUI.blue);
         },
         tui:       TUI,
         options:   { ...options, quiet: false },

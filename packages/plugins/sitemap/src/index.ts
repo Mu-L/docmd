@@ -35,7 +35,7 @@ export const plugin: PluginDescriptor = {
 export async function onPostBuild({ config, pages, outputDir, log }: any) {
   // 1. Check if enabled
   if (config.plugins?.sitemap === false || !config.url) {
-    if (!config.url && log) log('Skipping sitemap: "url" is missing in config');
+    if (!config.url && log) log('Skipping sitemap: "url" is missing in config', 'SKIP');
     return;
   }
 
