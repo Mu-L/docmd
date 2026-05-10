@@ -340,32 +340,34 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
       let needsAutoInstall = false;
       
       try {
-        const resolvedPath = require.resolve(name, { paths: resolvePaths });
-        rawModule = await import(pathToFileURL(resolvedPath).href);
-      } catch (e: any) {
-        // Monorepo fallback: if it's an official plugin, try packages/plugins/{id}
+        let loadedFromMonorepo = false;
+
+        // 1. Monorepo Priority: if it's an official plugin, try local monorepo source first.
+        // This prevents older versions installed in project node_modules from taking
+        // precedence during monorepo development.
         if (name.startsWith('@docmd/plugin-')) {
           const id = name.replace('@docmd/plugin-', '');
           const localPath = path.resolve(__monorepoRoot, 'packages/plugins', id, 'dist/index.js');
           if (nativeFs.existsSync(localPath)) {
             rawModule = await import(pathToFileURL(localPath).href);
-          } else {
-            // Mark for auto-install if it's an official plugin not found
-            needsAutoInstall = true;
+            loadedFromMonorepo = true;
           }
         }
 
-        if (!rawModule && !needsAutoInstall) {
+        // 2. Standard NPM Resolution: if not found locally, use Node's resolution
+        if (!loadedFromMonorepo) {
+          const resolvedPath = require.resolve(name, { paths: resolvePaths });
+          rawModule = await import(pathToFileURL(resolvedPath).href);
+        }
+      } catch (e: any) {
+        if (name.startsWith('@docmd/plugin-')) {
+          needsAutoInstall = true;
+        } else {
           // Fallback for non-package plugins or when resolution fails
           try {
             rawModule = await import(name);
           } catch (innerError: any) {
-            // For official plugins, attempt auto-install
-            if (name.startsWith('@docmd/plugin-')) {
-              needsAutoInstall = true;
-            } else {
-              throw new Error(`Failed to resolve ${name}. Search paths: ${resolvePaths.join(', ')}. Detail: ${innerError.message}`);
-            }
+            throw new Error(`Failed to resolve ${name}. Search paths: ${resolvePaths.join(', ')}. Detail: ${innerError.message}`);
           }
         }
       }
