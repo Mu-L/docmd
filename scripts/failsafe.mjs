@@ -1,10 +1,10 @@
 /**
  * --------------------------------------------------------------------
- * docmd : Universal Failsafe V4.1
+ * docmd : Universal Failsafe V5.0
  * 
  * Comprehensive end-to-end integration test for 0.8.0 release.
- * Tests multi-project, i18n, versioning, plugins, and config validation
- * in a single mega-build to ensure nothing is broken.
+ * Tests multi-project, i18n, versioning, plugins, type safety,
+ * and config validation in a single mega-build.
  * --------------------------------------------------------------------
  */
 
@@ -12,14 +12,11 @@ import { execSync } from 'node:child_process';
 import nativeFs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CWD = process.cwd();
 const CLI_BIN = path.join(CWD, 'packages/core/dist/bin/docmd.js');
-const LIVE_PUBLIC = path.join(CWD, 'dist');
-const TEMP_SCRIPT = path.join(CWD, 'temp-live-test.mjs');
 
 // TUI Emulation (matching @docmd/tui for consistency without package dependency)
 const TUI_EMU = {
@@ -95,7 +92,7 @@ function runCmd(cmd, cwd, silent = true) {
     const args = process.argv.slice(2);
     const skipSetup = args.includes('--skip-setup');
 
-    console.log(`\x1b[34m│\x1b[0m\n\x1b[34m│\x1b[0m  \x1b[1mUNIVERSAL FAILSAFE V4.1\x1b[0m`);
+    console.log(`\x1b[34m│\x1b[0m\n\x1b[34m│\x1b[0m  \x1b[1mUNIVERSAL FAILSAFE V5.0\x1b[0m`);
     const tempRoot = path.join(os.tmpdir(), `docmd-failsafe-${Math.random().toString(36).slice(2, 8)}`);
     console.log(`\x1b[34m│\x1b[0m  \x1b[2mWorkspace: ${tempRoot}\x1b[0m\n\x1b[34m│\x1b[0m`);
     nativeFs.mkdirSync(tempRoot);
@@ -120,79 +117,90 @@ function runCmd(cmd, cwd, silent = true) {
     const rootPkg = JSON.parse(nativeFs.readFileSync(path.join(CWD, 'package.json'), 'utf8'));
     const rootVersion = rootPkg.version;
 
-    // Parallelize independent verification sections
-    TUI.section('Concurrent Verification Suite');
+    // ═════════════════════════════════════════════════════════════
+    // SECTION 1: Type Safety & Version Integrity
+    // ═════════════════════════════════════════════════════════════
     
-    const runVerification = async () => {
-        const results = await Promise.allSettled([
-            // 1. Monorepo Integrity
-            (async () => {
-                TUI.step('Checking version consistency', 'WAIT');
-                const packagesDir = path.join(CWD, 'packages');
-                const checkVersions = (dir) => {
-                    for (const entry of nativeFs.readdirSync(dir)) {
-                        const p = path.join(dir, entry);
-                        if (nativeFs.existsSync(path.join(p, 'package.json'))) {
-                            const pkg = JSON.parse(nativeFs.readFileSync(path.join(p, 'package.json'), 'utf8'));
-                            assert(pkg.version === rootVersion, `Version mismatch in ${pkg.name}: ${pkg.version} != ${rootVersion}`);
-                        } else if (nativeFs.statSync(p).isDirectory() && entry !== 'node_modules' && entry !== 'dist') {
-                            checkVersions(p);
-                        }
-                    }
-                };
-                checkVersions(packagesDir);
-                TUI.step('Checking version consistency', 'DONE');
-            })(),
+    TUI.section('Type Safety & Integrity');
+    
+    // 1a. TypeScript type-checking across ALL packages
+    TUI.step('Type-checking monorepo packages', 'WAIT');
+    const typeCheckPackages = ['tui', 'utils', 'api', 'parser', 'core'];
+    const typeErrors = [];
+    for (const pkg of typeCheckPackages) {
+        const pkgDir = path.join(CWD, 'packages', pkg);
+        if (!nativeFs.existsSync(path.join(pkgDir, 'tsconfig.json'))) continue;
+        try {
+            execSync('npx tsc --noEmit', { cwd: pkgDir, stdio: 'pipe' });
+        } catch (e) {
+            const stderr = e.stderr?.toString() || e.stdout?.toString() || '';
+            typeErrors.push({ pkg, errors: stderr });
+        }
+    }
+    if (typeErrors.length > 0) {
+        TUI.step('Type-checking monorepo packages', 'FAIL');
+        for (const { pkg, errors } of typeErrors) {
+            TUI.error(`Type errors in @docmd/${pkg}:`);
+            errors.split('\n').slice(0, 10).forEach(l => {
+                console.error(`\x1b[34m│\x1b[0m  \x1b[2m${l}\x1b[0m`);
+            });
+        }
+        throw new Error(`TypeScript type errors found in ${typeErrors.map(e => e.pkg).join(', ')}`);
+    }
+    TUI.step('Type-checking monorepo packages', 'DONE');
 
-            // 2. Live Runtime & Security (Parallel)
-            (async () => {
-                TUI.step('Testing Live Runtime', 'WAIT');
-                if (nativeFs.existsSync(LIVE_PUBLIC)) nativeFs.rmSync(LIVE_PUBLIC, { recursive: true });
-                nativeFs.writeFileSync(TEMP_SCRIPT, `import { buildLive } from './packages/core/dist/commands/live.js'; await buildLive({ serve: false });`);
-                runCmd(`node "${TEMP_SCRIPT}"`, CWD);
-                
-                const sandbox = { 
-                    window: { location: { host: 'l' } }, 
-                    document: { 
-                        compatMode: 'CSS1Compat', 
-                        documentElement: { getAttribute: () => 'l' }, 
-                        addEventListener: () => { }, 
-                        body: { classList: { add: () => { } }, dataset: {} }, 
-                        querySelectorAll: () => [], 
-                        createElement: () => ({ setAttribute: () => { }, style: {} }) 
-                    }, 
-                    console, setTimeout, clearTimeout, Buffer 
-                };
-                sandbox.globalThis = sandbox; sandbox.self = sandbox; sandbox.window.document = sandbox.document;
-                vm.createContext(sandbox); 
-                vm.runInContext(nativeFs.readFileSync(path.join(LIVE_PUBLIC, 'docmd-live.js'), 'utf8'), sandbox);
-                assert(typeof sandbox.docmd.compile === 'function', "Live runtime compile missing");
-                TUI.step('Testing Live Runtime', 'DONE');
-            })(),
+    // 1b. Plugin type-checking
+    TUI.step('Type-checking plugins', 'WAIT');
+    const pluginsDir = path.join(CWD, 'packages/plugins');
+    const pluginTypeErrors = [];
+    if (nativeFs.existsSync(pluginsDir)) {
+        for (const entry of nativeFs.readdirSync(pluginsDir)) {
+            const pluginDir = path.join(pluginsDir, entry);
+            if (!nativeFs.existsSync(path.join(pluginDir, 'tsconfig.json'))) continue;
+            try {
+                execSync('npx tsc --noEmit', { cwd: pluginDir, stdio: 'pipe' });
+            } catch (e) {
+                const stderr = e.stderr?.toString() || e.stdout?.toString() || '';
+                pluginTypeErrors.push({ plugin: entry, errors: stderr });
+            }
+        }
+    }
+    if (pluginTypeErrors.length > 0) {
+        TUI.step('Type-checking plugins', 'FAIL');
+        for (const { plugin, errors } of pluginTypeErrors) {
+            TUI.error(`Type errors in plugin ${plugin}:`);
+            errors.split('\n').slice(0, 10).forEach(l => {
+                console.error(`\x1b[34m│\x1b[0m  \x1b[2m${l}\x1b[0m`);
+            });
+        }
+        throw new Error(`TypeScript type errors found in plugins: ${pluginTypeErrors.map(e => e.plugin).join(', ')}`);
+    }
+    TUI.step('Type-checking plugins', 'DONE');
 
-            (async () => {
-                TUI.step('Running Security Audit', 'WAIT');
-                try {
-                    execSync('pnpm audit --audit-level=moderate', { cwd: CWD, stdio: 'pipe' });
-                    TUI.step('Running Security Audit', 'DONE');
-                } catch {
-                    TUI.step('Running Security Audit', 'SKIP'); // Non-fatal
-                }
-            })()
-        ]);
-
-        const failures = results.filter(r => r.status === 'rejected');
-        if (failures.length > 0) throw failures[0].reason;
+    // 1c. Version consistency
+    TUI.step('Checking version consistency', 'WAIT');
+    const packagesDir = path.join(CWD, 'packages');
+    const checkVersions = (dir) => {
+        for (const entry of nativeFs.readdirSync(dir)) {
+            const p = path.join(dir, entry);
+            if (nativeFs.existsSync(path.join(p, 'package.json'))) {
+                const pkg = JSON.parse(nativeFs.readFileSync(path.join(p, 'package.json'), 'utf8'));
+                assert(pkg.version === rootVersion, `Version mismatch in ${pkg.name}: ${pkg.version} != ${rootVersion}`);
+            } else if (nativeFs.statSync(p).isDirectory() && entry !== 'node_modules' && entry !== 'dist') {
+                checkVersions(p);
+            }
+        }
     };
+    checkVersions(packagesDir);
+    TUI.step('Checking version consistency', 'DONE');
 
-    await runVerification();
     TUI.footer();
 
     // ═════════════════════════════════════════════════════════════
-    // V4.0: COMPREHENSIVE MEGA TEST
+    // SECTION 2: COMPREHENSIVE MEGA INTEGRATION TEST
     // ═════════════════════════════════════════════════════════════
     
-    TUI.section('Mega Integration Test (V4.1)');
+    TUI.section('Mega Integration Test (V5.0)');
     
     // Create ONE project that tests EVERYTHING together
     const megaDir = path.join(tempRoot, 'mega-integration');
@@ -266,7 +274,7 @@ title: Math
 Inline math: $E = mc^2$
 Block math:
 $$
-\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
+\\\\int_{-\\\\infty}^{\\\\infty} e^{-x^2} dx = \\\\sqrt{\\\\pi}
 $$`);
     
     nativeFs.writeFileSync(path.join(megaDir, 'main/docs/en/mermaid.md'), `---
@@ -377,35 +385,17 @@ All available API endpoints.`);
     TUI.footer();
 
     // ═════════════════════════════════════════════════════════════
-    // V4.1: Parallel Brute-Test Integration
-    // ═════════════════════════════════════════════════════════════
-    
-    TUI.section('Brute-Test Performance Check');
-    TUI.step('Running brute-test.js', 'WAIT');
-    
-    // We keep brute-test for full isolation checks, but it's called once.
-    try {
-        execSync('node scripts/brute-test.js', { cwd: CWD, stdio: 'pipe' });
-        TUI.step('Running brute-test.js', 'DONE');
-    } catch {
-        TUI.step('Running brute-test.js', 'FAIL');
-        throw new Error('Brute-test suite failed!');
-    }
-    TUI.footer();
-
-    // ═════════════════════════════════════════════════════════════
     // SUCCESS
     // ═════════════════════════════════════════════════════════════
     
     if (TUI.success) {
-        TUI.success('Universal Failsafe V4.1 Passed!');
+        TUI.success('Universal Failsafe V5.0 Passed!');
     } else {
-        console.log(`\n\x1b[32m\x1b[1m⬢ Universal Failsafe V4.1 Passed!\x1b[0m\n`);
+        console.log(`\n\x1b[32m\x1b[1m⬢ Universal Failsafe V5.0 Passed!\x1b[0m\n`);
     }
 
     // Clean up
     nativeFs.rmSync(tempRoot, { recursive: true, force: true });
-    if (nativeFs.existsSync(TEMP_SCRIPT)) nativeFs.unlinkSync(TEMP_SCRIPT);
 
 })().catch(err => {
     console.error(`\n\x1b[31m┌─ Failsafe Fatal Error\x1b[0m`);

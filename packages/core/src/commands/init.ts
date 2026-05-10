@@ -13,7 +13,7 @@
  */
 
 import { TUI } from '@docmd/api';
-import fs from '../utils/fs-utils.js';
+import { fsUtils as fs } from '@docmd/utils';
 import path from 'path';
 import readline from 'readline';
 import { createRequire } from 'module';

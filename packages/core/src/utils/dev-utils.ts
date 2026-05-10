@@ -18,7 +18,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
-import fs from './fs-utils.js';
+import { fsUtils as fs } from '@docmd/utils';
 
 
 

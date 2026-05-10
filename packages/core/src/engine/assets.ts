@@ -13,7 +13,7 @@
  */
 
 import path from 'path';
-import fs from '../utils/fs-utils.js';
+import { fsUtils as fs } from '@docmd/utils';
 import esbuild from 'esbuild';
 import { createRequire } from 'module';
 import nativeFs from 'fs';

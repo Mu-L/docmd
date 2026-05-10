@@ -50,6 +50,7 @@ export type {
   PluginHooks,
   Capability,
   PageContext,
+  PostBuildContext,
   // Action/Event system
   ActionContext,
   ActionHandler,

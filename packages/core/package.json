@@ -20,6 +20,7 @@
     "@docmd/api": "workspace:*",
     "@docmd/live": "workspace:*",
     "@docmd/parser": "workspace:*",
+    "@docmd/utils": "workspace:*",
     "@docmd/plugin-analytics": "workspace:*",
     "@docmd/plugin-git": "workspace:*",
     "@docmd/plugin-installer": "workspace:*",

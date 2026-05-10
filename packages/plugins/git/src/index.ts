@@ -14,54 +14,53 @@
 
 import path from 'path';
 import fs from 'fs';
-import { execFile, execSync } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
-import { fileURLToPath } from 'url';
+import crypto from 'crypto';
 
 const execFileAsync = promisify(execFile);
-import crypto from 'crypto';
+import { fileURLToPath } from 'url';
+
 import type { PluginDescriptor, PageContext } from '@docmd/api';
 
-export const plugin: PluginDescriptor = {
-  name: 'git',
-  version: '0.7.9',
-  capabilities: ['build', 'body', 'assets', 'translations', 'init']
-};
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const i18nDir = path.resolve(__dirname, '..', 'i18n');
-
-// Cache for git data to avoid repeated shell calls (keyed by absolute file path)
+const gitRootCache = new Map<string, string | null>();
 const gitCache = new Map<string, GitFileInfo>();
 
-// Cache git root per directory (keyed by directory path)
-const gitRootCache = new Map<string, string | null>();
+// Persistent disk cache for git histories
+let _diskCache: Record<string, { mtimeMs: number, info: GitFileInfo }> | null = null;
+let _diskCachePath: string | null = null;
+let _cacheDirty = false;
 
-export interface GitCommit {
-  hash: string;
-  shortHash: string;
-  author: string;
-  email: string;
-  date: string;
-  timestamp: number;
-  message: string;
-  avatarUrl: string;
+function initDiskCache() {
+  if (_diskCache !== null) return;
+  const cwd = process.cwd();
+  const cacheDir = path.join(cwd, '.docmd', 'cache');
+  _diskCachePath = path.join(cacheDir, 'git-history.json');
+  try {
+    if (fs.existsSync(_diskCachePath)) {
+      _diskCache = JSON.parse(fs.readFileSync(_diskCachePath, 'utf8'));
+    } else {
+      _diskCache = {};
+    }
+  } catch {
+    _diskCache = {};
+  }
 }
 
-export interface GitFileInfo {
-  lastUpdated: string;
-  lastUpdatedTimestamp: number;
-  commits: GitCommit[];
+function saveDiskCache() {
+  if (!_cacheDirty || !_diskCachePath || !_diskCache) return;
+  try {
+    const cacheDir = path.dirname(_diskCachePath);
+    if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
+    fs.writeFileSync(_diskCachePath, JSON.stringify(_diskCache), 'utf8');
+    _cacheDirty = false;
+  } catch { /* ignore */ }
 }
 
-/**
- * Resolve the git root for a given directory.
- * Cached per directory so multi-project builds never share roots.
- */
+
 async function resolveGitRoot(dir: string): Promise<string | null> {
   if (gitRootCache.has(dir)) return gitRootCache.get(dir)!;
   try {
-    // Normalize to real path to avoid case-sensitivity issues on Mac
     const realDir = fs.realpathSync(dir);
     const { stdout } = await execFileAsync('git', ['rev-parse', '--show-toplevel'], {
       cwd: realDir
@@ -75,43 +74,37 @@ async function resolveGitRoot(dir: string): Promise<string | null> {
   }
 }
 
-/**
- * Check if git is available on the system.
- */
-function isGitAvailable(): boolean {
-  try {
-    execSync('git --version', { stdio: 'pipe' });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Get git information for a specific file.
- * Resolves the git root from the file's own directory — safe for multi-project builds.
- */
 async function getGitFileInfo(filePath: string, maxCommits: number = 6): Promise<GitFileInfo | null> {
-  // Check cache first (keyed by absolute file path)
   if (gitCache.has(filePath)) return gitCache.get(filePath)!;
 
-  // Resolve git root from the file's directory, not process.cwd()
+  initDiskCache();
+
+  let fileStat;
+  try {
+    fileStat = fs.statSync(filePath);
+  } catch {
+    return null;
+  }
+
+  // Check disk cache
+  if (_diskCache && _diskCache[filePath] && _diskCache[filePath].mtimeMs === fileStat.mtimeMs) {
+    const cachedInfo = _diskCache[filePath].info;
+    gitCache.set(filePath, cachedInfo);
+    return cachedInfo;
+  }
+
   const fileDir = path.dirname(filePath);
   const gitRoot = await resolveGitRoot(fileDir);
   if (!gitRoot) return null;
 
-  // Ensure gitRoot and filePath are normalized for comparison
   const normalizedRoot = fs.realpathSync(gitRoot);
   const normalizedFile = fs.realpathSync(filePath);
 
   const relPath = path.relative(normalizedRoot, normalizedFile).replace(/\\/g, '/');
   
-  // Security/Correctness check: file MUST be inside the git root
   if (!relPath || relPath.startsWith('..') || path.isAbsolute(relPath)) return null;
 
   try {
-    // Use execFile with array arguments to avoid shell injection and path escaping issues.
-    // Added --follow to track renames and -- "path" to isolate commits to THIS file only.
     const { stdout } = await execFileAsync('git', [
       'log',
       '--follow',
@@ -151,10 +144,40 @@ async function getGitFileInfo(filePath: string, maxCommits: number = 6): Promise
     };
 
     gitCache.set(filePath, info);
+    if (_diskCache) {
+      _diskCache[filePath] = { mtimeMs: fileStat.mtimeMs, info };
+      _cacheDirty = true;
+    }
     return info;
   } catch {
     return null;
   }
+}
+
+export const plugin: PluginDescriptor = {
+  name: 'git',
+  version: '0.7.9',
+  capabilities: ['build', 'body', 'assets', 'translations', 'init', 'post-build']
+};
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const i18nDir = path.resolve(__dirname, '..', 'i18n');
+
+export interface GitCommit {
+  hash: string;
+  shortHash: string;
+  author: string;
+  email: string;
+  date: string;
+  timestamp: number;
+  message: string;
+  avatarUrl: string;
+}
+
+export interface GitFileInfo {
+  lastUpdated: string;
+  lastUpdatedTimestamp: number;
+  commits: GitCommit[];
 }
 
 /**
@@ -219,12 +242,11 @@ export function translations(localeId: string): Record<string, string> {
   return loadPluginStrings(localeId || 'en');
 }
 
-/**
- * Build hook: Reset file-level cache at the start of each build.
- * This runs once per build, ensuring the cache persists across all pages.
- */
-export function onConfigResolved(_config: any): void {
+let pluginOptions: any = {};
+
+export function onConfigResolved(config: any): void {
   gitCache.clear();
+  pluginOptions = config.plugins?.git || {};
 }
 
 /**
@@ -234,17 +256,40 @@ export function onBeforeParse(_ctx: any): void {
   // Logic removed (moved to onConfigResolved for better performance)
 }
 
-/**
- * onBeforeRender: inject git data into frontmatter before the template runs.
- * This is the correct hook for plugins that need source-file-derived data
- * available during template rendering.
- */
-export async function onBeforeRender(page: PageContext): Promise<void> {
-  const sourcePath = page?.sourcePath;
-  if (!sourcePath || !page?.frontmatter) return;
+export async function onBeforeBuild(ctx: any): Promise<void> {
+  const { pages, tui, options } = ctx;
+  if (!pages || pages.length === 0) return;
 
-  const gitInfo = await getGitFileInfo(sourcePath);
-  if (gitInfo) page.frontmatter._git = gitInfo;
+  const commitHistory = pluginOptions?.commitHistory !== false; // Default true
+  const maxCommits = commitHistory ? (pluginOptions?.maxCommits || 5) : 1;
+  const showTui = tui && !options?.quiet;
+
+  if (showTui) tui.step('Syncing git metadata', 'WAIT');
+
+  let processed = 0;
+  for (const page of pages) {
+    const sourcePath = page?.sourcePath;
+    if (sourcePath && page.frontmatter) {
+      const gitInfo = await getGitFileInfo(sourcePath, maxCommits);
+      if (gitInfo) {
+        if (!commitHistory) {
+          gitInfo.commits = [];
+        }
+        page.frontmatter._git = gitInfo;
+      }
+    }
+
+    processed++;
+    if (showTui && (processed % 10 === 0 || processed === pages.length)) {
+      tui.progress('Syncing git metadata', processed, pages.length);
+    }
+  }
+
+  if (showTui) tui.step('Syncing git metadata', 'DONE');
+}
+
+export function onPostBuild(): void {
+  saveDiskCache();
 }
 
 /**

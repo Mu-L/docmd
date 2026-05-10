@@ -16,7 +16,7 @@ import http from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import nativeFs from 'node:fs';
 import path from 'path';
-import fs from '../utils/fs-utils.js';
+import { fsUtils as fs, WorkerPool } from '@docmd/utils';
 import { TUI } from '@docmd/api';
 import { buildSite } from './build.js';
 import { loadConfig } from '../utils/config-loader.js';
@@ -93,12 +93,22 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
 
   // ── Initial Build ────────────────────────────────────
   const initialElapsed = TUI.timer();
+
+  // Show project details before building
+  const rootOutputDir = path.resolve(CWD, config.out || 'site');
+  TUI.section('Build');
+  const details = TUI.extractProjectDetails(config, rootOutputDir, CWD);
+  TUI.projectDetails(details);
+
   const sp = TUI.spinner('Performing initial build');
+  let workerPool: WorkerPool;
 
   try {
-    await buildSite(configPathOption, { isDev: true, preserve: options.preserve, quiet: true });
+    const workerScript = path.resolve(__dirname, '../engine/worker-parser.js');
+    workerPool = new WorkerPool(workerScript, { config, cwd: CWD });
+    await buildSite(configPathOption, { isDev: true, preserve: options.preserve, quiet: true, showStats: false, workerPool });
     sp.done(`Initial build complete in ${initialElapsed()}`);
-  } catch (error) {
+  } catch (error: any) {
     sp.fail('Initial build failed');
     TUI.error('Initial build failed', error.message);
   }
@@ -169,7 +179,8 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
                 isDev: true, 
                 preserve: options.preserve,
                 quiet: true,
-                targetFiles: [filePath]
+                targetFiles: [filePath],
+                workerPool
               });
               sp.done(`Rebuilt: ${relativeFilePath} in ${rebuildElapsed()}`, true);
               broadcastReload();
@@ -215,11 +226,16 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
             paths = resolveConfigPaths(config);
             state.outputDir = paths.outputDir;
 
+            if (workerPool) await workerPool.terminateAll();
+            const workerScript = path.resolve(__dirname, '../engine/worker-parser.js');
+            workerPool = new WorkerPool(workerScript, { config, cwd: CWD });
+
             // Full rebuild with fresh config
             await buildSite(configPathOption, { 
               isDev: true, 
               preserve: options.preserve,
-              quiet: true 
+              quiet: true,
+              workerPool
             });
 
             TUI.step(`Config reloaded and rebuilt in ${configElapsed()}`, 'DONE', TUI.blue, true);
@@ -362,6 +378,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
       watchers.forEach(w => closures.push(new Promise<void>(resolve => { w.close(); resolve(); })));
       if (wss) closures.push(new Promise(resolve => wss.close(resolve)));
       if (server) closures.push(new Promise(resolve => server.close(resolve)));
+      if (workerPool) closures.push(workerPool.terminateAll());
 
       await Promise.all(closures);
       clearTimeout(forceExitTimeout);

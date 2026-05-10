@@ -37,7 +37,7 @@
  */
 
 import path from 'path';
-import fs from '../utils/fs-utils.js';
+import { fsUtils as fs } from '@docmd/utils';
 import nativeFs from 'fs';
 import { TUI } from '@docmd/tui';
 import { loadConfig } from '../utils/config-loader.js';
@@ -217,17 +217,35 @@ export async function buildMultiProject(
     const label = prefix === '/' ? `/ (root)` : prefix;
     const projectElapsed = TUI.timer();
 
-    if (!opts.quiet) {
-      TUI.section(`Building: ${label}`);
-      TUI.item('Source', `${project.src}/`, TUI.dim, TUI.cyan);
-      TUI.item('Output', `${path.relative(CWD, projectOutDir)}/`, TUI.dim, TUI.cyan);
-    }
-
     // Check if the project has its own config
     const hasProjectConfig = nativeFs.existsSync(projectConfigPath);
 
-    if (!hasProjectConfig && !opts.quiet) {
-      TUI.item('Config', 'zero-config (no docmd.config.js found)', TUI.dim, TUI.cyan);
+    if (!opts.quiet) {
+      TUI.section(`Building: ${label}`);
+
+      // Load the child config to extract version/locale details
+      const originalCwdCheck = process.cwd();
+      process.chdir(projectSrcDir);
+      try {
+        const childConfig = await loadConfig(hasProjectConfig ? 'docmd.config.js' : 'docmd.config.js', { isDev: opts.isDev, quiet: true });
+        const childDetails = TUI.extractProjectDetails(childConfig, projectOutDir, CWD);
+        TUI.projectDetails({
+          source: `${project.src}/`,
+          output: `${path.relative(CWD, projectOutDir)}/`,
+          versions: childDetails.versions,
+          locales: childDetails.locales,
+        });
+      } catch {
+        // Fallback: just show source/output if config loading fails
+        TUI.item('Source', `${project.src}/`, TUI.dim, TUI.cyan);
+        TUI.item('Output', `${path.relative(CWD, projectOutDir)}/`, TUI.dim, TUI.cyan);
+      } finally {
+        process.chdir(originalCwdCheck);
+      }
+
+      if (!hasProjectConfig) {
+        TUI.item('Config', 'zero-config (no docmd.config.js found)', TUI.dim, TUI.cyan);
+      }
     }
 
     // Change to project directory and build
@@ -410,8 +428,8 @@ export async function devMultiProject(
     TUI.item('', '', TUI.dim, TUI.green);
 
     for (const project of multiConfig.projects) {
-      const prefix = project.prefix === '/' ? '/' : project.prefix;
-      TUI.item('Project', localUrl + prefix, TUI.dim, TUI.green);
+      const pfx = project.prefix === '/' ? '/' : project.prefix;
+      TUI.item('Project', localUrl + pfx, TUI.dim, TUI.green);
     }
     TUI.item('', '', TUI.dim, TUI.green);
     TUI.footer(TUI.green);

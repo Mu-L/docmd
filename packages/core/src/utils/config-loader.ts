@@ -110,17 +110,35 @@ export async function loadConfig(configPath: string, options: any = {}) {
 
   let absoluteConfigPath = path.resolve(cwd, configPath);
 
-  if (!fs.existsSync(absoluteConfigPath) && configPath === 'docmd.config.js') {
-    const legacyPath = path.resolve(cwd, 'config.js');
-    if (fs.existsSync(legacyPath)) absoluteConfigPath = legacyPath;
-    else {
+  if (configPath === 'docmd.config.js') {
+    const candidates = [
+      'docmd.config.json',
+      'docmd.config.ts',
+      'docmd.config.js',
+      'docmd.config.mjs',
+      'config.js'
+    ];
+    let found = false;
+    for (const c of candidates) {
+      const p = path.resolve(cwd, c);
+      if (fs.existsSync(p)) {
+        absoluteConfigPath = p;
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
       // Fallback to Zero-Config if nothing is found to prevent crashing!
       if (!(global as any).__DOCMD_NO_CONFIG_LOGGED && !options.quiet) {
         TUI.warn('No config found. Running in auto mode. Run `docmd init` to create one.');
         (global as any).__DOCMD_NO_CONFIG_LOGGED = true;
       }
-      return await buildZeroConfig(cwd, options.isDev, options.quiet);
+      const autoConfig = await buildZeroConfig(cwd, options.isDev, options.quiet);
+      return JSON.parse(JSON.stringify(autoConfig));
     }
+  } else if (!fs.existsSync(absoluteConfigPath)) {
+    throw new Error(`Config file not found: ${absoluteConfigPath}`);
   }
 
   // Cleanup any orphaned temp config files from previous failed reloads
@@ -148,33 +166,38 @@ export async function loadConfig(configPath: string, options: any = {}) {
     const ts = Date.now();
     let configUrl = pathToFileURL(absoluteConfigPath).href + '?t=' + ts;
     let tempConfigPath: string | null = null;
-
-    if (absoluteConfigPath.endsWith('.ts')) {
-        const esbuild = await import('esbuild');
-        tempConfigPath = absoluteConfigPath.replace(/\.ts$/, `-${ts}.mjs`);
-        await esbuild.build({
-            entryPoints: [absoluteConfigPath],
-            outfile: tempConfigPath,
-            format: 'esm',
-            bundle: true,
-            packages: 'external',
-            platform: 'node',
-            target: 'node18'
-        });
-        configUrl = pathToFileURL(tempConfigPath).href;
-    } else if (absoluteConfigPath.endsWith('.js') || absoluteConfigPath.endsWith('.mjs')) {
-        // Copy to a temp file to guarantee cache bypass (query strings
-        // are not always reliable for ESM cache busting in all Node versions)
-        const ext = path.extname(absoluteConfigPath);
-        tempConfigPath = absoluteConfigPath.replace(new RegExp(`\\${ext}$`), `-${ts}${ext}`);
-        fs.copyFileSync(absoluteConfigPath, tempConfigPath);
-        configUrl = pathToFileURL(tempConfigPath).href;
-    }
+    let rawConfig: any;
 
     try {
-      const rawModule = await import(configUrl);
-      const rawConfig = rawModule.default || rawModule;
-      
+      if (absoluteConfigPath.endsWith('.json')) {
+          rawConfig = JSON.parse(fs.readFileSync(absoluteConfigPath, 'utf-8'));
+      } else {
+          if (absoluteConfigPath.endsWith('.ts')) {
+              const esbuild = await import('esbuild');
+              tempConfigPath = absoluteConfigPath.replace(/\.ts$/, `-${ts}.mjs`);
+              await esbuild.build({
+                  entryPoints: [absoluteConfigPath],
+                  outfile: tempConfigPath,
+                  format: 'esm',
+                  bundle: true,
+                  packages: 'external',
+                  platform: 'node',
+                  target: 'node18'
+              });
+              configUrl = pathToFileURL(tempConfigPath).href;
+          } else if (absoluteConfigPath.endsWith('.js') || absoluteConfigPath.endsWith('.mjs')) {
+              // Copy to a temp file to guarantee cache bypass (query strings
+              // are not always reliable for ESM cache busting in all Node versions)
+              const ext = path.extname(absoluteConfigPath);
+              tempConfigPath = absoluteConfigPath.replace(new RegExp(`\\${ext}$`), `-${ts}${ext}`);
+              fs.copyFileSync(absoluteConfigPath, tempConfigPath);
+              configUrl = pathToFileURL(tempConfigPath).href;
+          }
+
+          const rawModule = await import(configUrl);
+          rawConfig = rawModule.default || rawModule;
+      }
+        
       // If user has 'search' or 'theme' at root, but no 'layout' object, they are legacy.
       const isLegacy = !rawConfig.layout && (
         rawConfig.search !== undefined ||
@@ -243,7 +266,9 @@ export async function loadConfig(configPath: string, options: any = {}) {
         }
       }
 
-      return normalized;
+      // Ensure the final configuration object is completely JSON-serialisable
+      // This is crucial for passing the config to worker threads in the new multi-threaded build engine
+      return JSON.parse(JSON.stringify(normalized));
     } finally {
       if (tempConfigPath && fs.existsSync(tempConfigPath)) {
           fs.unlinkSync(tempConfigPath);

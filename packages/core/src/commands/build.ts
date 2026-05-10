@@ -14,7 +14,7 @@
 
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fs from '../utils/fs-utils.js';
+import { fsUtils as fs, WorkerPool } from '@docmd/utils';
 import { loadConfig } from '../utils/config-loader.js';
 import { TUI, loadPlugins } from '@docmd/api';
 
@@ -54,6 +54,12 @@ export async function buildSite(configPath: string, opts: any = {}) {
   // 1. Load Config (Zero-Config aware)
   try {
     const config = await loadConfig(configPath, { isDev: options.isDev });
+    
+    // Initialize global WorkerPool (or use provided one)
+    const workerScript = path.resolve(__dirname, '../engine/worker-parser.js');
+    const workerPool = opts.workerPool || new WorkerPool(workerScript, { config, cwd: process.cwd() });
+    config._workerPool = workerPool;
+
     const hooks = await loadPlugins(config, { resolvePaths: [__dirname] });
 
     // Execute onConfigResolved hooks
@@ -68,22 +74,15 @@ export async function buildSite(configPath: string, opts: any = {}) {
     await fs.ensureDir(rootOutputDir);
 
     // ── TUI: Build section header ──────────────────────────
-    if (!options.quiet) {
-      TUI.section('Build');
-      TUI.item('Source', config.src + '/', TUI.dim, TUI.cyan);
-      TUI.item('Output', path.relative(CWD, rootOutputDir) + '/', TUI.dim, TUI.cyan);
-    }
-
-    // Show stats (versions/locales) when not quiet OR when explicitly requested
     if (!options.quiet || options.showStats) {
-      if (config.versions?.all?.length > 0) {
-        const vLabels = config.versions.all.map((v: any) => v.id).join(', ');
-        TUI.item('Versions', `${config.versions.all.length} (${vLabels})`, TUI.dim, TUI.cyan);
-      }
-      if (config.i18n?.locales?.length > 0) {
-        const lLabels = config.i18n.locales.map((l: any) => l.id).join(', ');
-        TUI.item('Locales', `${config.i18n.locales.length} (${lLabels})`, TUI.dim, TUI.cyan);
-      }
+      if (!options.quiet) TUI.section('Build');
+      const details = TUI.extractProjectDetails(config, rootOutputDir, CWD);
+      TUI.projectDetails({
+        source: !options.quiet ? details.source : undefined,
+        output: !options.quiet ? details.output : undefined,
+        versions: details.versions,
+        locales: details.locales,
+      });
     }
 
     // Helper: Build Assets for a specific output directory
@@ -248,21 +247,29 @@ export async function buildSite(configPath: string, opts: any = {}) {
     // --- 5. Post Build Hooks (Search, Sitemap, LLMs) ---
     // Only run on full builds to prevent partial data from corrupting global indexes
     if (!options.targetFiles) {
-      if (!options.quiet) {
-        TUI.footer(TUI.cyan);
-        TUI.section('Post-Build Tasks', TUI.blue);
-      }
+      TUI.footer(TUI.cyan);
+      TUI.section('Post-Build Tasks', TUI.blue);
       await Promise.all(hooks.onPostBuild.map((fn: any) => fn({
         config,
         pages: allGeneratedPages,
         outputDir: rootOutputDir,
-        log: (msg: string) => !options.quiet && TUI.step(msg, 'DONE', TUI.blue)
+        log: (msg: string) => TUI.step(msg, 'DONE', TUI.blue),
+        tui: TUI,
+        options: { ...options, quiet: false },
+        runWorkerTask(modulePath: string, functionName: string, args: any[]) {
+          if (!config._workerPool) throw new Error('WorkerPool is not initialized');
+          return config._workerPool.runTask({ type: 'plugin-task', modulePath, functionName, args });
+        }
       })));
     }
 
-    if (!options.isDev && !options.quiet) {
+    if (!options.isDev) {
       TUI.footer(TUI.blue);
       TUI.success(`Build complete. Generated ${allGeneratedPages.length} pages in ${elapsed()}.`);
+    }
+
+    if (!opts.workerPool) {
+      await workerPool.terminateAll();
     }
 
   } catch (e: any) {

@@ -16,7 +16,7 @@ import { createRequire } from 'module';
 
 const _require = createRequire(import.meta.url);
 
-import fs from '../utils/fs-utils.js';
+import { fsUtils as fs } from '@docmd/utils';
 import path from 'path';
 import { TUI } from '@docmd/api';
 

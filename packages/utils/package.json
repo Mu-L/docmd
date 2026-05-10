@@ -1,0 +1,30 @@
+{
+  "name": "@docmd/utils",
+  "version": "0.7.9",
+  "description": "Zero-dependency shared utilities for docmd core.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^5.9.3"
+  },
+  "author": {
+    "name": "Ghazi",
+    "url": "https://mgks.dev"
+  },
+  "license": "MIT"
+}

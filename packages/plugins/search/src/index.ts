@@ -67,11 +67,12 @@ export function translations(localeId: string): Record<string, string> {
  * Each locale gets its own `search-index.json` covering all versions within that locale.
  * Default locale index is at root, non-default locale indexes are at `/{locale}/search-index.json`.
  */
-export async function onPostBuild({ config, pages, outputDir, log }: any) {
+export async function onPostBuild({ config, pages, outputDir, tui, options }: any) {
   const isEnabled = config.optionsMenu ? config.optionsMenu.components.search !== false : config.search !== false;
   if (!isEnabled) return;
 
-  if (log) log('🔍 Generating search index...');
+  const showTui = tui && !options?.quiet;
+  if (showTui) tui.step('Generating search index', 'WAIT');
 
   // Determine locale configuration
   const locales = config.i18n?.locales || [];
@@ -194,6 +195,8 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
     await fs.mkdir(path.dirname(indexPath), { recursive: true });
     await fs.writeFile(indexPath, json);
   }
+
+  if (showTui) tui.step('Generating search index', 'DONE');
 }
 
 /**

@@ -12,7 +12,7 @@
  * --------------------------------------------------------------------
  */
 
-import fs from '../utils/fs-utils.js';
+import { fsUtils as fs } from '@docmd/utils';
 import path from 'path';
 import nativeFs from 'fs';
 import { TUI } from '@docmd/api';

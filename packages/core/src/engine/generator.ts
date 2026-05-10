@@ -13,7 +13,7 @@
  */
 
 import path from 'path';
-import fs from '../utils/fs-utils.js';
+import { fsUtils as fs } from '@docmd/utils';
 import { createRequire } from 'module';
 import { execSync } from 'child_process';
 import { generateAssetTag, findFilesRecursive } from './assets.js';
@@ -22,6 +22,7 @@ import nativeFs from 'fs';
 
 const _require = createRequire(import.meta.url);
 import * as parser from '@docmd/parser';
+import { TUI } from '@docmd/tui';
 import { findPageNeighbors, findBreadcrumbs, normalizeNavPaths, createUrlContext, buildContextualUrl, computePageUrls, buildAbsoluteUrl, sanitizeUrl } from '@docmd/parser';
 import * as ui from '@docmd/ui';
 
@@ -113,7 +114,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
         }
       }
     } catch {
-      console.warn(`[docmd] Failed to parse locale navigation: ${localeNavPath}`);
+      TUI.warn(`Failed to parse locale navigation: ${localeNavPath}`);
     }
   }
 
@@ -334,7 +335,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
             rawContent = renderedBody;
           }
         } catch (e) {
-          console.warn(`[docmd] Skipping EJS render error in ${relativePath}: ${e.message}`);
+          TUI.warn(`Skipping EJS render error in ${relativePath}: ${(e as any).message}`);
           continue;
         }
       }
@@ -364,6 +365,30 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
     // Report progress after each batch
     processedCount += batch.length;
     if (onProgress) onProgress(processedCount, totalFiles);
+  }
+
+  // --- 2.5 onBeforeBuild (Data Indexing) ---
+  // Always run onBeforeBuild hooks (they contain git indexing, etc.)
+  // Show the Data Indexing section unless it's a targeted incremental rebuild
+  if (hooks.onBeforeBuild && hooks.onBeforeBuild.length > 0) {
+    const showIndexingSection = !options.targetFiles;
+    if (showIndexingSection && TUI) {
+      TUI.footer(TUI.cyan);
+      TUI.section('Data Indexing', TUI.blue);
+    }
+    const beforeBuildContext = {
+      config,
+      pages,
+      tui: TUI,
+      options: showIndexingSection ? { ...options, quiet: false } : options,
+      runWorkerTask(modulePath: string, functionName: string, args: any[]) {
+        if (!config._workerPool) throw new Error('WorkerPool is not initialized');
+        return config._workerPool.runTask({ type: 'plugin-task', modulePath, functionName, args });
+      }
+    };
+    for (const hookFn of hooks.onBeforeBuild) {
+      await hookFn(beforeBuildContext);
+    }
   }
 
   // --- 3. Render HTML (parallel template rendering + batched writes) ---

@@ -14,7 +14,7 @@
 
 import path from 'path';
 import nodeFs from 'fs';
-import fs from '../utils/fs-utils.js';
+import { fsUtils as fs } from '@docmd/utils';
 import { TUI } from '@docmd/tui';
 import { renderPages } from './generator.js';
 import { resolveLocaleSrcDir, resolveFallbackSrcDir } from './i18n.js';

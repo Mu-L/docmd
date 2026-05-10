@@ -15,7 +15,7 @@
 import path from 'path';
 import { TUI } from '@docmd/tui';
 import nativeFs from 'fs';
-import fs from '../utils/fs-utils.js';
+import { fsUtils as fs } from '@docmd/utils';
 import { renderPages } from './generator.js';
 import { buildVersions, filterGhostVersions } from './versioning.js';
 import { sanitizeUrl } from '@docmd/parser';

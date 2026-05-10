@@ -104,6 +104,9 @@ importers:
       '@docmd/ui':
         specifier: workspace:*
         version: link:../ui
+      '@docmd/utils':
+        specifier: workspace:*
+        version: link:../utils
       esbuild:
         specifier: ^0.28.0
         version: 0.28.0
@@ -352,6 +355,15 @@ importers:
         version: 5.9.3
 
   packages/ui: {}
+
+  packages/utils:
+    devDependencies:
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
 packages:
 

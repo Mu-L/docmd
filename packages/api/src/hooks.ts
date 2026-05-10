@@ -47,7 +47,7 @@ const CAPABILITY_HOOKS: Record<Capability, string[]> = {
   events:       ['events'],
   translations: ['translations'],
   init:         ['onConfigResolved'],
-  build:        ['onBeforeParse', 'onAfterParse', 'onBeforeRender', 'onPageReady'],
+  build:        ['onBeforeParse', 'onAfterParse', 'onBeforeBuild', 'onBeforeRender', 'onPageReady'],
   dev:          ['onDevServerReady'],
 };
 
@@ -70,6 +70,7 @@ export const hooks: PluginHooks = {
   onDevServerReady: [],
   onBeforeParse: [],
   onAfterParse: [],
+  onBeforeBuild: [],
   onBeforeRender: [],
   onPageReady: [],
 };
@@ -292,6 +293,7 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
   hooks.onDevServerReady = [];
   hooks.onBeforeParse = [];
   hooks.onAfterParse = [];
+  hooks.onBeforeBuild = [];
   hooks.onBeforeRender = [];
   hooks.onPageReady = [];
   pluginErrors.length = 0;
@@ -497,7 +499,7 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
       const fn = plugin.onPostBuild;
       hooks.onPostBuild.push(async (ctx: any) => {
         try {
-          await fn({ ...ctx, options });
+          await fn(ctx);
         } catch (err: any) {
           TUI.error(`Plugin "${name}" threw in onPostBuild`, err.message);
           pluginErrors.push({ plugin: name, hook: 'onPostBuild', message: err.message });
@@ -615,6 +617,23 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
       });
     } else {
       TUI.warn(`Plugin "${shortName}" exports onAfterParse but didn't declare "build" capability - skipped`);
+    }
+  }
+
+  // onBeforeBuild
+  if (typeof (plugin as any).onBeforeBuild === 'function') {
+    if (hasCapabilityForHook(descriptor, 'onBeforeBuild')) {
+      const fn = (plugin as any).onBeforeBuild;
+      hooks.onBeforeBuild.push(async (ctx: any) => {
+        try {
+          await fn(ctx);
+        } catch (err: any) {
+          TUI.error(`Plugin "${name}" threw in onBeforeBuild`, err.message);
+          pluginErrors.push({ plugin: name, hook: 'onBeforeBuild', message: err.message });
+        }
+      });
+    } else {
+      TUI.warn(`Plugin "${shortName}" exports onBeforeBuild but didn't declare "build" capability - skipped`);
     }
   }
 

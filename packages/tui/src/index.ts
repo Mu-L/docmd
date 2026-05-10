@@ -36,7 +36,7 @@ function renderBar(current: number, total: number): string {
   const filled = Math.round(ratio * BAR_WIDTH);
   const empty = BAR_WIDTH - filled;
   const pct = Math.round(ratio * 100);
-  return `${BAR_FULL.repeat(filled)}${BAR_EMPTY.repeat(empty)}  ${current}/${total}  (${pct}%)`;
+  return `${BAR_FULL.repeat(filled)}${BAR_EMPTY.repeat(empty)}  (${pct}%)`;
 }
 
 /* ── Spinner frames ─────────────────────────────────────────── */
@@ -127,7 +127,13 @@ export const TUI = {
    *   │  Checking consistency                        [ DONE ]  ← replaces WAIT
    */
   step: (label: string, status: 'DONE' | 'WAIT' | 'SKIP' | 'FAIL' | string = 'WAIT', barColor = chalk.cyan, statusFirst = false) => {
-    flushProgress();
+    const willOverwriteProgress = _progressActive && status !== 'WAIT';
+    if (!willOverwriteProgress) {
+      flushProgress();
+    } else {
+      _progressActive = false; // consume it
+    }
+    
     const statusText = status === 'DONE' ? chalk.green('[ DONE ]') : 
                        status === 'SKIP' ? chalk.yellow('[ SKIP ]') : 
                        status === 'FAIL' ? chalk.red('[ FAIL ]') :
@@ -138,7 +144,9 @@ export const TUI = {
       : `${barColor('│')}  ${chalk.dim(label.padEnd(45))} ${statusText}`;
 
     // If the previous output was a WAIT step, overwrite it in-place
-    if (isTTY() && status !== 'WAIT' && _lastOutputWasWaitStep) {
+    if (isTTY() && status !== 'WAIT' && willOverwriteProgress) {
+      process.stdout.write(`\r\x1b[K${line}\n`);
+    } else if (isTTY() && status !== 'WAIT' && _lastOutputWasWaitStep) {
       process.stdout.write(`\x1b[1A\r\x1b[K${line}\n`);
     } else {
       console.log(line);
@@ -202,9 +210,13 @@ export const TUI = {
    * On non-TTY: prints at 25%, 50%, 75%, and 100%.
    */
   progress: (label: string, current: number, total: number, barColor = chalk.cyan) => {
+    if (_lastOutputWasWaitStep && isTTY()) {
+      process.stdout.write('\x1b[1A'); // Move up one line to overwrite the WAIT step
+    }
     resetStepState();
+    
     const bar = renderBar(current, total);
-    const line = `${barColor('│')}  ${chalk.dim(label)} ${chalk.cyan(bar)}`;
+    const line = `${barColor('│')}  ${chalk.dim(label.padEnd(20))} ${chalk.cyan(bar)}`;
     if (isTTY()) {
       writeLine(line);
       _progressActive = true;
@@ -323,5 +335,65 @@ export const TUI = {
   timer: () => {
     const start = Date.now();
     return () => formatDuration(Date.now() - start);
-  }
+  },
+
+  // ── Centralised Project Summary ───────────────────────────
+
+  /**
+   * Print standardised project details within a TUI section.
+   * This is the single source of truth for build/dev/multi-project output.
+   *
+   * Usage:
+   *   TUI.section('Build');
+   *   TUI.projectDetails({ source: 'docs/', output: 'site/', versions, locales, threads });
+   *
+   * Each field is optional — only non-empty fields are printed.
+   */
+  projectDetails: (opts: {
+    source?: string;
+    output?: string;
+    versions?: { count: number; labels: string };
+    locales?: { count: number; labels: string };
+    threads?: number;
+    barColor?: typeof chalk.cyan;
+  }) => {
+    const bc = opts.barColor || chalk.cyan;
+    if (opts.source)   TUI.item('Source',   opts.source, chalk.dim, bc);
+    if (opts.output)   TUI.item('Output',   opts.output, chalk.dim, bc);
+    if (opts.versions) TUI.item('Versions', `${opts.versions.count} (${opts.versions.labels})`, chalk.dim, bc);
+    if (opts.locales)  TUI.item('Locales',  `${opts.locales.count} (${opts.locales.labels})`, chalk.dim, bc);
+    if (opts.threads)  TUI.item('Threads',  `${opts.threads}`, chalk.dim, bc);
+  },
+
+  /**
+   * Extract standardised project details from a resolved config object.
+   * Returns the data shape expected by `TUI.projectDetails()`.
+   */
+  extractProjectDetails: (config: any, outputDir: string, cwd: string) => {
+    const details: {
+      source: string;
+      output: string;
+      versions?: { count: number; labels: string };
+      locales?: { count: number; labels: string };
+    } = {
+      source: (config.src || 'docs') + '/',
+      output: outputDir.startsWith(cwd) ? outputDir.slice(cwd.length + 1) + '/' : outputDir + '/',
+    };
+
+    if (config.versions?.all?.length > 0) {
+      details.versions = {
+        count: config.versions.all.length,
+        labels: config.versions.all.map((v: any) => v.id).join(', '),
+      };
+    }
+
+    if (config.i18n?.locales?.length > 0) {
+      details.locales = {
+        count: config.i18n.locales.length,
+        labels: config.i18n.locales.map((l: any) => l.id).join(', '),
+      };
+    }
+
+    return details;
+  },
 };

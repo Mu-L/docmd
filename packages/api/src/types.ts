@@ -69,6 +69,8 @@ export interface ActionContext {
   broadcast(event: string, data: any): void;
   /** Source editing tools for block-level markdown manipulation. */
   source: SourceTools;
+  /** Execute a generic function inside the multi-threaded worker pool. */
+  runWorkerTask<T = any>(modulePath: string, functionName: string, args: any[]): Promise<T>;
 }
 
 /**
@@ -158,8 +160,10 @@ export interface PluginModule {
   generateScripts?(config: any, options?: any): { headScriptsHtml?: string; bodyScriptsHtml?: string };
   /** Define external assets (JS/CSS) to inject. */
   getAssets?(options?: any): any[];
+  /** Run logic before HTML generation, after markdown parsing. */
+  onBeforeBuild?(ctx: BeforeBuildContext): Promise<void>;
   /** Run logic after all HTML files are generated. */
-  onPostBuild?(ctx: any): Promise<void>;
+  onPostBuild?(ctx: PostBuildContext): Promise<void>;
   /** Locale-specific UI string overrides. */
   translations?(localeId: string, options?: any): Record<string, string>;
   /** Named action handlers for WebSocket RPC calls from the browser. */
@@ -214,6 +218,34 @@ export interface PageContext {
   versionId?: string;
   /** Relative path from the output file to the site root. */
   relativePathToRoot?: string;
+  /** Execute a generic function inside the multi-threaded worker pool. */
+  runWorkerTask<T = any>(modulePath: string, functionName: string, args: any[]): Promise<T>;
+}
+
+// ---------------------------------------------------------------------------
+// Build Contexts
+// ---------------------------------------------------------------------------
+
+/** Context provided to onBeforeBuild hooks. */
+export interface BeforeBuildContext {
+  config: any;
+  pages: any[];
+  tui: any; // @docmd/tui instance for progress bars and spinners
+  options: any;
+  /** Execute a generic function inside the multi-threaded worker pool. */
+  runWorkerTask<T = any>(modulePath: string, functionName: string, args: any[]): Promise<T>;
+}
+
+/** Context provided to onPostBuild hooks. */
+export interface PostBuildContext {
+  config: any;
+  pages: any[];
+  outputDir: string;
+  tui: any; // @docmd/tui instance for progress bars and spinners
+  log: (msg: string) => void;
+  options: any;
+  /** Execute a generic function inside the multi-threaded worker pool. */
+  runWorkerTask<T = any>(modulePath: string, functionName: string, args: any[]): Promise<T>;
 }
 
 // ---------------------------------------------------------------------------
@@ -225,7 +257,8 @@ export interface PluginHooks {
   markdownSetup: ((md: any) => void)[];
   injectHead: ((config: any, pageContext: any, root?: string) => string | Promise<string>)[];
   injectBody: ((config: any, pageContext: any) => string | Promise<string>)[];
-  onPostBuild: ((ctx: any) => Promise<void>)[];
+  onBeforeBuild: ((ctx: BeforeBuildContext) => Promise<void>)[];
+  onPostBuild: ((ctx: PostBuildContext) => Promise<void>)[];
   assets: (() => any[])[];
   translations: ((localeId: string) => Record<string, string>)[];
   actions: Record<string, ActionHandler>;

@@ -62,15 +62,12 @@ graph TD
 
 ### Architecture Diagram (Lucide Icons)
 ```mermaid
-architecture-beta
-    service db(icon:database)[Database]
-    service api(icon:server)[API Gateway]
-    service web(icon:globe)[Web Server]
-    service app(icon:smartphone)[Mobile App]
-
-    app:R -- L:api
-    web:R -- L:api
-    api:B -- T:db
+flowchart TD
+    A[Trigger: aaaa] --> B[take an action]
+    B --> C[x]
+    C --> D{yyy?}
+    D -->|No| E[Return]
+    D -->|Yes| F{zzz?}
 ```
 
 ### Code Block with Title

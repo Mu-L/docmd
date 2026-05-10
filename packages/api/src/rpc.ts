@@ -24,6 +24,7 @@
 import path from 'path';
 import fs from 'fs';
 import { createSourceTools } from './source.js';
+import { TUI } from '@docmd/tui';
 import type {
   ActionContext,
   ActionHandler,
@@ -93,6 +94,10 @@ export function createActionDispatcher(hooks: DispatcherHooks, options: Dispatch
           const content = await ctx.readFile(relativePath);
           return content.split('\n');
         },
+        runWorkerTask(modulePath: string, functionName: string, args: any[]) {
+          if (!config._workerPool) throw new Error('WorkerPool is not initialized');
+          return config._workerPool.runTask({ type: 'plugin-task', modulePath, functionName, args });
+        }
       };
 
       const result = await handler(payload, ctx);
@@ -124,12 +129,16 @@ export function createActionDispatcher(hooks: DispatcherHooks, options: Dispatch
           const content = await ctx.readFile(relativePath);
           return content.split('\n');
         },
+        runWorkerTask(modulePath: string, functionName: string, args: any[]) {
+          if (!config._workerPool) throw new Error('WorkerPool is not initialized');
+          return config._workerPool.runTask({ type: 'plugin-task', modulePath, functionName, args });
+        }
       };
 
       try {
         handler(data, ctx);
       } catch (e: any) {
-        console.error(`Event handler error [${name}]:`, e.message);
+        TUI.warn(`Event handler error [${name}]: ${e.message}`);
       }
     },
   };
