@@ -25,176 +25,200 @@ const LOGO = `
  |___|___|___|_|_|_|___|
 `;
 
-/* ── Progress bar rendering ─────────────────────────────────── */
+/* ── Progress bar ───────────────────────────────────────────── */
 
 const BAR_WIDTH = 20;
-const BAR_FULL = '━';
+const BAR_FULL  = '━';
 const BAR_EMPTY = '─';
 
 function renderBar(current: number, total: number): string {
-  const ratio = total > 0 ? Math.min(current / total, 1) : 0;
+  const ratio  = total > 0 ? Math.min(current / total, 1) : 0;
   const filled = Math.round(ratio * BAR_WIDTH);
-  const empty = BAR_WIDTH - filled;
-  const pct = Math.round(ratio * 100);
-  return `${BAR_FULL.repeat(filled)}${BAR_EMPTY.repeat(empty)}  (${pct}%)`;
+  const pct    = Math.round(ratio * 100);
+  return `${BAR_FULL.repeat(filled)}${BAR_EMPTY.repeat(BAR_WIDTH - filled)}  (${pct}%)`;
 }
 
-/* ── Spinner frames ─────────────────────────────────────────── */
+/* ── Spinner ────────────────────────────────────────────────── */
 
-const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+const SPINNER_FRAMES = ['⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏'];
 
-/* ── TTY Helpers ────────────────────────────────────────────── */
+/* ── TTY helpers ────────────────────────────────────────────── */
 
-/** Check TTY status live (not cached) for environments that change it. */
-function isTTY(): boolean {
-  return process.stdout.isTTY === true;
+function isTTY(): boolean { return process.stdout.isTTY === true; }
+
+function eraseLines(n: number): void {
+  for (let i = 0; i < n; i++) process.stdout.write('\x1b[1A\x1b[2K');
 }
 
-/** Write in-place on a single line and immediately flush. */
-function writeLine(text: string): void {
-  if (isTTY()) {
-    process.stdout.write(`\r\x1b[K${text}`);
-  }
-}
-
-/* ── Output state tracking ──────────────────────────────────── */
-
-let _progressActive = false;
-let _lastOutputWasWaitStep = false;
-
-/** Flush an in-progress progress bar line before printing new output. */
-function flushProgress(): void {
-  if (_progressActive && isTTY()) {
-    process.stdout.write('\n');
-    _progressActive = false;
-  }
-}
-
-/** Reset the WAIT step tracking - called by all non-step output methods. */
-function resetStepState(): void {
-  _lastOutputWasWaitStep = false;
-}
-
-/* ── Timer ──────────────────────────────────────────────────── */
+/* ── Duration ───────────────────────────────────────────────── */
 
 function formatDuration(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-  return `${(ms / 1000).toFixed(1)}s`;
+  return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
+}
+
+/* ──────────────────────────────────────────────────────────────
+ * Active-line state machine
+ *
+ * Layout while a WAIT step is active:
+ *
+ *   │  [ WAIT ] Label text here           ← wait line
+ *   │           ━━━━━━━━━━━━━━━━  (42%)  ← progress bar  ← _progressLines ≥ 1
+ *   │                                    ← breathing room ← _progressLines = 2
+ *
+ * _waitLine      : text of the current WAIT step (null = none active)
+ * _waitBarColor  : chalk colour function used for that step's bar glyph
+ * _progressLines : how many lines BELOW the wait line are "active"
+ *                  0 = nothing extra  1 = blank only  2 = bar + blank
+ * ────────────────────────────────────────────────────────────── */
+
+let _waitLine:     string | null = null;
+let _waitBarColor: typeof chalk.cyan   = chalk.cyan;
+let _progressLines = 0;
+
+// Section auto-close tracking
+let _sectionOpen  = false;
+let _sectionColor = chalk.cyan;
+
+/** Erase only the progress area below the wait line. */
+function clearProgressArea(): void {
+  if (_progressLines > 0 && isTTY()) {
+    eraseLines(_progressLines);
+    _progressLines = 0;
+  }
+}
+
+/** Erase the full active block: progress area + the wait line itself. */
+function clearActiveBlock(): void {
+  if (!isTTY()) return;
+  const total = _progressLines + (_waitLine !== null ? 1 : 0);
+  if (total > 0) eraseLines(total);
+  _progressLines = 0;
+  _waitLine      = null;
+}
+
+/** Commit any active state before printing structural output (section/footer). */
+function commitState(): void {
+  clearProgressArea();
+  // Leave the wait line on-screen — it will be resolved by its own DONE/FAIL call
+  _progressLines = 0;
+}
+
+/* ── Flag helpers ───────────────────────────────────────────── */
+
+function flag(status: string): string {
+  switch (status) {
+    case 'DONE': return chalk.green('[ DONE ]');
+    case 'FAIL': return chalk.red  ('[ FAIL ]');
+    case 'SKIP': return chalk.yellow('[ SKIP ]');
+    case 'WAIT': return chalk.blue ('[ WAIT ]');
+    default:     return chalk.blue (`[ ${status} ]`);
+  }
 }
 
 /**
  * High-Signal Terminal Design System (TUI)
  * Standalone package with zero internal dependencies.
+ *
+ * Step format  →  │  [ DONE ] Label text flows freely here
+ * Progress     →  │           ━━━━━━━━━━━━━━━━━━━━  (42%)
+ * Breathing    →  │
  */
 export const TUI = {
-  // Semantic Colors
-  blue: chalk.blue,
-  cyan: chalk.cyan,
-  green: chalk.green,
+  // Semantic colors
+  blue:   chalk.blue,
+  cyan:   chalk.cyan,
+  green:  chalk.green,
   yellow: chalk.yellow,
-  red: chalk.red,
-  dim: chalk.dim,
-  bold: chalk.bold,
+  red:    chalk.red,
+  dim:    chalk.dim,
+  bold:   chalk.bold,
 
   banner: (logo: string = LOGO, version: string = PKG_VERSION) => {
-    flushProgress();
-    resetStepState();
+    commitState();
     console.log(`\n${chalk.blue(logo)}`);
     console.log(`${chalk.dim(` v${version}`)}\n`);
   },
 
   section: (label: string, color = chalk.cyan) => {
-    flushProgress();
-    resetStepState();
+    commitState();
+    // Auto-close any previously open section so callers don't need to
+    // manually track when to call footer()
+    if (_sectionOpen) {
+      console.log(`${_sectionColor('└──────────────────────────────────────────────────────────')}\n`);
+    }
+    _sectionColor = color;
+    _sectionOpen  = true;
     console.log(`${color.bold(`┌─ ${label}`)}`);
   },
 
   divider: (label: string, color = chalk.blue) => {
-    flushProgress();
-    resetStepState();
+    commitState();
     console.log(`${color.bold(`├─ ${label}`)}`);
   },
 
   /**
    * Print a status step line.
    *
-   * When called with 'WAIT', it prints and remembers that the last output
-   * was a WAIT step. When called with 'DONE'/'FAIL'/'SKIP' immediately
-   * after a WAIT step, it overwrites the WAIT line in-place on TTY.
-   * This gives the clean single-line transition effect:
+   * WAIT  → prints the line + a blank breathing `│`, tracks state
+   * DONE/FAIL/SKIP → erases the WAIT block in-place and replaces with final status line
    *
-   *   │  Checking consistency                        [ WAIT ]
-   *   │  Checking consistency                        [ DONE ]  ← replaces WAIT
+   * `statusFirst` is accepted but ignored — left-side flags are now always the default.
    */
-  step: (label: string, status: 'DONE' | 'WAIT' | 'SKIP' | 'FAIL' | string = 'WAIT', barColor = chalk.cyan, statusFirst = false) => {
-    const willOverwriteProgress = _progressActive && status !== 'WAIT';
-    if (!willOverwriteProgress) {
-      flushProgress();
-    } else {
-      _progressActive = false; // consume it
-    }
-    
-    const statusText = status === 'DONE' ? chalk.green('[ DONE ]') : 
-                       status === 'SKIP' ? chalk.yellow('[ SKIP ]') : 
-                       status === 'FAIL' ? chalk.red('[ FAIL ]') :
-                       chalk.blue(`[ ${status} ]`);
-    
-    const line = statusFirst 
-      ? `${barColor('│')}  ${statusText} ${label}`
-      : `${barColor('│')}  ${chalk.dim(label.padEnd(45))} ${statusText}`;
+  step: (label: string, status: 'DONE'|'WAIT'|'SKIP'|'FAIL'|string = 'WAIT', barColor = chalk.cyan, _statusFirst?: boolean) => {
+    const f    = flag(status);
+    const line = `${barColor('│')}  ${f} ${chalk.dim(label)}`;
 
-    // If the previous output was a WAIT step, overwrite it in-place
-    if (isTTY() && status !== 'WAIT' && willOverwriteProgress) {
-      process.stdout.write(`\r\x1b[K${line}\n`);
-    } else if (isTTY() && status !== 'WAIT' && _lastOutputWasWaitStep) {
-      process.stdout.write(`\x1b[1A\r\x1b[K${line}\n`);
-    } else {
+    if (status === 'WAIT') {
+      clearProgressArea();
       console.log(line);
-    }
+      console.log(`${barColor('│')}`);   // breathing room
+      _waitLine     = label;
+      _waitBarColor = barColor;
+      _progressLines = 1;               // just the blank │
 
-    // Track: only set true for WAIT, reset for everything else
-    _lastOutputWasWaitStep = (status === 'WAIT');
+    } else {
+      // Erase: blank(s) + progress bar + wait line
+      if (isTTY() && _waitLine !== null) {
+        eraseLines(_progressLines + 1);  // +1 for the wait line itself
+      }
+      console.log(line);
+      _waitLine      = null;
+      _progressLines = 0;
+    }
   },
 
   item: (label: string, value: string, labelColor = chalk.dim, barColor = chalk.cyan) => {
-    flushProgress();
-    resetStepState();
+    commitState();
     console.log(`${barColor('│')}  ${labelColor(label.padEnd(15))} ${value}`);
   },
 
   footer: (color = chalk.cyan) => {
-    flushProgress();
-    resetStepState();
+    commitState();
     console.log(`${color('└──────────────────────────────────────────────────────────')}\n`);
+    _sectionOpen = false;
   },
 
   info: (msg: string) => {
-    flushProgress();
-    resetStepState();
+    commitState();
     console.log(`${chalk.blue.bold('⬢')} ${msg}`);
   },
 
   success: (msg: string) => {
-    flushProgress();
-    resetStepState();
+    commitState();
     console.log(`\n${chalk.green.bold('⬢')} ${msg}\n`);
   },
 
   warn: (msg: string) => {
-    flushProgress();
-    resetStepState();
+    commitState();
     console.log(`${chalk.yellow.bold('⬢')} ${chalk.yellow(msg)}`);
   },
 
   error: (msg: string, detail?: string) => {
-    flushProgress();
-    resetStepState();
+    commitState();
     console.error(`\n${chalk.red.bold('┌─ Failure')}`);
     console.error(`${chalk.red('│')}  ${msg}`);
     if (detail) {
-      detail.split('\n').forEach(line => {
-        console.error(`${chalk.red('│')}  ${chalk.dim(line)}`);
-      });
+      detail.split('\n').forEach(l => console.error(`${chalk.red('│')}  ${chalk.dim(l)}`));
     }
     console.error(`${chalk.red('└──────────────────────────────────────────────────────────')}\n`);
   },
@@ -202,179 +226,139 @@ export const TUI = {
   // ── Progress Bar ───────────────────────────────────────────
 
   /**
-   * Render a single-line progress bar that updates in-place.
+   * Render an in-place progress bar on its own line below the active WAIT step.
    *
-   *   │  Processing pages ████████░░░░░░░░░░░░  42/100  (42%)
-   *
-   * On TTY: overwrites the same line in-place.
-   * On non-TTY: prints at 25%, 50%, 75%, and 100%.
+   *   │  [ WAIT ] Processing pages
+   *   │           ━━━━━━━━━━━━━━━━━━━━  (42%)
+   *   │
    */
   progress: (label: string, current: number, total: number, barColor = chalk.cyan) => {
-    if (_lastOutputWasWaitStep && isTTY()) {
-      process.stdout.write('\x1b[1A'); // Move up one line to overwrite the WAIT step
-    }
-    resetStepState();
-    
-    const bar = renderBar(current, total);
-    const line = `${barColor('│')}  ${chalk.dim(label.padEnd(20))} ${chalk.cyan(bar)}`;
-    if (isTTY()) {
-      writeLine(line);
-      _progressActive = true;
-    } else {
-      // Non-TTY: print at key milestones to avoid spam but show progress
+    const bar  = renderBar(current, total);
+    const line = `${barColor('│')}           ${chalk.cyan(bar)}`;
+
+    if (!isTTY()) {
       const pct = total > 0 ? Math.round((current / total) * 100) : 0;
       if (current >= total || pct === 25 || pct === 50 || pct === 75) {
         console.log(line);
       }
+      return;
     }
+
+    // Erase the progress area below the wait line (bar + blank)
+    if (_progressLines > 0) eraseLines(_progressLines);
+
+    process.stdout.write(`${line}\n`);
+    process.stdout.write(`${barColor('│')}\n`);
+    _progressLines = 2;
   },
 
   // ── Spinner ────────────────────────────────────────────────
 
   /**
-   * Start an animated spinner. Returns a handle to update, complete, or fail it.
+   * Start an animated spinner in left-flag style.
    *
-   *   │  Loading config ⠋
+   *   │  [ ⠋ ] Loading config
+   *   │
    *
-   * Usage:
-   *   const sp = TUI.spinner('Loading config');
-   *   // ... async work ...
-   *   sp.done('Config loaded');
+   * Returns a handle with .done() / .fail() / .update().
    */
   spinner: (label: string, barColor = chalk.cyan) => {
-    resetStepState();
-    let frameIndex = 0;
+    let frameIndex  = 0;
     let currentLabel = label;
-    let stopped = false;
+    let stopped     = false;
+
+    // Print initial WAIT line + breathing room
+    const waitLine = `${barColor('│')}  ${chalk.blue('[ WAIT ]')} ${chalk.dim(currentLabel)}`;
+    console.log(waitLine);
+    console.log(`${barColor('│')}`);
+    _waitLine      = currentLabel;
+    _waitBarColor  = barColor;
+    _progressLines = 1;
 
     const render = () => {
-      if (stopped) return;
-      const frame = chalk.cyan(SPINNER_FRAMES[frameIndex % SPINNER_FRAMES.length]);
-      // For spinners, we always put the frame at the end for animation stability
-      writeLine(`${barColor('│')}  ${chalk.dim(currentLabel)} ${frame}`);
-      frameIndex++;
+      if (stopped || !isTTY()) return;
+      const frame = chalk.cyan(SPINNER_FRAMES[frameIndex++ % SPINNER_FRAMES.length]);
+      // Go up past blank + wait line, rewrite wait line with spinner frame
+      process.stdout.write('\x1b[2A\r\x1b[2K');
+      process.stdout.write(`${barColor('│')}  ${chalk.blue('[')} ${frame} ${chalk.blue(']')} ${chalk.dim(currentLabel)}\n`);
+      process.stdout.write(`${barColor('│')}\n`);
     };
 
-    // Start animation — only on TTY
     const interval = isTTY() ? setInterval(render, 80) : null;
-    if (interval) interval.unref(); // Don't block process exit
+    if (interval) interval.unref();
     if (!isTTY()) {
-      // Non-TTY: print static line
-      console.log(`${barColor('│')}  ${chalk.dim(currentLabel)} ...`);
+      // Non-TTY: static line already printed above
     }
 
+    const finish = (status: 'DONE' | 'FAIL', finalLabel?: string) => {
+      stopped = true;
+      if (interval) clearInterval(interval);
+      const fl = finalLabel || currentLabel;
+      if (isTTY()) eraseLines(_progressLines + 1);
+      const f    = status === 'DONE' ? chalk.green('[ DONE ]') : chalk.red('[ FAIL ]');
+      console.log(`${barColor('│')}  ${f} ${chalk.dim(fl)}`);
+      _waitLine      = null;
+      _progressLines = 0;
+    };
+
     return {
-      /** Update the label text mid-spin. */
-      update: (newLabel: string) => {
-        currentLabel = newLabel;
-      },
-
-      /** Stop spinner with success. */
-      done: (doneLabel?: string, statusFirst = false) => {
-        stopped = true;
-        if (interval) clearInterval(interval);
-        const finalLabel = doneLabel || currentLabel;
-        const statusText = chalk.green('[ DONE ]');
-        const line = statusFirst
-          ? `${barColor('│')}  ${statusText} ${finalLabel}`
-          : `${barColor('│')}  ${chalk.dim(finalLabel.padEnd(45))} ${statusText}`;
-        
-        if (isTTY()) {
-          process.stdout.write(`\r\x1b[K${line}\n`);
-        } else {
-          console.log(line);
-        }
-      },
-
-      /** Stop spinner with failure. */
-      fail: (failLabel?: string, statusFirst = false) => {
-        stopped = true;
-        if (interval) clearInterval(interval);
-        const finalLabel = failLabel || currentLabel;
-        const statusText = chalk.red('[ FAIL ]');
-        const line = statusFirst
-          ? `${barColor('│')}  ${statusText} ${finalLabel}`
-          : `${barColor('│')}  ${chalk.dim(finalLabel.padEnd(45))} ${statusText}`;
-
-        if (isTTY()) {
-          process.stdout.write(`\r\x1b[K${line}\n`);
-        } else {
-          console.log(line);
-        }
-      }
+      update: (newLabel: string) => { currentLabel = newLabel; },
+      done:   (doneLabel?: string, _statusFirst?: boolean) => finish('DONE', doneLabel),
+      fail:   (failLabel?: string, _statusFirst?: boolean) => finish('FAIL', failLabel),
     };
   },
 
   // ── Counter ────────────────────────────────────────────────
 
-  /**
-   * Render a single-line counter that updates in-place.
-   *
-   *   │  Scanned 342 files
-   */
   counter: (label: string, count: number, barColor = chalk.cyan) => {
-    resetStepState();
     const line = `${barColor('│')}  ${chalk.dim(label)} ${chalk.bold(String(count))}`;
-    writeLine(line);
+    if (isTTY()) process.stdout.write(`\r\x1b[K${line}`);
   },
 
-  /** Finalise a counter / progress line with a newline. */
   commitLine: (label: string, barColor = chalk.cyan) => {
-    flushProgress();
-    resetStepState();
-    const line = `${barColor('│')}  ${chalk.dim(label)}`;
-    console.log(line);
+    commitState();
+    console.log(`${barColor('│')}  ${chalk.dim(label)}`);
   },
 
-  // ── Timer Utility ──────────────────────────────────────────
+  // ── Timer ──────────────────────────────────────────────────
 
-  /** Format milliseconds into a human-readable duration. */
   formatDuration,
 
-  /** Start a timer and return a function that returns the elapsed time string. */
   timer: () => {
     const start = Date.now();
     return () => formatDuration(Date.now() - start);
   },
 
-  // ── Centralised Project Summary ───────────────────────────
+  // ── Centralised Project Summary ────────────────────────────
 
   /**
    * Print standardised project details within a TUI section.
-   * This is the single source of truth for build/dev/multi-project output.
-   *
-   * Usage:
-   *   TUI.section('Build');
-   *   TUI.projectDetails({ source: 'docs/', output: 'site/', versions, locales, threads });
-   *
-   * Each field is optional — only non-empty fields are printed.
    */
   projectDetails: (opts: {
-    source?: string;
-    output?: string;
+    source?:   string;
+    output?:   string;
     versions?: { count: number; labels: string };
-    locales?: { count: number; labels: string };
-    threads?: number;
+    locales?:  { count: number; labels: string };
+    threads?:  number;
     barColor?: typeof chalk.cyan;
   }) => {
     const bc = opts.barColor || chalk.cyan;
-    if (opts.source)   TUI.item('Source',   opts.source, chalk.dim, bc);
-    if (opts.output)   TUI.item('Output',   opts.output, chalk.dim, bc);
-    if (opts.versions) TUI.item('Versions', `${opts.versions.count} (${opts.versions.labels})`, chalk.dim, bc);
-    if (opts.locales)  TUI.item('Locales',  `${opts.locales.count} (${opts.locales.labels})`, chalk.dim, bc);
-    if (opts.threads)  TUI.item('Threads',  `${opts.threads}`, chalk.dim, bc);
+    if (opts.source)   TUI.item('Source',   opts.source,                                          chalk.dim, bc);
+    if (opts.output)   TUI.item('Output',   opts.output,                                          chalk.dim, bc);
+    if (opts.versions) TUI.item('Versions', `${opts.versions.count} (${opts.versions.labels})`,   chalk.dim, bc);
+    if (opts.locales)  TUI.item('Locales',  `${opts.locales.count} (${opts.locales.labels})`,     chalk.dim, bc);
+    if (opts.threads)  TUI.item('Threads',  `${opts.threads}`,                                    chalk.dim, bc);
   },
 
   /**
    * Extract standardised project details from a resolved config object.
-   * Returns the data shape expected by `TUI.projectDetails()`.
    */
   extractProjectDetails: (config: any, outputDir: string, cwd: string) => {
     const details: {
       source: string;
       output: string;
       versions?: { count: number; labels: string };
-      locales?: { count: number; labels: string };
+      locales?:  { count: number; labels: string };
     } = {
       source: (config.src || 'docs') + '/',
       output: outputDir.startsWith(cwd) ? outputDir.slice(cwd.length + 1) + '/' : outputDir + '/',
@@ -382,14 +366,14 @@ export const TUI = {
 
     if (config.versions?.all?.length > 0) {
       details.versions = {
-        count: config.versions.all.length,
+        count:  config.versions.all.length,
         labels: config.versions.all.map((v: any) => v.id).join(', '),
       };
     }
 
     if (config.i18n?.locales?.length > 0) {
       details.locales = {
-        count: config.i18n.locales.length,
+        count:  config.i18n.locales.length,
         labels: config.i18n.locales.map((l: any) => l.id).join(', '),
       };
     }

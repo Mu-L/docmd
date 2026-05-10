@@ -26,6 +26,11 @@ import { TUI } from '@docmd/tui';
 import { findPageNeighbors, findBreadcrumbs, normalizeNavPaths, createUrlContext, buildContextualUrl, computePageUrls, buildAbsoluteUrl, sanitizeUrl } from '@docmd/parser';
 import * as ui from '@docmd/ui';
 
+// Per-build deduplication: ensures the Data Indexing section only prints once
+// even when buildLocales calls generateSite multiple times (locale × version).
+let _buildId       = '';
+let _indexingShown = false;
+
 /* ── Constants ────────────────────────────────────────────────── */
 
 /** Number of pages to process concurrently in each batch. */
@@ -368,19 +373,25 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
   }
 
   // --- 2.5 onBeforeBuild (Data Indexing) ---
-  // Always run onBeforeBuild hooks (they contain git indexing, etc.)
-  // Show the Data Indexing section unless it's a targeted incremental rebuild
+  // Run hooks on every pass (each locale has its own page set).
+  // Show the section header only ONCE per top-level build to avoid
+  // reprinting it for every locale × version combination.
   if (hooks.onBeforeBuild && hooks.onBeforeBuild.length > 0) {
-    const showIndexingSection = !options.targetFiles;
-    if (showIndexingSection && TUI) {
-      TUI.footer(TUI.cyan);
-      TUI.section('Data Indexing', TUI.blue);
+    const buildId = (options as any)._buildId || '';
+    if (buildId !== _buildId) {
+      _buildId       = buildId;
+      _indexingShown = false;
+    }
+    const showSection = !options.targetFiles && !_indexingShown && !options.isDev;
+    if (showSection && TUI) {
+      _indexingShown = true;
+      TUI.section('Data Indexing', TUI.blue);  // auto-closes any open section
     }
     const beforeBuildContext = {
       config,
       pages,
       tui: TUI,
-      options: showIndexingSection ? { ...options, quiet: false } : options,
+      options: showSection ? { ...options, quiet: false } : options,
       runWorkerTask(modulePath: string, functionName: string, args: any[]) {
         if (!config._workerPool) throw new Error('WorkerPool is not initialized');
         return config._workerPool.runTask({ type: 'plugin-task', modulePath, functionName, args });
@@ -388,6 +399,11 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
     };
     for (const hookFn of hooks.onBeforeBuild) {
       await hookFn(beforeBuildContext);
+    }
+    // Close Data Indexing section BEFORE page rendering so the
+    // Processing progress bar appears in a clean context.
+    if (showSection && TUI) {
+      TUI.footer(TUI.blue);
     }
   }
 
