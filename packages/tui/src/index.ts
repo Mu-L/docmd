@@ -159,27 +159,32 @@ export const TUI = {
   /**
    * Print a status step line.
    *
-   * WAIT  → prints the line + a blank breathing `│`, tracks state
-   * DONE/FAIL/SKIP → erases the WAIT block in-place and replaces with final status line
+   * WAIT  → prints the line + a blank breathing `│`, tracks state.
+   *         If a WAIT is already active, overwrites in-place (label update).
+   * DONE/FAIL/SKIP → erases the WAIT block and replaces with final status line.
    *
-   * `statusFirst` is accepted but ignored — left-side flags are now always the default.
+   * `statusFirst` accepted but ignored — left-side flags are always the default.
    */
   step: (label: string, status: 'DONE'|'WAIT'|'SKIP'|'FAIL'|string = 'WAIT', barColor = chalk.cyan, _statusFirst?: boolean) => {
     const f    = flag(status);
     const line = `${barColor('│')}  ${f} ${chalk.dim(label)}`;
 
     if (status === 'WAIT') {
-      clearProgressArea();
+      if (isTTY() && _waitLine !== null) {
+        // Overwrite existing wait line in-place (e.g. count update)
+        eraseLines(_progressLines + 1);
+      } else {
+        clearProgressArea();
+      }
       console.log(line);
-      console.log(`${barColor('│')}`);   // breathing room
-      _waitLine     = label;
-      _waitBarColor = barColor;
-      _progressLines = 1;               // just the blank │
+      console.log(`${barColor('│')}`);
+      _waitLine      = label;
+      _waitBarColor  = barColor;
+      _progressLines = 1;
 
     } else {
-      // Erase: blank(s) + progress bar + wait line
       if (isTTY() && _waitLine !== null) {
-        eraseLines(_progressLines + 1);  // +1 for the wait line itself
+        eraseLines(_progressLines + 1);
       }
       console.log(line);
       _waitLine      = null;

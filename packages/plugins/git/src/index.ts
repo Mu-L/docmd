@@ -31,6 +31,11 @@ let _diskCache: Record<string, { mtimeMs: number, info: GitFileInfo }> | null = 
 let _diskCachePath: string | null = null;
 let _cacheDirty = false;
 
+// Per-build deduplication: git indexing only needs to run once per full build.
+// The in-memory gitCache stores results for all subsequent locale/version passes.
+let _gitBuildId = '';
+let _gitIndexingDone = false;
+
 function initDiskCache() {
   if (_diskCache !== null) return;
   const cwd = process.cwd();
@@ -268,18 +273,39 @@ export async function onBeforeBuild(ctx: any): Promise<void> {
   const { pages, tui, options } = ctx;
   if (!pages || pages.length === 0) return;
 
-  const commitHistory = pluginOptions?.commitHistory !== false; // Default true
-  const maxCommits = commitHistory ? (pluginOptions?.maxCommits || 5) : 1;
-  const showTui = tui && !options?.quiet;
+  // Deduplicate per build: only the FIRST locale/version pass runs git log.
+  // Subsequent passes pull from the in-memory gitCache, which is already warm.
+  const buildId = (options as any)?._buildId || '';
+  if (buildId !== _gitBuildId) {
+    _gitBuildId       = buildId;
+    _gitIndexingDone  = false;
+  }
 
-  if (showTui) tui.step('Syncing git metadata', 'WAIT');
+  const commitHistory = pluginOptions?.commitHistory !== false;
+  const maxCommits    = commitHistory ? (pluginOptions?.maxCommits || 5) : 1;
+  const showTui       = tui && !options?.quiet && !_gitIndexingDone;
 
-  // Parallel I/O with concurrency limit — git log is async I/O, not CPU-bound,
-  // so running multiple calls concurrently yields significant speedups on cold starts.
+  if (_gitIndexingDone) {
+    // Still populate frontmatter from in-memory cache for this locale's pages
+    for (const page of pages) {
+      if (page?.sourcePath && page.frontmatter) {
+        const cached = gitCache.get(page.sourcePath);
+        if (cached) {
+          if (!commitHistory) cached.commits = [];
+          page.frontmatter._git = cached;
+        }
+      }
+    }
+    return;
+  }
+
+  _gitIndexingDone = true;
+  const total      = pages.length;
+  let processed    = 0;
+
+  if (showTui) tui.step(`Syncing git metadata`, 'WAIT');
+
   const CONCURRENCY = 10;
-  let processed = 0;
-  const total = pages.length;
-
   for (let i = 0; i < total; i += CONCURRENCY) {
     const batch = pages.slice(i, i + CONCURRENCY);
     await Promise.all(batch.map(async (page: any) => {
@@ -287,21 +313,16 @@ export async function onBeforeBuild(ctx: any): Promise<void> {
       if (sourcePath && page.frontmatter) {
         const gitInfo = await getGitFileInfo(sourcePath, maxCommits);
         if (gitInfo) {
-          if (!commitHistory) {
-            gitInfo.commits = [];
-          }
+          if (!commitHistory) gitInfo.commits = [];
           page.frontmatter._git = gitInfo;
         }
       }
     }));
-
     processed += batch.length;
-    if (showTui) {
-      tui.progress('Syncing git metadata', processed, total);
-    }
+    if (showTui) tui.step(`Syncing git metadata  ${processed}/${total}`, 'WAIT');
   }
 
-  if (showTui) tui.step('Syncing git metadata', 'DONE');
+  if (showTui) tui.step(`Syncing git metadata`, 'DONE');
 }
 
 export function onPostBuild(): void {

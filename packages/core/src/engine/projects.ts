@@ -272,29 +272,18 @@ export async function buildMultiProject(
       const configFile = hasProjectConfig ? 'docmd.config.js' : 'docmd.config.js';
 
       await buildSite(configFile, {
-        isDev: opts.isDev || false,
+        isDev:   opts.isDev   || false,
         offline: opts.offline || false,
-        quiet: true,          // Suppress child's own section headers/summary
-        showStats: !opts.quiet,    // But still show versions/locales in parent's section
-        onProgress: !opts.quiet ? (current: number, total: number) => {
-          TUI.progress(`Processing     `, current, total);
-        } : undefined,
+        quiet:   true,  // Projects.ts owns all section headers
       });
-
-      if (!opts.quiet) {
-        TUI.step(`Project ${label} built in ${projectElapsed()}`, 'DONE', TUI.cyan);
-        TUI.footer(TUI.cyan);
-      }
 
     } catch (err: any) {
       if (!opts.quiet) {
         TUI.step(`Project ${label} build failed`, 'FAIL', TUI.cyan);
-        TUI.footer(TUI.cyan);
       }
       TUI.error(`Build failed for ${label}`, err.message);
       if (!opts.isDev) throw err;
     } finally {
-      // Always restore CWD
       process.chdir(originalCwd);
       delete process.env.DOCMD_PROJECT_OUT;
       delete process.env.DOCMD_PROJECT_PREFIX;

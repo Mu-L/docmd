@@ -79,6 +79,7 @@ export async function buildSite(configPath: string, opts: any = {}) {
       TUI.section('Build');
       const details = TUI.extractProjectDetails(config, rootOutputDir, CWD);
       TUI.projectDetails(details);
+      TUI.footer(); // close Build — Data Indexing and progress appear in clean air
     }
 
     // Helper: Build Assets for a specific output directory
@@ -106,24 +107,17 @@ export async function buildSite(configPath: string, opts: any = {}) {
     }
 
     // Pre-count all pages across all locales and versions.
-    // This gives us the exact total BEFORE processing starts, so the
-    // progress bar can show accurate 0 → N from the very first page.
     const expectedTotal = await preCountPages(config, CWD, options.targetFiles);
-    const processedSoFar = 0;
 
-    const displayProgress = options.onProgress || (!options.quiet ? (current: number, total: number) => {
-      TUI.progress('Processing     ', current, total);
-    } : undefined);
+    // Progress is forwarded to external consumers (e.g. multi-project parent) only.
+    // The TUI no longer shows a floating progress bar between sections — the
+    // final "Build complete. Generated N pages" line provides the count.
+    const displayProgress = options.onProgress || undefined;
 
-    // Each renderPages call reports (current, total) for its own pass.
-    // We ignore its `total` and use our pre-counted expectedTotal instead.
-    // Track pass transitions by watching when the per-pass total changes
-    // OR when current resets (drops below last value = new pass started).
     let processedBeforeThisPass = 0;
     let currentPassTotal = -1;
     let lastCurrent = 0;
     const fixedTotalProgress = displayProgress ? (current: number, passTotal: number) => {
-      // Detect new renderPages pass: passTotal changes, or current reset
       const isNewPass = passTotal !== currentPassTotal || current < lastCurrent;
       if (isNewPass) {
         processedBeforeThisPass += currentPassTotal > 0 ? currentPassTotal : 0;
@@ -245,18 +239,22 @@ export async function buildSite(configPath: string, opts: any = {}) {
     // TUI.section() auto-closes any previously open section (Build or Data Indexing)
     if (!options.targetFiles) {
       TUI.section('Post-Build Tasks', TUI.blue);
-      await Promise.all(hooks.onPostBuild.map((fn: any) => fn({
+      const postBuildCtx = {
         config,
-        pages: allGeneratedPages,
+        pages:     allGeneratedPages,
         outputDir: rootOutputDir,
-        log: (msg: string) => TUI.step(msg, 'DONE', TUI.blue),
-        tui: TUI,
-        options: { ...options, quiet: false },
+        log:       (msg: string) => TUI.step(msg, 'DONE', TUI.blue),
+        tui:       TUI,
+        options:   { ...options, quiet: false },
         runWorkerTask(modulePath: string, functionName: string, args: any[]) {
           if (!config._workerPool) throw new Error('WorkerPool is not initialized');
           return config._workerPool.runTask({ type: 'plugin-task', modulePath, functionName, args });
         }
-      })));
+      };
+      // Sequential execution keeps each plugin's WAIT→DONE transition clean in the TUI.
+      for (const fn of hooks.onPostBuild) {
+        await fn(postBuildCtx);
+      }
     }
 
     if (!options.isDev) {

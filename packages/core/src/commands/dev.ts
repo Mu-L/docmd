@@ -94,22 +94,20 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
   // ── Initial Build ────────────────────────────────────
   const initialElapsed = TUI.timer();
 
-  // Show project details before building
   const rootOutputDir = path.resolve(CWD, config.out || 'site');
   TUI.section('Build');
   const details = TUI.extractProjectDetails(config, rootOutputDir, CWD);
   TUI.projectDetails(details);
+  TUI.footer();
 
-  const sp = TUI.spinner('Performing initial build');
   let workerPool: WorkerPool;
 
   try {
     const workerScript = path.resolve(__dirname, '../engine/worker-parser.js');
     workerPool = new WorkerPool(workerScript, { config, cwd: CWD });
     await buildSite(configPathOption, { isDev: true, preserve: options.preserve, quiet: true, showStats: false, workerPool });
-    sp.done(`Initial build complete in ${initialElapsed()}`);
+    TUI.info(`Initial build complete in ${initialElapsed()}.`);
   } catch (error: any) {
-    sp.fail('Initial build failed');
     TUI.error('Initial build failed', error.message);
   }
 
