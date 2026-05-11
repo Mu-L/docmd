@@ -101,13 +101,16 @@ export function resolveHref(href: string): NormalizedHref {
     href = href.slice(0, -4);
   }
 
-  // 7. Strip trailing /index (the page is the folder root)
+  // 7. Strip trailing /index or /README (the page is the folder root)
   //    Handles: dir/index, ./dir/index, ../dir/index, /dir/index
-  //    Also handles bare "index" (root index)
-  if (href === 'index' || href === './index') {
-    href = href === 'index' ? '' : './';
+  //    And:     dir/README, ./dir/README, ../dir/README, /dir/README
+  //    Also handles bare "index" or "README" (root index)
+  if (href === 'index' || href === './index' || href === 'README' || href === './README') {
+    href = (href === 'index' || href === 'README') ? '' : './';
   } else if (href.endsWith('/index')) {
     href = href.slice(0, -5); // "dir/index" → "dir/"
+  } else if (href.endsWith('/README')) {
+    href = href.slice(0, -6); // "dir/README" → "dir/"
   }
 
   // 8. Ensure trailing slash for non-empty paths
