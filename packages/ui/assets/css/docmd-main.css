@@ -1630,16 +1630,18 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 
 .mermaid-controls {
     position: absolute;
-    top: 16px;
-    right: 16px;
+    bottom: 16px;
+    left: 16px;
     display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 4px;
     z-index: 10;
     opacity: 0;
     transition: opacity 0.2s ease;
 }
 
-.docmd-mermaid-container:hover .mermaid-controls,
+.mermaid-wrapper:hover .mermaid-controls,
 .mermaid-wrapper.mermaid-fullscreen .mermaid-controls {
     opacity: 1;
 }

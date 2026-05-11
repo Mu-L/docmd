@@ -105,8 +105,6 @@ import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.mi
         const rightBtn = document.createElement('button');
         rightBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
         rightBtn.style.cssText = btnStyle; rightBtn.title = 'Pan Right';
-        controls.style.flexDirection = 'column';
-        controls.style.alignItems = 'flex-end';
         controls.style.gap = '4px';
 
         const row1 = document.createElement('div');
@@ -126,8 +124,8 @@ import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.mi
         controls.appendChild(row1);
         controls.appendChild(row2);
         
+        wrapper.appendChild(controls);
         el.appendChild(wrapper);
-        el.appendChild(controls);
 
         let scale = 1;
         let translateX = 0;
