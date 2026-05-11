@@ -174,10 +174,15 @@
         currentPath = currentPath.substring(1);
       }
 
-      // Strip current locale prefix from path
-      if (currentLocale && currentLocale !== defaultLocale && currentPath.startsWith(currentLocale + '/')) {
-        currentPath = currentPath.substring(currentLocale.length + 1);
+      // Strip current locale prefix from path (ensuring we handle the leading slash)
+      var pathWithoutBase = currentPath;
+      if (currentLocale && currentLocale !== defaultLocale) {
+        var localePrefix = currentLocale + '/';
+        if (pathWithoutBase.startsWith(localePrefix)) {
+          pathWithoutBase = pathWithoutBase.substring(localePrefix.length);
+        }
       }
+      currentPath = pathWithoutBase;
 
       // Build new path with target locale prefix
       var targetLocPrefix = (localeId && localeId !== defaultLocale) ? localeId + '/' : '';
@@ -378,7 +383,7 @@
     document.addEventListener('click', async (e) => {
       if (e.target.closest('.collapse-icon-wrapper')) return;
 
-      if (e.target.closest('[data-spa-ignore]')) return;
+      if (e.target.closest('[data-spa-ignore], .language-switcher-item, .version-dropdown-item')) return;
 
       const link = e.target.closest('.sidebar-nav a, .page-navigation a, .page-footer a, .main-content a');
       if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
@@ -454,19 +459,33 @@
         currentPath = new URL(finalUrl).pathname;
         document.title = doc.title;
 
-        // Sync Assets
+        // Sync Assets (CSS/Icons) - use absolute URLs to prevent jank when relative paths change
         const assetSelectors = 'link[rel="stylesheet"], link[rel="icon"], link[rel="shortcut icon"]';
         const oldAssets = Array.from(document.head.querySelectorAll(assetSelectors));
         const newAssets = Array.from(doc.head.querySelectorAll(assetSelectors));
 
-        newAssets.forEach((newAsset, index) => {
-          if (oldAssets[index]) {
-            if (oldAssets[index].getAttribute('href') !== newAsset.getAttribute('href')) {
-              oldAssets[index].setAttribute('href', newAsset.getAttribute('href'));
-            }
-          } else {
-            document.head.appendChild(newAsset.cloneNode(true));
+        newAssets.forEach((newAsset) => {
+          const newHref = new URL(newAsset.getAttribute('href'), data.finalUrl).href;
+          // Check if this absolute URL is already present in the head
+          const alreadyPresent = Array.from(document.head.querySelectorAll(assetSelectors)).some(oldAsset => {
+            return new URL(oldAsset.getAttribute('href'), window.location.href).href === newHref;
+          });
+
+          if (!alreadyPresent) {
+            const cloned = newAsset.cloneNode(true);
+            cloned.setAttribute('href', newHref);
+            document.head.appendChild(cloned);
           }
+        });
+
+        // Sync Root Attributes (Theme, Classes)
+        document.documentElement.className = doc.documentElement.className;
+        document.body.className = doc.body.className;
+        Array.from(doc.documentElement.attributes).forEach(attr => {
+          if (attr.name !== 'class') document.documentElement.setAttribute(attr.name, attr.value);
+        });
+        Array.from(doc.body.attributes).forEach(attr => {
+          if (attr.name !== 'class') document.body.setAttribute(attr.name, attr.value);
         });
 
         // Sync Sidebar State
@@ -553,7 +572,10 @@
   }
 
   // 4. BOOTSTRAP
-  document.addEventListener('DOMContentLoaded', () => {
+  function bootstrap() {
+    if (document.body.dataset.bootstrapped === 'true') return;
+    document.body.dataset.bootstrapped = 'true';
+
     if (localStorage.getItem('docmd-sidebar-collapsed') === 'true') {
       document.body.classList.add('sidebar-collapsed');
     }
@@ -598,12 +620,16 @@
       }
       if (window.location.hash) {
         try {
-          document.querySelector(window.location.hash)?.scrollIntoView();
-        } catch {
-          document.getElementById(window.location.hash.substring(1))?.scrollIntoView();
-        }
+          const target = document.querySelector(window.location.hash) || document.getElementById(window.location.hash.substring(1));
+          if (target) target.scrollIntoView({ behavior: 'smooth' });
+        } catch { /* ignore */ }
       }
     }, 100);
-  });
+  }
 
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootstrap);
+  } else {
+    bootstrap();
+  }
 })();

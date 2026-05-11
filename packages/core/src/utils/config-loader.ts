@@ -266,6 +266,8 @@ export async function loadConfig(configPath: string, options: any = {}) {
         }
       }
 
+      normalized._resolvedPath = absoluteConfigPath;
+
       // Ensure the final configuration object is completely JSON-serialisable
       // This is crucial for passing the config to worker threads in the new multi-threaded build engine
       return JSON.parse(JSON.stringify(normalized));

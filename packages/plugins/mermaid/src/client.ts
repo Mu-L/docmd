@@ -18,19 +18,31 @@ import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.mi
 (async function () {
   'use strict';
   let counter = 0;
+  let iconsRegistered = false;
+
 
   function getTheme() {
     return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default';
   }
 
   async function renderAll() {
-    mermaid.registerIconPacks([
-      {
-        name: 'icon',
-        loader: () => fetch('https://unpkg.com/@iconify-json/lucide@1/icons.json').then((res) => res.json()),
-      },
-    ]);
+    if (!iconsRegistered) {
+      try {
+        mermaid.registerIconPacks([
+          {
+            name: 'icon',
+            loader: () => fetch('https://unpkg.com/@iconify-json/lucide@1/icons.json').then((res) => res.json()),
+          },
+        ]);
+        iconsRegistered = true;
+      } catch (e) {
+        console.warn('Mermaid icon registration failed:', e);
+      }
+    }
     mermaid.initialize({ startOnLoad: false, theme: getTheme(), securityLevel: 'loose' });
+
+    // Ensure DOM is settled
+    await new Promise(resolve => requestAnimationFrame(resolve));
 
     const elements = document.querySelectorAll('.mermaid:not([data-processed="true"])') as NodeListOf<HTMLElement>;
 
@@ -38,7 +50,6 @@ import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.mi
       if (!el.dataset.original) el.dataset.original = el.textContent || '';
       const code = el.dataset.original;
 
-      if (el.offsetParent === null) continue;
 
       try {
         const id = `mermaid-svg-${counter++}`;

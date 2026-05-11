@@ -19,7 +19,7 @@ import type { PluginDescriptor } from '@docmd/api';
 export const plugin: PluginDescriptor = {
   name: 'pwa',
   version: '0.8.0',
-  capabilities: ['post-build']
+  capabilities: ['post-build', 'head', 'body']
 };
 
 export async function onPostBuild({ config, outputDir, log }: any) {

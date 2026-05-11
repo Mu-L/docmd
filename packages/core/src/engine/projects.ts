@@ -56,6 +56,8 @@ export interface MultiProjectConfig {
   projects: ProjectEntry[];
   /** Shared output directory. Default: 'site' */
   out?: string;
+  /** Internal: Absolute path to the config file itself. Used for hot-reloading. */
+  _resolvedPath?: string;
 }
 
 /* ── Detection ─────────────────────────────────────────────── */
@@ -77,30 +79,57 @@ export function isMultiProject(rawConfig: any): rawConfig is MultiProjectConfig 
  * Load the raw config file without normalization to check for projects.
  * Returns null if no config found or if it's not multi-project.
  */
-export async function detectMultiProject(configPath: string): Promise<MultiProjectConfig | null> {
+export async function detectMultiProject(configPathOption: string): Promise<MultiProjectConfig | null> {
   const CWD = process.cwd();
-  const absolutePath = path.resolve(CWD, configPath);
+  let absolutePath = path.resolve(CWD, configPathOption);
 
-  if (!nativeFs.existsSync(absolutePath)) return null;
+  if (configPathOption === 'docmd.config.js') {
+    const candidates = [
+      'docmd.config.json',
+      'docmd.config.ts',
+      'docmd.config.js',
+      'docmd.config.mjs',
+      'config.js'
+    ];
+    let found = false;
+    for (const c of candidates) {
+      const p = path.resolve(CWD, c);
+      if (nativeFs.existsSync(p)) {
+        absolutePath = p;
+        found = true;
+        break;
+      }
+    }
+    if (!found) return null;
+  } else if (!nativeFs.existsSync(absolutePath)) {
+    return null;
+  }
 
   try {
-    // Polyfill defineConfig
-    (global as any).defineConfig = (config: any) => config;
+    let rawConfig: any;
 
-    const ts = Date.now();
-    const ext = path.extname(absolutePath);
-    const tempPath = absolutePath.replace(new RegExp(`\\${ext}$`), `-${ts}${ext}`);
-    nativeFs.copyFileSync(absolutePath, tempPath);
+    if (absolutePath.endsWith('.json')) {
+      rawConfig = JSON.parse(nativeFs.readFileSync(absolutePath, 'utf-8'));
+    } else {
+      // Polyfill defineConfig
+      (global as any).defineConfig = (config: any) => config;
 
-    const { pathToFileURL } = await import('url');
-    const configUrl = pathToFileURL(tempPath).href;
-    const rawModule = await import(configUrl);
-    const rawConfig = rawModule.default || rawModule;
+      const ts = Date.now();
+      const ext = path.extname(absolutePath);
+      const tempPath = absolutePath.replace(new RegExp(`\\${ext}$`), `-${ts}${ext}`);
+      nativeFs.copyFileSync(absolutePath, tempPath);
 
-    nativeFs.unlinkSync(tempPath);
-    delete (global as any).defineConfig;
+      const { pathToFileURL } = await import('url');
+      const configUrl = pathToFileURL(tempPath).href;
+      const rawModule = await import(configUrl);
+      rawConfig = rawModule.default || rawModule;
+
+      nativeFs.unlinkSync(tempPath);
+      delete (global as any).defineConfig;
+    }
 
     if (isMultiProject(rawConfig)) {
+      rawConfig._resolvedPath = absolutePath;
       return rawConfig as MultiProjectConfig;
     }
     return null;
@@ -445,20 +474,25 @@ export async function devMultiProject(
         if (isRebuilding) return;
         isRebuilding = true;
 
+        const isConfigUpdate = filename.includes('docmd.config') && !filename.includes('docmd.config-');
         const label = project.prefix === '/' ? '/' : project.prefix;
         const displayPath = filename.replace(/^[^/]+\//, '');
         const rebuildElapsed = TUI.timer();
 
-        TUI.step(`Rebuilding [${label}] ${displayPath}`, 'WAIT', TUI.blue, true);
+        if (isConfigUpdate) {
+          TUI.step(`Reloading config and rebuilding [${label}]`, 'WAIT', TUI.blue, true);
+        } else {
+          TUI.step(`Rebuilding [${label}] ${displayPath}`, 'WAIT', TUI.blue, true);
+        }
 
         try {
           const fullChangedPath = path.resolve(projectSrcDir, filename);
           await buildSingleProject(project, multiConfig, { 
             isDev: true,
-            targetFiles: [fullChangedPath]
+            targetFiles: isConfigUpdate ? undefined : [fullChangedPath]
           });
           broadcastReload();
-          TUI.step(`Rebuilt [${label}] ${displayPath} in ${rebuildElapsed()}`, 'DONE', TUI.blue, true);
+          TUI.step(`Rebuilt [${label}] ${isConfigUpdate ? 'with new config' : displayPath} in ${rebuildElapsed()}`, 'DONE', TUI.blue, true);
         } catch (err: any) {
           TUI.step(`Rebuild [${label}] ${displayPath}`, 'FAIL', TUI.blue, true);
           TUI.error('Rebuild failed', err.message);
@@ -466,6 +500,42 @@ export async function devMultiProject(
           isRebuilding = false;
         }
       }, 200);
+    });
+  }
+
+  // Watch the root multi-project config file itself
+  if (multiConfig._resolvedPath && nativeFs.existsSync(multiConfig._resolvedPath)) {
+    let rootConfigLock = false;
+    nativeFs.watch(multiConfig._resolvedPath, () => {
+      if (rootConfigLock) return;
+      rootConfigLock = true;
+
+      if (rebuildTimeout) clearTimeout(rebuildTimeout);
+      rebuildTimeout = setTimeout(async () => {
+        if (isRebuilding) return;
+        isRebuilding = true;
+
+        const rebuildElapsed = TUI.timer();
+        TUI.step('Reloading multi-project workspace config...', 'WAIT', TUI.blue, true);
+
+        try {
+          const { detectMultiProject } = await import('./projects.js');
+          const newMultiConfig = await detectMultiProject(path.basename(multiConfig._resolvedPath));
+          if (newMultiConfig) {
+            // Update the reference for subsequent project rebuilds
+            Object.assign(multiConfig, newMultiConfig);
+            await buildMultiProject(newMultiConfig, { isDev: true });
+            broadcastReload();
+            TUI.step(`Rebuilt entire workspace with new config in ${rebuildElapsed()}`, 'DONE', TUI.blue, true);
+          }
+        } catch (err: any) {
+          TUI.step('Workspace Rebuild', 'FAIL', TUI.blue, true);
+          TUI.error('Rebuild failed', err.message);
+        } finally {
+          isRebuilding = false;
+          setTimeout(() => { rootConfigLock = false; }, 500);
+        }
+      }, 300);
     });
   }
 

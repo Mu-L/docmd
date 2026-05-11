@@ -63,11 +63,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
   const CWD = process.cwd();
 
   // Config Fallback Logic
-  let actualConfigPath = path.resolve(CWD, configPathOption);
-  if (configPathOption === 'docmd.config.js' && !await fs.pathExists(actualConfigPath)) {
-    const legacyPath = path.resolve(CWD, 'config.js');
-    if (await fs.pathExists(legacyPath)) actualConfigPath = legacyPath;
-  }
+  const actualConfigPath = config._resolvedPath || path.resolve(CWD, configPathOption);
 
   const resolveConfigPaths = (currentConfig) => ({
     outputDir: path.resolve(CWD, currentConfig.out),
