@@ -23,9 +23,11 @@ function getCanonicalPath(p) {
   // 2. Remove file extension
   path = path.replace(/(\.html|\.md)$/, '');
 
-  // 3. Remove index suffix
+  // 3. Remove index/README suffix
   if (path.endsWith('index')) {
     path = path.slice(0, -5);
+  } else if (path.endsWith('README')) {
+    path = path.slice(0, -6);
   }
 
   // 4. Remove trailing slash

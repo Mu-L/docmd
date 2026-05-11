@@ -1631,10 +1631,10 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 .mermaid-controls {
     position: absolute;
     bottom: 16px;
-    left: 16px;
+    right: 16px;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: flex-end;
     gap: 4px;
     z-index: 10;
     opacity: 0;
