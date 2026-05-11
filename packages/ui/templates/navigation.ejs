@@ -15,7 +15,7 @@
         if (!p || p === '#') return '#';
         if (p.startsWith('http')) return p;
         let path = p.replace(/^(\.\/|\/)+/, '');
-        path = path.replace(/(\/index\.html|index\.html|\.html|\.md)$/, '');
+        path = path.replace(/(\/index\.html|index\.html|\/README\.md|README\.md|\.html|\.md)$/i, '');
         path = path.replace(/\/$/, '');
         return '/' + path;
       }
