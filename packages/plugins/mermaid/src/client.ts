@@ -148,6 +148,8 @@ import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.mi
           translateY = 0;
           
           // Let the SVG naturally size itself with max constraints
+          svgEl.style.width = '';
+          svgEl.style.height = '';
           svgEl.style.maxWidth = '100%';
           svgEl.style.maxHeight = '420px';
           svgEl.style.transformOrigin = 'center';
@@ -187,8 +189,13 @@ import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.mi
         });
 
         document.addEventListener('fullscreenchange', () => {
+          if (!svgEl) return;
           if (document.fullscreenElement === wrapper) {
             wrapper.classList.add('mermaid-fullscreen');
+            svgEl.style.maxWidth = 'calc(100vw - 40px)';
+            svgEl.style.maxHeight = 'calc(100vh - 40px)';
+            svgEl.style.width = '100%';
+            svgEl.style.height = '100%';
             scale = 1;
             translateX = 0;
             translateY = 0;

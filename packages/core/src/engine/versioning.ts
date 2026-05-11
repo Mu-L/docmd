@@ -60,13 +60,15 @@ export function filterNavForVersion(items: any[], vSrcDir: string, fallbackSrcDi
       let relativeFilePath = newItem.path.replace(/^\//, '');
       // Reverse clean-URL normalisation to find the source file
       if (relativeFilePath.endsWith('/') || relativeFilePath === '') {
-        // Trailing slash (or root) → could be folder/index.md or folder/README.md
+        // Trailing slash (or root) → could be folder/index.md or folder/README.md or file.md
         const dir = relativeFilePath.replace(/\/$/, '');
+        const fileCandidate = dir ? dir + '.md' : '';
         const indexCandidates = dir 
-          ? [dir + '/index.md', dir + '/README.md', dir + '/readme.md']
+          ? [dir + '/index.md', dir + '/README.md', dir + '/readme.md', fileCandidate]
           : ['index.md', 'README.md', 'readme.md'];
         
         const found = indexCandidates.find(c => {
+          if (!c) return false;
           const abs = path.join(vSrcDir, c);
           if (nodeFs.existsSync(abs)) return true;
           if (fallbackSrcDir && nodeFs.existsSync(path.join(fallbackSrcDir, c))) return true;
