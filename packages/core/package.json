@@ -20,7 +20,6 @@
     "@docmd/api": "workspace:*",
     "@docmd/live": "workspace:*",
     "@docmd/parser": "workspace:*",
-    "@docmd/utils": "workspace:*",
     "@docmd/plugin-analytics": "workspace:*",
     "@docmd/plugin-git": "workspace:*",
     "@docmd/plugin-installer": "workspace:*",
@@ -34,12 +33,11 @@
     "@docmd/themes": "workspace:*",
     "@docmd/tui": "workspace:*",
     "@docmd/ui": "workspace:*",
+    "@docmd/utils": "workspace:*",
     "esbuild": "^0.28.0",
     "ws": "^8.20.0"
   },
-  "devDependencies": {
-    "@types/node": "^25.6.0"
-  },
+  "devDependencies": {},
   "keywords": [
     "docmd",
     "markdown",

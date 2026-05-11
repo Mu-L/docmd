@@ -13,10 +13,7 @@
   ],
   "devDependencies": {
     "@docmd/api": "workspace:*",
-    "@types/node": "^18.19.130",
-    "esbuild": "^0.28.0",
-    "mermaid": "^11.14.0",
-    "typescript": "^5.9.3"
+    "esbuild": "^0.28.0"
   },
   "keywords": [
     "docmd",

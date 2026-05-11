@@ -17,10 +17,7 @@
   "files": [
     "dist"
   ],
-  "dependencies": {},
   "devDependencies": {
-    "@types/node": "^25.6.0",
-    "typescript": "^5.9.3"
   },
   "keywords": [
     "docmd",

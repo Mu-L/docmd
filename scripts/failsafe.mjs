@@ -196,6 +196,23 @@ function runCmd(cmd, cwd, silent = true) {
 
     TUI.footer();
 
+    // 1d. Security Audit
+    TUI.section('Security & Compliance');
+    TUI.step('Running security audit', 'WAIT');
+    try {
+        execSync('pnpm audit --audit-level moderate', { cwd: CWD, stdio: 'pipe' });
+        TUI.step('Running security audit', 'DONE');
+    } catch (e) {
+        TUI.step('Running security audit', 'FAIL');
+        TUI.error('Security vulnerabilities found in dependencies:');
+        const output = e.stdout?.toString() || e.message;
+        output.split('\n').slice(0, 20).forEach(l => {
+            console.error(`\x1b[34m│\x1b[0m  \x1b[31m${l}\x1b[0m`);
+        });
+        throw new Error('Security audit failed. Please run "pnpm audit" and fix vulnerabilities.');
+    }
+    TUI.footer();
+
     // ═════════════════════════════════════════════════════════════
     // SECTION 2: COMPREHENSIVE MEGA INTEGRATION TEST
     // ═════════════════════════════════════════════════════════════

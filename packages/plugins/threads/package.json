@@ -29,11 +29,10 @@
     "lit": "^3.3.2"
   },
   "devDependencies": {
-    "@playwright/test": "^1.59.1",
+    "@docmd/api": "workspace:*",
+    "@playwright/test": "^1.60.0",
     "esbuild": "^0.28.0",
-    "markdown-it": "^14.1.1",
-    "typescript": "^5.9.3",
-    "@docmd/api": "workspace:*"
+    "markdown-it": "^14.1.1"
   },
   "keywords": [
     "docmd",
