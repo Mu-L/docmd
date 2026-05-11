@@ -169,7 +169,7 @@ async function getGitFileInfo(filePath: string, maxCommits: number = 6): Promise
 
 export const plugin: PluginDescriptor = {
   name: 'git',
-  version: '0.7.9',
+  version: '0.8.0',
   capabilities: ['build', 'body', 'assets', 'translations', 'init', 'post-build']
 };
 
@@ -259,6 +259,8 @@ let pluginOptions: any = {};
 
 export function onConfigResolved(config: any): void {
   gitCache.clear();
+  gitRootCache.clear();
+  _gitIndexingDone = false;
   pluginOptions = config.plugins?.git || {};
 }
 
