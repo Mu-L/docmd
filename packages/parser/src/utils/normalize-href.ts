@@ -105,12 +105,13 @@ export function resolveHref(href: string): NormalizedHref {
   //    Handles: dir/index, ./dir/index, ../dir/index, /dir/index
   //    And:     dir/README, ./dir/README, ../dir/README, /dir/README
   //    Also handles bare "index" or "README" (root index)
-  if (href === 'index' || href === './index' || href === 'README' || href === './README') {
-    href = (href === 'index' || href === 'README') ? '' : './';
-  } else if (href.endsWith('/index')) {
+  const lowerHref = href.toLowerCase();
+  if (lowerHref === 'index' || lowerHref === './index' || lowerHref === 'readme' || lowerHref === './readme') {
+    href = (lowerHref === 'index' || lowerHref === 'readme') ? '' : './';
+  } else if (lowerHref.endsWith('/index')) {
     href = href.slice(0, -5); // "dir/index" → "dir/"
-  } else if (href.endsWith('/README')) {
-    href = href.slice(0, -6); // "dir/README" → "dir/"
+  } else if (lowerHref.endsWith('/readme')) {
+    href = href.slice(0, -6); // "dir/readme" → "dir/"
   }
 
   // 8. Ensure trailing slash for non-empty paths
