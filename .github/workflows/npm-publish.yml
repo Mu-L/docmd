@@ -29,22 +29,22 @@ jobs:
             binary: docmd-engine-darwin-arm64.node
             lib: libdocmd_engine.dylib
 
-          - os: macos-13            # Intel macOS runner
+          - os: macos-latest        # Cross-compile Intel binary on ARM64 runner (Faster)
             target: x86_64-apple-darwin
             binary: docmd-engine-darwin-x64.node
             lib: libdocmd_engine.dylib
 
-          - os: ubuntu-latest
+          - os: ubuntu-latest        # Cross-compile Linux x64 binary on ARM64 runner (Faster)
             target: x86_64-unknown-linux-gnu
             binary: docmd-engine-linux-x64.node
             lib: libdocmd_engine.so
 
-          - os: ubuntu-24.04-arm    # GitHub-hosted ARM64 Linux runner
+          - os: ubuntu-24.04-arm     # GitHub-hosted ARM64 Linux runner
             target: aarch64-unknown-linux-gnu
             binary: docmd-engine-linux-arm64.node
             lib: libdocmd_engine.so
 
-          - os: windows-latest
+          - os: windows-latest       # Cross-compile Windows x64 binary on ARM64 runner (Faster)
             target: x86_64-pc-windows-msvc
             binary: docmd-engine-win32-x64.node
             lib: docmd_engine.dll
@@ -52,7 +52,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -103,13 +103,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
@@ -171,5 +171,3 @@ jobs:
               fi
             fi
           done
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
