@@ -66,7 +66,7 @@ jobs:
 
       - name: Build native addon
         working-directory: packages/engines/rust-binaries/native
-        run: cargo build --release --target ${{ matrix.target }}
+        run: rustup run stable cargo build --release --target ${{ matrix.target }}
 
       # Copy the built library to bin/ with the correct name
       - name: Collect binary (Unix)
