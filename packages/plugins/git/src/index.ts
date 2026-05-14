@@ -125,8 +125,35 @@ function resolveCacheDir(): string {
     dir = parent;
   }
 
-  // Generate a unique hash for this project workspace to isolate multi-project temp storage
-  const hash = crypto.createHash('md5').update(dir).digest('hex').slice(0, 12);
+  // Derive a consistent project identifier (remote origin URL -> directory inode -> absolute path)
+  // Ensures cache directory resolution remains stable across local folder moves/renames.
+  let identifier = dir;
+  try {
+    const gitConfigPath = path.join(dir, '.git', 'config');
+    let urlFound = false;
+    if (fs.existsSync(gitConfigPath)) {
+      const content = fs.readFileSync(gitConfigPath, 'utf8');
+      const match = content.match(/url\s*=\s*([^\r\n]+)/);
+      if (match && match[1]) {
+        identifier = match[1].trim();
+        urlFound = true;
+      }
+    }
+    if (!urlFound) {
+      const stat = fs.statSync(dir);
+      if (stat && stat.ino) {
+        identifier = `ino:${stat.ino}`;
+      }
+    }
+  } catch {
+    try {
+      const stat = fs.statSync(dir);
+      if (stat && stat.ino) identifier = `ino:${stat.ino}`;
+    } catch { /* keep absolute path fallback */ }
+  }
+
+  // Generate a unique hash for this stable project identifier
+  const hash = crypto.createHash('md5').update(identifier).digest('hex').slice(0, 12);
   const baseSlug = path.basename(dir).replace(/[^a-zA-Z0-9-_]/g, '');
   return path.join(os.tmpdir(), `docmd-${baseSlug}-${hash}`, 'cache');
 }

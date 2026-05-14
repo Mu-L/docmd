@@ -21,120 +21,69 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const { version } = require('../../package.json');
 
-const defaultConfigContent = `// docmd.config.js
-export default defineConfig({
-  // --- Core Metadata ---
-  title: 'My Documentation',
-  url: '', // e.g. https://mysite.com (Critical for SEO/Sitemap)
-
-  // --- Branding ---
-  logo: {
-    light: 'assets/images/docmd-logo-dark.png',
-    dark: 'assets/images/docmd-logo-light.png',
-    alt: 'Logo',
-    href: '/',
-  },
-  favicon: 'assets/favicon.ico',
-
-  // --- Source & Output ---
-  src: 'docs',
-  out: 'site',
-
-  // --- Layout & UI Architecture ---
-  layout: {
-    spa: true, // Enable seamless page transitions
-    header: {
-      enabled: true,
+const defaultConfigContent = `{
+  "title": "My Documentation",
+  "url": "https://docs.myproject.com",
+  "src": "docs",
+  "out": "site",
+  "engine": "js",
+  "layout": {
+    "spa": true,
+    "header": {
+      "enabled": true
     },
-    sidebar: {
-      collapsible: true,
-      defaultCollapsed: false,
+    "sidebar": {
+      "collapsible": true,
+      "defaultCollapsed": false
     },
-    optionsMenu: {
-      position: 'sidebar-top', // 'menubar', 'header', 'sidebar-top', 'sidebar-bottom'
-      components: {
-        search: true,      
-        themeSwitch: true, 
-        sponsor: null,     
+    "optionsMenu": {
+      "position": "sidebar-top",
+      "components": {
+        "search": true,
+        "themeSwitch": true
       }
     },
-    footer: {
-      style: 'minimal', // 'minimal' or 'complete'
-      content: '© ' + new Date().getFullYear() + ' My Project.',
-      branding: true    // Config for "Built with docmd" badge
+    "footer": {
+      "style": "minimal",
+      "content": "© My Project.",
+      "branding": true
     }
   },
-
-  // --- Theme Settings ---
-  theme: {
-    name: 'default',        // Options: 'default', 'sky', 'ruby', 'retro'
-    appearance: 'system',   // 'light', 'dark', or 'system'
-    codeHighlight: true,    
-    customCss: [],          
+  "theme": {
+    "name": "default",
+    "appearance": "system",
+    "codeHighlight": true
   },
-
-  // --- General Features ---
-  minify: true,           
-  autoTitleFromH1: true,  
-  copyCode: true,         
-  pageNavigation: true,   
-  
-  customJs: [],           
-
-  // --- Versioning (Optional) ---
-  /*
-  versions: {
-    position: 'sidebar-top', // 'sidebar-top', 'sidebar-bottom'
-    current: 'v2',
-    all: [
-      { id: 'v2',       // Unique identifier for this version (used in URLs) and matching current version
-       dir: 'docs',     // Source directory for latest version
-       label: 'v2.0 (Latest)'
-      },
-      { id: 'v1',
-       dir: 'docs-v1',  // Source directory for older version
-       label: 'v1.0'
-      }
-    ]
-  },
-  */
-
-  // --- Navigation (Sidebar) ---
-  navigation: [
-    { title: 'Introduction', path: '/', icon: 'home' },
+  "minify": true,
+  "autoTitleFromH1": true,
+  "copyCode": true,
+  "pageNavigation": true,
+  "navigation": [
+    { "title": "Introduction", "path": "/", "icon": "home" },
     {
-      title: 'Getting Started',
-      icon: 'rocket',
-      collapsible: false,
-      children: [
-        { title: 'Installation', path: 'https://docs.docmd.io/getting-started/installation', icon: 'download', external: true },
-        { title: 'Configuration', path: 'https://docs.docmd.io/configuration/general/', icon: 'cog', external: true },
-      ],
+      "title": "Getting Started",
+      "icon": "rocket",
+      "collapsible": false,
+      "children": [
+        { "title": "Installation", "path": "https://docs.docmd.io/getting-started/installation", "icon": "download", "external": true },
+        { "title": "Configuration", "path": "https://docs.docmd.io/configuration/overview", "icon": "cog", "external": true }
+      ]
     },
-    { title: 'Live Editor', path: 'https://live.docmd.io', icon: 'play', external: true },
-    { title: 'GitHub', path: 'https://github.com/docmd-io/docmd', icon: 'github', external: true },
+    { "title": "GitHub", "path": "https://github.com/docmd-io/docmd", "icon": "github", "external": true }
   ],
-
-  // --- Plugins ---
-  plugins: {
-    seo: {
-      defaultDescription: 'Documentation built with docmd.',
-      openGraph: { defaultImage: '' },
-      twitter: { cardType: 'summary_large_image' }
+  "plugins": {
+    "git": {
+      "commitHistory": true,
+      "maxCommits": 5
     },
-    sitemap: { defaultChangefreq: 'weekly' },
-    analytics: { 
-      googleV4: { measurementId: 'G-X9WTDL262N' } // Change the example GA ID with your own
+    "seo": {
+      "defaultDescription": "Documentation built with docmd."
+    },
+    "sitemap": {
+      "defaultChangefreq": "weekly"
     }
-  },
-  
-  // --- Edit Link ---
-  editLink: {
-    enabled: false,
-    baseUrl: 'https://github.com/USERNAME/REPO/edit/main/docs',
-    text: 'Edit this page'
   }
-});
+}
 `;
 
 const defaultIndexMdContent = `---
@@ -144,15 +93,15 @@ description: "Welcome to your new documentation site."
 
 # Welcome to Your Docs 🚀
 
-Congratulations! You have successfully initialized a new **docmd** project.
+Congratulations! You have successfully initialised a new **docmd** project.
 
 ## Quick Start
 
 You are currently viewing \`docs/index.md\`.
 
 \`\`\`bash
-npm start   # Start the dev server
-docmd build # Build for production
+npm run dev   # Start the dev server
+npm run build # Build for production
 \`\`\`
 
 ## Features Demo
@@ -184,9 +133,8 @@ print('Hello World')
 - **Search**
 - **Sitemap**
 - **SEO Optimisation**
-- **Analytics**
+- **Git Integration**
 - **Mermaid Diagrams**
-- **LLMs (AI Integration)**
 
 ## Next Steps
 - **[Official Documentation](https://docs.docmd.io)**
@@ -213,7 +161,7 @@ const defaultPackageJson = {
 export async function initProject() {
   const baseDir = process.cwd();
   const packageJsonFile = path.join(baseDir, 'package.json');
-  const configFile = path.join(baseDir, 'docmd.config.js');
+  const configFile = path.join(baseDir, 'docmd.config.json');
   const docsDir = path.join(baseDir, 'docs');
   const indexMdFile = path.join(docsDir, 'index.md');
   const assetsDir = path.join(baseDir, 'assets');
@@ -237,9 +185,17 @@ export async function initProject() {
     TUI.step('Using existing package.json', 'SKIP');
   }
 
-  // Check each file individually
+  // Check each configuration file variant individually
   if (await fs.pathExists(configFile)) {
+    existingFiles.push('docmd.config.json');
+  }
+  const jsConfigFile = path.join(baseDir, 'docmd.config.js');
+  if (await fs.pathExists(jsConfigFile)) {
     existingFiles.push('docmd.config.js');
+  }
+  const tsConfigFile = path.join(baseDir, 'docmd.config.ts');
+  if (await fs.pathExists(tsConfigFile)) {
+    existingFiles.push('docmd.config.ts');
   }
 
   // Check for the legacy config.js
@@ -308,11 +264,11 @@ export async function initProject() {
   }
 
   // Write config file if it doesn't exist or user confirmed override
-  if (!await fs.pathExists(configFile) || shouldOverride) {
+  if (!await fs.pathExists(configFile) && !await fs.pathExists(jsConfigFile) && !await fs.pathExists(tsConfigFile) || shouldOverride) {
     await fs.writeFile(configFile, defaultConfigContent, 'utf8');
-    TUI.step(`${shouldOverride ? 'Updated' : 'Created'} docmd.config.js`, 'DONE');
+    TUI.step(`${shouldOverride ? 'Updated' : 'Created'} docmd.config.json`, 'DONE');
   } else {
-    TUI.step('Using existing docmd.config.js', 'SKIP');
+    TUI.step('Using existing configuration', 'SKIP');
   }
 
   // Write index.md file if it doesn't exist or user confirmed override
@@ -327,5 +283,5 @@ export async function initProject() {
   }
 
   TUI.footer();
-  TUI.success('Initialization complete. Run `npm install` to setup dependencies.');
+  TUI.success('Initialisation complete. Run `npm install` to setup dependencies.');
 }
