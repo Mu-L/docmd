@@ -116,7 +116,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Upgrade npm (required for OIDC provenance)
-        run: npm install -g npm@latest
+        run: npm install -g npm@11.12.1
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
