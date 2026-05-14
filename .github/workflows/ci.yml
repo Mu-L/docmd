@@ -1,4 +1,4 @@
-name: docmd CI Verification
+name: docmd CI verification
 
 on:
   push:
