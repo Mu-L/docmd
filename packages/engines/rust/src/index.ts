@@ -129,7 +129,7 @@ export function createRustEngine(): Engine {
   
   return {
     name: 'rust',
-    version: '0.8.1',
+    version: '0.8.2',
     
     supports(_taskType: string): boolean {
       return true;
