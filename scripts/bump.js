@@ -32,15 +32,29 @@ function updateVersion(pkgPath) {
   console.log(`Updated: ${pkg.name} → ${newVersion}`);
 }
 
-function updatePluginDescriptor(pkgDir) {
-  const pluginIndexPath = path.join(pkgDir, "src", "index.ts");
-  if (fs.existsSync(pluginIndexPath)) {
-    let content = fs.readFileSync(pluginIndexPath, "utf8");
+function updateSourceVersion(pkgDir) {
+  const indexPath = path.join(pkgDir, "src", "index.ts");
+  if (fs.existsSync(indexPath)) {
+    let content = fs.readFileSync(indexPath, "utf8");
     const versionRegex = /version:\s*(['"])(.*?)(['"])/g;
-    if (content.includes('PluginDescriptor') && versionRegex.test(content)) {
+    // Update any file in src/index.ts that has a version property
+    if (versionRegex.test(content)) {
       content = content.replace(versionRegex, `version: $1${newVersion}$3`);
-      fs.writeFileSync(pluginIndexPath, content);
-      console.log(`Updated PluginDescriptor: ${path.basename(pkgDir)} → ${newVersion}`);
+      fs.writeFileSync(indexPath, content);
+      console.log(`Updated Source Version: ${path.basename(pkgDir)} → ${newVersion}`);
+    }
+  }
+}
+
+function updateCargoVersion(pkgDir) {
+  const cargoPath = path.join(pkgDir, "native", "Cargo.toml");
+  if (fs.existsSync(cargoPath)) {
+    let content = fs.readFileSync(cargoPath, "utf8");
+    const versionRegex = /version\s*=\s*(['"])(.*?)(['"])/;
+    if (versionRegex.test(content)) {
+      content = content.replace(versionRegex, `version     = "${newVersion}"`);
+      fs.writeFileSync(cargoPath, content);
+      console.log(`Updated Cargo Version: ${path.basename(pkgDir)} → ${newVersion}`);
     }
   }
 }
@@ -57,7 +71,8 @@ function walk(dir) {
 
     if (fs.existsSync(path.join(full, "package.json"))) {
       updateVersion(path.join(full, "package.json"));
-      updatePluginDescriptor(full);
+      updateSourceVersion(full);
+      updateCargoVersion(full);
     } else if (fs.statSync(full).isDirectory()) {
       walk(full);
     }
