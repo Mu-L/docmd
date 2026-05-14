@@ -1,0 +1,32 @@
+[package]
+name        = "docmd-engine"
+version     = "0.8.1"
+edition     = "2021"
+description = "Native Node.js addon for the docmd Rust engine"
+license     = "MIT"
+
+# napi-rs builds a cdylib (.node file loaded by Node.js via require())
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# napi-rs: Rust ↔ Node.js bridge (N-API, ABI-stable across Node versions)
+napi        = { version = "2", features = ["async", "napi4"] }
+napi-derive = "2"
+
+# Async runtime — tokio powers all async tasks inside the addon
+tokio = { version = "1", features = ["rt-multi-thread", "fs", "process", "macros"] }
+
+# Serialisation — tasks arrive as JSON strings, results leave as JSON strings
+serde       = { version = "1", features = ["derive"] }
+serde_json  = "1"
+
+[build-dependencies]
+napi-build = "2"
+
+# Release profile: optimise for speed and small binary size
+[profile.release]
+lto           = true
+codegen-units = 1
+opt-level     = 3
+strip         = true

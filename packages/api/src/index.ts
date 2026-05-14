@@ -42,6 +42,21 @@ export {
 
 export type { UrlContext, PageUrls } from '@docmd/parser';
 
+// ─── Engine System ─────────────────────────────────────────────────────────
+// Re-exported from engine module.
+export {
+  engineRegistry,
+  registerEngine,
+  loadEngine,
+  isEngineAvailable,
+  getAvailableEngines,
+  runTask,
+  discoverFiles,
+  readFilesBatch,
+  getGitLog,
+  buildSearchIndex,
+} from './engine.js';
+
 // Types
 export type {
   // Plugin system
@@ -61,4 +76,15 @@ export type {
   BlockInfo,
   InlineSegment,
   TextLocation,
+  // Engine system
+  Engine,
+  EngineTask,
+  EngineResult,
+  EngineLoader,
+  EngineInitOptions,
+  BuiltinTaskType,
+  FileDiscoverPayload,
+  FileReadBatchPayload,
+  GitLogPayload,
+  SearchIndexPayload,
 } from './types.js';
