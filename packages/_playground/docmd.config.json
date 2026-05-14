@@ -1,4 +1,5 @@
 {
+  "engine": "rust",
   "title": "_playground",
   "src": "docs",
   "out": "site",
@@ -43,15 +44,16 @@
     "search": {},
     "seo": {},
     "sitemap": {},
-    "analytics": {},
+    "analytics": {
+      "googleV4": { "measurementId": "G-X9WTDL262N" }
+    },
     "llms": {},
     "mermaid": {},
     "git": {
       "repo": "https://github.com/docmd-io/docmd"
     },
     "openapi": {},
-    "math": {},
-    "threads": {}
+    "math": {}
   },
 
   "versions": {

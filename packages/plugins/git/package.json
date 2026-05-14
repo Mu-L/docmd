@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-git",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Git integration plugin for docmd.",
   "type": "module",
   "main": "dist/index.js",
@@ -22,8 +22,7 @@
     "@docmd/api": "workspace:*"
   },
   "devDependencies": {
-    "@docmd/api": "workspace:*",
-    "@types/node": "^25.6.0"
+    "@docmd/api": "workspace:*"
   },
   "keywords": [
     "docmd",

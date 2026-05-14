@@ -138,12 +138,22 @@ export function normalizeInternalHref(href: string): string {
 /**
  * Recursively normalises all `path` values in a navigation tree.
  * Used for nav config from `navigation.json`, `docmd.config.js`, and the auto-router.
+ * 
+ * Supports the `external:` prefix as a shorthand for `external: true`:
+ *   { "path": "external:https://github.com" } → { "path": "https://github.com", "external": true }
+ * 
+ * The explicit `external: true` attribute is also supported and takes precedence.
  */
 export function normalizeNavPaths(items: any[]): void {
   if (!items) return;
   for (const item of items) {
     if (item.path && typeof item.path === 'string') {
-      item.path = normalizeInternalHref(item.path);
+      const result = resolveHref(item.path);
+      item.path = result.href;
+      // If external: prefix was used, set the external flag (unless already explicitly set)
+      if (result.isExternal && item.external !== false) {
+        item.external = true;
+      }
     }
     if (item.children) {
       normalizeNavPaths(item.children);
