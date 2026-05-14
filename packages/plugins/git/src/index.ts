@@ -14,6 +14,7 @@
 
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import crypto from 'crypto';
@@ -21,7 +22,66 @@ import crypto from 'crypto';
 const execFileAsync = promisify(execFile);
 import { fileURLToPath } from 'url';
 
-import type { PluginDescriptor, PageContext } from '@docmd/api';
+import type { PluginDescriptor, PageContext, Engine } from '@docmd/api';
+
+// ---------------------------------------------------------------------------
+// Engine Integration
+// ---------------------------------------------------------------------------
+
+let _engine: Engine | null = null;
+let _engineLoadAttempted = false;
+let _configuredEngine: string = 'rust'; // default: prefer Rust, respected from config
+
+/**
+ * Try to load an engine based on config.engine key.
+ * Falls back to JS engine, then to execFile if neither is available.
+ */
+async function getEngine(): Promise<Engine | null> {
+  if (_engineLoadAttempted) return _engine;
+  _engineLoadAttempted = true;
+
+  try {
+    const { loadEngine } = await import('@docmd/api');
+    if (_configuredEngine === 'js') {
+      _engine = await loadEngine('js');
+    } else {
+      // Default: try Rust, fall back to JS
+      _engine = await loadEngine('rust').catch(() => loadEngine('js'));
+    }
+    return _engine;
+  } catch {
+    // No engine available — will use execFile fallback
+    return null;
+  }
+}
+
+/**
+ * Get git log for multiple files using the engine (batch operation).
+ * Returns a Map from file path to commits array.
+ */
+async function getGitLogViaEngine(
+  filePaths: string[],
+  maxCommits: number
+): Promise<Map<string, any[]> | null> {
+  const engine = await getEngine();
+  if (!engine) return null;
+  
+  try {
+    const result = await engine.run<Record<string, any[]>>({
+      type: 'git:log',
+      payload: { filePaths, maxCommits }
+    });
+    
+    if (!result.success) return null;
+    return new Map(Object.entries(result.data || {}));
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Original Implementation (fallback when engine is not available)
+// ---------------------------------------------------------------------------
 
 const gitRootCache = new Map<string, string | null>();
 const gitCache = new Map<string, GitFileInfo>();
@@ -36,10 +96,71 @@ let _cacheDirty = false;
 let _gitBuildId = '';
 let _gitIndexingDone = false;
 
+/**
+ * Resolve the cache directory anchored to the git root (not process.cwd()).
+ * This fixes multi-project builds where process.chdir() shifts per-project,
+ * which caused the cache to land in unpredictable subdirectories.
+ */
+let _configuredTmpDir: string | null = null;
+
+/**
+ * Resolve the cache directory base path.
+ * If config.tmp is configured, stores temporary files inside that specified path.
+ * Otherwise, moves them to the device's actual OS temporary folder nested by project hash
+ * so multiple documentations on the same device remain perfectly isolated.
+ */
+function resolveCacheDir(): string {
+  if (_configuredTmpDir) {
+    return path.join(path.resolve(process.cwd(), _configuredTmpDir), 'cache');
+  }
+
+  // Walk up from cwd to find the project git root, ensuring stable path resolution
+  let dir = process.cwd();
+  for (let i = 0; i < 10; i++) {
+    if (fs.existsSync(path.join(dir, '.git'))) {
+      break;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+
+  // Derive a consistent project identifier (remote origin URL -> directory inode -> absolute path)
+  // Ensures cache directory resolution remains stable across local folder moves/renames.
+  let identifier = dir;
+  try {
+    const gitConfigPath = path.join(dir, '.git', 'config');
+    let urlFound = false;
+    if (fs.existsSync(gitConfigPath)) {
+      const content = fs.readFileSync(gitConfigPath, 'utf8');
+      const match = content.match(/url\s*=\s*([^\r\n]+)/);
+      if (match && match[1]) {
+        identifier = match[1].trim();
+        urlFound = true;
+      }
+    }
+    if (!urlFound) {
+      const stat = fs.statSync(dir);
+      if (stat && stat.ino) {
+        identifier = `ino:${stat.ino}`;
+      }
+    }
+  } catch {
+    try {
+      const stat = fs.statSync(dir);
+      if (stat && stat.ino) identifier = `ino:${stat.ino}`;
+    } catch { /* keep absolute path fallback */ }
+  }
+
+  // Generate a unique hash for this stable project identifier
+  const hash = crypto.createHash('md5').update(identifier).digest('hex').slice(0, 12);
+  const baseSlug = path.basename(dir).replace(/[^a-zA-Z0-9-_]/g, '');
+  return path.join(os.tmpdir(), `docmd-${baseSlug}-${hash}`, 'cache');
+}
+
 function initDiskCache() {
   if (_diskCache !== null) return;
-  const cwd = process.cwd();
-  const cacheDir = path.join(cwd, '.docmd', 'cache');
+  const cacheDir = resolveCacheDir();
   _diskCachePath = path.join(cacheDir, 'git-history.json');
   try {
     if (fs.existsSync(_diskCachePath)) {
@@ -169,7 +290,7 @@ async function getGitFileInfo(filePath: string, maxCommits: number = 6): Promise
 
 export const plugin: PluginDescriptor = {
   name: 'git',
-  version: '0.8.0',
+  version: '0.8.1',
   capabilities: ['build', 'body', 'assets', 'translations', 'init', 'post-build']
 };
 
@@ -261,6 +382,13 @@ export function onConfigResolved(config: any): void {
   gitCache.clear();
   gitRootCache.clear();
   _gitIndexingDone = false;
+  _engineLoadAttempted = false;  // Reset engine state for fresh builds
+  _engine = null;
+  _diskCache = null;             // Reset disk cache so it re-reads from the correct path
+  _diskCachePath = null;
+  _cacheDirty = false;
+  _configuredEngine = config.engine || 'rust'; // Respect the config.engine key
+  _configuredTmpDir = config.tmp || null;      // Respect the config.tmp custom path
   pluginOptions = config.plugins?.git || {};
 }
 
@@ -303,28 +431,115 @@ export async function onBeforeBuild(ctx: any): Promise<void> {
 
   _gitIndexingDone = true;
   const total      = pages.length;
-  let processed    = 0;
 
   if (showTui) tui.step(`Syncing git metadata`, 'WAIT');
 
-  const CONCURRENCY = 10;
-  for (let i = 0; i < total; i += CONCURRENCY) {
-    const batch = pages.slice(i, i + CONCURRENCY);
-    await Promise.all(batch.map(async (page: any) => {
-      const sourcePath = page?.sourcePath;
-      if (sourcePath && page.frontmatter) {
-        const gitInfo = await getGitFileInfo(sourcePath, maxCommits);
-        if (gitInfo) {
-          if (!commitHistory) gitInfo.commits = [];
-          page.frontmatter._git = gitInfo;
-        }
+  // Collect all source paths that need git info.
+  // Pre-warm in-memory cache from disk first so the engine is only called
+  // for uncached or modified files (warm builds benefit from persistence).
+  const pathsToFetch: string[] = [];
+  const pagesByPath = new Map<string, any[]>();
+
+  initDiskCache();
+  for (const page of pages) {
+    const sourcePath = page?.sourcePath;
+    if (sourcePath && page.frontmatter && !gitCache.has(sourcePath)) {
+      let fileStat: any;
+      try { fileStat = fs.statSync(sourcePath); } catch { /* skip */ }
+      // Hit disk cache if file hasn't changed since last build
+      if (fileStat && _diskCache && _diskCache[sourcePath] && _diskCache[sourcePath].mtimeMs === fileStat.mtimeMs) {
+        gitCache.set(sourcePath, _diskCache[sourcePath].info);
+        if (page.frontmatter) page.frontmatter._git = _diskCache[sourcePath].info;
+      } else {
+        pathsToFetch.push(sourcePath);
+        if (!pagesByPath.has(sourcePath)) pagesByPath.set(sourcePath, []);
+        pagesByPath.get(sourcePath)!.push(page);
       }
-    }));
-    processed += batch.length;
-    if (showTui) tui.step(`Syncing git metadata  ${processed}/${total}`, 'WAIT');
+    }
   }
 
-  if (showTui) tui.step(`Syncing git metadata`, 'DONE');
+  // Try to use engine for batch processing (much faster with Rust)
+  const engineResult = await getGitLogViaEngine(pathsToFetch, maxCommits);
+
+  
+  if (engineResult && engineResult.size > 0) {
+    // Engine succeeded — process and persist results
+    for (const [filePath, commits] of engineResult) {
+
+      if (commits && commits.length > 0) {
+        let fileStat: any;
+        try { fileStat = fs.statSync(filePath); } catch { /* skip */ }
+
+        const info: GitFileInfo = {
+          lastUpdated: new Date(commits[0].timestamp).toISOString(),
+          lastUpdatedTimestamp: commits[0].timestamp,
+          commits: commits.map((c: any) => {
+            const hashEmail = crypto.createHash('md5').update((c.email || '').trim().toLowerCase()).digest('hex');
+            return {
+              hash: c.hash,
+              shortHash: c.shortHash,
+              author: c.author,
+              email: c.email,
+              date: new Date(c.timestamp).toISOString(),
+              timestamp: c.timestamp,
+              message: c.message,
+              avatarUrl: `https://www.gravatar.com/avatar/${hashEmail}?d=mp&s=64`
+            };
+          })
+        };
+
+        if (!commitHistory) info.commits = [];
+        gitCache.set(filePath, info);
+
+        // Persist to disk cache so subsequent builds are fast (warm start)
+        if (_diskCache && fileStat) {
+          _diskCache[filePath] = { mtimeMs: fileStat.mtimeMs, info };
+          _cacheDirty = true;
+        }
+
+        // Update all pages with this source path
+        const pagesForPath = pagesByPath.get(filePath) || [];
+        for (const page of pagesForPath) {
+          if (page.frontmatter) page.frontmatter._git = info;
+        }
+      }
+    }
+
+    if (showTui) tui.step(`Syncing git metadata`, 'DONE');
+  } else {
+    // Fallback to original execFile-based implementation
+    let processed = 0;
+    const CONCURRENCY = 10;
+    
+    for (let i = 0; i < total; i += CONCURRENCY) {
+      const batch = pages.slice(i, i + CONCURRENCY);
+      await Promise.all(batch.map(async (page: any) => {
+        const sourcePath = page?.sourcePath;
+        if (sourcePath && page.frontmatter) {
+          const gitInfo = await getGitFileInfo(sourcePath, maxCommits);
+          if (gitInfo) {
+            if (!commitHistory) gitInfo.commits = [];
+            page.frontmatter._git = gitInfo;
+          }
+        }
+      }));
+      processed += batch.length;
+      if (showTui) tui.step(`Syncing git metadata  ${processed}/${total}`, 'WAIT');
+    }
+
+    if (showTui) tui.step(`Syncing git metadata`, 'DONE');
+  }
+  
+  // Also populate pages that were already in cache
+  for (const page of pages) {
+    if (page?.sourcePath && page.frontmatter && !page.frontmatter._git) {
+      const cached = gitCache.get(page.sourcePath);
+      if (cached) {
+        if (!commitHistory) cached.commits = [];
+        page.frontmatter._git = cached;
+      }
+    }
+  }
 }
 
 export function onPostBuild(): void {

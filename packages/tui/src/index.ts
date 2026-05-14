@@ -342,12 +342,14 @@ export const TUI = {
   projectDetails: (opts: {
     source?:   string;
     output?:   string;
+    engine?:   string;
     versions?: { count: number; labels: string };
     locales?:  { count: number; labels: string };
     threads?:  number;
     barColor?: typeof chalk.cyan;
   }) => {
     const bc = opts.barColor || chalk.cyan;
+    if (opts.engine)   TUI.item('Engine',   opts.engine === 'rust' ? 'rust (preview)' : opts.engine, chalk.dim, bc);
     if (opts.source)   TUI.item('Source',   opts.source,                                          chalk.dim, bc);
     if (opts.output)   TUI.item('Output',   opts.output,                                          chalk.dim, bc);
     if (opts.versions) TUI.item('Versions', `${opts.versions.count} (${opts.versions.labels})`,   chalk.dim, bc);
@@ -362,12 +364,17 @@ export const TUI = {
     const details: {
       source: string;
       output: string;
+      engine?: string;
       versions?: { count: number; labels: string };
       locales?:  { count: number; labels: string };
     } = {
       source: (config.src || 'docs') + '/',
       output: outputDir.startsWith(cwd) ? outputDir.slice(cwd.length + 1) + '/' : outputDir + '/',
     };
+
+    if (config.engine && config.engine !== 'js') {
+      details.engine = config.engine;
+    }
 
     if (config.versions?.all?.length > 0) {
       details.versions = {

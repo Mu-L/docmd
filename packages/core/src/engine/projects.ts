@@ -236,7 +236,17 @@ export async function buildMultiProject(
   for (const project of sorted) {
     const prefix = project.prefix === '/' ? '/' : project.prefix.replace(/\/$/, '');
     const projectSrcDir = path.resolve(CWD, project.src);
-    const projectConfigPath = path.join(projectSrcDir, 'docmd.config.js');
+
+    const candidates = ['docmd.config.json', 'docmd.config.ts', 'docmd.config.js', 'docmd.config.mjs', 'config.js'];
+    let resolvedConfigName: string | null = null;
+    for (const c of candidates) {
+      if (nativeFs.existsSync(path.join(projectSrcDir, c))) {
+        resolvedConfigName = c;
+        break;
+      }
+    }
+    const hasProjectConfig = resolvedConfigName !== null;
+    const configFileToUse = resolvedConfigName || 'docmd.config.js';
 
     // Determine this project's output directory
     const projectOutDir = prefix === '/'
@@ -246,9 +256,6 @@ export async function buildMultiProject(
     const label = prefix === '/' ? `/ (root)` : prefix;
     const projectElapsed = TUI.timer();
 
-    // Check if the project has its own config
-    const hasProjectConfig = nativeFs.existsSync(projectConfigPath);
-
     if (!opts.quiet) {
       TUI.section(`Building: ${label}`);
 
@@ -256,9 +263,10 @@ export async function buildMultiProject(
       const originalCwdCheck = process.cwd();
       process.chdir(projectSrcDir);
       try {
-        const childConfig = await loadConfig(hasProjectConfig ? 'docmd.config.js' : 'docmd.config.js', { isDev: opts.isDev, quiet: true });
+        const childConfig = await loadConfig(configFileToUse, { isDev: opts.isDev, quiet: true });
         const childDetails = TUI.extractProjectDetails(childConfig, projectOutDir, CWD);
         TUI.projectDetails({
+          engine: childConfig.engine && childConfig.engine !== 'js' ? childConfig.engine : undefined,
           source: `${project.src}/`,
           output: `${path.relative(CWD, projectOutDir)}/`,
           versions: childDetails.versions,
@@ -273,7 +281,7 @@ export async function buildMultiProject(
       }
 
       if (!hasProjectConfig) {
-        TUI.item('Config', 'zero-config (no docmd.config.js found)', TUI.dim, TUI.cyan);
+        TUI.item('Config', 'zero-config (no docmd.config.json found)', TUI.dim, TUI.cyan);
       }
     }
 
@@ -282,7 +290,7 @@ export async function buildMultiProject(
     process.chdir(projectSrcDir);
 
     try {
-      // The project's docmd.config.js should NOT have src/out,
+      // The project's config should NOT have src/out,
       // because the multi-project handler provides those.
       // We set environment variables so the config loader can
       // pick them up. src is NOT overridden - the child config
@@ -298,9 +306,7 @@ export async function buildMultiProject(
 
       // Build this project — quiet suppresses headers/summary,
       // but showStats + onProgress give us live feedback
-      const configFile = hasProjectConfig ? 'docmd.config.js' : 'docmd.config.js';
-
-      await buildSite(configFile, {
+      await buildSite(configFileToUse, {
         isDev:   opts.isDev   || false,
         offline: opts.offline || false,
         quiet:   true,  // Projects.ts owns all section headers
@@ -337,16 +343,22 @@ async function buildSingleProject(
   const rootOutDir = path.resolve(CWD, multiConfig.out || 'site');
   const prefix = project.prefix === '/' ? '/' : project.prefix.replace(/\/$/, '');
   const projectSrcDir = path.resolve(CWD, project.src);
-  const projectConfigPath = path.join(projectSrcDir, 'docmd.config.js');
+
+  const candidates = ['docmd.config.json', 'docmd.config.ts', 'docmd.config.js', 'docmd.config.mjs', 'config.js'];
+  let resolvedConfigName: string | null = null;
+  for (const c of candidates) {
+    if (nativeFs.existsSync(path.join(projectSrcDir, c))) {
+      resolvedConfigName = c;
+      break;
+    }
+  }
+  const configFileToUse = resolvedConfigName || 'docmd.config.js';
 
   const projectOutDir = prefix === '/'
     ? rootOutDir
     : path.join(rootOutDir, prefix.replace(/^\//, ''));
 
   const label = prefix === '/' ? '/ (root)' : prefix;
-
-  // Check if project has its own config
-  const hasProjectConfig = nativeFs.existsSync(projectConfigPath);
 
   // Change to project directory and build
   const originalCwd = process.cwd();
@@ -364,8 +376,7 @@ async function buildSingleProject(
     }
 
     // Build only this project
-    const configFile = hasProjectConfig ? 'docmd.config.js' : 'docmd.config.js';
-    await buildSite(configFile, {
+    await buildSite(configFileToUse, {
       isDev: opts.isDev || false,
       offline: opts.offline || false,
       quiet: true, // Suppress output in dev mode
