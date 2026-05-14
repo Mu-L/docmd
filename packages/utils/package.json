@@ -1,6 +1,6 @@
 {
   "name": "@docmd/utils",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Zero-dependency shared utilities for docmd core.",
   "type": "module",
   "main": "dist/index.js",
@@ -17,11 +17,7 @@
   "files": [
     "dist"
   ],
-  "dependencies": {},
-  "devDependencies": {
-    "@types/node": "^25.6.0",
-    "typescript": "^5.9.3"
-  },
+  "devDependencies": {},
   "keywords": [
     "docmd",
     "ui",

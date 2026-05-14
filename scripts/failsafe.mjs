@@ -126,8 +126,10 @@ function runCmd(cmd, cwd, silent = true) {
     // 1a. TypeScript type-checking across ALL packages
     TUI.step('Type-checking monorepo packages', 'WAIT');
     const typeCheckPackages = ['tui', 'utils', 'api', 'parser', 'core'];
+    // Engine packages live under packages/engines/<name> — check them separately
+    const typeCheckEngines = ['engines/js', 'engines/rust'];
     const typeErrors = [];
-    for (const pkg of typeCheckPackages) {
+    for (const pkg of [...typeCheckPackages, ...typeCheckEngines]) {
         const pkgDir = path.join(CWD, 'packages', pkg);
         if (!nativeFs.existsSync(path.join(pkgDir, 'tsconfig.json'))) continue;
         try {
@@ -194,6 +196,114 @@ function runCmd(cmd, cwd, silent = true) {
     checkVersions(packagesDir);
     TUI.step('Checking version consistency', 'DONE');
 
+    TUI.footer();
+
+    // 1d. Security Audit
+    TUI.section('Security & Compliance');
+    TUI.step('Running security audit', 'WAIT');
+    try {
+        execSync('pnpm audit --audit-level moderate', { cwd: CWD, stdio: 'pipe' });
+        TUI.step('Running security audit', 'DONE');
+    } catch (e) {
+        TUI.step('Running security audit', 'FAIL');
+        TUI.error('Security vulnerabilities found in dependencies:');
+        const output = e.stdout?.toString() || e.message;
+        output.split('\n').slice(0, 20).forEach(l => {
+            console.error(`\x1b[34m│\x1b[0m  \x1b[31m${l}\x1b[0m`);
+        });
+        throw new Error('Security audit failed. Please run "pnpm audit" and fix vulnerabilities.');
+    }
+    TUI.footer();
+
+    // ═════════════════════════════════════════════════════════════
+    // SECTION 1e: ENGINE TESTS
+    // ═════════════════════════════════════════════════════════════
+    
+    TUI.section('Engine Tests');
+    
+    // Test JS Engine
+    TUI.step('Testing JS engine', 'WAIT');
+    try {
+        const jsEngineTest = await import('../packages/engines/js/dist/index.js');
+        const jsEngine = jsEngineTest.createJsEngine();
+        
+        // Test file:discover
+        const discoverResult = await jsEngine.run({ 
+            type: 'file:discover', 
+            payload: { dir: path.join(CWD, 'packages/engines'), extensions: ['.ts'] } 
+        });
+        if (!discoverResult.success) throw new Error('file:discover failed');
+        
+        // Test file:exists
+        const existsResult = await jsEngine.run({ 
+            type: 'file:exists', 
+            payload: { path: path.join(CWD, 'package.json') } 
+        });
+        if (!existsResult.success || existsResult.data !== true) throw new Error('file:exists failed');
+        
+        TUI.step('Testing JS engine', 'DONE');
+    } catch (e) {
+        TUI.step('Testing JS engine', 'FAIL');
+        TUI.error(`JS engine test failed: ${e.message}`);
+        throw e;
+    }
+    
+    // Test Rust Engine (if binary available)
+    TUI.step('Testing Rust engine', 'WAIT');
+    try {
+        const rustEngineTest = await import('../packages/engines/rust/dist/index.js');
+        
+        if (rustEngineTest.isRustEngineAvailable()) {
+            const rustEngine = rustEngineTest.createRustEngine();
+            
+            // Test file:discover
+            const discoverResult = await rustEngine.run({ 
+                type: 'file:discover', 
+                payload: { dir: path.join(CWD, 'packages/engines'), extensions: ['.ts'] } 
+            });
+            if (!discoverResult.success) throw new Error('file:discover failed');
+            
+            // Test file:exists
+            const existsResult = await rustEngine.run({ 
+                type: 'file:exists', 
+                payload: { path: path.join(CWD, 'package.json') } 
+            });
+            if (!existsResult.success || existsResult.data !== true) throw new Error('file:exists failed');
+            
+            // Test git:status
+            const gitResult = await rustEngine.run({ type: 'git:status', payload: {} });
+            if (!gitResult.success) throw new Error('git:status failed');
+            
+            TUI.step('Testing Rust engine', 'DONE');
+        } else {
+            TUI.step('Testing Rust engine (binary not present, built by CI)', 'SKIP');
+        }
+    } catch (e) {
+        TUI.step('Testing Rust engine', 'FAIL');
+        TUI.error(`Rust engine test failed: ${e.message}`);
+        // Don't throw — Rust engine is optional, JS is the fallback
+    }
+    
+    // Test API engine loading
+    TUI.step('Testing API engine loader', 'WAIT');
+    try {
+        const apiEngine = await import('../packages/api/dist/engine.js');
+        
+        // Test loading JS engine via API
+        const jsEngine = await apiEngine.loadEngine('js');
+        if (jsEngine.name !== 'js') throw new Error('loadEngine("js") failed');
+        
+        // Test running a task through the API
+        const result = await apiEngine.discoverFiles(jsEngine, path.join(CWD, 'packages/engines'), ['.ts']);
+        if (!Array.isArray(result)) throw new Error('discoverFiles failed');
+        
+        TUI.step('Testing API engine loader', 'DONE');
+    } catch (e) {
+        TUI.step('Testing API engine loader', 'FAIL');
+        TUI.error(`API engine loader test failed: ${e.message}`);
+        throw e;
+    }
+    
     TUI.footer();
 
     // ═════════════════════════════════════════════════════════════

@@ -507,11 +507,18 @@
             const newA = newLi.querySelector('a');
             if (oldA && newA) {
               // Resolve new href to absolute URL to prevent relative path nesting issues
+              // But preserve external URLs (http/https, mailto:, tel:, etc.) as-is
               const newHref = newA.getAttribute('href');
               if (newHref && newHref !== '#') {
                 try {
-                  const absoluteUrl = new URL(newHref, data.finalUrl || window.location.href);
-                  oldA.setAttribute('href', absoluteUrl.pathname + absoluteUrl.hash);
+                  // Check if this is an external URL or special protocol - preserve as-is
+                  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(newHref)) {
+                    oldA.setAttribute('href', newHref);
+                  } else {
+                    // Internal link: resolve relative to the fetched page's URL
+                    const absoluteUrl = new URL(newHref, data.finalUrl || window.location.href);
+                    oldA.setAttribute('href', absoluteUrl.pathname + absoluteUrl.hash);
+                  }
                 } catch {
                   oldA.setAttribute('href', newHref);
                 }

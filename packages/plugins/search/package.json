@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-search",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Offline full-text search for docmd.",
   "type": "module",
   "main": "dist/index.js",
@@ -16,7 +16,8 @@
     "minisearch": "^7.2.0"
   },
   "devDependencies": {
-    "@docmd/api": "workspace:*"
+    "@docmd/api": "workspace:*",
+    "esbuild": "^0.28.0"
   },
   "keywords": [
     "docmd",

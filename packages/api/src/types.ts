@@ -273,3 +273,172 @@ export interface PluginHooks {
   onBeforeRender: ((page: PageContext) => void | Promise<void>)[];
   onPageReady: ((page: any) => void | Promise<void>)[];
 }
+
+// ---------------------------------------------------------------------------
+// Engine Interface (§ Engine Abstraction Layer)
+// ---------------------------------------------------------------------------
+
+/**
+ * Task definition for engine execution.
+ * Engines receive tasks and return results - they don't know or care
+ * what the task does, they just execute it.
+ */
+export interface EngineTask {
+  /** Task type identifier (e.g., 'file:discover', 'git:log', 'search:index') */
+  type: string;
+  /** Task payload - any serializable data */
+  payload: any;
+  /** Optional timeout in milliseconds */
+  timeout?: number;
+}
+
+/**
+ * Result from an engine task execution.
+ */
+export interface EngineResult<T = any> {
+  /** Whether the task succeeded */
+  success: boolean;
+  /** Result data if successful */
+  data?: T;
+  /** Error message if failed */
+  error?: string;
+  /** Execution time in milliseconds */
+  duration?: number;
+}
+
+/**
+ * Engine interface for pluggable build acceleration.
+ *
+ * Engines are simple task executors - they receive a task and return a result.
+ * The API layer controls what tasks are allowed and how they're structured.
+ * This keeps engines language-agnostic and allows any tool (docmd, docmd-search, etc.)
+ * to use them without tight coupling.
+ *
+ * @example
+ * ```typescript
+ * const engine = await loadEngine('rust');
+ * const result = await engine.run({ type: 'file:discover', payload: { dir: './docs' } });
+ * if (result.success) {
+ *   console.log('Found files:', result.data);
+ * }
+ * ```
+ */
+export interface Engine {
+  /** Engine descriptor with name and version. */
+  readonly name: string;
+  readonly version: string;
+  
+  /**
+   * Execute a task and return the result.
+   * This is the only method engines need to implement.
+   * 
+   * @param task - The task to execute
+   * @returns The result of the task execution
+   */
+  run<T = any>(task: EngineTask): Promise<EngineResult<T>>;
+  
+  /**
+   * Check if the engine supports a given task type.
+   * Optional - if not implemented, engine assumes it can try any task.
+   */
+  supports?(taskType: string): boolean;
+  
+  /**
+   * Initialize the engine. Called once before first use.
+   */
+  init?(options?: EngineInitOptions): Promise<void>;
+  
+  /**
+   * Clean up resources. Called when the engine is no longer needed.
+   */
+  destroy?(): Promise<void>;
+}
+
+/**
+ * Options passed to engine initialization.
+ */
+export interface EngineInitOptions {
+  /** Project root directory. */
+  projectRoot?: string;
+  /** Enable debug logging. */
+  debug?: boolean;
+}
+
+/**
+ * Engine loader function type.
+ */
+export type EngineLoader = () => Promise<Engine | null>;
+
+/**
+ * Registry of available engine loaders.
+ */
+export const engineRegistry: Map<string, EngineLoader> = new Map();
+
+/**
+ * Register an engine loader.
+ */
+export function registerEngine(name: string, loader: EngineLoader): void {
+  engineRegistry.set(name, loader);
+}
+
+// ---------------------------------------------------------------------------
+// Task Types (defined by API, not engines)
+// ---------------------------------------------------------------------------
+
+/**
+ * Built-in task types that the API layer supports.
+ * Engines don't define these - the API does.
+ */
+export type BuiltinTaskType =
+  // File operations
+  | 'file:discover'      // Discover files in directory tree
+  | 'file:read'          // Read single file
+  | 'file:readBatch'     // Read multiple files
+  | 'file:write'         // Write file
+  | 'file:exists'        // Check if file exists
+  // Git operations
+  | 'git:log'            // Get git log for file(s)
+  | 'git:status'         // Get git status
+  // Search operations
+  | 'search:index'       // Build search index
+  | 'search:query'       // Query search index
+  // Generic
+  | 'exec:script';       // Execute arbitrary script
+
+/**
+ * Payload for file:discover task.
+ */
+export interface FileDiscoverPayload {
+  dir: string;
+  extensions?: string[];
+  exclude?: string[];
+}
+
+/**
+ * Payload for file:readBatch task.
+ */
+export interface FileReadBatchPayload {
+  paths: string[];
+}
+
+/**
+ * Payload for git:log task.
+ */
+export interface GitLogPayload {
+  filePaths: string[];
+  maxCommits?: number;
+}
+
+/**
+ * Payload for search:index task.
+ */
+export interface SearchIndexPayload {
+  documents: Array<{
+    id: string;
+    title: string;
+    content: string;
+    path: string;
+    locale?: string;
+    version?: string;
+  }>;
+}
