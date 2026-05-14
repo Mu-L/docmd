@@ -20,12 +20,31 @@
     "scripts",
     "bin"
   ],
-  "keywords": ["docmd", "engine", "rust", "native", "performance"],
-  "author": { "name": "Ghazi", "url": "https://mgks.dev" },
+  "keywords": [
+    "docmd",
+    "engine",
+    "rust",
+    "native",
+    "performance",
+    "markdown",
+    "minimalist",
+    "zero-config",
+    "site-generator",
+    "documentation",
+    "docs"
+  ],
+  "author": {
+    "name": "Ghazi",
+    "url": "https://mgks.dev"
+  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/docmd-io/docmd.git",
-    "directory": "packages/engines/rust"
+    "url": "git+https://github.com/docmd-io/docmd.git"
   },
+  "bugs": {
+    "url": "https://github.com/docmd-io/docmd/issues"
+  },
+  "homepage": "https://docmd.io",
+  "funding": "https://github.com/sponsors/mgks",
   "license": "MIT"
 }

@@ -1,11 +1,15 @@
 /**
- * @docmd/engine-rust — Rust-accelerated engine for docmd
+ * --------------------------------------------------------------------
+ * docmd : the zero-config documentation engine.
  *
- * This is a lightweight wrapper that loads the pre-built native binary
- * from bin/ and forwards all task execution to Rust.
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
- * The binary is downloaded at install time by scripts/postinstall.cjs
- * from the docmd monorepo (packages/engines/rust-binaries/bin/).
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
  */
 
 import { createRequire } from 'module';

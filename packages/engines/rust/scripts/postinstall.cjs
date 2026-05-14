@@ -1,13 +1,15 @@
 /**
- * postinstall.cjs — Downloads the pre-built Rust binary for the current platform.
+ * --------------------------------------------------------------------
+ * docmd : the zero-config documentation engine.
  *
- * Downloads from npm (via unpkg CDN) with exact version matching.
- * The version is read from this package's package.json, ensuring users
- * always get the binary that matches their installed version.
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
- * Download sources (tried in order):
- *   1. unpkg.com (npm CDN, versioned)
- *   2. jsdelivr.net (npm CDN, versioned)
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
  */
 
 'use strict';

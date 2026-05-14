@@ -22,7 +22,11 @@
     "engine",
     "javascript",
     "nodejs",
-    "documentation"
+    "minimalist",
+    "zero-config",
+    "site-generator",
+    "documentation",
+    "docs"
   ],
   "author": {
     "name": "Ghazi",
@@ -30,8 +34,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/docmd-io/docmd.git",
-    "directory": "packages/engines/js"
+    "url": "git+https://github.com/docmd-io/docmd.git"
   },
+  "bugs": {
+    "url": "https://github.com/docmd-io/docmd/issues"
+  },
+  "homepage": "https://docmd.io",
+  "funding": "https://github.com/sponsors/mgks",
   "license": "MIT"
 }

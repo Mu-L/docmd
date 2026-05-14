@@ -2,7 +2,7 @@
  * --------------------------------------------------------------------
  * docmd : the zero-config documentation engine.
  *
- * @package     @docmd/engine-js
+ * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT

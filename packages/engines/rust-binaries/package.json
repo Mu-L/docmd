@@ -8,12 +8,31 @@
   "files": [
     "bin"
   ],
-  "keywords": ["docmd", "rust", "binaries", "native"],
-  "author": { "name": "Ghazi", "url": "https://mgks.dev" },
+  "keywords": [
+    "docmd",
+    "engine",
+    "rust",
+    "binaries",
+    "native",
+    "markdown",
+    "minimalist",
+    "zero-config",
+    "site-generator",
+    "documentation",
+    "docs"
+  ],
+  "author": {
+    "name": "Ghazi",
+    "url": "https://mgks.dev"
+  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/docmd-io/docmd.git",
-    "directory": "packages/engines/rust-binaries"
+    "url": "git+https://github.com/docmd-io/docmd.git"
   },
+  "bugs": {
+    "url": "https://github.com/docmd-io/docmd/issues"
+  },
+  "homepage": "https://docmd.io",
+  "funding": "https://github.com/sponsors/mgks",
   "license": "MIT"
 }

@@ -1,12 +1,15 @@
 /**
- * build.js — Builds the Rust native addon for the current platform.
+ * --------------------------------------------------------------------
+ * docmd : the zero-config documentation engine.
  *
- * Run by maintainers only: `pnpm --filter @docmd/engine-rust-binaries run build`
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
  *
- * Output: bin/docmd-engine-<platform>-<arch>.node
- *
- * These binaries are committed to the GitHub repo and downloaded by
- * @docmd/engine-rust at install time. Users never need Rust installed.
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
  */
 
 'use strict';
