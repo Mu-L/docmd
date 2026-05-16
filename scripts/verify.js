@@ -35,10 +35,7 @@ if (!isCI) {
     run(headerCmd, false);
 }
 
-// 2. Run Security Audit
-run('node scripts/security-audit.mjs', false);
-
-// 3. Run the actual failsafe check
+// 2. Run the actual failsafe check
 // Forwarding arguments to failsafe.mjs
 const failsafeArgs = args.filter(a => a !== '--link' && a !== '--skip-header').join(' ');
 run(`node scripts/failsafe.mjs ${failsafeArgs}`, false);

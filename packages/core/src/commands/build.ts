@@ -258,7 +258,7 @@ export async function buildSite(configPath: string, opts: any = {}) {
       }
     }
 
-    if (!options.isDev) {
+    if (!options.isDev && !options.quiet) {
       TUI.success(`Build complete. Generated ${allGeneratedPages.length} pages in ${elapsed()}.`);
     }
 
@@ -267,7 +267,7 @@ export async function buildSite(configPath: string, opts: any = {}) {
     }
 
   } catch (e: any) {
-    if (!options.isDev) {
+    if (!options.isDev && !options.quiet) {
       TUI.error('Build failed', e.message);
       // Show full stack trace if we are in a testing/CI environment
       if (process.env.npm_lifecycle_event === 'test' || process.env.CI) {

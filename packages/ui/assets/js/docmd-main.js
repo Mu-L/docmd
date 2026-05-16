@@ -249,16 +249,56 @@
     }
 
     // Copy Code Button
+    // Copy Code Button
     const copyBtn = e.target.closest('.copy-code-button');
     if (copyBtn) {
       const code = copyBtn.closest('.code-wrapper')?.querySelector('code');
       if (code) {
         navigator.clipboard.writeText(code.innerText).then(() => {
           copyBtn.classList.add('copied');
-          copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+          // Update icon to checkmark
+          copyBtn.innerHTML = ''; // Safe to clear
+          const checkSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          checkSvg.setAttribute('width', '16');
+          checkSvg.setAttribute('height', '16');
+          checkSvg.setAttribute('viewBox', '0 0 24 24');
+          checkSvg.setAttribute('fill', 'none');
+          checkSvg.setAttribute('stroke', 'currentColor');
+          checkSvg.setAttribute('stroke-width', '2');
+          checkSvg.setAttribute('stroke-linecap', 'round');
+          checkSvg.setAttribute('stroke-linejoin', 'round');
+          checkSvg.classList.add('lucide', 'lucide-check');
+          const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+          polyline.setAttribute('points', '20 6 9 17 4 12');
+          checkSvg.appendChild(polyline);
+          copyBtn.appendChild(checkSvg);
+
           setTimeout(() => {
             copyBtn.classList.remove('copied');
-            copyBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>`;
+            // Revert icon to copy
+            copyBtn.innerHTML = ''; 
+            const copySvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            copySvg.setAttribute('width', '16');
+            copySvg.setAttribute('height', '16');
+            copySvg.setAttribute('viewBox', '0 0 24 24');
+            copySvg.setAttribute('fill', 'none');
+            copySvg.setAttribute('stroke', 'currentColor');
+            copySvg.setAttribute('stroke-width', '2');
+            copySvg.setAttribute('stroke-linecap', 'round');
+            copySvg.setAttribute('stroke-linejoin', 'round');
+            copySvg.classList.add('lucide', 'lucide-copy');
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('width', '14');
+            rect.setAttribute('height', '14');
+            rect.setAttribute('x', '8');
+            rect.setAttribute('y', '8');
+            rect.setAttribute('rx', '2');
+            rect.setAttribute('ry', '2');
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', 'M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2');
+            copySvg.appendChild(rect);
+            copySvg.appendChild(path);
+            copyBtn.appendChild(copySvg);
           }, 2000);
         });
       }
@@ -306,7 +346,10 @@
 
       const copyButton = document.createElement('button');
       copyButton.className = 'copy-code-button';
-      copyButton.innerHTML = svg;
+      
+      const svgDoc = new DOMParser().parseFromString(svg, 'image/svg+xml');
+      copyButton.appendChild(svgDoc.documentElement);
+      
       wrapper.appendChild(copyButton);
     });
   }
@@ -566,7 +609,12 @@
         selectorsToSwap.forEach(selector => {
           const oldEl = document.querySelector(selector);
           const newEl = doc.querySelector(selector);
-          if (oldEl && newEl) oldEl.innerHTML = newEl.innerHTML;
+          if (oldEl && newEl) {
+            oldEl.textContent = '';
+            while (newEl.firstChild) {
+              oldEl.appendChild(newEl.firstChild);
+            }
+          }
         });
 
         // Scroll after the browser has painted the new content.

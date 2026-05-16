@@ -91,10 +91,6 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
   const initialElapsed = TUI.timer();
 
   const rootOutputDir = path.resolve(CWD, config.out || 'site');
-  TUI.section('Build');
-  const details = TUI.extractProjectDetails(config, rootOutputDir, CWD);
-  TUI.projectDetails(details);
-  TUI.footer();
 
   let workerPool: WorkerPool;
 
@@ -107,7 +103,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
     if (await fs.exists(rootOutputDir)) {
       await fs.remove(rootOutputDir);
     }
-    await buildSite(configPathOption, { isDev: true, preserve: options.preserve, quiet: true, showStats: false, workerPool });
+    await buildSite(configPathOption, { isDev: true, preserve: options.preserve, quiet: false, showStats: false, workerPool });
     TUI.info(`Initial build completed in ${initialElapsed()}.`);
   } catch (error: any) {
     TUI.error('Initial build failed', error.message);

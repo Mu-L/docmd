@@ -296,7 +296,7 @@ a:any-link {
     padding: .5em 0;
     top: 0;
     left: 0;
-    overflow: hidden;
+    overflow: visible;
     box-sizing: border-box;
     flex-shrink: 0;
     z-index: 100;
@@ -969,18 +969,14 @@ body.has-menubar-header .docmd-menubar {
     border-top: 1px solid var(--border-color);
 }
 
-/* --- Version Dropdown (Flat UI) --- */
-.sidebar-version-wrapper{
-    padding: 0.25rem .5em;
-}
-
 .sidebar-top-group,.sidebar-bottom-group.mt-auto {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
     gap: 0.25rem;
-    padding: 0.25rem 0;
+    padding: 0.25rem;
+    position: relative;
 }
 
 .sidebar-top-group:empty {
@@ -995,14 +991,8 @@ body.has-menubar-header .docmd-menubar {
     display: none;
 }
 
-.sidebar-version-wrapper,
-.sidebar-language-wrapper {
-    position: relative;
-}
-
 .docmd-version-dropdown,
 .docmd-language-switcher {
-    position: relative;
     width: auto;
 }
 
@@ -3117,13 +3107,7 @@ ul.contains-task-list>li::marker {
     }
 }
 /* Workspace Switcher */
-.sidebar-project-switcher-wrapper {
-    position: relative;
-    margin-bottom: 1rem;
-}
-
 .docmd-project-switcher {
-    position: relative;
     width: 100%;
 }
 

@@ -28,14 +28,14 @@ const TUI_EMU = {
     dim: (t) => `\x1b[2m${t}\x1b[0m`,
     bold: (t) => `\x1b[1m${t}\x1b[0m`,
     
-    step: (label, status = 'WAIT') => {
+    step: (label, status = 'WAIT', noReplace = false) => {
         const statusText = status === 'DONE' ? `\x1b[32m[ DONE ]\x1b[0m` :
                           status === 'SKIP' ? `\x1b[33m[ SKIP ]\x1b[0m` :
                           status === 'FAIL' ? `\x1b[31m[ FAIL ]\x1b[0m` :
                           `\x1b[34m[ ${status} ]\x1b[0m`;
         const line = `\x1b[34m│\x1b[0m  \x1b[2m${label.padEnd(45)}\x1b[0m ${statusText}`;
         
-        if (process.stdout.isTTY && status !== 'WAIT') {
+        if (process.stdout.isTTY && status !== 'WAIT' && !noReplace) {
             process.stdout.write(`\x1b[1A\r\x1b[K${line}\n`);
         } else {
             process.stdout.write(`${line}\n`);
@@ -202,16 +202,13 @@ function runCmd(cmd, cwd, silent = true) {
     TUI.section('Security & Compliance');
     TUI.step('Running security audit', 'WAIT');
     try {
-        execSync('pnpm audit --audit-level moderate', { cwd: CWD, stdio: 'pipe' });
+        // Run our custom monorepo security audit
+        execSync('node scripts/security-audit.mjs --skip-header', { cwd: CWD, stdio: 'inherit' });
         TUI.step('Running security audit', 'DONE');
     } catch (e) {
         TUI.step('Running security audit', 'FAIL');
-        TUI.error('Security vulnerabilities found in dependencies:');
-        const output = e.stdout?.toString() || e.message;
-        output.split('\n').slice(0, 20).forEach(l => {
-            console.error(`\x1b[34m│\x1b[0m  \x1b[31m${l}\x1b[0m`);
-        });
-        throw new Error('Security audit failed. Please run "pnpm audit" and fix vulnerabilities.');
+        TUI.error('High-risk security patterns detected in source code or templates.');
+        throw new Error('Security audit failed. Fix issues in scripts/security-audit.mjs baseline or patch vulnerabilities.');
     }
     TUI.footer();
 

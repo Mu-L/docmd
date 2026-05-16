@@ -96,12 +96,18 @@
       }
     }
 
-    // data-i18n-html → innerHTML (use cautiously)
+    // data-i18n-html → innerHTML (use cautiously with sanitization)
     var htmlEls = document.querySelectorAll('[data-i18n-html]');
     for (var j = 0; j < htmlEls.length; j++) {
       var htmlKey = htmlEls[j].getAttribute('data-i18n-html');
       if (htmlKey && strings[htmlKey] !== undefined) {
-        htmlEls[j].innerHTML = strings[htmlKey];
+        var rawHtml = strings[htmlKey];
+        // Basic sanitization: strip script and event handlers
+        var sanitized = rawHtml
+          .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "")
+          .replace(/on\w+="[^"]*"/gim, "")
+          .replace(/on\w+='[^']*'/gim, "");
+        htmlEls[j].innerHTML = sanitized;
       }
     }
 

@@ -99,10 +99,17 @@ export class ThreadsComment extends LitElement {
     if (typeof (window as any).docmd?.compile === 'function') {
       try {
         const rendered = (window as any).docmd.compile(text);
-        return html`<div .innerHTML=${rendered}></div>`;
+        return html`<div .innerHTML=${this.sanitize(rendered)}></div>`;
       } catch { /* fall through */ }
     }
-    return html`<div .innerHTML=${this.simpleMarkdown(text)}></div>`;
+    return html`<div .innerHTML=${this.sanitize(this.simpleMarkdown(text))}></div>`;
+  }
+
+  private sanitize(html: string): string {
+    return html
+      .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "")
+      .replace(/on\w+="[^"]*"/gim, "")
+      .replace(/on\w+='[^']*'/gim, "");
   }
 
   private simpleMarkdown(text: string): string {

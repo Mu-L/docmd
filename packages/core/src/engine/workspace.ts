@@ -347,12 +347,17 @@ export async function buildWorkspace(
         _activePrefix: prefix
       });
 
+      if (!opts.quiet) {
+        TUI.footer(TUI.cyan);
+      }
+
     } catch (err: any) {
       if (!opts.quiet) {
         TUI.step(`Project ${label} build failed`, 'FAIL', TUI.cyan);
+        TUI.footer(TUI.cyan);
       }
       TUI.error(`Build failed for ${label}`, err.message);
-      if (!opts.isDev) throw err;
+      if (!opts.isDev) process.exit(1);
     } finally {
       process.chdir(originalCwd);
       delete process.env.DOCMD_PROJECT_OUT;

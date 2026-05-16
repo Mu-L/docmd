@@ -59,9 +59,11 @@ import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.mi
         el.classList.add('docmd-mermaid-container');
         el.innerHTML = '';
 
+        const parser = new DOMParser();
         const wrapper = document.createElement('div');
         wrapper.className = 'mermaid-wrapper';
-        wrapper.innerHTML = svg;
+        const svgDoc = parser.parseFromString(svg, 'image/svg+xml');
+        wrapper.appendChild(svgDoc.documentElement);
 
         const svgEl = wrapper.querySelector('svg');
 
@@ -81,41 +83,23 @@ import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.mi
 
         const btnStyle = 'background: var(--bg-color, #fff); border: 1px solid var(--border-color, #e4e4e7); border-radius: 6px; padding: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); width: 28px; height: 28px; color: var(--text-muted, #71717a);';
 
-        const zoomInBtn = document.createElement('button');
-        zoomInBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>';
-        zoomInBtn.style.cssText = btnStyle;
-        zoomInBtn.title = 'Zoom in';
+        const createBtn = (title: string, svgContent: string) => {
+          const btn = document.createElement('button');
+          btn.style.cssText = btnStyle;
+          btn.title = title;
+          const btnSvgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
+          btn.appendChild(btnSvgDoc.documentElement);
+          return btn;
+        };
 
-        const zoomOutBtn = document.createElement('button');
-        zoomOutBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>';
-        zoomOutBtn.style.cssText = btnStyle;
-        zoomOutBtn.title = 'Zoom out';
-
-        const resetBtn = document.createElement('button');
-        resetBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>';
-        resetBtn.style.cssText = btnStyle;
-        resetBtn.title = 'Reset view';
-
-        const fullscreenBtn = document.createElement('button');
-        fullscreenBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>';
-        fullscreenBtn.style.cssText = btnStyle;
-        fullscreenBtn.title = 'Fullscreen';
-
-        const upBtn = document.createElement('button');
-        upBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>';
-        upBtn.style.cssText = btnStyle; upBtn.title = 'Pan Up';
-
-        const downBtn = document.createElement('button');
-        downBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
-        downBtn.style.cssText = btnStyle; downBtn.title = 'Pan Down';
-
-        const leftBtn = document.createElement('button');
-        leftBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>';
-        leftBtn.style.cssText = btnStyle; leftBtn.title = 'Pan Left';
-
-        const rightBtn = document.createElement('button');
-        rightBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
-        rightBtn.style.cssText = btnStyle; rightBtn.title = 'Pan Right';
+        const zoomInBtn = createBtn('Zoom in', '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>');
+        const zoomOutBtn = createBtn('Zoom out', '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>');
+        const resetBtn = createBtn('Reset view', '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>');
+        const fullscreenBtn = createBtn('Fullscreen', '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>');
+        const upBtn = createBtn('Pan Up', '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>');
+        const downBtn = createBtn('Pan Down', '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>');
+        const leftBtn = createBtn('Pan Left', '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>');
+        const rightBtn = createBtn('Pan Right', '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>');
         controls.style.gap = '4px';
 
         const row1 = document.createElement('div');

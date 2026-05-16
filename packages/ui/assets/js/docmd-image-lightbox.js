@@ -20,13 +20,22 @@ document.addEventListener('DOMContentLoaded', function () {
   // Create lightbox elements
   const lightbox = document.createElement('div');
   lightbox.className = 'docmd-lightbox';
-  lightbox.innerHTML = `
-    <div class="docmd-lightbox-content">
-      <img src="" alt="">
-      <div class="docmd-lightbox-caption"></div>
-    </div>
-    <div class="docmd-lightbox-close">&times;</div>
-  `;
+  const content = document.createElement('div');
+  content.className = 'docmd-lightbox-content';
+  const img = document.createElement('img');
+  img.src = '';
+  img.alt = '';
+  const caption = document.createElement('div');
+  caption.className = 'docmd-lightbox-caption';
+  content.appendChild(img);
+  content.appendChild(caption);
+  
+  const close = document.createElement('div');
+  close.className = 'docmd-lightbox-close';
+  close.innerHTML = '&times;'; // Hardcoded entity is safe
+  
+  lightbox.appendChild(content);
+  lightbox.appendChild(close);
   document.body.appendChild(lightbox);
 
   const lightboxImg = lightbox.querySelector('img');

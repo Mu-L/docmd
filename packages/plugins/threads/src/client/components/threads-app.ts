@@ -124,7 +124,11 @@ export class ThreadsApp extends LitElement {
 
       const btn = document.createElement('button');
       btn.className = 'threads-new-thread-btn';
-      btn.innerHTML = `<wa-icon name="plus" style="font-size:14px;"></wa-icon> ${t('newThread')}`;
+      const icon = document.createElement('wa-icon');
+      icon.setAttribute('name', 'plus');
+      icon.setAttribute('style', 'font-size:14px;');
+      btn.appendChild(icon);
+      btn.appendChild(document.createTextNode(' ' + t('newThread')));
       btn.title = t('startThread');
       btn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -415,7 +419,11 @@ export class ThreadsApp extends LitElement {
         // Reply button
         const replyBtn = document.createElement('button');
         replyBtn.className = 'threads-comment-reply-btn';
-        replyBtn.innerHTML = `<wa-icon name="reply" style="font-size:13px;"></wa-icon> ${t('reply')}`;
+        const replyIcon = document.createElement('wa-icon');
+        replyIcon.setAttribute('name', 'reply');
+        replyIcon.setAttribute('style', 'font-size:13px;');
+        replyBtn.appendChild(replyIcon);
+        replyBtn.appendChild(document.createTextNode(' ' + t('reply')));
         replyBtn.title = t('replyToComment');
         replyBtn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -426,7 +434,10 @@ export class ThreadsApp extends LitElement {
         // Delete button
         const delBtn = document.createElement('button');
         delBtn.className = 'threads-delete-btn';
-        delBtn.innerHTML = `<wa-icon name="trash" style="font-size:13px;"></wa-icon>`;
+        const delIcon = document.createElement('wa-icon');
+        delIcon.setAttribute('name', 'trash');
+        delIcon.setAttribute('style', 'font-size:13px;');
+        delBtn.appendChild(delIcon);
         delBtn.title = t('deleteComment');
         delBtn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -459,7 +470,11 @@ export class ThreadsApp extends LitElement {
 
       const btn = document.createElement('button');
       btn.className = 'threads-new-comment-btn';
-      btn.innerHTML = `<wa-icon name="plus" style="font-size:13px;"></wa-icon> ${t('newComment')}`;
+      const plusIcon = document.createElement('wa-icon');
+      plusIcon.setAttribute('name', 'plus');
+      plusIcon.setAttribute('style', 'font-size:13px;');
+      btn.appendChild(plusIcon);
+      btn.appendChild(document.createTextNode(' ' + t('newComment')));
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         this.openReplyEditor(threadEl, threadId, null);
@@ -469,14 +484,19 @@ export class ThreadsApp extends LitElement {
       // Collapse/expand toggle button
       const toggleBtn = document.createElement('button');
       toggleBtn.className = 'threads-collapse-btn';
-      toggleBtn.innerHTML = `<wa-icon name="chevron-up" style="font-size:14px;"></wa-icon>`;
+      const upIcon = document.createElement('wa-icon');
+      upIcon.setAttribute('name', 'chevron-up');
+      upIcon.setAttribute('style', 'font-size:14px;');
+      toggleBtn.appendChild(upIcon);
       toggleBtn.title = t('collapseThread');
       toggleBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const isCollapsed = threadEl.classList.toggle('threads-thread--collapsed');
-        toggleBtn.innerHTML = isCollapsed
-          ? `<wa-icon name="chevron-down" style="font-size:14px;"></wa-icon>`
-          : `<wa-icon name="chevron-up" style="font-size:14px;"></wa-icon>`;
+        toggleBtn.innerHTML = '';
+        const icon = document.createElement('wa-icon');
+        icon.setAttribute('name', isCollapsed ? 'chevron-down' : 'chevron-up');
+        icon.setAttribute('style', 'font-size:14px;');
+        toggleBtn.appendChild(icon);
         toggleBtn.title = isCollapsed ? t('expandThread') : t('collapseThread');
       });
       footer.appendChild(toggleBtn);
@@ -670,7 +690,11 @@ export class ThreadsApp extends LitElement {
     const toggle = document.createElement('button');
     toggle.className = 'tc-sidebar-toggle';
     toggle.title = t('openThreadsPanel');
-    toggle.innerHTML = '<wa-icon name="comments" variant="regular" style="font-size:16px;"></wa-icon>';
+    const toggleIcon = document.createElement('wa-icon');
+    toggleIcon.setAttribute('name', 'comments');
+    toggleIcon.setAttribute('variant', 'regular');
+    toggleIcon.setAttribute('style', 'font-size:16px;');
+    toggle.appendChild(toggleIcon);
     toggle.addEventListener('click', () => {
       document.body.classList.add('tc-panel-open');
     });
@@ -682,18 +706,32 @@ export class ThreadsApp extends LitElement {
 
     // Panel header
     const header = document.createElement('div');
-    header.className = 'tc-panel__header';
-    header.innerHTML = `
-      <div class="tc-panel__title">
-        <span>${t('threads')}</span>
-        <span class="tc-panel__count"></span>
-      </div>
-      <div class="tc-panel__header-actions">
-         <button class="tc-panel__close-btn" title="${t('closePanel')}" style="background:none;border:none;cursor:pointer;color:var(--tc-muted-fg);padding:4px;">
-          <wa-icon name="xmark" variant="solid" style="font-size:16px;"></wa-icon>
-        </button>
-      </div>
-    `;
+    header.classList.add('tc-panel__header');
+    
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'tc-panel__title';
+    const titleSpan = document.createElement('span');
+    titleSpan.textContent = t('threads');
+    const countSpan = document.createElement('span');
+    countSpan.className = 'tc-panel__count';
+    titleDiv.appendChild(titleSpan);
+    titleDiv.appendChild(countSpan);
+    
+    const actionsDiv = document.createElement('div');
+    actionsDiv.className = 'tc-panel__header-actions';
+    const cBtn = document.createElement('button');
+    cBtn.className = 'tc-panel__close-btn';
+    cBtn.title = t('closePanel');
+    cBtn.style.cssText = 'background:none;border:none;cursor:pointer;color:var(--tc-muted-fg);padding:4px;';
+    const closeIcon = document.createElement('wa-icon');
+    closeIcon.setAttribute('name', 'xmark');
+    closeIcon.setAttribute('variant', 'solid');
+    closeIcon.setAttribute('style', 'font-size:16px;');
+    cBtn.appendChild(closeIcon);
+    actionsDiv.appendChild(cBtn);
+
+    header.appendChild(titleDiv);
+    header.appendChild(actionsDiv);
     const closeBtn = header.querySelector('.tc-panel__close-btn');
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
@@ -719,7 +757,7 @@ export class ThreadsApp extends LitElement {
     if (!panelBody) return;
 
     // Clear existing panel threads
-    panelBody.innerHTML = '';
+    panelBody.textContent = '';
 
     // Move all thread cards into the panel
     const threadCards = document.querySelectorAll('.threads-sidebar .threads-thread');
@@ -743,7 +781,11 @@ export class ThreadsApp extends LitElement {
     const fab = document.createElement('button');
     fab.className = 'threads-fab';
     fab.title = t('jumpToThreads');
-    fab.innerHTML = `<wa-icon name="comments" variant="regular" style="font-size:20px;"></wa-icon>`;
+    const fabIcon = document.createElement('wa-icon');
+    fabIcon.setAttribute('name', 'comments');
+    fabIcon.setAttribute('variant', 'regular');
+    fabIcon.setAttribute('style', 'font-size:20px;');
+    fab.appendChild(fabIcon);
 
     const badge = document.createElement('span');
     badge.className = 'threads-fab__badge';
