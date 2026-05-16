@@ -16,6 +16,25 @@ import fs from 'fs';
 import path from 'path';
 import { normalizeInternalHref } from '@docmd/parser';
 
+/**
+ * Convert a file/folder name to a URL-safe slug.
+ * Replaces spaces and URL-unsafe characters with hyphens so that the
+ * generated nav link, the output file path, and the browser URL all agree.
+ *
+ * Examples:
+ *   "folder with space"  → "folder-with-space"
+ *   "my file (draft)"   → "my-file-draft"
+ *   "already-slug_ok"   → "already-slug_ok"  (no change)
+ */
+function slugifySegment(name: string): string {
+  return name
+    .replace(/\s+/g, '-')               // spaces → hyphens
+    .replace(/[^a-zA-Z0-9\-_.~]/g, '-') // unsafe URL chars → hyphens
+    .replace(/-{2,}/g, '-')             // collapse consecutive hyphens
+    .replace(/^-+|-+$/g, '')            // strip leading/trailing hyphens
+    || name;                             // fallback: keep original if result is empty
+}
+
 // Extract title from Frontmatter or H1 without loading heavy parsers
 function extractTitleFromFile(filePath: string, filename: string) {
   try {
@@ -77,10 +96,11 @@ export function buildAutoNav(dir: string, basePath = '/'): any[] { // Default ba
 
     const fullPath = path.join(dir, item.name);
 
-    // Construct URL path: basePath + filename
-    // Ensure we don't double slash if basePath is '/'
+    // Construct URL path: basePath + slugified filename.
+    // Slugify so that spaces and URL-unsafe characters are replaced with hyphens,
+    // keeping the nav link, output file path, and browser URL consistent.
     const safeBase = basePath.endsWith('/') ? basePath : basePath + '/';
-    const relPath = safeBase + item.name;
+    const relPath = safeBase + slugifySegment(item.name);
 
     if (item.isDirectory()) {
       const children = buildAutoNav(fullPath, relPath);
@@ -108,19 +128,6 @@ export function buildAutoNav(dir: string, basePath = '/'): any[] { // Default ba
       }
 
       nav.push({ title, path: linkPath });
-    }
-  }
-
-  // If no index exists at this level, and we have files, designate the first one as index
-  if (!indexExists && nav.length > 0) {
-    // Find first file (not a folder) - alphabetical after sorting (sorted below)
-    // But since sort hasn't happened yet, sort copies to pick the true first
-    const fileItems = nav.filter(n => !n.children).sort((a, b) => a.title.localeCompare(b.title));
-    if (fileItems.length > 0) {
-      const firstFile = fileItems[0];
-      // Store the original path before reassigning so the generator knows which file this is
-      firstFile._sourceFile = firstFile.path;
-      firstFile.path = basePath === '/' ? '/' : basePath;
     }
   }
 

@@ -101,6 +101,12 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
   try {
     const workerScript = path.resolve(__dirname, '../engine/worker-parser.js');
     workerPool = new WorkerPool(workerScript, { config, cwd: CWD });
+    // Clean output dir before initial build to remove stale files from previous builds.
+    // Without this, files generated under old URL structures (e.g. from a different
+    // auto-router behaviour) persist alongside new files and cause 404 on nav links.
+    if (await fs.exists(rootOutputDir)) {
+      await fs.remove(rootOutputDir);
+    }
     await buildSite(configPathOption, { isDev: true, preserve: options.preserve, quiet: true, showStats: false, workerPool });
     TUI.info(`Initial build completed in ${initialElapsed()}.`);
   } catch (error: any) {
@@ -173,7 +179,10 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
                 isDev: true, 
                 preserve: options.preserve,
                 quiet: true,
-                targetFiles: [filePath],
+                // No targetFiles → full rebuild on every change.
+                // A targeted rebuild only regenerates the changed file, leaving the
+                // navigation HTML in all other pages stale. A full rebuild is ~250ms
+                // for typical doc projects — negligible for dev ergonomics.
                 workerPool
               });
               sp.done(`Rebuilt: ${relativeFilePath} in ${rebuildElapsed()}`, true);
