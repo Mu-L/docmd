@@ -25,8 +25,9 @@ const exceptions: any = {
   'cloud-upload': 'UploadCloud'
 };
 
-function escapeHtml(str: string): string {
-  return str.replace(/[&<>"']/g, m => ({
+function escapeHtml(str: any): string {
+  const s = typeof str === 'string' ? str : String(str || '');
+  return s.replace(/[&<>"']/g, m => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   })[m] as string);
 }

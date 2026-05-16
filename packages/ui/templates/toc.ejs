@@ -35,7 +35,7 @@ if (shouldShowToc && !frontmatter?.toc || frontmatter?.toc !== 'false') {
     <ul class="toc-list">
       <% tocHeadings.forEach(heading => { %>
         <li class="toc-item toc-level-<%= heading.level %>">
-          <a href="#<%= heading.id %>" class="toc-link"><%- heading.text %></a>
+          <a href="#<%= heading.id %>" class="toc-link"><%= heading.text.replace(/<[^>]*>?/gm, '') %></a>
         </li>
       <% }); %>
     </ul>

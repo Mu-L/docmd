@@ -2,8 +2,8 @@
  * --------------------------------------------------------------------
  * docmd : Universal Failsafe V5.0
  * 
- * Comprehensive end-to-end integration test for 0.8.0 release.
- * Tests multi-project, i18n, versioning, plugins, type safety,
+ * Comprehensive end-to-end integration test for 0.8.3 release.
+ * Tests workspaces, i18n, versioning, plugins, type safety,
  * and config validation in a single mega-build.
  * --------------------------------------------------------------------
  */
@@ -316,7 +316,7 @@ function runCmd(cmd, cwd, silent = true) {
     const megaDir = path.join(tempRoot, 'mega-integration');
     nativeFs.mkdirSync(megaDir, { recursive: true });
     
-    // Setup multi-project structure with i18n + versioning + plugins
+    // Setup workspace structure with i18n + versioning + plugins
     nativeFs.mkdirSync(path.join(megaDir, 'main/docs/en'), { recursive: true });
     nativeFs.mkdirSync(path.join(megaDir, 'main/docs/fr'), { recursive: true });
     nativeFs.mkdirSync(path.join(megaDir, 'main/docs-v1/en'), { recursive: true });
@@ -353,14 +353,16 @@ function runCmd(cmd, cwd, silent = true) {
       plugins: { search: {}, mermaid: {} }
     }`);
     
-    // Root multi-project config
+    // Root workspace config
     nativeFs.writeFileSync(path.join(megaDir, 'docmd.config.js'), `export default {
-      projects: [
-        { prefix: '/', src: 'main' },
-        { prefix: '/api', src: 'api' }
-      ]
+      workspace: {
+        projects: [
+          { prefix: '/', src: 'main' },
+          { prefix: '/api', src: 'api' }
+        ]
+      }
     }`);
-    
+
     // Content files for main project
     nativeFs.writeFileSync(path.join(megaDir, 'main/docs/en/index.md'), `---
 title: Home
@@ -429,7 +431,7 @@ All available API endpoints.`);
     const checks = [];
     const verify = (condition, desc) => checks.push({ ok: condition, desc });
     
-    // Multi-project outputs
+    // Workspace outputs
     verify(nativeFs.existsSync(path.join(megaDir, 'site/index.html')), 'Main project root index');
     verify(nativeFs.existsSync(path.join(megaDir, 'site/guide/index.html')), 'Main project guide page');
     verify(nativeFs.existsSync(path.join(megaDir, 'site/api/index.html')), 'API project index');

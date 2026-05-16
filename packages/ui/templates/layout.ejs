@@ -40,7 +40,7 @@
       window.DOCMD_SITE_ROOT = siteRoot;
 
       window.DOCMD_APPEARANCE = "<%= appearance %>";
-      window.DOCMD_VERSION_ROOT = "<%- versionRoot %>";
+      window.DOCMD_VERSION_ROOT = "<%= versionRoot || '/' %>";
       window.DOCMD_BASE = "<%= config.base || '/' %>";
       window.DOCMD_LOCALE = "<%= (locals.activeLocale && locals.activeLocale.id) ? locals.activeLocale.id : '' %>";
       window.DOCMD_DEFAULT_LOCALE = "<%= locals.defaultLocale || '' %>";
@@ -58,7 +58,7 @@
     <% } %>
     <%- pluginHeadScriptsHtml || '' %>
     <% (customCssFiles || []).forEach(cssFile=> { %>
-      <link rel="stylesheet" href="<%= relativePathToRoot %><%- cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
+      <link rel="stylesheet" href="<%= relativePathToRoot %><%= cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
     <% }); %>
     <%- themeInitScript %>
   </head>
@@ -80,11 +80,11 @@
           <% if (logo && logo.light && logo.dark) { %>
             <a href="<%= logo.href || relativePathToRoot %>" class="logo-link">
               <img
-                src="<%= relativePathToRoot %><%- logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>"
+                src="<%= relativePathToRoot %><%= logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>"
                 alt="<%= logo.alt || siteTitle %>" class="logo-light" <% if (logo.height) { %>style="height: <%=
                 logo.height %>;"<% } %>>
               <img
-                src="<%= relativePathToRoot %><%- logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>"
+                src="<%= relativePathToRoot %><%= logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>"
                 alt="<%= logo.alt || siteTitle %>" class="logo-dark" <% if (logo.height) { %>style="height: <%=
                 logo.height %>;"<% } %>>
             </a>
@@ -184,7 +184,7 @@
                       <% breadcrumbs.forEach((crumb, index) => { %>
                         <li class="breadcrumb-item <%= index === breadcrumbs.length - 1 ? 'active' : '' %>" <%= index === breadcrumbs.length - 1 ? 'aria-current="page"' : '' %>>
                           <% if (crumb.path && index < breadcrumbs.length - 1) { %>
-                            <a href="<%= relativePathToRoot %><%- _bcPrefix %><%- crumb.path.startsWith('/') ? crumb.path.substring(1) : crumb.path %>"><%= crumb.title %></a>
+                            <a href="<%= relativePathToRoot %><%= _bcPrefix %><%= crumb.path.startsWith('/') ? crumb.path.substring(1) : crumb.path %>"><%= crumb.title %></a>
                           <% } else { %>
                             <span><%= crumb.title %></span>
                           <% } %>
@@ -294,7 +294,7 @@
       <% (customJsFiles || []).forEach(jsFile=> {
         if (jsFile && jsFile.trim() !== '') { %>
         <script
-          src="<%= relativePathToRoot %><%- jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>?v=<%= buildHash %>"></script>
+          src="<%= relativePathToRoot %><%= jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>?v=<%= buildHash %>"></script>
         <% }
       }); %>
   </body>

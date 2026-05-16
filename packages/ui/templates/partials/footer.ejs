@@ -11,8 +11,8 @@
       <div class="footer-brand">
           <% if (logo && logo.light && logo.dark) { %>
             <a href="<%= logo.href || relativePathToRoot %>" class="logo-link">
-              <img src="<%= relativePathToRoot %><%- logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>" alt="<%= logo.alt || siteTitle %>" class="logo-light">
-              <img src="<%= relativePathToRoot %><%- logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>" alt="<%= logo.alt || siteTitle %>" class="logo-dark">
+              <img src="<%= relativePathToRoot %><%= logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>" alt="<%= logo.alt || siteTitle %>" class="logo-light">
+              <img src="<%= relativePathToRoot %><%= logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>" alt="<%= logo.alt || siteTitle %>" class="logo-dark">
             </a>
           <% } else { %>
             <span class="footer-title"><%= siteTitle %></span>

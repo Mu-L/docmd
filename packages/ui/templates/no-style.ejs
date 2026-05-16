@@ -86,7 +86,7 @@
   <% if (frontmatter.components?.customCss !==false && customCssFiles && customCssFiles.length> 0) { %>
     <% customCssFiles.forEach(cssFile=> { %>
       <link rel="stylesheet"
-        href="<%= relativePathToRoot %><%- cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
+        href="<%= relativePathToRoot %><%= cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
     <% }); %>
   <% } %>
 
@@ -160,9 +160,9 @@
         <% if (frontmatter.components?.logo !==false && logo && logo.light && logo.dark) { %>
           <div class="sidebar-header">
             <a href="<%= logo.href || relativePathToRoot %>" class="logo-link">
-              <img src="<%= relativePathToRoot %><%- logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>"
+              <img src="<%= relativePathToRoot %><%= logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>"
                 alt="<%= logo.alt || siteTitle %>" class="logo-light" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>>
-              <img src="<%= relativePathToRoot %><%- logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>"
+              <img src="<%= relativePathToRoot %><%= logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>"
                 alt="<%= logo.alt || siteTitle %>" class="logo-dark" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>>
             </a>
           </div>
@@ -230,7 +230,7 @@
 
       <% if (frontmatter.components?.customJs===true && customJsFiles && customJsFiles.length> 0) { %>
         <% customJsFiles.forEach(jsFile=> { %>
-          <script src="<%= relativePathToRoot %><%- jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>"></script>
+          <script src="<%= relativePathToRoot %><%= jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>"></script>
         <% }); %>
       <% } %>
 
