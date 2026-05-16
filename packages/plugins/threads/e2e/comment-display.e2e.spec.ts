@@ -123,10 +123,7 @@ test.describe("markdown rendering in comments", () => {
     await expect(codeEl).toBeAttached();
   });
 
-  test.fixme("HTML special characters are escaped", async () => {
-    // FIXME: XSS vulnerability - the markdown-it parser has html:true, so raw
-    // HTML in comment bodies is rendered as-is. Comment body content should be
-    // sanitized before storage or rendering.
+  test("HTML special characters are escaped", async () => {
     const { id: threadId } = await seedAndReload(user.page, {
       body: "<script>alert('xss')</script>",
     });
