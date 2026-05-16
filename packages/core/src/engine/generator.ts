@@ -178,8 +178,9 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       if (item.children) {
         extractNavIndexes(item.children);
       } else if (item._sourceFile) {
-        // _sourceFile is the original path like '/highlighting' - normalize to relative path
-        navDesignatedIndexFiles.add(item._sourceFile.replace(/^\//, ''));
+        // _sourceFile is the original path like '/highlighting/' - normalize to relative path
+        // and strip trailing slash to match relWithoutExt format used during comparison
+        navDesignatedIndexFiles.add(item._sourceFile.replace(/^\//, '').replace(/\/$/, ''));
       }
     }
   };
