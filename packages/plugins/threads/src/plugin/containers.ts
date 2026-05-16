@@ -117,7 +117,8 @@ export function setup(md: any): void {
       const info = tokens[idx].info.trim();
       const parsed = parseThreadInfo(info);
       const resolvedClass = parsed.resolved ? ' threads-thread--resolved' : '';
-      return `<div class="threads-thread${resolvedClass}" data-thread-id="${parsed.id}">\n`;
+      const safeId = md.utils.escapeHtml(parsed.id);
+      return `<div class="threads-thread${resolvedClass}" data-thread-id="${safeId}">\n`;
     },
     () => '</div>\n'
   );
@@ -129,14 +130,22 @@ export function setup(md: any): void {
     (tokens: any[], idx: number) => {
       const info = tokens[idx].info.trim();
       const parsed = parseCommentInfo(info);
-      const idAttr = parsed.id ? ` data-comment-id="${parsed.id}"` : '';
-      const parentAttr = parsed.parentId ? ` data-parent-id="${parsed.parentId}"` : '';
-      const editedAttr = parsed.editedAt ? ` data-edited="${parsed.editedAt}"` : '';
+      
+      const safeId = parsed.id ? md.utils.escapeHtml(parsed.id) : null;
+      const safeParentId = parsed.parentId ? md.utils.escapeHtml(parsed.parentId) : null;
+      const safeAuthor = md.utils.escapeHtml(parsed.author);
+      const safeDate = md.utils.escapeHtml(parsed.date);
+      const safeEdited = parsed.editedAt ? md.utils.escapeHtml(parsed.editedAt) : null;
+
+      const idAttr = safeId ? ` data-comment-id="${safeId}"` : '';
+      const parentAttr = safeParentId ? ` data-parent-id="${safeParentId}"` : '';
+      const editedAttr = safeEdited ? ` data-edited="${safeEdited}"` : '';
       const replyClass = parsed.parentId ? ' threads-comment--reply' : '';
+      
       return (
-        `<div class="threads-comment${replyClass}"${idAttr}${parentAttr} data-author="${parsed.author}" data-date="${parsed.date}"${editedAttr}>` +
+        `<div class="threads-comment${replyClass}"${idAttr}${parentAttr} data-author="${safeAuthor}" data-date="${safeDate}"${editedAttr}>` +
         `<div class="threads-comment__avatar-col"></div>` +
-        `<div class="threads-comment__meta"><strong>${parsed.author}</strong> &middot; ${parsed.date}</div>` +
+        `<div class="threads-comment__meta"><strong>${safeAuthor}</strong> &middot; ${safeDate}</div>` +
         `<div class="threads-comment__body">\n`
       );
     },
@@ -150,4 +159,39 @@ export function setup(md: any): void {
     () => '<div class="threads-reactions">\n',
     () => '</div>\n'
   );
+
+  // 5. Security: Harden comment bodies by disabling raw HTML rendering
+  // We push this to the core ruler to intercept tokens after block parsing
+  md.core.ruler.after('block', 'threads_harden', (state: any) => {
+    let insideComment = false;
+
+    for (const token of state.tokens) {
+      if (token.type === 'container_comment_open') {
+        insideComment = true;
+        continue;
+      }
+      if (token.type === 'container_comment_close') {
+        insideComment = false;
+        continue;
+      }
+
+      if (insideComment) {
+        // Disable raw HTML blocks inside comments
+        if (token.type === 'html_block') {
+          token.type = 'text';
+          token.content = md.utils.escapeHtml(token.content);
+        }
+
+        // Disable raw HTML inline inside comments
+        if (token.type === 'inline' && token.children) {
+          for (const child of token.children) {
+            if (child.type === 'html_inline') {
+              child.type = 'text';
+              child.content = md.utils.escapeHtml(child.content);
+            }
+          }
+        }
+      }
+    }
+  });
 }
