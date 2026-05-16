@@ -54,7 +54,7 @@ function smartDedent(str) {
  * @param renderOpen - Renderer for the opening token
  * @param renderClose - Renderer for the closing token
  */
-export function createDepthTrackingContainer(md, name, renderOpen, renderClose) {
+export function createDepthTrackingContainer(md: any, name: string, renderOpen: any, renderClose: any) {
   md.block.ruler.before('fence', `custom_${name}`, (state, startLine, endLine, silent) => {
     const start = state.bMarks[startLine] + state.tShift[startLine];
     const max = state.eMarks[startLine];
@@ -142,7 +142,7 @@ export function createDepthTrackingContainer(md, name, renderOpen, renderClose) 
 
 export default {
   name: 'common-containers',
-  setup(md) {
+  setup(md: any) {
 
     // 1. Callout
     createDepthTrackingContainer(md, 'callout', (tokens, idx) => {
@@ -162,8 +162,9 @@ export default {
       
       const renderedTitle = title ? md.renderInline(title) : '';
       const iconHtml = icon ? renderIcon(icon, { class: 'callout-icon-heading' }) : '';
+      const safeType = md.utils.escapeHtml(type);
 
-      return `<div class="docmd-container callout callout-${type}">${renderedTitle || iconHtml ? `<div class="callout-title">${iconHtml}${renderedTitle}</div>` : ''}<div class="callout-content">\n`;
+      return `<div class="docmd-container callout callout-${safeType}">${renderedTitle || iconHtml ? `<div class="callout-title">${iconHtml}${renderedTitle}</div>` : ''}<div class="callout-content">\n`;
     }, () => '</div></div>\n');
 
     // 2. Card
@@ -183,8 +184,9 @@ export default {
       const displayTitle = title || 'Click to expand';
       const renderedTitle = md.renderInline(displayTitle);
       const iconHtml = icon ? renderIcon(icon, { class: 'collapsible-icon-heading' }) : '';
+      const safeOpen = isOpen ? ' open' : '';
 
-      return `<details class="docmd-container collapsible" ${isOpen ? 'open' : ''}>
+      return `<details class="docmd-container collapsible"${safeOpen}>
         <summary class="collapsible-summary">
             <span class="collapsible-title">${iconHtml}${renderedTitle}</span>
             <span class="collapsible-arrow"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
@@ -226,7 +228,8 @@ export default {
         const { title, icon } = parseTitleAndIcon(info);
         const renderedTitle = title ? md.renderInline(title) : '';
         const iconHtml = icon ? renderIcon(icon, { class: 'callout-icon-heading' }) : '';
-        return `<div class="docmd-container callout callout-${alias.type}">${renderedTitle || iconHtml ? `<div class="callout-title">${iconHtml}${renderedTitle}</div>` : ''}<div class="callout-content">\n`;
+        const safeType = md.utils.escapeHtml(alias.type);
+        return `<div class="docmd-container callout callout-${safeType}">${renderedTitle || iconHtml ? `<div class="callout-title">${iconHtml}${renderedTitle}</div>` : ''}<div class="callout-content">\n`;
       }, () => '</div></div>\n');
     }
 

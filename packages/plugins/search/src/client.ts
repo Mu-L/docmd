@@ -214,6 +214,12 @@ declare const MiniSearch: any;
             });
         }
 
+        function escapeHtml(str: string): string {
+            return str.replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[m] as string);
+        }
+
         function getSnippet(text: string | undefined, query: string): string {
             if (!text) return '';
             const terms = query.split(/\s+/).filter(t => t.length > 2);
@@ -228,7 +234,10 @@ declare const MiniSearch: any;
             if (start > 0) snippet = '...' + snippet;
             if (end < text.length) snippet += '...';
 
-            const safeTerms = terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+            snippet = escapeHtml(snippet);
+
+            // Then apply highlighting marks (escape terms to match escaped snippet)
+            const safeTerms = terms.map(t => escapeHtml(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
             if (safeTerms) {
                 snippet = snippet.replace(new RegExp(`(${safeTerms})`, 'gi'), '<mark>$1</mark>');
             }
@@ -263,11 +272,11 @@ declare const MiniSearch: any;
                 const linkHref = `${ROOT_PATH}${cleanId}`.replace(/([^:])\/\/+/g, '$1/');
                 const vc = result.version ? globalVersionColors[result.version] : null;
                 const versionBadge = result.version
-                    ? `<span class="search-result-version" style="background:${vc!.bg};color:${vc!.fg}">${result.version}</span>`
+                    ? `<span class="search-result-version" style="background:${vc!.bg};color:${vc!.fg}">${escapeHtml(result.version)}</span>`
                     : '';
                 return `
                     <a href="${linkHref}" class="search-result-item" data-index="${index}">
-                        <div class="search-result-title">${result.title}${versionBadge}</div>
+                        <div class="search-result-title">${escapeHtml(result.title)}${versionBadge}</div>
                         <div class="search-result-preview">${snippet}</div>
                     </a>`;
             }).join('');

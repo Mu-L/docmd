@@ -15,8 +15,8 @@
 import * as lucideStatic from 'lucide-static';
 
 // Convert kebab-case to PascalCase (e.g., arrow-right -> ArrowRight)
-function kebabToPascal(str: any) {
-  return str.split('-').map((p: any) => p.charAt(0).toUpperCase() + p.slice(1)).join('');
+function kebabToPascal(str: string): string {
+  return str.split('-').map((p: string) => p.charAt(0).toUpperCase() + p.slice(1)).join('');
 }
 
 const exceptions: any = {
@@ -24,6 +24,12 @@ const exceptions: any = {
   'file-cog': 'Settings',
   'cloud-upload': 'UploadCloud'
 };
+
+function escapeHtml(str: string): string {
+  return str.replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[m] as string);
+}
 
 function renderIcon(name: string, options: any = {}) {
   if (!name) return '';
@@ -33,13 +39,15 @@ function renderIcon(name: string, options: any = {}) {
 
   if (!svgData) return ''; // Fail silently or warn via callback
 
+  const escape = escapeHtml;
+
   // Inject attributes into the raw SVG string
   const attrs = [
-    `class="lucide-icon icon-${name} ${options.class || ''}"`,
-    `width="${options.width || '1em'}"`,
-    `height="${options.height || '1em'}"`,
-    `stroke="${options.stroke || 'currentColor'}"`,
-    `stroke-width="${options.strokeWidth || 2}"`,
+    `class="lucide-icon icon-${escape(name)} ${escape(options.class || '')}"`,
+    `width="${escape(options.width || '1em')}"`,
+    `height="${escape(options.height || '1em')}"`,
+    `stroke="${escape(options.stroke || 'currentColor')}"`,
+    `stroke-width="${escape(options.strokeWidth || 2)}"`,
     'fill="none"',
     'stroke-linecap="round"',
     'stroke-linejoin="round"'

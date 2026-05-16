@@ -43,7 +43,7 @@ function smartDedent(str) {
 }
 
 // The Parsing Rule
-function tabsRule(state, startLine, endLine, silent) {
+function tabsRule(state: any, startLine: number, endLine: number, silent: boolean) {
   const start = state.bMarks[startLine] + state.tShift[startLine];
   const max = state.eMarks[startLine];
   const lineContent = state.src.slice(start, max).trim();
@@ -136,7 +136,7 @@ function tabsRule(state, startLine, endLine, silent) {
     const navItemToken = state.push('tabs_nav_item', 'div', 0);
     navItemToken.attrs = [['class', `docmd-tabs-nav-item ${index === 0 ? 'active' : ''}`]];
     if (tab.icon) {
-      navItemToken.attrs.push(['data-icon', tab.icon]);
+      navItemToken.attrs.push(['data-icon', state.md.utils.escapeHtml(tab.icon)]);
     }
     navItemToken.content = tab.title;
   });
@@ -170,7 +170,7 @@ function tabsRule(state, startLine, endLine, silent) {
 
 export default {
   name: 'tabs',
-  setup(md) {
+  setup(md: any) {
     md.block.ruler.before('fence', 'enhanced_tabs', tabsRule, { alt: ['paragraph', 'reference', 'blockquote', 'list'] });
 
     // Register Renderers

@@ -109,10 +109,17 @@ export async function serveStatic(req: any, res: any, rootDir: string) {
     return;
   }
 
-  let safePath = path.normalize(req.url).replace(/^(\.\.[\/\\])+/, '').split('?')[0].split('#')[0];
-  if (safePath === '/' || safePath === '\\') safePath = 'index.html';
+  const url = new URL(req.url || '/', 'http://localhost');
+  const pathname = decodeURIComponent(url.pathname);
+  const rootAbs = path.resolve(rootDir);
+  let filePath = path.join(rootAbs, pathname);
 
-  let filePath = path.join(rootDir, safePath);
+  // Security: Prevent directory traversal by ensuring the resolved path is within rootDir
+  if (!filePath.startsWith(rootAbs)) {
+    res.writeHead(403);
+    res.end('Forbidden');
+    return;
+  }
 
   try {
     let stats;
