@@ -153,14 +153,20 @@ function warnOnce(key: string, message: string): void {
 // Shorthand resolution
 // ---------------------------------------------------------------------------
 
-/**
- * Resolve a plugin name from config shorthand to full package name.
- * Bare names (no `/` or scope) expand to `@docmd/plugin-*`.
- * Third-party plugins must use full package names.
- */
 export function resolvePluginName(key: string): string {
   if (key.includes('/')) return key;
-  return `@docmd/plugin-${key}`;
+  
+  const registry = getPluginRegistry();
+  if (registry[key]) {
+    return `@docmd/plugin-${key}`;
+  }
+  
+  const corePlugins = ['search', 'seo', 'sitemap', 'analytics', 'llms', 'mermaid', 'git', 'openapi'];
+  if (corePlugins.includes(key)) {
+    return `@docmd/plugin-${key}`;
+  }
+  
+  return key;
 }
 
 // ---------------------------------------------------------------------------
