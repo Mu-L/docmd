@@ -105,6 +105,9 @@ if (!command || values.help) {
   TUI.item('--docker', 'Generate Dockerfile & .dockerignore', TUI.cyan);
   TUI.item('--nginx', 'Generate production nginx.conf', TUI.cyan);
   TUI.item('--caddy', 'Generate production Caddyfile', TUI.cyan);
+  TUI.item('--github-pages', 'Generate GitHub Actions deploy workflow', TUI.cyan);
+  TUI.item('--vercel', 'Generate vercel.json', TUI.cyan);
+  TUI.item('--netlify', 'Generate netlify.toml', TUI.cyan);
   TUI.footer();
   
   process.exit(0);
@@ -184,6 +187,9 @@ if (command === 'init') {
     docker: { type: 'boolean' },
     nginx: { type: 'boolean' },
     caddy: { type: 'boolean' },
+    'github-pages': { type: 'boolean' },
+    vercel: { type: 'boolean' },
+    netlify: { type: 'boolean' },
     force: { type: 'boolean' },
     help: { type: 'boolean', short: 'h' }
   } as const;
@@ -192,14 +198,7 @@ if (command === 'init') {
   try {
     deployParsed = parseArgs({ args: deployArgs, options: deployOptions, allowPositionals: false });
   } catch (e: any) {
-    console.log(`\nArgument needed. Please specify a deployment target to configure.`);
-    console.log(`\nTargets:`);
-    console.log(`  --docker    Generate Dockerfile & .dockerignore`);
-    console.log(`  --nginx     Generate production nginx.conf`);
-    console.log(`  --caddy     Generate production Caddyfile`);
-    console.log(`\nOptions:`);
-    console.log(`  --force     Overwrite existing deployment files`);
-    console.log(`  -h, --help  Show this help message`);
+    console.log(`\nArgument needed. Please specify a deployment target.`);
     process.exit(0);
   }
 
@@ -207,17 +206,30 @@ if (command === 'init') {
 
   if (dv.help) {
     console.log(`\nUsage: docmd deploy [options]\n`);
-    console.log(`Targets:`);
-    console.log(`  --docker    Generate Dockerfile & .dockerignore`);
-    console.log(`  --nginx     Generate production nginx.conf`);
-    console.log(`  --caddy     Generate production Caddyfile`);
+    console.log(`Self-hosted:`);
+    console.log(`  --docker          Generate Dockerfile & .dockerignore`);
+    console.log(`  --nginx           Generate production nginx.conf`);
+    console.log(`  --caddy           Generate production Caddyfile`);
+    console.log(`\nCloud / CI:`);
+    console.log(`  --github-pages    Generate GitHub Actions deploy workflow`);
+    console.log(`  --vercel          Generate vercel.json`);
+    console.log(`  --netlify         Generate netlify.toml`);
     console.log(`\nOptions:`);
-    console.log(`  --force     Overwrite existing deployment files`);
-    console.log(`  -h, --help  Show this help message`);
+    console.log(`  --force           Overwrite existing deployment files`);
+    console.log(`  -h, --help        Show this help message`);
     process.exit(0);
   }
 
-  initDeploy({ docker: dv.docker, nginx: dv.nginx, caddy: dv.caddy, force: dv.force, config: opts.config }).catch((e) => {
+  initDeploy({
+    docker: dv.docker,
+    nginx: dv.nginx,
+    caddy: dv.caddy,
+    githubPages: dv['github-pages'],
+    vercel: dv.vercel,
+    netlify: dv.netlify,
+    force: dv.force,
+    config: opts.config
+  }).catch((e) => {
     console.error(e);
     process.exit(1);
   });

@@ -66,6 +66,9 @@ importers:
       '@docmd/api':
         specifier: workspace:*
         version: link:../api
+      '@docmd/deployer':
+        specifier: workspace:*
+        version: link:../deployer
       '@docmd/live':
         specifier: workspace:*
         version: link:../live
@@ -120,6 +123,12 @@ importers:
       ws:
         specifier: ^8.20.1
         version: 8.20.1
+
+  packages/deployer:
+    dependencies:
+      '@docmd/api':
+        specifier: workspace:*
+        version: link:../api
 
   packages/engines/js: {}
 

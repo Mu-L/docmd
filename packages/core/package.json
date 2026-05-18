@@ -23,6 +23,7 @@
     "@docmd/plugin-analytics": "workspace:*",
     "@docmd/plugin-git": "workspace:*",
     "@docmd/plugin-installer": "workspace:*",
+    "@docmd/deployer": "workspace:*",
     "@docmd/plugin-llms": "workspace:*",
     "@docmd/plugin-mermaid": "workspace:*",
     "@docmd/plugin-openapi": "workspace:*",
