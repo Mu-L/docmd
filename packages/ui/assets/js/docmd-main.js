@@ -559,52 +559,66 @@
         const oldLis = Array.from(document.querySelectorAll('.sidebar-nav li'));
         const newLis = Array.from(doc.querySelectorAll('.sidebar-nav li'));
 
-        oldLis.forEach((oldLi, i) => {
-          const newLi = newLis[i];
-          if (newLi) {
-            oldLi.classList.toggle('active', newLi.classList.contains('active'));
-            oldLi.classList.toggle('active-parent', newLi.classList.contains('active-parent'));
-
-            if (newLi.classList.contains('expanded')) {
-              oldLi.classList.add('expanded');
-              oldLi.setAttribute('aria-expanded', 'true');
-            }
-
-            const oldA = oldLi.querySelector('a');
-            const newA = newLi.querySelector('a');
-            if (oldA && newA) {
-              // Resolve new href to absolute URL to prevent relative path nesting issues
-              // But preserve external URLs (http/https, mailto:, tel:, etc.) as-is
-              const newHref = newA.getAttribute('href');
-              if (newHref && newHref !== '#') {
-                try {
-                  // Check if this is an external URL or special protocol - preserve as-is
-                  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(newHref)) {
-                    oldA.setAttribute('href', newHref);
-                  } else {
-                    // Internal link: resolve relative to the fetched page's URL
-                    const absoluteUrl = new URL(newHref, data.finalUrl || window.location.href);
-                    oldA.setAttribute('href', absoluteUrl.pathname + absoluteUrl.hash);
-                  }
-                } catch {
-                  oldA.setAttribute('href', newHref);
-                }
-              } else {
-                oldA.setAttribute('href', newHref || '#');
-              }
-              oldA.classList.toggle('active', newA.classList.contains('active'));
-            }
-          }
-        });
-
         const selectorsToSwap = [
           '.content-layout',
           '.docmd-breadcrumbs',
           '.page-header .header-title',
           '.page-footer',
           '.footer-complete',
-          '.page-footer-actions'
+          '.page-footer-actions',
+          '.sidebar-top-group',
+          '.sidebar-bottom-group'
         ];
+
+        let shouldSwapSidebar = oldLis.length !== newLis.length;
+        if (!shouldSwapSidebar && oldLis.length > 0) {
+          for (let i = 0; i < Math.min(oldLis.length, 5); i++) {
+            const oldA = oldLis[i].querySelector('a');
+            const newA = newLis[i].querySelector('a');
+            if (oldA && newA && oldA.textContent.trim() !== newA.textContent.trim()) {
+              shouldSwapSidebar = true;
+              break;
+            }
+          }
+        }
+
+        if (shouldSwapSidebar) {
+          selectorsToSwap.push('.sidebar-nav');
+        } else {
+          oldLis.forEach((oldLi, i) => {
+            const newLi = newLis[i];
+            if (newLi) {
+              oldLi.classList.toggle('active', newLi.classList.contains('active'));
+              oldLi.classList.toggle('active-parent', newLi.classList.contains('active-parent'));
+
+              if (newLi.classList.contains('expanded')) {
+                oldLi.classList.add('expanded');
+                oldLi.setAttribute('aria-expanded', 'true');
+              }
+
+              const oldA = oldLi.querySelector('a');
+              const newA = newLi.querySelector('a');
+              if (oldA && newA) {
+                const newHref = newA.getAttribute('href');
+                if (newHref && newHref !== '#') {
+                  try {
+                    if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(newHref)) {
+                      oldA.setAttribute('href', newHref);
+                    } else {
+                      const absoluteUrl = new URL(newHref, data.finalUrl || window.location.href);
+                      oldA.setAttribute('href', absoluteUrl.pathname + absoluteUrl.hash);
+                    }
+                  } catch {
+                    oldA.setAttribute('href', newHref);
+                  }
+                } else {
+                  oldA.setAttribute('href', newHref || '#');
+                }
+                oldA.classList.toggle('active', newA.classList.contains('active'));
+              }
+            }
+          });
+        }
 
         selectorsToSwap.forEach(selector => {
           const oldEl = document.querySelector(selector);
