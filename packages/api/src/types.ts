@@ -179,9 +179,8 @@ export interface PluginModule {
   /** Access the dev server instance. */
   onDevServerReady?(server: any, wss: any): void | Promise<void>;
   /** Modify raw markdown before parsing. Called per page. */
-  onBeforeParse?(src: string, frontmatter: any): string | Promise<string>;
-  /** Modify rendered HTML after parsing. */
-  onAfterParse?(html: string, frontmatter: any): string | Promise<string>;
+  onBeforeParse?(src: string, frontmatter: any, filePath?: string): string | Promise<string>;
+  onAfterParse?(html: string, frontmatter: any, filePath?: string): string | Promise<string>;
   /**
    * Called BEFORE template rendering. Receives the page context including
    * `sourcePath` (absolute path to the source .md file), `frontmatter`,
@@ -267,8 +266,8 @@ export interface PluginHooks {
   // Lifecycle Hooks
   onConfigResolved: ((config: any) => void | Promise<void>)[];
   onDevServerReady: ((server: any, wss: any) => void | Promise<void>)[];
-  onBeforeParse: ((src: string, frontmatter: any) => string | Promise<string>)[];
-  onAfterParse: ((html: string, frontmatter: any) => string | Promise<string>)[];
+  onBeforeParse: ((src: string, frontmatter: any, filePath?: string) => string | Promise<string>)[];
+  onAfterParse: ((html: string, frontmatter: any, filePath?: string) => string | Promise<string>)[];
   /** Called before template rendering. Receives full PageContext. */
   onBeforeRender: ((page: PageContext) => void | Promise<void>)[];
   onPageReady: ((page: any) => void | Promise<void>)[];

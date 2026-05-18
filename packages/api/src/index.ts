@@ -13,7 +13,7 @@
  */
 
 // Plugin loader & hook registry
-export { loadPlugins, hooks, resolvePluginName } from './hooks.js';
+export { loadPlugins, hooks, resolvePluginName, getPluginErrors } from './hooks.js';
 
 // RPC action/event dispatcher
 export { createActionDispatcher, safePath } from './rpc.js';

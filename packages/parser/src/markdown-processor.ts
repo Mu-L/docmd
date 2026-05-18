@@ -126,7 +126,7 @@ function createMarkdownProcessor(config: any = {}, pluginsCallback: any) {
     html: true,
     linkify: true,
     typographer: true,
-    breaks: true,
+    breaks: config.markdown?.breaks ?? true,
   };
 
   // Syntax Highlighting (title extraction is handled separately in the fence renderer)
@@ -290,7 +290,7 @@ function processContent(rawString, mdInstance, config, env = {}) {
   return { frontmatter, htmlContent, headings, searchData };
 }
 
-async function processContentAsync(rawString, mdInstance, config, env = {}, hooks: any = null) {
+async function processContentAsync(rawString: string, mdInstance: any, config: any, env: any = {}, hooks: any = null) {
   let frontmatter, markdownContent;
 
   try {
@@ -304,7 +304,7 @@ async function processContentAsync(rawString, mdInstance, config, env = {}, hook
 
   if (hooks && hooks.onBeforeParse) {
     for (const fn of hooks.onBeforeParse) {
-      markdownContent = await fn(markdownContent, frontmatter);
+      markdownContent = await fn(markdownContent, frontmatter, env.filePath);
     }
   }
 
@@ -317,7 +317,7 @@ async function processContentAsync(rawString, mdInstance, config, env = {}, hook
 
   if (hooks && hooks.onAfterParse) {
     for (const fn of hooks.onAfterParse) {
-      htmlContent = await fn(htmlContent, frontmatter);
+      htmlContent = await fn(htmlContent, frontmatter, env.filePath);
     }
   }
 

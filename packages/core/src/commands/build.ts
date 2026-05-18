@@ -266,6 +266,12 @@ export async function buildSite(configPath: string, opts: any = {}) {
       await workerPool.terminateAll();
     }
 
+    const { getPluginErrors } = await import('@docmd/api');
+    const errors = getPluginErrors();
+    if (errors.length > 0) {
+      throw new Error(`Build failed: ${errors.length} plugin error(s) occurred during execution.`);
+    }
+
   } catch (e: any) {
     if (!options.isDev && !options.quiet) {
       TUI.error('Build failed', e.message);

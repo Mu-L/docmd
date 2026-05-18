@@ -377,7 +377,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       const isNavDesignatedIndex = navDesignatedIndexFiles.has(relWithoutExt);
       const effectivelyIndex = isIndex || (isReadme && !hasIndexInFolder) || (isNavDesignatedIndex && !hasIndexInFolder);
 
-      const processed = await parser.processContentAsync(rawContent, mdProcessor, config, { isIndex: effectivelyIndex }, hooks);
+      const processed = await parser.processContentAsync(rawContent, mdProcessor, config, { isIndex: effectivelyIndex, filePath: targetFilePath }, hooks);
       if (!processed) continue;
 
       // Determine output path — slugify each path segment so that spaces and

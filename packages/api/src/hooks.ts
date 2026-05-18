@@ -136,8 +136,11 @@ function safeCall<T>(hookName: string, pluginName: string, fn: (...args: any[]) 
   }
 }
 
-// Collect errors for summary
-const pluginErrors: { plugin: string; hook: string; message: string }[] = [];
+const pluginErrors: { plugin: string; hook: string; message: string; filePath?: string }[] = [];
+
+export function getPluginErrors() {
+  return pluginErrors;
+}
 
 // Track which plugin warnings have already been printed to avoid repeating them on
 // every dev-server rebuild. Keyed by `pluginName:warningType`.
@@ -600,12 +603,13 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
   if (typeof plugin.onBeforeParse === 'function') {
     if (hasCapabilityForHook(descriptor, 'onBeforeParse')) {
       const fn = plugin.onBeforeParse;
-      hooks.onBeforeParse.push(async (src: string, frontmatter: any) => {
+      hooks.onBeforeParse.push(async (src: string, frontmatter: any, filePath?: string) => {
         try {
-          return await fn(src, frontmatter) ?? src;
+          return await fn(src, frontmatter, filePath) ?? src;
         } catch (err: any) {
-          TUI.error(`Plugin "${name}" threw in onBeforeParse`, err.message);
-          pluginErrors.push({ plugin: name, hook: 'onBeforeParse', message: err.message });
+          const loc = filePath ? ` in ${filePath}` : '';
+          TUI.error(`Plugin "${name}" threw in onBeforeParse${loc}`, err.message);
+          pluginErrors.push({ plugin: name, hook: 'onBeforeParse', message: err.message, filePath });
           return src;
         }
       });
@@ -618,12 +622,13 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
   if (typeof plugin.onAfterParse === 'function') {
     if (hasCapabilityForHook(descriptor, 'onAfterParse')) {
       const fn = plugin.onAfterParse;
-      hooks.onAfterParse.push(async (html: string, frontmatter: any) => {
+      hooks.onAfterParse.push(async (html: string, frontmatter: any, filePath?: string) => {
         try {
-          return await fn(html, frontmatter) ?? html;
+          return await fn(html, frontmatter, filePath) ?? html;
         } catch (err: any) {
-          TUI.error(`Plugin "${name}" threw in onAfterParse`, err.message);
-          pluginErrors.push({ plugin: name, hook: 'onAfterParse', message: err.message });
+          const loc = filePath ? ` in ${filePath}` : '';
+          TUI.error(`Plugin "${name}" threw in onAfterParse${loc}`, err.message);
+          pluginErrors.push({ plugin: name, hook: 'onAfterParse', message: err.message, filePath });
           return html;
         }
       });
@@ -682,5 +687,4 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
       TUI.warn(`Plugin "${shortName}" exports onPageReady but didn't declare "build" capability - skipped`);
     }
   }
-
 }
