@@ -1,0 +1,44 @@
+{
+  "name": "@docmd/deployer",
+  "version": "0.8.3",
+  "description": "Deployment configuration generator for docmd — Docker, Nginx, Caddy, GitHub Pages, Vercel, and Netlify.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@docmd/api": "workspace:*"
+  },
+  "keywords": [
+    "docmd",
+    "deployer",
+    "docker",
+    "nginx",
+    "caddy",
+    "github-pages",
+    "vercel",
+    "netlify",
+    "deployment",
+    "static-site-generator",
+    "docs"
+  ],
+  "author": {
+    "name": "Ghazi",
+    "url": "https://mgks.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/docmd-io/docmd.git"
+  },
+  "bugs": {
+    "url": "https://github.com/docmd-io/docmd/issues"
+  },
+  "homepage": "https://docmd.io",
+  "funding": "https://github.com/sponsors/mgks",
+  "license": "MIT"
+}
