@@ -148,13 +148,13 @@ export async function serveStatic(req: any, res: any, rootDir: string) {
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
     const content = await fs.readFile(filePath);
 
-    res.writeHead(200, { 'Content-Type': contentType });
-
     if (contentType === 'text/html') {
+      res.writeHead(200, { 'Content-Type': contentType, 'Cache-Control': 'no-cache' });
       const htmlStr = content.toString('utf-8');
       const liveReloadScript = `${getDevInfoScript()}<script src="/__dev/docmd-api.js"></script></body>`;
       res.end(htmlStr.replace('</body>', liveReloadScript));
     } else {
+      res.writeHead(200, { 'Content-Type': contentType });
       res.end(content);
     }
 
