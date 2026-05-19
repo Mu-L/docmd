@@ -203,16 +203,30 @@
     applyStrings: applyStrings
   };
 
-  // Auto-apply on DOM ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () {
+  function hasI18nElements() {
+    if (document.querySelector('[data-i18n], [data-i18n-html]')) return true;
+    var allEls = document.querySelectorAll('*');
+    for (var i = 0; i < allEls.length; i++) {
+      var attrs = allEls[i].attributes;
+      for (var j = 0; j < attrs.length; j++) {
+        if (attrs[j].name.indexOf('data-i18n-') === 0) return true;
+      }
+    }
+    return false;
+  }
+
+  function init() {
+    if (hasI18nElements()) {
       loadStrings(activeLocale, function (err, strings) {
         if (!err && strings) applyStrings(strings);
       });
-    });
+    }
+  }
+
+  // Auto-apply on DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
   } else {
-    loadStrings(activeLocale, function (err, strings) {
-      if (!err && strings) applyStrings(strings);
-    });
+    init();
   }
 })();

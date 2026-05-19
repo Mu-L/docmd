@@ -14,12 +14,10 @@
 %>
 <div class="docmd-version-dropdown">
   <button class="version-dropdown-toggle" aria-expanded="false" aria-label="<%= typeof t === 'function' ? t('selectVersion') : 'Select Version' %>">
+    <%- renderIcon('git-branch', { class: 'version-icon' }) %>
     <span class="version-label">
       <%= current ? current.label : (typeof t === 'function' ? t('version') : 'Version') %>
     </span>
-    <% if (current && current.id === versions.current) { %>
-      <span class="version-latest-badge"><%= typeof t === 'function' ? t('latest') : 'Latest' %></span>
-    <% } %>
     <%- renderIcon('chevron-down', { class: 'version-chevron' }) %>
   </button>
   <ul class="version-dropdown-menu">
