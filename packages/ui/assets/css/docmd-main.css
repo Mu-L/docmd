@@ -3216,6 +3216,7 @@ ul.contains-task-list>li::marker {
 .project-prefix {
     font-size: 0.75rem;
     opacity: 0.5;
+    line-height: 1em
 }
 
 .project-check {
