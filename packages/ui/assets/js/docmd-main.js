@@ -277,28 +277,7 @@
             copyBtn.classList.remove('copied');
             // Revert icon to copy
             copyBtn.innerHTML = ''; 
-            const copySvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            copySvg.setAttribute('width', '16');
-            copySvg.setAttribute('height', '16');
-            copySvg.setAttribute('viewBox', '0 0 24 24');
-            copySvg.setAttribute('fill', 'none');
-            copySvg.setAttribute('stroke', 'currentColor');
-            copySvg.setAttribute('stroke-width', '2');
-            copySvg.setAttribute('stroke-linecap', 'round');
-            copySvg.setAttribute('stroke-linejoin', 'round');
-            copySvg.classList.add('lucide', 'lucide-copy');
-            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            rect.setAttribute('width', '14');
-            rect.setAttribute('height', '14');
-            rect.setAttribute('x', '8');
-            rect.setAttribute('y', '8');
-            rect.setAttribute('rx', '2');
-            rect.setAttribute('ry', '2');
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', 'M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2');
-            copySvg.appendChild(rect);
-            copySvg.appendChild(path);
-            copyBtn.appendChild(copySvg);
+            copyBtn.appendChild(createCopySvg());
           }, 2000);
         });
       }
@@ -331,10 +310,34 @@
 
   });
 
+  function createCopySvg() {
+    const copySvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    copySvg.setAttribute('width', '16');
+    copySvg.setAttribute('height', '16');
+    copySvg.setAttribute('viewBox', '0 0 24 24');
+    copySvg.setAttribute('fill', 'none');
+    copySvg.setAttribute('stroke', 'currentColor');
+    copySvg.setAttribute('stroke-width', '2');
+    copySvg.setAttribute('stroke-linecap', 'round');
+    copySvg.setAttribute('stroke-linejoin', 'round');
+    copySvg.classList.add('lucide', 'lucide-copy');
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('width', '14');
+    rect.setAttribute('height', '14');
+    rect.setAttribute('x', '8');
+    rect.setAttribute('y', '8');
+    rect.setAttribute('rx', '2');
+    rect.setAttribute('ry', '2');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2');
+    copySvg.appendChild(rect);
+    copySvg.appendChild(path);
+    return copySvg;
+  }
+
   // 2. COMPONENT INITIALIZERS
   function injectCopyButtons() {
     if (document.body.dataset.copyCodeEnabled !== 'true') return;
-    const svg = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>`;
 
     document.querySelectorAll('pre').forEach(preElement => {
       if (preElement.closest('.code-wrapper')) return;
@@ -346,7 +349,7 @@
 
       const copyButton = document.createElement('button');
       copyButton.className = 'copy-code-button';
-      copyButton.innerHTML = svg;
+      copyButton.appendChild(createCopySvg());
       copyButton.title = "Copy code";
       wrapper.appendChild(copyButton);
     });
