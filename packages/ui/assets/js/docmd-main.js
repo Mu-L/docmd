@@ -346,10 +346,8 @@
 
       const copyButton = document.createElement('button');
       copyButton.className = 'copy-code-button';
-      
-      const svgDoc = new DOMParser().parseFromString(svg, 'image/svg+xml');
-      copyButton.appendChild(svgDoc.documentElement);
-      
+      copyButton.innerHTML = svg;
+      copyButton.title = "Copy code";
       wrapper.appendChild(copyButton);
     });
   }

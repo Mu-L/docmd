@@ -39,7 +39,7 @@
     --sidebar-link-active-text: #18181b;
 
     /* Code Colors */
-    --code-bg: #9392921f;
+    --code-bg: #ffffff;
     --code-text: #27272a;
 
     /* Accents */
@@ -410,7 +410,7 @@ span.collapse-icon-wrapper .collapse-icon {
 }
 
 .copy-code-button:hover,
-div:hover>.copy-code-button {
+.code-wrapper:hover>.copy-code-button {
     opacity: .8;
 }
 
