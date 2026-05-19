@@ -236,7 +236,7 @@ export async function buildSite(configPath: string, opts: any = {}) {
         pages:     allGeneratedPages,
         outputDir: rootOutputDir,
         log: (msg: string, status: 'DONE'|'SKIP'|'FAIL'|'WAIT' = 'DONE') => {
-          TUI.step(msg, status, TUI.blue);
+          if (!options.quiet) TUI.step(msg, status, TUI.blue);
         },
         tui:     TUI,
         options: { ...options, quiet: options.quiet },

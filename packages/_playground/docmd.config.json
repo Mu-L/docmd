@@ -60,7 +60,7 @@
     "current": "06",
     "position": "sidebar-top",
     "all": [
-      { "id": "06", "dir": "docs", "label": "v0.6.0 (Latest)" },
+      { "id": "06", "dir": "docs", "label": "v0.6.0" },
       { "id": "05", "dir": "docs-05", "label": "v0.5.0",
         "navigation": [
           { "title": "V0.5 Home", "path": "/", "icon": "home" },

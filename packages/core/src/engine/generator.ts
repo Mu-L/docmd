@@ -410,7 +410,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       config,
       pages,
       tui: TUI,
-      options: showSection ? { ...options, quiet: false } : options,
+      options: showSection ? { ...options, quiet: options.quiet || false } : options,
       runWorkerTask(modulePath: string, functionName: string, args: any[]) {
         if (!config._workerPool) throw new Error('WorkerPool is not initialized');
         return config._workerPool.runTask({ type: 'plugin-task', modulePath, functionName, args });
