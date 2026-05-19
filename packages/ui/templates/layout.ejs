@@ -157,8 +157,7 @@
               <% if (sidebarConfig?.collapsible) { %>
                 <button id="sidebar-toggle-button" class="sidebar-toggle-button"
                   aria-label="<%= typeof t === 'function' ? t('toggleSidebar') : 'Toggle sidebar' %>">
-                  <%- renderIcon('panel-left-close', { class: 'icon-close' }) %>
-                  <%- renderIcon('panel-left', { class: 'icon-open' }) %>
+                  <%- renderIcon('chevron-left') %>
                 </button>
               <% } %>
               <div class="header-titles-wrapper">

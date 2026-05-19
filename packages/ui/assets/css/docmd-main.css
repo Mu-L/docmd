@@ -325,7 +325,7 @@ a:any-link {
     text-decoration: none;
     color: var(--sidebar-text);
     border-radius: var(--radius-md);
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
     line-height: 1.4;
 }
 
@@ -424,59 +424,57 @@ div:hover>.copy-code-button {
 
 .sidebar-toggle-button {
     position: absolute;
-    left: -14px;
+    left: -16px;
     top: 50%;
     transform: translateY(-50%);
     background-color: var(--bg-color);
     border: 1px solid var(--border-color);
     color: var(--text-muted);
     cursor: pointer;
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     display: none;
     align-items: center;
     justify-content: center;
     box-shadow: var(--shadow-sm);
     transition: left 0.3s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-    z-index: 1000;
+    z-index: 200;
 }
 
 .sidebar-toggle-button:hover {
     background-color: var(--bg-hover);
     color: var(--text-color);
     border-color: var(--border-color-hover);
+    box-shadow: var(--shadow-md);
 }
 
 .sidebar-toggle-button .lucide-icon {
-    width: 1rem;
-    height: 1rem;
+    width: 1.1rem;
+    height: 1.1rem;
     color: currentColor;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.sidebar-toggle-button .icon-open {
-    display: none;
+body.sidebar-collapsed .sidebar-toggle-button .lucide-icon {
+    transform: rotate(180deg);
 }
 
-.sidebar-toggle-button .icon-close {
-    display: block;
+body.sidebar-collapsible .sidebar-toggle-button {
+    display: inline-flex;
 }
 
-body.sidebar-collapsed .sidebar-toggle-button .icon-open {
-    display: block;
-}
-
-body.sidebar-collapsed .sidebar-toggle-button .icon-close {
-    display: none;
+body.sidebar-collapsed .sidebar-toggle-button {
+    left: 12px;
 }
 
 body.sidebar-collapsible .header-titles-wrapper {
-    margin-left: 20px;
+    margin-left: 24px;
     transition: margin-left 0.3s ease;
 }
 
 body.sidebar-collapsible.sidebar-collapsed .header-titles-wrapper {
-    margin-left: 36px;
+    margin-left: 40px;
 }
 
 .docmd-container.steps-reset .docmd-container.steps-reset ol.steps-list>li.step-item::before,
@@ -1810,7 +1808,7 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
 }
 
 :focus:not(:focus-visible) {
-    outline: currentcolor
+    outline: none !important;
 }
 
 .sidebar nav li a:focus-visible {
@@ -2532,47 +2530,48 @@ hr {
 .footer-complete {
     background-color: var(--sidebar-bg);
     border-top: 1px solid var(--border-color);
-    padding: var(--space-12) var(--space-8) var(--space-6);
+    padding: 4.5rem 2rem 2.5rem;
     margin-top: auto;
 }
 
 .footer-complete-top {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
+    align-items: flex-start;
     flex-wrap: wrap;
-    gap: 2rem;
+    gap: 3rem;
     max-width: 1200px;
-    margin: 0 auto 3rem auto;
+    margin: 0 auto 4rem auto;
 }
 
 .footer-brand {
-    flex: 1;
-    min-width: 250px;
-    max-width: 500px;
-    text-align: center;
+    flex: 1 1 300px;
+    max-width: 400px;
+    text-align: left;
 }
 
 .footer-brand .logo-link {
     display: block;
     overflow: hidden;
-    margin: 0 auto;
+    margin: 0 0 1rem 0;
     width: fit-content;
 }
 
 .footer-brand .logo-link img {
-    max-height: 30px;
+    max-height: 28px;
     width: auto;
 }
 
 .footer-columns {
     display: flex;
     flex-wrap: wrap;
-    gap: 3rem;
+    gap: 4rem;
     justify-content: flex-end;
+    flex: 2 1 auto;
 }
 
 .footer-column {
-    min-width: 120px;
+    min-width: 140px;
 }
 
 .footer-title {
@@ -2583,16 +2582,20 @@ hr {
 
 .footer-desc {
     color: var(--text-muted);
-    font-size: 0.9rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
     margin-top: 0.75rem;
+    opacity: 0.9;
 }
 
 .footer-column-title {
     display: block;
+    font-size: 0.75rem;
     font-weight: 600;
-    color: var(--text-heading);
-    margin-bottom: 1rem;
-    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 1.25rem;
 }
 
 .footer-column ul {
@@ -2602,13 +2605,14 @@ hr {
 }
 
 .footer-column ul li {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
 }
 
 .footer-column ul a {
     color: var(--text-muted);
     text-decoration: none;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
+    transition: color 0.2s ease;
 }
 
 .footer-column ul a:hover {
@@ -2618,12 +2622,12 @@ hr {
 .footer-complete-bottom {
     max-width: 1200px;
     margin: 0 auto;
-    padding-top: 1.5rem;
+    padding-top: 2rem;
     border-top: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     color: var(--text-muted);
 }
 
