@@ -1384,9 +1384,9 @@ tr:hover td {
 }
 
 .logo-link img {
-    max-height: 40px;
+    max-height: 2.75rem;
     width: auto;
-    margin: 0 auto
+    margin: 0 auto .25rem
 }
 
 .docmd-tab-pane,
@@ -3215,17 +3215,9 @@ ul.contains-task-list>li::marker {
     opacity: 0.5;
 }
 
-
-
-.project-title {
-    font-weight: 600;
-    font-size: 0.85rem;
-}
-
 .project-prefix {
     font-size: 0.75rem;
-    opacity: 0.6;
-    margin-top: 1px;
+    opacity: 0.5;
 }
 
 .project-check {
