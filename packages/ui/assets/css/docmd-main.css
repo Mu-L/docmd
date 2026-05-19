@@ -994,6 +994,7 @@ body.has-menubar-header .docmd-menubar {
 .docmd-version-dropdown,
 .docmd-language-switcher {
     width: auto;
+    position: relative;
 }
 
 .docmd-language-switcher {
@@ -3109,6 +3110,7 @@ ul.contains-task-list>li::marker {
 /* Workspace Switcher */
 .docmd-project-switcher {
     width: 100%;
+    position: relative;
 }
 
 .project-switcher-toggle {
