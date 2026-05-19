@@ -93,31 +93,25 @@
 }
 
 :root[data-theme=dark] {
-    --bg-color: #09090b;
-    --text-color: #a1a1aa;
+    --bg-color: #111111;
+    --text-color: #cacaca;
     --text-muted: #71717a;
     --text-heading: #fafafa;
     --link-color: #068ad5;
     --border-color: #27272a;
-
     --border-color-codeblock: #fafafa17;
-
-    --header-bg: rgba(9, 9, 11, 0.8);
+    --header-bg: rgb(26 26 26 / 68%);
     --header-border: #27272a;
-    --sidebar-bg: #09090b;
-    --sidebar-text: #a1a1aa;
+    --sidebar-bg: #161616;
+    --sidebar-text: #d1d1d1;
     --sidebar-link-active-bg: #18181b;
-    --sidebar-link-active-text: #fafafa;
-
-    --code-bg: #18181b;
+    --sidebar-link-active-text: #ffffff;
+    --code-bg: #1b1b1d;
     --code-text: #e4e4e7;
-
     --sponsor-red: #e11d48;
     --sponsor-red-hover: #be123c;
-
     --scrollbar-thumb: #27272a;
     --scrollbar-thumb-hover: #52525b;
-
     color-scheme: dark;
 }
 
@@ -306,9 +300,7 @@ a:any-link {
 .sidebar h1 {
     font-size: 1.25rem;
     font-weight: 700;
-    margin-bottom: var(--space-4);
-    padding-bottom: var(--space-3);
-    border-bottom: 1px solid var(--border-color);
+    padding: var(--space-2);
 }
 
 .sidebar nav ul {
@@ -424,7 +416,7 @@ div:hover>.copy-code-button {
 
 .sidebar-toggle-button {
     position: absolute;
-    left: -16px;
+    left: -1rem;
     top: 50%;
     transform: translateY(-50%);
     background-color: var(--bg-color);
@@ -443,7 +435,6 @@ div:hover>.copy-code-button {
 }
 
 .sidebar-toggle-button:hover {
-    background-color: var(--bg-hover);
     color: var(--text-color);
     border-color: var(--border-color-hover);
     box-shadow: var(--shadow-md);
@@ -465,15 +456,12 @@ body.sidebar-collapsible .sidebar-toggle-button {
 }
 
 body.sidebar-collapsed .sidebar-toggle-button {
-    left: 12px;
+    justify-content: right;
+    padding: 0;
 }
 
 body.sidebar-collapsible .header-titles-wrapper {
     transition: margin-left 0.3s ease;
-}
-
-body.sidebar-collapsible.sidebar-collapsed .header-titles-wrapper {
-    margin-left: 40px;
 }
 
 .docmd-container.steps-reset .docmd-container.steps-reset ol.steps-list>li.step-item::before,
@@ -554,7 +542,7 @@ img {
 
 .page-header {
     justify-content: space-between;
-    padding: var(--space-3) var(--space-8);
+    padding: var(--space-3);
     background-color: var(--header-bg);
     border-bottom: 1px solid var(--header-border);
     position: sticky;
@@ -640,7 +628,7 @@ img {
 
 .header-right {
     gap: var(--space-2);
-    margin-right:1rem;
+    margin-right: 1rem;
 }
 
 :root {
@@ -714,7 +702,7 @@ body.has-menubar-top .docmd-menubar {
 body.has-menubar-header .docmd-menubar {
     position: sticky;
     top: 0;
-    z-index: 150;
+    z-index: 250;
 }
 
 .menubar-inner {
@@ -969,7 +957,8 @@ body.has-menubar-header .docmd-menubar {
     border-top: 1px solid var(--border-color);
 }
 
-.sidebar-top-group,.sidebar-bottom-group.mt-auto {
+.sidebar-top-group,
+.sidebar-bottom-group.mt-auto {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -1365,15 +1354,12 @@ tr:hover td {
 
 .sidebar-header {
     flex-shrink: 0;
-    margin-bottom: .5em;
     text-align: center;
-    height: 2.5em;
 }
 
 .sidebar-header h1 {
     font-size: 1.5em;
-    margin-top: 0;
-    margin-bottom: 0
+    margin: 0;
 }
 
 .logo-link img {
@@ -1600,7 +1586,8 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 }
 
 .docmd-mermaid-container {
-    position: relative; /* Anchor for controls */
+    position: relative;
+    /* Anchor for controls */
     margin: var(--space-6) 0;
     padding: var(--space-6) var(--space-4);
     border: 1px solid var(--border-color-codeblock);
@@ -1611,7 +1598,8 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 
 .mermaid-wrapper {
     position: relative;
-    overflow: hidden; /* Hide scrollbars, we use drag-to-pan */
+    overflow: hidden;
+    /* Hide scrollbars, we use drag-to-pan */
     cursor: grab;
 }
 
@@ -1646,7 +1634,8 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 }
 
 .docmd-mermaid-container svg {
-    max-width: none; /* Let SVG size itself, wrapper will scroll */
+    max-width: none;
+    /* Let SVG size itself, wrapper will scroll */
     display: block;
     margin: 0 auto;
 }
@@ -2847,28 +2836,40 @@ hr {
         margin-left: .5rem
     }
 
-    /* Keep menubar flow natural at the top of the viewport on mobile */
+    /* Make menubar sticky at the top of the viewport on mobile */
     body.has-menubar-top .docmd-menubar,
     body.has-menubar-header .docmd-menubar {
-        position: relative !important;
+        position: sticky !important;
         top: 0 !important;
         left: 0 !important;
         right: 0 !important;
         width: 100% !important;
         box-shadow: none;
+        z-index: 250 !important;
     }
-        .heading-anchor {
+
+    /* Disable page-header stickiness on mobile when menubar is enabled */
+    body.has-menubar-top .page-header,
+    body.has-menubar-header .page-header {
+        position: relative !important;
+        top: auto !important;
+    }
+
+    .heading-anchor {
         position: static;
         margin-right: var(--space-2);
         opacity: 1;
         color: var(--border-color);
     }
+
     .content-area {
         padding: var(--space-6) var(--space-4);
     }
+
     .docmd-breadcrumbs {
         display: none;
     }
+
     .docmd-menubar {
         padding: 0;
     }
@@ -2877,19 +2878,28 @@ hr {
         display: none;
     }
 
-    .menubar-link span,
-    .menubar-dropdown-toggle span:not(.menubar-chevron) {
-        display: none;
+    .menubar-inner {
+        padding: 0 var(--space-3);
+        gap: var(--space-2);
     }
 
-    .header-left, .header-right{
-        margin-left: 0;
-        margin-right:0;
+    .menubar-link,
+    .menubar-dropdown-toggle {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8125rem;
     }
+
+    .header-left,
+    .header-right {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
     .search-keys,
     .search-label {
         display: none
     }
+
     .footer-complete-top {
         flex-direction: column;
         gap: 2rem;
@@ -2903,7 +2913,7 @@ hr {
         flex: 1;
     }
 
-    .footer-brand .logo-link{
+    .footer-brand .logo-link {
         margin: 0 auto
     }
 
@@ -3163,6 +3173,7 @@ ul.contains-task-list>li::marker {
         font-size: 3rem;
     }
 }
+
 /* Workspace Switcher */
 .docmd-project-switcher {
     width: 100%;
