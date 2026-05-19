@@ -287,7 +287,6 @@ a:any-link {
     border-right: 1px solid var(--border-color);
     height: 100vh;
     position: fixed;
-    padding: .5em 0;
     top: 0;
     left: 0;
     overflow: visible;
@@ -550,6 +549,7 @@ img {
     z-index: 50;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    gap: 0.5rem
 }
 
 @media (min-width: 769px) {
@@ -1376,17 +1376,20 @@ tr:hover td {
 .sidebar-header {
     flex-shrink: 0;
     text-align: center;
+    padding: .5rem
 }
 
 .sidebar-header h1 {
+    display: inline-block;
     font-size: 1.5em;
     margin: 0;
+    padding: 0
 }
 
 .logo-link img {
-    max-height: 2.75rem;
+    max-height: 2.5rem;
     width: auto;
-    margin: 0 auto .25rem
+    margin: 0 auto
 }
 
 .docmd-tab-pane,
@@ -2713,7 +2716,7 @@ hr {
 
     .sidebar {
         width: 100%;
-        height: 3.5rem;
+        height: 3rem;
         position: relative;
         top: 0;
         border-right-width: medium;
@@ -2734,8 +2737,7 @@ hr {
     }
 
     .sidebar-menu-button {
-        font-size: 1.5em;
-        margin-top: 5px
+        font-size: 1.5em
     }
 
     .sidebar #theme-toggle-button,
@@ -2780,10 +2782,6 @@ hr {
 
     .main-content-wrapper {
         margin-left: 0
-    }
-
-    .content-area {
-        padding: 1.5rem 15px 15px
     }
 
     .page-navigation {
@@ -2884,7 +2882,7 @@ hr {
     }
 
     .content-area {
-        padding: var(--space-6) var(--space-4);
+        padding: var(--space-4);
     }
 
     .docmd-breadcrumbs {
