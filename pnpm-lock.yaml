@@ -15,8 +15,8 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.4.0)
       '@types/node':
-        specifier: ^25.9.0
-        version: 25.9.0
+        specifier: ^25.9.1
+        version: 25.9.1
       chalk:
         specifier: 4.1.2
         version: 4.1.2
@@ -206,8 +206,8 @@ importers:
         specifier: ^1.0.4
         version: 1.0.4
       markdown-it-attrs:
-        specifier: ^4.3.1
-        version: 4.3.1(markdown-it@14.1.1)
+        specifier: ^4.5.0
+        version: 4.5.0(markdown-it@14.1.1)
       markdown-it-deflist:
         specifier: ^2.1.0
         version: 2.1.0
@@ -240,8 +240,8 @@ importers:
         version: link:../../api
     devDependencies:
       '@types/node':
-        specifier: ^25.9.0
-        version: 25.9.0
+        specifier: ^25.9.1
+        version: 25.9.1
 
   packages/plugins/llms:
     devDependencies:
@@ -348,8 +348,8 @@ importers:
         version: 4.1.2
     devDependencies:
       '@types/node':
-        specifier: ^25.9.0
-        version: 25.9.0
+        specifier: ^25.9.1
+        version: 25.9.1
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -632,8 +632,8 @@ packages:
   '@types/mdurl@2.0.0':
     resolution: {integrity: sha512-RGdgjQUZba5p6QEFAVx2OGb8rQDL/cPRG7GiedRzMcJ1tYnUANBncjbSB1NRGwbvjcPeikRABz2nshyPk1bhWg==}
 
-  '@types/node@25.9.0':
-    resolution: {integrity: sha512-AOQwYUNolgy3VosiRqXrACUXTN8nJUtPl7FJXMqZVyxiiCLhQuG3jXKvCS1ALr+Y2OmZhzzLVlYPEqJaiqkaJQ==}
+  '@types/node@25.9.1':
+    resolution: {integrity: sha512-xfrlY7UD5rMJk3ZVJP8BNzS28J36YJg+xp+LPXV1TdWxr8uMH5A860QNxYDGQe/ylDSgjxE52Q9VnO7p75tJxg==}
 
   '@types/react@19.2.14':
     resolution: {integrity: sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w==}
@@ -958,8 +958,8 @@ packages:
   markdown-it-abbr@1.0.4:
     resolution: {integrity: sha512-ZeA4Z4SaBbYysZap5iZcxKmlPL6bYA8grqhzJIHB1ikn7njnzaP8uwbtuXc4YXD5LicI4/2Xmc0VwmSiFV04gg==}
 
-  markdown-it-attrs@4.3.1:
-    resolution: {integrity: sha512-/ko6cba+H6gdZ0DOw7BbNMZtfuJTRp9g/IrGIuz8lYc/EfnmWRpaR3CFPnNbVz0LDvF8Gf1hFGPqrQqq7De0rg==}
+  markdown-it-attrs@4.5.0:
+    resolution: {integrity: sha512-dsuEyK/MDAYsdZLDIaDAQXz5+gP0AAbJ4ZjOSB0w+ZGe4lLbzyCgGg0LApC6j9zUK2F+2SA9VkzXfyNG9hL/8g==}
     engines: {node: '>=6'}
     peerDependencies:
       markdown-it: '>= 9.0.0'
@@ -1332,7 +1332,7 @@ snapshots:
 
   '@types/mdurl@2.0.0': {}
 
-  '@types/node@25.9.0':
+  '@types/node@25.9.1':
     dependencies:
       undici-types: 7.24.6
 
@@ -1703,7 +1703,7 @@ snapshots:
 
   markdown-it-abbr@1.0.4: {}
 
-  markdown-it-attrs@4.3.1(markdown-it@14.1.1):
+  markdown-it-attrs@4.5.0(markdown-it@14.1.1):
     dependencies:
       markdown-it: 14.1.1
 
