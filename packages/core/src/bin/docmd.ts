@@ -144,6 +144,7 @@ if (command === 'init') {
     mkdocs: { type: 'boolean' },
     vitepress: { type: 'boolean' },
     starlight: { type: 'boolean' },
+    upgrade: { type: 'boolean' },
     help: { type: 'boolean', short: 'h' }
   } as const;
 
@@ -157,17 +158,19 @@ if (command === 'init') {
     console.log(`  --mkdocs        Migrate from MkDocs`);
     console.log(`  --vitepress     Migrate from VitePress`);
     console.log(`  --starlight     Migrate from Astro Starlight`);
+    console.log(`  --upgrade       Upgrade legacy docmd configuration to modern schema`);
     process.exit(0);
   }
 
   const mv = migrateParsed.values;
-  if (mv.help || (!mv.docusaurus && !mv.mkdocs && !mv.vitepress && !mv.starlight)) {
+  if (mv.help || (!mv.docusaurus && !mv.mkdocs && !mv.vitepress && !mv.starlight && !mv.upgrade)) {
     console.log(`\nUsage: docmd migrate [options]\n`);
     console.log(`Sources:`);
     console.log(`  --docusaurus    Migrate from Docusaurus`);
     console.log(`  --mkdocs        Migrate from MkDocs`);
     console.log(`  --vitepress     Migrate from VitePress`);
     console.log(`  --starlight     Migrate from Astro Starlight`);
+    console.log(`  --upgrade       Upgrade legacy docmd configuration to modern schema`);
     process.exit(0);
   }
 
@@ -175,7 +178,8 @@ if (command === 'init') {
     docusaurus: mv.docusaurus, 
     mkdocs: mv.mkdocs, 
     vitepress: mv.vitepress, 
-    starlight: mv.starlight 
+    starlight: mv.starlight,
+    upgrade: mv.upgrade
   }).catch((e) => {
     console.error(e);
     process.exit(1);

@@ -1,0 +1,159 @@
+<!--
+  ---------------------------------------------------------------
+  docmd-search : offline semantic search
+  A file-browser style layout with prominent search bar.
+  @website https://docmd.io/search
+  [docmd-source] - Please do not remove this header.
+  ---------------------------------------------------------------
+-->
+
+<!DOCTYPE html>
+<html lang="<%= (locals.activeLocale && locals.activeLocale.id) ? locals.activeLocale.id : 'en' %>">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="generator" content="docmd-search">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <%- themeInitScript %>
+    <style>
+      html { visibility: hidden; }
+    </style>
+    <script>
+      var root = "<%= relativePathToRoot %>";
+      if (root && !root.endsWith('/')) root += '/';
+      if (root === '') root = './';
+      window.DOCMD_ROOT = root;
+      window.DOCMD_SITE_ROOT = root;
+      window.DOCMD_APPEARANCE = "<%= appearance %>";
+    </script>
+    <title><%= pageTitle %><% if (siteTitle && pageTitle !== siteTitle) { %> — <%= siteTitle %><% } %></title>
+    <%- faviconLinkHtml || '' %>
+    <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-main.css?v=<%= buildHash %>">
+    <% if (config.theme?.codeHighlight !== false) { const isDarkDefault = appearance === 'dark'; %>
+    <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-light.css?v=<%= buildHash %>" id="hljs-light" <%= isDarkDefault ? 'disabled' : '' %>>
+    <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-dark.css?v=<%= buildHash %>" id="hljs-dark" <%= isDarkDefault ? '' : 'disabled' %>>
+    <% } %>
+    <%- pluginHeadScriptsHtml || '' %>
+    <% (customCssFiles || []).forEach(cssFile => { %>
+      <link rel="stylesheet" href="<%= relativePathToRoot %><%= cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
+    <% }); %>
+    <style>
+      /* docmd-search template overrides */
+      .ds-search-header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: var(--color-bg);
+        border-bottom: 1px solid var(--color-border);
+        padding: 1rem 1.5rem;
+      }
+      .ds-search-bar {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .ds-search-input {
+        width: 100%;
+        padding: 0.875rem 1.25rem;
+        font-size: 1.125rem;
+        border: 2px solid var(--color-border);
+        border-radius: 12px;
+        background: var(--color-bg-alt);
+        color: var(--color-text);
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      .ds-search-input:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 4px var(--color-primary-light, rgba(217, 70, 239, 0.15));
+      }
+      .ds-search-input::placeholder {
+        color: var(--color-text-muted);
+      }
+      /* Hide TOC in this template */
+      .toc-sidebar { display: none !important; }
+      .content-layout { display: block !important; }
+      .main-content { max-width: 100% !important; }
+      /* File browser badge */
+      .ds-badge {
+        position: fixed;
+        bottom: 16px;
+        right: 16px;
+        background: linear-gradient(135deg, #d946ef, #a855f7);
+        color: #fff;
+        padding: 5px 11px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        opacity: 0.85;
+        z-index: 9999;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body class="<%= sidebarConfig?.enabled === false ? 'no-sidebar' : 'sidebar-collapsible' %>" data-copy-code-enabled="<%= config.copyCode === true %>" data-spa-enabled="<%= config.layout?.spa !== false %>">
+
+    <a href="#main-content" class="skip-link"><%= typeof t === 'function' ? t('skipToContent') : 'Skip to content' %></a>
+
+    <% if (sidebarConfig?.enabled !== false) { %>
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h1><a href="<%= relativePathToRoot %>"><%= siteTitle %></a></h1>
+          <span class="mobile-view sidebar-menu-button float-right">
+            <%- renderIcon("menu") %>
+          </span>
+        </div>
+        <%- navigationHtml %>
+      </aside>
+    <% } %>
+
+    <div class="main-content-wrapper">
+      <!-- Prominent search bar -->
+      <div class="ds-search-header">
+        <div class="ds-search-bar">
+          <input
+            type="text"
+            class="ds-search-input"
+            id="ds-main-search"
+            placeholder="<%= typeof t === 'function' ? t('searchPlaceholder') : 'Search files...' %>"
+            autocomplete="off"
+            spellcheck="false"
+          >
+        </div>
+      </div>
+
+      <div class="content-theme-cover">
+        <main class="content-area" id="main-content">
+          <div class="content-layout">
+            <div class="main-content">
+              <%- content %>
+            </div>
+          </div>
+        </main>
+        <%- await include('partials/footer', { footerConfig, config, relativePathToRoot, logo, siteTitle, footerHtml }) %>
+      </div>
+    </div>
+
+    <!-- docmd-search badge -->
+    <div class="ds-badge">⚡ docmd-search</div>
+
+    <script src="<%= relativePathToRoot %>assets/js/docmd-main.js?v=<%= buildHash %>"></script>
+    <%- pluginBodyScriptsHtml || '' %>
+    <% (customJsFiles || []).forEach(jsFile => {
+      if (jsFile && jsFile.trim() !== '') { %>
+      <script src="<%= relativePathToRoot %><%= jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>?v=<%= buildHash %>"></script>
+    <% }
+    }); %>
+
+    <script>
+      // Wire up the prominent search bar to open the search modal
+      (function() {
+        const mainSearch = document.getElementById('ds-main-search');
+        if (mainSearch && typeof window.openDocmdSearch === 'function') {
+          mainSearch.addEventListener('focus', function() {
+            this.blur();
+            window.openDocmdSearch();
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

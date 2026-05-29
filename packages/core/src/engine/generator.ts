@@ -151,7 +151,8 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
   const templates = {
     layout: await nativeFs.promises.readFile(ui.getTemplatePath('layout'), 'utf8'),
     noStyle: await nativeFs.promises.readFile(ui.getTemplatePath('no-style'), 'utf8'),
-    navigation: await nativeFs.promises.readFile(ui.getTemplatePath('navigation'), 'utf8')
+    navigation: await nativeFs.promises.readFile(ui.getTemplatePath('navigation'), 'utf8'),
+    'docmd-search': await nativeFs.promises.readFile(ui.getTemplatePath('docmd-search'), 'utf8'),
   };
 
   // Load Partials
@@ -550,7 +551,13 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       }, { filename: ui.getTemplatePath('navigation') });
 
       // Render Full Page
-      const templateString = page.frontmatter.noStyle ? templates.noStyle : templates.layout;
+      // Template selection: frontmatter.template > frontmatter.noStyle > default layout
+      let templateString = templates.layout;
+      if (page.frontmatter.template && templates[page.frontmatter.template as keyof typeof templates]) {
+        templateString = templates[page.frontmatter.template as keyof typeof templates];
+      } else if (page.frontmatter.noStyle) {
+        templateString = templates.noStyle;
+      }
       let fullHtml = await parser.renderTemplateAsync(templateString, {
         content: page.htmlContent,
         frontmatter: page.frontmatter,

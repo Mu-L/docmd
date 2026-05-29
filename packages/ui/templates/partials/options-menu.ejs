@@ -15,7 +15,7 @@
     </button>
     <% } %>
 
-    <% if (locals.workspace && workspace.switcher && workspace.switcher.position === 'options-menu') { %>
+    <% if (locals.workspace && workspace.switcher.enabled && workspace.switcher.position === 'options-menu') { %>
     <div class="options-menu-project-switcher">
         <%- await include('project-switcher', { workspace, config, renderIcon, compact: true }) %>
     </div>

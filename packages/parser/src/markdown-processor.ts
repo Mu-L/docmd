@@ -243,16 +243,33 @@ function stripHtml(html) {
   return html.replace(/<[^>]*>?/gm, '');
 }
 
+function decodeHtmlEntities(str: string): string {
+  if (!str) return '';
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&rsquo;/g, "'")
+    .replace(/&lsquo;/g, "'")
+    .replace(/&rdquo;/g, '"')
+    .replace(/&ldquo;/g, '"')
+    .replace(/&nbsp;/g, ' ');
+}
+
 function extractHeadings(html) {
   const headings = [];
   // Require non-empty ID match to exclude stripped container headings: "([^"]+)"
   const regex = /<h([1-6])[^>]*?id="([^"]+)"[^>]*?>([\s\S]*?)<\/h\1>/g;
   let match;
   while ((match = regex.exec(html)) !== null) {
+    const rawText = match[3].replace(/<\/?[^>]+(>|$)/g, '').trim();
     headings.push({
       level: parseInt(match[1], 10),
       id: match[2],
-      text: match[3].replace(/<\/?[^>]+(>|$)/g, '').trim()
+      text: decodeHtmlEntities(rawText)
     });
   }
   return headings;

@@ -98,7 +98,7 @@
           </span>
         </div>
         <div class="sidebar-top-group">
-          <% if (locals.workspace && workspace.switcher && workspace.switcher.position === 'sidebar-top') { %>
+          <% if (locals.workspace && workspace.switcher.enabled && workspace.switcher.position === 'sidebar-top') { %>
             <div class="sidebar-project-switcher-wrapper">
               <%- await include('partials/project-switcher', { workspace, config, renderIcon, compact: false }) %>
             </div>
@@ -133,7 +133,7 @@
               <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: false, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
             </div>
           <% } %>
-          <% if (locals.workspace && workspace.switcher && workspace.switcher.position === 'sidebar-bottom') { %>
+          <% if (locals.workspace && workspace.switcher.enabled && workspace.switcher.position === 'sidebar-bottom') { %>
             <div class="sidebar-project-switcher-wrapper">
               <%- await include('partials/project-switcher', { workspace, config, renderIcon, compact: false }) %>
             </div>
