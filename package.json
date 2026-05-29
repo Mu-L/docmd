@@ -36,6 +36,11 @@
     ],
     "overrides": {
       "mermaid>uuid": ">=14.0.0"
+    },
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "docmd-search"
+      ]
     }
   },
   "keywords": [

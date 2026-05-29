@@ -174,7 +174,13 @@ export async function detectWorkspace(configPathOption: string): Promise<Workspa
         };
       }
 
-      return rawConfig as WorkspaceRootConfig;
+      // Return workspace config only if it has workspace settings
+      // This prevents false positives when a config has a 'workspace' field but no projects
+      if (rawConfig.workspace && rawConfig.workspace.projects) {
+        return rawConfig as WorkspaceRootConfig;
+      }
+
+      return null;
     }
     return null;
   } catch {

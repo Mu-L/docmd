@@ -1,4 +1,4 @@
-name: docmd Release to NPM
+name: Release docmd to NPM
 
 on:
   release:

@@ -18,11 +18,13 @@ import nativeFs from 'fs';
 import MiniSearch from 'minisearch';
 import MarkdownIt from 'markdown-it';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
 import type { PluginDescriptor } from '@docmd/api';
 import { outputPathToSlug, sanitizeUrl } from '@docmd/api';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const require = createRequire(import.meta.url);
 
 export const plugin: PluginDescriptor = {
   name: 'search',
@@ -32,6 +34,58 @@ export const plugin: PluginDescriptor = {
 
 // Resolve i18n directory (sibling to dist/ in the package)
 const i18nDir = path.resolve(__dirname, '..', 'i18n');
+
+/* ── Semantic search peer-dep detection ─────────────────────────────────── */
+
+/**
+ * Check if docmd-search is available (installed as a peer/optional dep).
+ * Returns the importable path (file:// URL) or null if not found.
+ */
+function resolveDocmdSearch(): string | null {
+  try {
+    // Try require.resolve for package.json (works for both CJS and ESM packages)
+    // Search in: cwd, __dirname, monorepo root (../../..), and global node_modules
+    const searchPaths = [
+      process.cwd(),
+      __dirname,
+      path.resolve(__dirname, '../../..'),  // monorepo root
+      path.resolve(__dirname, '../../../..'), // parent of monorepo
+    ];
+    const pkgPath = require.resolve('docmd-search/package.json', { paths: searchPaths });
+    const pkgDir = path.dirname(pkgPath);
+    // Read package.json to find the main entry point
+    const pkg = JSON.parse(nativeFs.readFileSync(pkgPath, 'utf8'));
+    const mainEntry = pkg.exports?.['.']?.import || pkg.main || 'dist/index.js';
+    const entryPath = path.join(pkgDir, mainEntry);
+    // Return as file:// URL for ESM dynamic import
+    return `file://${entryPath}`;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Ensure docmd-search is installed when semantic: true is requested.
+ * If missing, prints a helpful install message and returns false.
+ */
+async function ensureDocmdSearch(tui: any, quiet: boolean): Promise<boolean> {
+  if (resolveDocmdSearch()) return true;
+
+  if (!quiet && tui) {
+    tui.warn(
+      '  semantic search requires "docmd-search" — install it with:\n' +
+      '    npm install docmd-search\n' +
+      '  or disable it: plugins: { search: { semantic: false } }'
+    );
+  } else {
+    console.warn(
+      '[plugin-search] semantic: true requires "docmd-search".\n' +
+      '  Run: npm install docmd-search'
+    );
+  }
+
+  return false;
+}
 
 /**
  * Load translation strings for a given locale.
@@ -65,17 +119,125 @@ export function translations(localeId: string): Record<string, string> {
 
 /**
  * Post-build hook - generates per-locale search indexes.
- * Each locale gets its own `search-index.json` covering all versions within that locale.
- * Default locale index is at root, non-default locale indexes are at `/{locale}/search-index.json`.
  *
- * When a WorkerPool is available, the CPU-intensive MiniSearch indexing is
- * offloaded to a worker thread via `runWorkerTask` to keep the main thread free.
+ * When options.semantic is true:
+ *   - If options.indexDir is provided and contains a valid manifest.json,
+ *     skip indexing entirely — the index was pre-built (e.g. by docmd-search CLI).
+ *   - Otherwise, runs the docmd-search indexer over the docs source directory
+ *     and outputs the vector index to <outputDir>/.docmd-search/.
+ *   - Falls back to keyword-only search if docmd-search is not installed.
+ *
+ * When options.semantic is false (default):
+ *   - Generates per-locale MiniSearch indexes (existing behaviour).
  */
 export async function onPostBuild({ config, pages, outputDir, tui, options, runWorkerTask }: any) {
+  // Plugin-specific config is in config.plugins.search
+  const pluginOptions = (config.plugins && config.plugins.search) || {};
   const isEnabled = config.optionsMenu ? config.optionsMenu.components.search !== false : config.search !== false;
   if (!isEnabled) return;
 
   const showTui = tui && !options?.quiet;
+
+  // ── Semantic search path ────────────────────────────────────────────────
+  if (pluginOptions.semantic === true) {
+    // Check if a pre-built index exists (e.g. docmd-search --ui mode)
+    // If indexDir is provided and has a valid manifest, skip indexing entirely.
+    if (pluginOptions.indexDir) {
+      const manifestPath = path.join(pluginOptions.indexDir, 'manifest.json');
+      if (nativeFs.existsSync(manifestPath)) {
+        try {
+          const manifest = JSON.parse(nativeFs.readFileSync(manifestPath, 'utf8'));
+          if (manifest.status === 'complete' && manifest.batchCount > 0) {
+            if (showTui) tui.step('Using pre-built semantic index', 'DONE');
+            // Copy the index to outputDir if it's not already there
+            const targetDir = path.join(outputDir, '.docmd-search');
+            if (pluginOptions.indexDir !== targetDir) {
+              await fs.mkdir(targetDir, { recursive: true });
+              // Copy manifest and batches
+              await fs.copyFile(manifestPath, path.join(targetDir, 'manifest.json'));
+              const batchesDir = path.join(pluginOptions.indexDir, 'batches');
+              if (nativeFs.existsSync(batchesDir)) {
+                const targetBatchesDir = path.join(targetDir, 'batches');
+                await fs.mkdir(targetBatchesDir, { recursive: true });
+                for (const file of nativeFs.readdirSync(batchesDir)) {
+                  await fs.copyFile(path.join(batchesDir, file), path.join(targetBatchesDir, file));
+                }
+              }
+            }
+            return; // Index already exists — no need to build
+          }
+        } catch {
+          // Invalid manifest — fall through to build
+        }
+      }
+    }
+
+    const ready = await ensureDocmdSearch(tui, !showTui);
+    if (!ready) {
+      // Graceful fallback: build keyword index instead
+      if (showTui) tui.warn('Falling back to keyword search (docmd-search not installed)');
+    } else {
+      if (showTui) tui.step('Building semantic search index', 'WAIT');
+
+      try {
+        // Dynamic import of optional peer dep.
+        // We first resolve the package path, then import it dynamically.
+        // This approach is safe and works with bundlers.
+        const docmdSearchPath = resolveDocmdSearch();
+        if (!docmdSearchPath) {
+          throw new Error(
+            'docmd-search not found. Install it with: npm install docmd-search'
+          );
+        }
+
+        // Import using the resolved path - this is safe and works with bundlers
+        const docmdSearch: any = await import(docmdSearchPath);
+
+        if (!docmdSearch?.indexDirectory) {
+          throw new Error(
+            'docmd-search found but indexDirectory not exported. ' +
+            'Please update to the latest version: npm install docmd-search@latest'
+          );
+        }
+
+        // Determine the docs source directory from config
+        const docsDir = path.resolve(config.root || process.cwd(), config.srcDir || config.src || 'docs');
+        const semanticOutDir = path.join(outputDir, '.docmd-search');
+
+        await docmdSearch.indexDirectory(
+          {
+            rootDir: docsDir,
+            outDir: semanticOutDir,
+            model: pluginOptions.model,           // undefined → uses global/default
+            include: pluginOptions.include,
+            exclude: pluginOptions.exclude,
+            chunkSize: pluginOptions.chunkSize,
+            chunkOverlap: pluginOptions.chunkOverlap,
+          },
+          (progress: any) => {
+            if (showTui && progress.message) {
+              // Update TUI step message on each phase change
+              tui.step(`Semantic index: ${progress.message}`, 'WAIT');
+            }
+          }
+        );
+
+        if (showTui) tui.step('Building semantic search index', 'DONE');
+        // Semantic index built — skip MiniSearch index below
+        return;
+      } catch (err: any) {
+        if (showTui) {
+          tui.step('Building semantic search index', 'FAIL');
+          tui.warn(`Semantic indexing failed: ${err.message} — falling back to keyword search`);
+        } else {
+          console.warn(`[plugin-search] Semantic indexing failed: ${err.message}`);
+        }
+        // Fall through to keyword search
+      }
+    }
+  }
+
+  // ── Keyword search path (default / fallback) ────────────────────────────
   if (showTui) tui.step('Generating search index', 'WAIT');
 
   // Try to offload to worker thread for better main-thread responsiveness
@@ -223,12 +385,20 @@ async function buildSearchIndexInline(config: any, pages: any[], outputDir: stri
 
 /**
  * Inject the search modal HTML.
+ *
+ * When options.semantic is true:
+ *   - Adds a data-semantic="true" attribute to the modal so the semantic
+ *     client JS knows to use the vector index instead of MiniSearch.
+ *   - The modal HTML is identical — only the client JS bundle changes.
+ *
  * Strings are passed as data attributes so the client JS can read them
  * regardless of locale - the engine merges plugin translations before render.
  */
-export function generateScripts(config: any) {
+export function generateScripts(config: any, options: any) {
   const isEnabled = config.optionsMenu ? config.optionsMenu.components.search !== false : config.search !== false;
   if (!isEnabled) return {};
+
+  const isSemantic = (options || {}).semantic === true;
 
   // Load strings for the active locale (available at render time)
   const localeId = config._activeLocale?.id || 'en';
@@ -239,9 +409,11 @@ export function generateScripts(config: any) {
 
   const escape = new MarkdownIt().utils.escapeHtml;
 
+  const semanticAttr = isSemantic ? ' data-semantic="true"' : '';
+
   const modalHtml = `
   <!-- Search Modal (Injected by @docmd/plugin-search) -->
-  <div id="docmd-search-modal" class="docmd-search-modal" style="display: none;"
+  <div id="docmd-search-modal" class="docmd-search-modal" style="display: none;"${semanticAttr}
        data-search-placeholder="${escape(strings.searchPlaceholder || 'Search documentation...')}"
        data-search-no-results="${escape(strings.searchNoResults || 'No results found.')}"
        data-search-error="${escape(strings.searchError || 'Failed to load search index.')}"
@@ -267,7 +439,26 @@ export function generateScripts(config: any) {
   return { bodyScriptsHtml: modalHtml };
 }
 
-export function getAssets() {
+export function getAssets(options: any) {
+  const isSemantic = (options || {}).semantic === true;
+  const docmdSearchPkgDir = isSemantic ? resolveDocmdSearch() : null;
+
+  if (docmdSearchPkgDir) {
+    // Semantic mode: load docmd-search client instead of MiniSearch
+    // The client bundle is in dist/client/index.js within the package
+    const clientBundle = path.join(docmdSearchPkgDir, 'dist', 'client', 'index.js');
+
+    return [
+      {
+        src: nativeFs.existsSync(clientBundle) ? clientBundle : path.join(__dirname, 'docmd-search.js'),
+        dest: 'assets/js/docmd-search.js',
+        type: 'js',
+        location: 'body',
+      },
+    ];
+  }
+
+  // Default: keyword search via MiniSearch
   return [
     { url: 'https://cdn.jsdelivr.net/npm/minisearch@7.2.0/dist/umd/index.min.js', type: 'js', location: 'body' },
     { src: path.join(__dirname, 'docmd-search.js'), dest: 'assets/js/docmd-search.js', type: 'js', location: 'body' }
