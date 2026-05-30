@@ -169,7 +169,11 @@ declare const MiniSearch: any;
                     }
 
                     await semanticClient.load(semanticIndexBase, (loaded: number, total: number) => {
-                        searchResults.innerHTML = `<div class="search-initial">Loading semantic index… (${loaded}/${total})</div>`;
+                        if (loaded === total) {
+                            searchResults.innerHTML = `<div class="search-initial">Semantic search ready</div>`;
+                        } else {
+                            searchResults.innerHTML = `<div class="search-initial">Loading semantic index… (${loaded}/${total})</div>`;
+                        }
                     });
 
                     // Load versions.json for filter chips (same UX as keyword mode)
@@ -351,10 +355,30 @@ declare const MiniSearch: any;
                     // chunk fields: file (path), heading (section title), text (content)
                     const snippet = getSnippet(chunk.text, query);
                     const rawFile = chunk.file || '/';
-                    const cleanId = rawFile.startsWith('/') ? rawFile.slice(1) : rawFile;
-                    const linkHref = `${ROOT_PATH}${cleanId}`.replace(/([^:])\/\/+/g, '$1/');
+                    
+                    // Convert markdown file path to HTML URL
+                    // en/index.md → en/ or en/index.html
+                    // en/getting-started/installation.md → en/getting-started/installation/ or .html
+                    let urlPath = rawFile.replace(/\.md$/, '').replace(/\/index$/, '/');
+                    if (!urlPath.endsWith('/')) urlPath += '/';
+                    
+                    // Add anchor link if heading exists
+                    let anchor = '';
+                    if (chunk.heading) {
+                        // Convert heading to slug (lowercase, replace spaces/special chars with hyphens)
+                        anchor = '#' + chunk.heading.toLowerCase()
+                            .replace(/[^a-z0-9\s-]/g, '')
+                            .replace(/\s+/g, '-')
+                            .replace(/-+/g, '-')
+                            .replace(/^-|-$/g, '');
+                    }
+                    
+                    const cleanId = urlPath.startsWith('/') ? urlPath.slice(1) : urlPath;
+                    const linkHref = `${ROOT_PATH}${cleanId}${anchor}`.replace(/([^:])\/\/+/g, '$1/');
+                    
+                    // Use heading as title if available, otherwise use file-based title
                     const title = chunk.heading
-                        ? `${escapeHtml(cleanFileToTitle(rawFile))} › ${escapeHtml(chunk.heading)}`
+                        ? escapeHtml(chunk.heading)
                         : escapeHtml(cleanFileToTitle(rawFile));
                     
                     // Determine which version this result belongs to for badge display
