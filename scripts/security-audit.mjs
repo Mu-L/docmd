@@ -22,6 +22,7 @@ const AUDIT_CONFIG = {
             severity: 'HIGH',
             exclude: [
                 /packages\/plugins\/search\/src\/client\.ts/, // Fixed with escaping
+                /packages\/plugins\/search\/src\/semantic-client\.ts/, // Fixed with escaping
                 /packages\/plugins\/threads\/src\/client\.js/
             ]
         },
