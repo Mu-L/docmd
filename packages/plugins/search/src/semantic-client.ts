@@ -62,15 +62,16 @@ export async function loadSemanticIndex(ctx: SemanticSearchContext): Promise<boo
     }
 
     await semanticClient.load(semanticIndexBase, (loaded: number, total: number) => {
-        // Ensure numbers are safe (prevent NaN or non-numeric injection)
         const safeLoaded = Math.max(0, parseInt(String(loaded), 10) || 0);
         const safeTotal = Math.max(0, parseInt(String(total), 10) || 0);
         
-        if (safeLoaded === safeTotal && safeTotal > 0) {
-            ctx.searchResults.innerHTML = `<div class="search-initial">Semantic search ready</div>`;
-        } else {
-            ctx.searchResults.innerHTML = `<div class="search-initial">Loading semantic index… (${safeLoaded}/${safeTotal})</div>`;
-        }
+        clearElement(ctx.searchResults);
+        const div = document.createElement('div');
+        div.className = 'search-initial';
+        div.textContent = (safeLoaded === safeTotal && safeTotal > 0)
+            ? 'Semantic search ready'
+            : `Loading semantic index… (${safeLoaded}/${safeTotal})`;
+        ctx.searchResults.appendChild(div);
     });
 
     // Load versions.json for filter chips
@@ -96,6 +97,20 @@ export async function loadSemanticIndex(ctx: SemanticSearchContext): Promise<boo
     return true;
 }
 
+/** Helper to resolve the correct version label for a given file path */
+function resolveFileVersion(file: string, semanticVersions: Array<{ label: string; pathPrefix: string }>): string | null {
+    // Sort prefixes by length in descending order to match longest prefix first
+    const sorted = [...semanticVersions].sort((a, b) => b.pathPrefix.length - a.pathPrefix.length);
+    for (const v of sorted) {
+        if (v.pathPrefix && file.startsWith(v.pathPrefix)) {
+            return v.label;
+        }
+    }
+    // Fallback to empty prefix (current version) if present
+    const current = semanticVersions.find(v => !v.pathPrefix);
+    return current ? current.label : null;
+}
+
 /**
  * Perform semantic search and render results.
  */
@@ -108,47 +123,37 @@ export function performSemanticSearch(query: string, ctx: SemanticSearchContext)
     let filteredResults = rawResults;
     if (ctx.activeVersionFilters.size > 0) {
         const semanticVersions = (ctx.globalVersionColors as any).__semanticVersions || [];
-        const labelToPrefixMap: Record<string, string> = {};
-        for (const v of semanticVersions) {
-            labelToPrefixMap[v.label] = v.pathPrefix;
-        }
         filteredResults = rawResults.filter((result: any) => {
             const chunk = result.chunk;
             const file = chunk.file || '';
-            for (const activeLabel of ctx.activeVersionFilters) {
-                const prefix = labelToPrefixMap[activeLabel];
-                if (prefix !== undefined && file.startsWith(prefix)) {
-                    return true;
-                }
-            }
-            return false;
+            const verLabel = resolveFileVersion(file, semanticVersions);
+            return verLabel && ctx.activeVersionFilters.has(verLabel);
         });
     }
 
     if (filteredResults.length === 0) {
-        // Escape strings even though they come from server-side data attributes
-        const message = ctx.activeVersionFilters.size > 0 
-            ? escapeHtml('No results match the selected filters.') 
-            : escapeHtml(ctx.strings.noResults);
-        ctx.searchResults.innerHTML = `<div class="search-no-results">${message}</div>`;
+        clearElement(ctx.searchResults);
+        const div = document.createElement('div');
+        div.className = 'search-no-results';
+        div.textContent = ctx.activeVersionFilters.size > 0 
+            ? 'No results match the selected filters.' 
+            : ctx.strings.noResults;
+        ctx.searchResults.appendChild(div);
         return;
     }
 
-    ctx.searchResults.innerHTML = filteredResults.map((result: any, index: number) => {
+    clearElement(ctx.searchResults);
+    
+    filteredResults.forEach((result: any, index: number) => {
         const chunk = result.chunk;
-        const snippet = getSnippet(chunk.text, query);
         const rawFile = chunk.file || '/';
 
         // Convert markdown file path to HTML URL
-        // en/index.md → / (for default locale) or en/ (for non-default)
-        // en/getting-started/installation.md → getting-started/installation/
         let urlPath = rawFile.replace(/\.md$/, '').replace(/\/index$/, '/');
         if (!urlPath.endsWith('/')) urlPath += '/';
 
         // Strip locale prefix if it matches a known locale (source structure has locale dirs)
-        // The output URL should not have locale prefix for default locale
         const firstSegment = urlPath.split('/')[0];
-        // For now, assume first segment is locale if it's 2-3 chars
         if (firstSegment.length >= 2 && firstSegment.length <= 3) {
             urlPath = urlPath.replace(/^[a-z]{2,3}\//, '');
         }
@@ -164,55 +169,56 @@ export function performSemanticSearch(query: string, ctx: SemanticSearchContext)
         }
 
         const cleanId = urlPath.startsWith('/') ? urlPath.slice(1) : urlPath;
-        const linkHref = escapeHtml(`${ctx.ROOT_PATH}${cleanId}${anchor}`.replace(/([^:])\/\/+/g, '$1/'));
+        const linkHref = `${ctx.ROOT_PATH}${cleanId}${anchor}`.replace(/([^:])\/\/+/g, '$1/');
 
         // Use heading as title if available, otherwise use file-based title
-        const title = chunk.heading
-            ? escapeHtml(chunk.heading)
-            : escapeHtml(cleanFileToTitle(rawFile));
+        const titleText = chunk.heading || cleanFileToTitle(rawFile);
 
-        // Determine which version this result belongs to for badge display
-        let versionLabel = '';
-        let versionColors = null;
+        // Build DOM elements safely
+        const link = document.createElement('a');
+        link.href = linkHref;
+        link.className = 'search-result-item';
+        link.dataset.index = String(index);
+
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'search-result-title';
+        titleDiv.textContent = titleText;
+
+        // Add version badge if applicable
         if (ctx.globalAllVersions.length > 0) {
             const semanticVersions = (ctx.globalVersionColors as any).__semanticVersions || [];
-            for (const v of semanticVersions) {
-                if (rawFile.startsWith(v.pathPrefix)) {
-                    versionLabel = v.label;
-                    versionColors = ctx.globalVersionColors[v.label];
-                    break;
+            const verLabel = resolveFileVersion(rawFile, semanticVersions);
+            if (verLabel) {
+                const vc = ctx.globalVersionColors[verLabel];
+                if (vc) {
+                    const badge = document.createElement('span');
+                    badge.className = 'search-result-version';
+                    badge.style.background = vc.bg;
+                    badge.style.color = vc.fg;
+                    badge.textContent = verLabel;
+                    titleDiv.appendChild(badge);
                 }
             }
         }
 
-        // Sanitize version colors to prevent CSS injection
-        const safeBg = versionColors?.bg?.replace(/[^a-z0-9(),\s%]/gi, '') || '';
-        const safeFg = versionColors?.fg?.replace(/[^a-z0-9(),\s%]/gi, '') || '';
-        
-        const versionBadge = versionLabel && versionColors
-            ? `<span class="search-result-version" style="background:${safeBg};color:${safeFg}">${escapeHtml(versionLabel)}</span>`
-            : '';
+        const previewDiv = document.createElement('div');
+        previewDiv.className = 'search-result-preview';
+        previewDiv.appendChild(buildSnippetFragment(chunk.text, query));
 
-        return `
-            <a href="${linkHref}" class="search-result-item" data-index="${escapeHtml(String(index))}">
-                <div class="search-result-title">${title}${versionBadge}</div>
-                <div class="search-result-preview">${snippet}</div>
-            </a>`;
-    }).join('');
+        link.appendChild(titleDiv);
+        link.appendChild(previewDiv);
+        ctx.searchResults.appendChild(link);
 
-    ctx.searchResults.querySelectorAll('.search-result-item').forEach((item, idx) => {
-        item.addEventListener('mouseenter', () => {
-            ctx.selectedIndex = idx;
+        link.addEventListener('mouseenter', () => {
+            ctx.selectedIndex = index;
             ctx.updateSelection(ctx.searchResults.querySelectorAll('.search-result-item') as NodeListOf<HTMLElement>);
         });
     });
 }
 
-function escapeHtml(str: any): string {
-    const s = typeof str === 'string' ? str : String(str || '');
-    return s.replace(/[&<>"']/g, m => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    })[m] as string);
+/** Remove all child nodes from an element. */
+function clearElement(el: HTMLElement): void {
+    while (el.firstChild) el.removeChild(el.firstChild);
 }
 
 function cleanFileToTitle(file: string): string {
@@ -221,8 +227,14 @@ function cleanFileToTitle(file: string): string {
     return segment.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-function getSnippet(text: string | undefined, query: string): string {
-    if (!text) return '';
+/**
+ * Build a DocumentFragment for a text snippet with <mark> highlights.
+ * No innerHTML — all text inserted via textContent, marks via createElement.
+ */
+function buildSnippetFragment(text: string | undefined, query: string): DocumentFragment {
+    const frag = document.createDocumentFragment();
+    if (!text) return frag;
+
     const terms = query.split(/\s+/).filter(t => t.length > 2);
     let bestIndex = -1;
     for (const term of terms) {
@@ -235,11 +247,26 @@ function getSnippet(text: string | undefined, query: string): string {
     if (start > 0) snippet = '...' + snippet;
     if (end < text.length) snippet += '...';
 
-    snippet = escapeHtml(snippet);
-
-    const safeTerms = terms.map(t => escapeHtml(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-    if (safeTerms) {
-        snippet = snippet.replace(new RegExp(`(${safeTerms})`, 'gi'), '<mark>$1</mark>');
+    if (terms.length === 0) {
+        frag.appendChild(document.createTextNode(snippet));
+        return frag;
     }
-    return snippet;
+
+    // Split snippet by matching terms and wrap matches in <mark>
+    const pattern = new RegExp(`(${terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
+    const parts = snippet.split(pattern);
+
+    for (const part of parts) {
+        if (pattern.test(part)) {
+            pattern.lastIndex = 0; // reset after test
+            const mark = document.createElement('mark');
+            mark.textContent = part;
+            frag.appendChild(mark);
+        } else {
+            pattern.lastIndex = 0;
+            frag.appendChild(document.createTextNode(part));
+        }
+    }
+
+    return frag;
 }

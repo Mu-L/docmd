@@ -1,6 +1,6 @@
 {
   "name": "@docmd/core",
-  "version": "0.8.4",
+  "version": "0.8.5",
   "description": "Build production-ready documentation from Markdown in seconds. No React, no bloat, just content.",
   "type": "module",
   "browser": false,
@@ -18,12 +18,12 @@
   ],
   "dependencies": {
     "@docmd/api": "workspace:*",
+    "@docmd/deployer": "workspace:*",
     "@docmd/live": "workspace:*",
     "@docmd/parser": "workspace:*",
     "@docmd/plugin-analytics": "workspace:*",
     "@docmd/plugin-git": "workspace:*",
     "@docmd/plugin-installer": "workspace:*",
-    "@docmd/deployer": "workspace:*",
     "@docmd/plugin-llms": "workspace:*",
     "@docmd/plugin-mermaid": "workspace:*",
     "@docmd/plugin-openapi": "workspace:*",
@@ -36,7 +36,7 @@
     "@docmd/ui": "workspace:*",
     "@docmd/utils": "workspace:*",
     "esbuild": "^0.28.0",
-    "ws": "^8.20.1"
+    "ws": "^8.21.0"
   },
   "keywords": [
     "docmd",
