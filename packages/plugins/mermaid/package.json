@@ -6,14 +6,18 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc && esbuild src/client.ts --bundle --outfile=dist/init-mermaid.js --format=esm --platform=browser --minify --external:https://*"
+    "build": "tsc && esbuild src/client.ts --bundle --outfile=dist/init-mermaid.js --format=esm --platform=browser --minify --external:https://*",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "files": [
     "dist"
   ],
   "devDependencies": {
     "@docmd/api": "workspace:*",
-    "esbuild": "^0.28.0"
+    "esbuild": "^0.28.0",
+    "happy-dom": "^20.9.0",
+    "vitest": "^4.1.7"
   },
   "keywords": [
     "docmd",
