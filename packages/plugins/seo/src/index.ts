@@ -12,13 +12,16 @@
  * --------------------------------------------------------------------
  */
 
+import path from 'path';
+import fs from 'fs/promises';
+import nativeFs from 'fs';
 import type { PluginDescriptor } from '@docmd/api';
 import { outputPathToPathname, sanitizeUrl } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'seo',
   version: '0.8.4',
-  capabilities: ['head']
+  capabilities: ['head', 'post-build']
 };
 
 /**
@@ -114,4 +117,47 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
   }
 
   return html;
+}
+
+/**
+ * Post-build hook to auto-generate robots.txt if missing.
+ * This ensures SEO best practices without overwriting existing customizations.
+ * 
+ * @param {Object} context
+ * @param {Object} context.config - The parsed project config
+ * @param {string} context.outputDir - Absolute path to output directory
+ * @param {Function} context.log - Logger function
+ */
+export async function onPostBuild({ config, outputDir, log }: any) {
+  const robotsPath = path.join(outputDir, 'robots.txt');
+  const seoConfig = config.plugins?.seo || {};
+  
+  // If robots.txt already exists, don't overwrite it
+  if (nativeFs.existsSync(robotsPath)) {
+    if (log) log('robots.txt already exists, skipping generation');
+    return;
+  }
+  
+  // Generate default robots.txt
+  const siteUrl = config.url ? config.url.replace(/\/$/, '') : '';
+  const sitemapUrl = siteUrl ? `${siteUrl}/sitemap.xml` : '';
+  
+  let robotsContent = 'User-agent: *\nAllow: /\n';
+  
+  // Add sitemap reference if site URL is configured
+  if (sitemapUrl) {
+    robotsContent += `\n# Sitemap\nSitemap: ${sitemapUrl}\n`;
+  }
+  
+  // Add AI bot restrictions if configured
+  if (seoConfig.aiBots === false) {
+    robotsContent += '\n# Block AI training bots\n';
+    const aiBots = ['GPTBot', 'ChatGPT-User', 'Google-Extended', 'CCBot', 'anthropic-ai', 'Omgilibot', 'Omgili', 'FacebookBot', 'Diffbot', 'Bytespider', 'ImagesiftBot', 'cohere-ai'];
+    aiBots.forEach(bot => {
+      robotsContent += `User-agent: ${bot}\nDisallow: /\n`;
+    });
+  }
+  
+  await fs.writeFile(robotsPath, robotsContent);
+  if (log) log('Generated robots.txt');
 }
