@@ -2,3 +2,4 @@ packages:
   - 'packages/*'
   - 'packages/plugins/*'
   - 'packages/engines/*'
+  - '../docmd-search'  # Include docmd-search from parent directory
