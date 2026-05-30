@@ -62,10 +62,14 @@ export async function loadSemanticIndex(ctx: SemanticSearchContext): Promise<boo
     }
 
     await semanticClient.load(semanticIndexBase, (loaded: number, total: number) => {
-        if (loaded === total) {
+        // Ensure numbers are safe (prevent NaN or non-numeric injection)
+        const safeLoaded = Math.max(0, parseInt(String(loaded), 10) || 0);
+        const safeTotal = Math.max(0, parseInt(String(total), 10) || 0);
+        
+        if (safeLoaded === safeTotal && safeTotal > 0) {
             ctx.searchResults.innerHTML = `<div class="search-initial">Semantic search ready</div>`;
         } else {
-            ctx.searchResults.innerHTML = `<div class="search-initial">Loading semantic index… (${loaded}/${total})</div>`;
+            ctx.searchResults.innerHTML = `<div class="search-initial">Loading semantic index… (${safeLoaded}/${safeTotal})</div>`;
         }
     });
 
@@ -122,7 +126,11 @@ export function performSemanticSearch(query: string, ctx: SemanticSearchContext)
     }
 
     if (filteredResults.length === 0) {
-        ctx.searchResults.innerHTML = `<div class="search-no-results">${ctx.activeVersionFilters.size > 0 ? 'No results match the selected filters.' : ctx.strings.noResults}</div>`;
+        // Escape strings even though they come from server-side data attributes
+        const message = ctx.activeVersionFilters.size > 0 
+            ? escapeHtml('No results match the selected filters.') 
+            : escapeHtml(ctx.strings.noResults);
+        ctx.searchResults.innerHTML = `<div class="search-no-results">${message}</div>`;
         return;
     }
 
@@ -156,7 +164,7 @@ export function performSemanticSearch(query: string, ctx: SemanticSearchContext)
         }
 
         const cleanId = urlPath.startsWith('/') ? urlPath.slice(1) : urlPath;
-        const linkHref = `${ctx.ROOT_PATH}${cleanId}${anchor}`.replace(/([^:])\/\/+/g, '$1/');
+        const linkHref = escapeHtml(`${ctx.ROOT_PATH}${cleanId}${anchor}`.replace(/([^:])\/\/+/g, '$1/'));
 
         // Use heading as title if available, otherwise use file-based title
         const title = chunk.heading
@@ -177,12 +185,16 @@ export function performSemanticSearch(query: string, ctx: SemanticSearchContext)
             }
         }
 
+        // Sanitize version colors to prevent CSS injection
+        const safeBg = versionColors?.bg?.replace(/[^a-z0-9(),\s%]/gi, '') || '';
+        const safeFg = versionColors?.fg?.replace(/[^a-z0-9(),\s%]/gi, '') || '';
+        
         const versionBadge = versionLabel && versionColors
-            ? `<span class="search-result-version" style="background:${versionColors.bg};color:${versionColors.fg}">${escapeHtml(versionLabel)}</span>`
+            ? `<span class="search-result-version" style="background:${safeBg};color:${safeFg}">${escapeHtml(versionLabel)}</span>`
             : '';
 
         return `
-            <a href="${linkHref}" class="search-result-item" data-index="${index}">
+            <a href="${linkHref}" class="search-result-item" data-index="${escapeHtml(String(index))}">
                 <div class="search-result-title">${title}${versionBadge}</div>
                 <div class="search-result-preview">${snippet}</div>
             </a>`;
