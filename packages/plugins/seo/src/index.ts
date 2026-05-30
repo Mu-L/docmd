@@ -44,7 +44,9 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
   }
 
   // 1.5 AI Bots Control
-  const aiBots = seo.aiBots ?? globalSeo.aiBots;
+  // By default (aiBots: true), AI bots are allowed to index content
+  // Set aiBots: false to block AI training bots
+  const aiBots = seo.aiBots ?? globalSeo.aiBots ?? true; // Default: true (allow)
   if (aiBots === false) {
     const bots = ['GPTBot', 'ChatGPT-User', 'Google-Extended', 'CCBot', 'anthropic-ai', 'Omgilibot', 'Omgili', 'FacebookBot', 'Diffbot', 'Bytespider', 'ImagesiftBot', 'cohere-ai'];
     bots.forEach(bot => {
@@ -149,7 +151,7 @@ export async function onPostBuild({ config, outputDir, log }: any) {
     robotsContent += `\n# Sitemap\nSitemap: ${sitemapUrl}\n`;
   }
   
-  // Add AI bot restrictions if configured
+  // Add AI bot restrictions if configured (default: true = allow, false = block)
   if (seoConfig.aiBots === false) {
     robotsContent += '\n# Block AI training bots\n';
     const aiBots = ['GPTBot', 'ChatGPT-User', 'Google-Extended', 'CCBot', 'anthropic-ai', 'Omgilibot', 'Omgili', 'FacebookBot', 'Diffbot', 'Bytespider', 'ImagesiftBot', 'cohere-ai'];
