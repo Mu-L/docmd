@@ -86,7 +86,36 @@ declare const MiniSearch: any;
         const baseUrl = new URL(siteBase, window.location.href).href;
         const searchIndexUrl = baseUrl + localePrefix + 'search-index.json';
 
-        const emptyStateHtml = `<div class="search-initial">${strings.initial}</div>`;
+        function escapeHtml(str: any): string {
+            const s = typeof str === 'string' ? str : String(str || '');
+            return s.replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[m] as string);
+        }
+
+        function getSnippet(text: string | undefined, query: string): string {
+            if (!text) return '';
+            const terms = query.split(/\s+/).filter(t => t.length > 2);
+            let bestIndex = -1;
+            for (const term of terms) {
+                const idx = text.toLowerCase().indexOf(term.toLowerCase());
+                if (idx >= 0) { bestIndex = idx; break; }
+            }
+            const start = Math.max(0, bestIndex - 60);
+            const end = Math.min(text.length, bestIndex + 60);
+            let snippet = text.substring(start, end);
+            if (start > 0) snippet = '...' + snippet;
+            if (end < text.length) snippet += '...';
+
+            snippet = escapeHtml(snippet);
+
+            // Then apply highlighting marks (escape terms to match escaped snippet)
+            const safeTerms = terms.map(t => escapeHtml(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+            if (safeTerms) {
+                snippet = snippet.replace(new RegExp(`(${safeTerms})`, 'gi'), '<mark>$1</mark>');
+            }
+            return snippet;
+        }
 
         // 1. Open/Close Logic
         function openSearch() {
@@ -95,7 +124,8 @@ declare const MiniSearch: any;
             setTimeout(() => searchInput.focus(), 50);
 
             if (!searchInput.value.trim()) {
-                searchResults.innerHTML = emptyStateHtml;
+                const sanitized = `<div class="search-initial">${escapeHtml(strings.initial)}</div>`;
+                searchResults.innerHTML = sanitized;
                 selectedIndex = -1;
             }
             if (!isIndexLoaded) loadIndex();
@@ -208,7 +238,8 @@ declare const MiniSearch: any;
                 isIndexLoaded = true;
                 if (searchInput.value.trim()) searchInput.dispatchEvent(new Event('input'));
             } catch {
-                searchResults.innerHTML = `<div class="search-error">${strings.error}</div>`;
+                const sanitized = `<div class="search-error">${escapeHtml(strings.error)}</div>`;
+                searchResults.innerHTML = sanitized;
             }
         }
 
@@ -223,16 +254,17 @@ declare const MiniSearch: any;
                 searchResults.parentNode?.insertBefore(filterContainer, searchResults);
             }
 
-            filterContainer.innerHTML = globalAllVersions.map(v => {
+            const sanitized = globalAllVersions.map(v => {
                 const vc = globalVersionColors[v];
                 const isActive = activeVersionFilters.has(v);
                 const icon = isActive 
                     ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>` 
                     : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>`;
-                return `<span class="search-filter-tag ${isActive ? 'active' : ''}" data-version="${v}" style="background:${vc.bg};color:${vc.fg};cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:12px;font-size:11px;border: 1px solid ${isActive ? vc.fg : 'transparent'}; opacity: ${activeVersionFilters.size > 0 && !isActive ? '0.6' : '1'}; transition: all 0.2s;">
-                    ${icon} ${v}
+                return `<span class="search-filter-tag ${isActive ? 'active' : ''}" data-version="${escapeHtml(v)}" style="background:${vc.bg};color:${vc.fg};cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:12px;font-size:11px;border: 1px solid ${isActive ? vc.fg : 'transparent'}; opacity: ${activeVersionFilters.size > 0 && !isActive ? '0.6' : '1'}; transition: all 0.2s;">
+                    ${icon} ${escapeHtml(v)}
                 </span>`;
             }).join('');
+            filterContainer.innerHTML = sanitized;
 
             filterContainer.querySelectorAll('.search-filter-tag').forEach(tag => {
                 tag.addEventListener('click', (e) => {
@@ -247,50 +279,12 @@ declare const MiniSearch: any;
             });
         }
 
-        function escapeHtml(str: any): string {
-            const s = typeof str === 'string' ? str : String(str || '');
-            return s.replace(/[&<>"']/g, m => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-            })[m] as string);
-        }
-
-        /** Convert a file path like "getting-started/index.md" to a readable title. */
-        function cleanFileToTitle(file: string): string {
-            // Take the last meaningful path segment (ignore index)
-            const parts = file.replace(/\\/g, '/').replace(/\.md$/, '').split('/').filter(Boolean);
-            const segment = (parts[parts.length - 1] === 'index' ? parts[parts.length - 2] : parts[parts.length - 1]) || file;
-            return segment.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        }
-
-        function getSnippet(text: string | undefined, query: string): string {
-            if (!text) return '';
-            const terms = query.split(/\s+/).filter(t => t.length > 2);
-            let bestIndex = -1;
-            for (const term of terms) {
-                const idx = text.toLowerCase().indexOf(term.toLowerCase());
-                if (idx >= 0) { bestIndex = idx; break; }
-            }
-            const start = Math.max(0, bestIndex - 60);
-            const end = Math.min(text.length, bestIndex + 60);
-            let snippet = text.substring(start, end);
-            if (start > 0) snippet = '...' + snippet;
-            if (end < text.length) snippet += '...';
-
-            snippet = escapeHtml(snippet);
-
-            // Then apply highlighting marks (escape terms to match escaped snippet)
-            const safeTerms = terms.map(t => escapeHtml(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-            if (safeTerms) {
-                snippet = snippet.replace(new RegExp(`(${safeTerms})`, 'gi'), '<mark>$1</mark>');
-            }
-            return snippet;
-        }
-
         searchInput.addEventListener('input', (e) => {
             const query = (e.target as HTMLInputElement).value.trim();
             selectedIndex = -1;
             if (!query) { 
-                searchResults.innerHTML = emptyStateHtml; 
+                const sanitized = `<div class="search-initial">${escapeHtml(strings.initial)}</div>`;
+                searchResults.innerHTML = sanitized; 
                 return; 
             }
             if (!isIndexLoaded) return;
@@ -320,11 +314,12 @@ declare const MiniSearch: any;
             }
 
             if (results.length === 0) {
-                searchResults.innerHTML = `<div class="search-no-results">${activeVersionFilters.size > 0 ? 'No results match the selected filters.' : strings.noResults}</div>`;
+                const sanitized = `<div class="search-no-results">${activeVersionFilters.size > 0 ? 'No results match the selected filters.' : escapeHtml(strings.noResults)}</div>`;
+                searchResults.innerHTML = sanitized;
                 return;
             }
 
-            searchResults.innerHTML = results.slice(0, 10).map((result: any, index: number) => {
+            const sanitized = results.slice(0, 10).map((result: any, index: number) => {
                 const snippet = getSnippet(result.text, query);
                 // Strip leading slash to avoid double-slash when concatenating with ROOT_PATH
                 const cleanId = result.id.startsWith('/') ? result.id.slice(1) : result.id;
@@ -340,6 +335,7 @@ declare const MiniSearch: any;
                         <div class="search-result-preview">${snippet}</div>
                     </a>`;
             }).join('');
+            searchResults.innerHTML = sanitized;
 
             searchResults.querySelectorAll('.search-result-item').forEach((item, idx) => {
                 item.addEventListener('mouseenter', () => { selectedIndex = idx; updateSelection(searchResults.querySelectorAll('.search-result-item') as NodeListOf<HTMLElement>); });

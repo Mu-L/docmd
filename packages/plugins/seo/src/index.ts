@@ -20,7 +20,7 @@ import { outputPathToPathname, sanitizeUrl } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'seo',
-  version: '0.8.4',
+  version: '0.8.5',
   capabilities: ['head', 'post-build']
 };
 

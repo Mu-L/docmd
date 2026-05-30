@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-installer",
-  "version": "0.8.4",
+  "version": "0.8.5",
   "description": "Installer utility to add and remove plugins for docmd.",
   "type": "module",
   "main": "dist/index.js",
@@ -16,7 +16,7 @@
     "@docmd/api": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^25.9.0"
+    "@types/node": "^25.9.1"
   },
   "keywords": [
     "docmd",

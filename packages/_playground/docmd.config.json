@@ -42,7 +42,7 @@
 
   "plugins": {
     "search": {
-      "semantic": true
+      "semantic": false
     },
     "seo": {},
     "sitemap": {},
