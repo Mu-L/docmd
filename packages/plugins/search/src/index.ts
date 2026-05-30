@@ -28,7 +28,7 @@ const require = createRequire(import.meta.url);
 
 export const plugin: PluginDescriptor = {
   name: 'search',
-  version: '0.8.4',
+  version: '0.8.5',
   capabilities: ['post-build', 'head', 'body', 'assets', 'translations']
 };
 
@@ -73,9 +73,9 @@ async function ensureDocmdSearch(tui: any, quiet: boolean): Promise<boolean> {
 
   if (!quiet && tui) {
     tui.warn(
-      '  semantic search requires "docmd-search" — install it with:\n' +
+      '  Semantic search requires "docmd-search" — install it with:\n' +
       '    npm install docmd-search\n' +
-      '  or disable it: plugins: { search: { semantic: false } }'
+      '    or disable it: plugins: { search: { semantic: false } }'
     );
   } else {
     console.warn(
@@ -175,7 +175,7 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
     const ready = await ensureDocmdSearch(tui, !showTui);
     if (!ready) {
       // Graceful fallback: build keyword index instead
-      if (showTui) tui.warn('Falling back to keyword search (docmd-search not installed)');
+      if (showTui) tui.warn('  Falling back to keyword search (docmd-search not installed)');
     } else {
       if (showTui) tui.step('Building semantic search index', 'WAIT');
 
@@ -441,21 +441,43 @@ export function generateScripts(config: any, options: any) {
 
 export function getAssets(options: any) {
   const isSemantic = (options || {}).semantic === true;
-  const docmdSearchPkgDir = isSemantic ? resolveDocmdSearch() : null;
 
-  if (docmdSearchPkgDir) {
-    // Semantic mode: load docmd-search client instead of MiniSearch
-    // The client bundle is in dist/client/index.js within the package
-    const clientBundle = path.join(docmdSearchPkgDir, 'dist', 'client', 'index.js');
+  if (isSemantic) {
+    // Semantic mode: serve the docmd-search client bundle at a known path
+    // so the search client can dynamically import it at runtime.
+    // Resolve the actual file path (not a file:// URL) from docmd-search package.
+    let semanticClientSrc: string | null = null;
+    try {
+      const searchPaths = [
+        process.cwd(),
+        __dirname,
+        path.resolve(__dirname, '../../..'),
+        path.resolve(__dirname, '../../../..'),
+      ];
+      const pkgPath = require.resolve('docmd-search/package.json', { paths: searchPaths });
+      const pkgDir = path.dirname(pkgPath);
+      const clientEntry = path.join(pkgDir, 'dist', 'client', 'index.js');
+      if (nativeFs.existsSync(clientEntry)) semanticClientSrc = clientEntry;
+    } catch { /* not installed */ }
 
-    return [
-      {
-        src: nativeFs.existsSync(clientBundle) ? clientBundle : path.join(__dirname, 'docmd-search.js'),
-        dest: 'assets/js/docmd-search.js',
-        type: 'js',
-        location: 'body',
-      },
+    const assets: any[] = [
+      // Always include MiniSearch + keyword client as fallback
+      { url: 'https://cdn.jsdelivr.net/npm/minisearch@7.2.0/dist/umd/index.min.js', type: 'js', location: 'body' },
+      { src: path.join(__dirname, 'docmd-search.js'), dest: 'assets/js/docmd-search.js', type: 'js', location: 'body' },
     ];
+
+    if (semanticClientSrc) {
+      // Serve the docmd-search client at a well-known root path
+      // The search client.ts fetches it via import('.docmd-search-client.js')
+      assets.push({
+        src: semanticClientSrc,
+        dest: '.docmd-search-client.js',
+        type: 'js',
+        location: 'none', // not injected into <head>/<body> — loaded on demand
+      });
+    }
+
+    return assets;
   }
 
   // Default: keyword search via MiniSearch

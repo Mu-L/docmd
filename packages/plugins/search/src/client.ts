@@ -145,7 +145,70 @@ declare const MiniSearch: any;
 
         // 3. Index Loading - fetches locale-specific index
         async function loadIndex() {
+            const isSemantic = searchModal.dataset.semantic === 'true';
+
             try {
+                if (isSemantic) {
+                    // ── Semantic search path ──────────────────────────────────
+                    // Load the docmd-search client bundle and use the vector index
+                    // from .docmd-search/ in the site root.
+                    const semanticIndexBase = new URL('.docmd-search/', new URL(siteBase, window.location.href)).href;
+
+                    // Dynamically import the docmd-search client from the CDN bundle
+                    // injected by the plugin (served as /.docmd-search-client.js)
+                    const clientUrl = new URL('.docmd-search-client.js', new URL(siteBase, window.location.href)).href;
+                    let semanticClient: any;
+                    try {
+                        semanticClient = await import(/* @vite-ignore */ clientUrl);
+                    } catch {
+                        throw new Error('semantic-client-missing');
+                    }
+
+                    if (!semanticClient?.load || !semanticClient?.search) {
+                        throw new Error('semantic-client-invalid');
+                    }
+
+                    await semanticClient.load(semanticIndexBase, (loaded: number, total: number) => {
+                        searchResults.innerHTML = `<div class="search-initial">Loading semantic index… (${loaded}/${total})</div>`;
+                    });
+
+                    isIndexLoaded = true;
+                    if (searchInput.value.trim()) searchInput.dispatchEvent(new Event('input'));
+
+                    // Override the input handler for semantic search
+                    searchInput.addEventListener('input', async (e) => {
+                        const query = (e.target as HTMLInputElement).value.trim();
+                        selectedIndex = -1;
+                        if (!query) { searchResults.innerHTML = emptyStateHtml; return; }
+                        if (!isIndexLoaded) return;
+
+                        const results = semanticClient.search(query, 10);
+                        if (results.length === 0) {
+                            searchResults.innerHTML = `<div class="search-no-results">${strings.noResults}</div>`;
+                            return;
+                        }
+
+                        searchResults.innerHTML = results.map((result: any, index: number) => {
+                            const chunk = result.chunk;
+                            const snippet = getSnippet(chunk.text, query);
+                            const cleanId = (chunk.url || '/').startsWith('/') ? (chunk.url || '/').slice(1) : (chunk.url || '/');
+                            const linkHref = `${ROOT_PATH}${cleanId}`.replace(/([^:])\/\/+/g, '$1/');
+                            return `
+                                <a href="${linkHref}" class="search-result-item" data-index="${index}">
+                                    <div class="search-result-title">${escapeHtml(chunk.title || chunk.url || '')}</div>
+                                    <div class="search-result-preview">${snippet}</div>
+                                </a>`;
+                        }).join('');
+
+                        searchResults.querySelectorAll('.search-result-item').forEach((item, idx) => {
+                            item.addEventListener('mouseenter', () => { selectedIndex = idx; updateSelection(searchResults.querySelectorAll('.search-result-item') as NodeListOf<HTMLElement>); });
+                        });
+                    }, { once: false });
+
+                    return; // Semantic path handled — skip MiniSearch below
+                }
+
+                // ── Keyword search path (default) ─────────────────────────────
                 const response = await fetch(searchIndexUrl);
                 if (response.headers.get("content-type")?.includes("text/html")) throw new Error("Invalid content type");
                 if (!response.ok) throw new Error(String(response.status));
