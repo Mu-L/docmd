@@ -20,6 +20,9 @@ importers:
       chalk:
         specifier: 4.1.2
         version: 4.1.2
+      docmd-search:
+        specifier: 0.1.0-alpha.0
+        version: 0.1.0-alpha.0(@huggingface/transformers@4.2.0)(onnxruntime-node@1.26.0)
       esbuild:
         specifier: ^0.28.0
         version: 0.28.0
