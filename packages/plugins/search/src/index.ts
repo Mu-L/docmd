@@ -140,6 +140,17 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
 
   // ── Semantic search path ────────────────────────────────────────────────
   if (pluginOptions.semantic === true) {
+    // Strip sourcemap comment from the copied .docmd-search-client.js to avoid
+    // a 404 for the non-existent .js.map file in the browser.
+    const clientDestPath = path.join(outputDir, '.docmd-search-client.js');
+    if (nativeFs.existsSync(clientDestPath)) {
+      try {
+        const src = await fs.readFile(clientDestPath, 'utf8');
+        const stripped = src.replace(/\n?\/\/# sourceMappingURL=\S+\s*$/, '');
+        if (stripped !== src) await fs.writeFile(clientDestPath, stripped, 'utf8');
+      } catch { /* non-critical */ }
+    }
+
     // Check if a pre-built index exists (e.g. docmd-search --ui mode)
     // If indexDir is provided and has a valid manifest, skip indexing entirely.
     if (pluginOptions.indexDir) {
@@ -203,7 +214,126 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
         // Determine the docs source directory from config
         const docsDir = path.resolve(config.root || process.cwd(), config.srcDir || config.src || 'docs');
         const semanticOutDir = path.join(outputDir, '.docmd-search');
+        const hasVersioning = config.versions?.all?.length > 0;
 
+        if (hasVersioning) {
+          // ── Multi-version semantic indexing ──────────────────────────────
+          // Index each version's source dir separately into a temp subdir,
+          // then merge all batches into one unified index with file paths
+          // prefixed by the version's output URL prefix.
+          const versions: Array<{ id: string; label: string; dir: string; outputPrefix: string }> = [];
+          const currentVersionId = config.versions.current;
+          const CWD = config.root || process.cwd();
+
+          for (const v of config.versions.all) {
+            const outputPrefix = v.id === currentVersionId ? '' : v.id + '/';
+            versions.push({
+              id: v.id,
+              label: v.label || v.id,
+              dir: path.resolve(CWD, v.dir),
+              outputPrefix,
+            });
+          }
+
+          if (showTui) tui.step('Building semantic search index (multi-version)', 'WAIT');
+
+          const tmpBase = path.join(semanticOutDir, '_tmp_versions');
+          await fs.mkdir(tmpBase, { recursive: true });
+
+          let mergedDimensions = 384; // default, overwritten from first batch
+          let mergedBatchId = 0;
+          const mergedBatchesDir = path.join(semanticOutDir, 'batches');
+          await fs.mkdir(mergedBatchesDir, { recursive: true });
+
+          // Track version-to-pathPrefix mapping for the client filter
+          const versionMap: Array<{ label: string; pathPrefix: string }> = [];
+
+          for (const ver of versions) {
+            const tmpOut = path.join(tmpBase, ver.id);
+            try {
+              await docmdSearch.indexDirectory(
+                {
+                  rootDir: ver.dir,
+                  outDir: tmpOut,
+                  model: pluginOptions.model,
+                  include: pluginOptions.include,
+                  exclude: pluginOptions.exclude,
+                  chunkSize: pluginOptions.chunkSize,
+                  chunkOverlap: pluginOptions.chunkOverlap,
+                },
+                (progress: any) => {
+                  if (showTui && progress.message) {
+                    tui.step(`Semantic index [${ver.label}]: ${progress.message}`, 'WAIT');
+                  }
+                }
+              );
+            } catch (verErr: any) {
+              if (showTui) tui.warn(`  Skipping version ${ver.label}: ${verErr.message}`);
+              continue;
+            }
+
+            // Read all batches from this version's tmp index and re-save with prefixed file paths
+            const tmpBatchesDir = path.join(tmpOut, 'batches');
+            if (nativeFs.existsSync(tmpBatchesDir)) {
+              const batchFiles = nativeFs.readdirSync(tmpBatchesDir)
+                .filter(f => f.endsWith('.json'))
+                .sort();
+
+              for (const batchFile of batchFiles) {
+                const batchJson = JSON.parse(await fs.readFile(path.join(tmpBatchesDir, batchFile), 'utf8'));
+                const binPath = path.join(tmpBatchesDir, batchFile.replace('.json', '.bin'));
+
+                // Prefix each chunk's file path with the version output prefix
+                if (ver.outputPrefix) {
+                  batchJson.chunks = batchJson.chunks.map((chunk: any) => ({
+                    ...chunk,
+                    file: ver.outputPrefix + chunk.file,
+                  }));
+                }
+
+                mergedDimensions = batchJson.dimensions || mergedDimensions;
+                const paddedId = String(mergedBatchId).padStart(3, '0');
+                batchJson.batchId = mergedBatchId;
+
+                await fs.writeFile(
+                  path.join(mergedBatchesDir, `${paddedId}.json`),
+                  JSON.stringify(batchJson)
+                );
+                if (nativeFs.existsSync(binPath)) {
+                  await fs.copyFile(binPath, path.join(mergedBatchesDir, `${paddedId}.bin`));
+                }
+                mergedBatchId++;
+              }
+            }
+
+            // Always add this version to the filter map (even if it has no chunks)
+            versionMap.push({ label: ver.label, pathPrefix: ver.outputPrefix });
+          }
+
+          // Write unified manifest
+          const manifest = {
+            version: 1,
+            model: pluginOptions.model || 'Xenova/all-MiniLM-L6-v2',
+            dimensions: mergedDimensions,
+            status: 'complete',
+            batchCount: mergedBatchId,
+          };
+          await fs.writeFile(path.join(semanticOutDir, 'manifest.json'), JSON.stringify(manifest));
+
+          // Write versions.json for the client filter UI
+          await fs.writeFile(
+            path.join(semanticOutDir, 'versions.json'),
+            JSON.stringify(versionMap)
+          );
+
+          // Clean up temp dirs
+          try { await fs.rm(tmpBase, { recursive: true, force: true }); } catch { /* ok */ }
+
+          if (showTui) tui.step('Building semantic search index (multi-version)', 'DONE');
+          return;
+        }
+
+        // ── Single-version semantic indexing ─────────────────────────────
         await docmdSearch.indexDirectory(
           {
             rootDir: docsDir,
@@ -221,6 +351,9 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
             }
           }
         );
+
+        // No versioning — write an empty versions.json so the client knows
+        await fs.writeFile(path.join(semanticOutDir, 'versions.json'), '[]');
 
         if (showTui) tui.step('Building semantic search index', 'DONE');
         // Semantic index built — skip MiniSearch index below
