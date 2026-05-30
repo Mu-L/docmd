@@ -12,6 +12,8 @@
  * --------------------------------------------------------------------
  */
 
+import * as SemanticSearch from './semantic-client.js';
+
 export {};
 
 declare global {
@@ -26,7 +28,7 @@ declare const MiniSearch: any;
 
 (function () {
     let miniSearch: any = null;
-    let semanticClient: any = null;   // docmd-search client (set when semantic mode)
+    let isSemanticMode = false;  // Track if semantic search is active
     let isIndexLoaded = false;
     let selectedIndex = -1;
     const activeVersionFilters = new Set<string>();
@@ -151,54 +153,29 @@ declare const MiniSearch: any;
             try {
                 if (isSemantic) {
                     // ── Semantic search path ──────────────────────────────────
-                    // Load the docmd-search client bundle and use the vector index
-                    // from .docmd-search/ in the site root.
-                    const semanticIndexBase = new URL('.docmd-search/', new URL(siteBase, window.location.href)).href;
+                    const ctx: SemanticSearch.SemanticSearchContext = {
+                        siteBase,
+                        ROOT_PATH,
+                        searchResults,
+                        strings,
+                        activeVersionFilters,
+                        globalAllVersions,
+                        globalVersionColors,
+                        selectedIndex,
+                        updateSelection
+                    };
 
-                    // Dynamically import the docmd-search client from the bundle
-                    // injected by the plugin (served as /.docmd-search-client.js)
-                    const clientUrl = new URL('.docmd-search-client.js', new URL(siteBase, window.location.href)).href;
-                    try {
-                        semanticClient = await import(/* @vite-ignore */ clientUrl);
-                    } catch {
-                        throw new Error('semantic-client-missing');
+                    await SemanticSearch.loadSemanticIndex(ctx);
+                    
+                    // Render version filters if versions were loaded
+                    if (globalAllVersions.length > 0) {
+                        renderGlobalFilters();
                     }
 
-                    if (!semanticClient?.load || !semanticClient?.search) {
-                        throw new Error('semantic-client-invalid');
-                    }
-
-                    await semanticClient.load(semanticIndexBase, (loaded: number, total: number) => {
-                        if (loaded === total) {
-                            searchResults.innerHTML = `<div class="search-initial">Semantic search ready</div>`;
-                        } else {
-                            searchResults.innerHTML = `<div class="search-initial">Loading semantic index… (${loaded}/${total})</div>`;
-                        }
-                    });
-
-                    // Load versions.json for filter chips (same UX as keyword mode)
-                    try {
-                        const versionsUrl = new URL('.docmd-search/versions.json', new URL(siteBase, window.location.href)).href;
-                        const vRes = await fetch(versionsUrl);
-                        if (vRes.ok) {
-                            const vData: Array<{ label: string; pathPrefix: string }> = await vRes.json();
-                            if (Array.isArray(vData) && vData.length > 0) {
-                                globalAllVersions = vData.map(v => v.label);
-                                // Store pathPrefix alongside label for filtering
-                                (globalVersionColors as any).__semanticVersions = vData;
-                                const huePresets = [210, 150, 30, 330, 270, 60, 180, 0];
-                                globalAllVersions.forEach((label, i) => {
-                                    const hue = huePresets[i % huePresets.length];
-                                    globalVersionColors[label] = { bg: `hsl(${hue}, 55%, 92%)`, fg: `hsl(${hue}, 60%, 35%)` };
-                                });
-                                renderGlobalFilters();
-                            }
-                        }
-                    } catch { /* version filters are optional */ }
-
+                    isSemanticMode = true;
                     isIndexLoaded = true;
                     if (searchInput.value.trim()) searchInput.dispatchEvent(new Event('input'));
-                    return; // Semantic path handled — input handler below covers both modes
+                    return;
                 }
 
                 // ── Keyword search path (default) ─────────────────────────────
@@ -319,95 +296,19 @@ declare const MiniSearch: any;
             if (!isIndexLoaded) return;
 
             // ── Semantic mode ────────────────────────────────────────────────
-            if (semanticClient) {
-                const rawResults = semanticClient.search(query, 10);
-                
-                // Filter by active version filters (if any)
-                let filteredResults = rawResults;
-                if (activeVersionFilters.size > 0) {
-                    const semanticVersions = (globalVersionColors as any).__semanticVersions || [];
-                    // Build a map of label → pathPrefix
-                    const labelToPrefixMap: Record<string, string> = {};
-                    for (const v of semanticVersions) {
-                        labelToPrefixMap[v.label] = v.pathPrefix;
-                    }
-                    // Filter results where chunk.file starts with one of the active version prefixes
-                    filteredResults = rawResults.filter((result: any) => {
-                        const chunk = result.chunk;
-                        const file = chunk.file || '';
-                        for (const activeLabel of activeVersionFilters) {
-                            const prefix = labelToPrefixMap[activeLabel];
-                            if (prefix !== undefined && file.startsWith(prefix)) {
-                                return true;
-                            }
-                        }
-                        return false;
-                    });
-                }
-
-                if (filteredResults.length === 0) {
-                    searchResults.innerHTML = `<div class="search-no-results">${activeVersionFilters.size > 0 ? 'No results match the selected filters.' : strings.noResults}</div>`;
-                    return;
-                }
-                
-                searchResults.innerHTML = filteredResults.map((result: any, index: number) => {
-                    const chunk = result.chunk;
-                    // chunk fields: file (path), heading (section title), text (content)
-                    const snippet = getSnippet(chunk.text, query);
-                    const rawFile = chunk.file || '/';
-                    
-                    // Convert markdown file path to HTML URL
-                    // en/index.md → en/ or en/index.html
-                    // en/getting-started/installation.md → en/getting-started/installation/ or .html
-                    let urlPath = rawFile.replace(/\.md$/, '').replace(/\/index$/, '/');
-                    if (!urlPath.endsWith('/')) urlPath += '/';
-                    
-                    // Add anchor link if heading exists
-                    let anchor = '';
-                    if (chunk.heading) {
-                        // Convert heading to slug (lowercase, replace spaces/special chars with hyphens)
-                        anchor = '#' + chunk.heading.toLowerCase()
-                            .replace(/[^a-z0-9\s-]/g, '')
-                            .replace(/\s+/g, '-')
-                            .replace(/-+/g, '-')
-                            .replace(/^-|-$/g, '');
-                    }
-                    
-                    const cleanId = urlPath.startsWith('/') ? urlPath.slice(1) : urlPath;
-                    const linkHref = `${ROOT_PATH}${cleanId}${anchor}`.replace(/([^:])\/\/+/g, '$1/');
-                    
-                    // Use heading as title if available, otherwise use file-based title
-                    const title = chunk.heading
-                        ? escapeHtml(chunk.heading)
-                        : escapeHtml(cleanFileToTitle(rawFile));
-                    
-                    // Determine which version this result belongs to for badge display
-                    let versionLabel = '';
-                    let versionColors = null;
-                    if (globalAllVersions.length > 0) {
-                        const semanticVersions = (globalVersionColors as any).__semanticVersions || [];
-                        for (const v of semanticVersions) {
-                            if (rawFile.startsWith(v.pathPrefix)) {
-                                versionLabel = v.label;
-                                versionColors = globalVersionColors[v.label];
-                                break;
-                            }
-                        }
-                    }
-                    
-                    const versionBadge = versionLabel && versionColors
-                        ? `<span class="search-result-version" style="background:${versionColors.bg};color:${versionColors.fg}">${escapeHtml(versionLabel)}</span>`
-                        : '';
-                    
-                    return `
-                        <a href="${linkHref}" class="search-result-item" data-index="${index}">
-                            <div class="search-result-title">${title}${versionBadge}</div>
-                            <div class="search-result-preview">${snippet}</div>
-                        </a>`;
-                }).join('');
-                searchResults.querySelectorAll('.search-result-item').forEach((item, idx) => {
-                    item.addEventListener('mouseenter', () => { selectedIndex = idx; updateSelection(searchResults.querySelectorAll('.search-result-item') as NodeListOf<HTMLElement>); });
-                });
+            if (isSemanticMode) {
+                const ctx: SemanticSearch.SemanticSearchContext = {
+                    siteBase,
+                    ROOT_PATH,
+                    searchResults,
+                    strings,
+                    activeVersionFilters,
+                    globalAllVersions,
+                    globalVersionColors,
+                    selectedIndex,
+                    updateSelection
+                };
+                SemanticSearch.performSemanticSearch(query, ctx);
                 return;
             }
 
