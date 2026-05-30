@@ -14,6 +14,7 @@
 
 // @ts-expect-error Deno/Browser compatible CDN import that TypeScript cannot natively resolve
 import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+import { fixSvgNamespaces } from './svg-utils.js';
 
 (async function () {
   'use strict';
@@ -62,7 +63,10 @@ import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.mi
         const parser = new DOMParser();
         const wrapper = document.createElement('div');
         wrapper.className = 'mermaid-wrapper';
-        const svgDoc = parser.parseFromString(svg, 'image/svg+xml');
+        // Fix missing xmlns:xlink declaration — mermaid.render() omits it (unlike
+        // mermaid.run()) causing DOMParser to return <parsererror> for diagrams
+        // that use xlink:href, most notably C4Context person icons.
+        const svgDoc = parser.parseFromString(fixSvgNamespaces(svg), 'image/svg+xml');
         wrapper.appendChild(svgDoc.documentElement);
 
         const svgEl = wrapper.querySelector('svg');
