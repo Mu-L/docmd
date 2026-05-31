@@ -42,7 +42,8 @@
 
   "plugins": {
     "search": {
-      "semantic": false
+      "semantic": true,
+      "showConfidence": true
     },
     "seo": {},
     "sitemap": {},
