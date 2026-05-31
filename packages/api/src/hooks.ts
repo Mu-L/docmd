@@ -266,7 +266,7 @@ async function autoInstallPlugin(packageName: string): Promise<boolean> {
     execSync(installCmd, { stdio: 'pipe', cwd, timeout: 60000 });
     TUI.step(`Plugin installed: ${shortName}`, 'DONE');
     return true;
-  } catch (err: any) {
+  } catch (_err: any) {
     TUI.step(`Failed to install: ${shortName}`, 'FAIL');
     warnOnce(`install:${packageName}`, TUI.dim(`Run "docmd add ${shortName}" manually for details`));
     return false;
@@ -368,7 +368,7 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
           const resolvedPath = require.resolve(name, { paths: resolvePaths });
           rawModule = await import(pathToFileURL(resolvedPath).href);
         }
-      } catch (e: any) {
+      } catch (_e: any) {
         if (name.startsWith('@docmd/plugin-')) {
           needsAutoInstall = true;
         } else {

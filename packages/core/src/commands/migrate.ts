@@ -259,7 +259,7 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
     TUI.step(`Found configuration: ${TUI.cyan(path.basename(activePath))}`, 'WAIT');
 
     try {
-      let raw = await nativeFs.promises.readFile(activePath, 'utf8');
+      const raw = await nativeFs.promises.readFile(activePath, 'utf8');
       let configObj: any = {};
       let isUpgraded = false;
 

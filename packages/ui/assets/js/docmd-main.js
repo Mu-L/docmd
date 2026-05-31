@@ -18,7 +18,7 @@
  * --------------------------------------------------------------------
  */
 
-/* global requestAnimationFrame, cancelAnimationFrame */
+/* global requestAnimationFrame, cancelAnimationFrame, CSS */
 
 (function () {
 
@@ -31,7 +31,7 @@
       if (target) return target;
       target = document.querySelector('[id$="-' + CSS.escape(cleanHash) + '"]');
       if (target) return target;
-    } catch (e) {}
+    } catch (_e) { /* ignore */ }
     return null;
   }
 
