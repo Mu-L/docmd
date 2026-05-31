@@ -333,7 +333,7 @@ declare const MiniSearch: any;
                 const linkHref = `${ROOT_PATH}${cleanId}`.replace(/([^:])\/\/+/g, '$1/');
                 const vc = result.version ? globalVersionColors[result.version] : null;
                 const versionBadge = result.version
-                    ? `<span class="search-result-version" style="background:${vc!.bg};color:${vc!.fg}">${escapeHtml(result.version)}</span>`
+                    ? `<div class="search-result-meta"><span class="search-result-version" style="background:${vc!.bg};color:${vc!.fg}">${escapeHtml(result.version)}</span></div>`
                     : '';
                 return `
                     <a href="${linkHref}" class="search-result-item" data-index="${index}">
