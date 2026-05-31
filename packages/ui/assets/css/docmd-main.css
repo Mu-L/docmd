@@ -2417,7 +2417,6 @@ hr {
 
 .search-result-version {
     flex-shrink: 0;
-    margin-left: auto;
     font-size: 0.6rem;
     font-weight: 600;
     padding: 0.1rem 0.4rem;
@@ -2426,6 +2425,31 @@ hr {
     letter-spacing: 0.03em;
     white-space: nowrap;
     line-height: 1.4;
+}
+
+/* Right-side meta group: holds version pill + confidence badge */
+.search-result-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.search-result-confidence {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    line-height: 1.4;
+    background: var(--docmd-accent-soft, rgba(59, 130, 246, 0.08));
+    color: var(--docmd-accent, #3b82f6);
+}
+
+.search-result-confidence.confidence-high {
+    background: rgba(22, 163, 74, 0.08);
+    color: var(--docmd-green, #16a34a);
 }
 
 .search-result-preview {
@@ -2446,7 +2470,7 @@ hr {
 .search-error,
 .search-initial,
 .search-no-results {
-    padding: 3rem 2rem;
+    padding: 3rem 2rem 5em;
     text-align: center;
     color: var(--text-muted, #666);
     font-size: .95rem
