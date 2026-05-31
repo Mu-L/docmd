@@ -347,7 +347,10 @@ export async function buildWorkspace(
       await buildSite(configFileToUse, {
         isDev:   opts.isDev   || false,
         offline: opts.offline || false,
-        quiet:   true,
+        // Pass through quiet so the first build (quiet:false) shows git/search
+        // indexing progress. Live-reload rebuilds always arrive with quiet:true
+        // from buildWorkspaceProject, so they stay silent.
+        quiet:   opts.quiet   || false,
         _globalDefaults: globalDefaults,
         _workspace: workspace,
         _activePrefix: prefix
