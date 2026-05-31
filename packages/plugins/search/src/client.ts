@@ -32,6 +32,7 @@ declare const MiniSearch: any;
     let isIndexLoaded = false;
     let selectedIndex = -1;
     const activeVersionFilters = new Set<string>();
+    const showFilters = searchModal.dataset.showFilters !== 'false';
     let globalAllVersions: string[] = [];
     const globalVersionColors: Record<string, {bg: string, fg: string}> = {};
 
@@ -198,8 +199,8 @@ declare const MiniSearch: any;
 
                     await SemanticSearch.loadSemanticIndex(ctx);
                     
-                    // Render version filters if versions were loaded
-                    if (globalAllVersions.length > 0) {
+                    // Render version filters if versions were loaded and filters are enabled
+                    if (globalAllVersions.length > 0 && showFilters) {
                         renderGlobalFilters();
                     }
 
@@ -235,7 +236,9 @@ declare const MiniSearch: any;
                 });
                 
                 console.log('[docmd-search] Index loaded. Versions found:', globalAllVersions.length);
-                renderGlobalFilters();
+                if (globalAllVersions.length > 0 && showFilters) {
+                    renderGlobalFilters();
+                }
                 isIndexLoaded = true;
                 if (searchInput.value.trim()) searchInput.dispatchEvent(new Event('input'));
             } catch {
@@ -245,8 +248,7 @@ declare const MiniSearch: any;
         }
 
         function renderGlobalFilters() {
-            console.log('[docmd-search] Rendering global filters. Versions:', globalAllVersions);
-            if (globalAllVersions.length === 0) return;
+            if (globalAllVersions.length === 0 || !showFilters) return;
             let filterContainer = document.getElementById('docmd-global-search-filters');
             if (!filterContainer) {
                 filterContainer = document.createElement('div');
