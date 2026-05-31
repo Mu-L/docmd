@@ -125,7 +125,7 @@ Hält Ihr Projekt einfach.
 my-docs/
 ├── docs/
 ├── assets/
-├── docmd.config.js (optional)
+├── docmd.config.json (optional)
 └── package.json
 ```
 
@@ -139,7 +139,7 @@ Ein browserbasierter Editor zum sofortigen Schreiben und Vorschauen von Dokument
 
 Für den Anfang ist keine Konfiguration erforderlich.
 
-Fügen Sie eine Konfigurationsdatei (`docmd.config.js` im Projektwurzelverzeichnis) nur hinzu, wenn Sie mehr Kontrolle benötigen.
+Fügen Sie eine Konfigurationsdatei (`docmd.config.json` im Projektwurzelverzeichnis) nur hinzu, wenn Sie mehr Kontrolle benötigen.
 
 ```js
 const { defineConfig } = require('@docmd/core');
@@ -185,7 +185,7 @@ Verwendung in Skripten oder CI-Pipelines:
 ```js
 const { build, buildLive } = require('@docmd/core');
 
-await build('./docmd.config.js', { isDev: false });
+await build('./docmd.config.json', { isDev: false });
 await buildLive();
 ```
 
