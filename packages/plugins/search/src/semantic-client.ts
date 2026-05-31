@@ -40,6 +40,7 @@ export interface SemanticSearchContext {
     globalVersionColors: Record<string, { bg: string; fg: string }>;
     selectedIndex: number;
     updateSelection: (items: NodeListOf<HTMLElement>) => void;
+    showConfidence?: boolean;
 }
 
 let semanticClient: any = null;
@@ -199,6 +200,29 @@ export function performSemanticSearch(query: string, ctx: SemanticSearchContext)
                     titleDiv.appendChild(badge);
                 }
             }
+        }
+
+        // Add confidence badge if showConfidence is true
+        if (ctx.showConfidence && typeof result.score === 'number') {
+            const confidenceScore = Math.round(result.score * 100);
+            const scoreBadge = document.createElement('span');
+            scoreBadge.className = 'search-result-confidence';
+            scoreBadge.style.fontSize = '0.6875rem';
+            scoreBadge.style.fontWeight = '600';
+            scoreBadge.style.padding = '2px 8px';
+            scoreBadge.style.borderRadius = '100px';
+            scoreBadge.style.marginLeft = '8px';
+            scoreBadge.style.display = 'inline-flex';
+            scoreBadge.style.alignItems = 'center';
+            if (confidenceScore >= 85) {
+                scoreBadge.style.background = 'rgba(22, 163, 74, 0.08)';
+                scoreBadge.style.color = 'var(--docmd-green, #16a34a)';
+            } else {
+                scoreBadge.style.background = 'var(--docmd-accent-soft, rgba(59, 130, 246, 0.08))';
+                scoreBadge.style.color = 'var(--docmd-accent, #3b82f6)';
+            }
+            scoreBadge.textContent = `${confidenceScore}% match`;
+            titleDiv.appendChild(scoreBadge);
         }
 
         const previewDiv = document.createElement('div');

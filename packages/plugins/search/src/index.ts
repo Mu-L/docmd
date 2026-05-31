@@ -532,6 +532,7 @@ export function generateScripts(config: any, options: any) {
   if (!isEnabled) return {};
 
   const isSemantic = (options || {}).semantic === true;
+  const showConfidence = (options || {}).showConfidence === true;
 
   // Load strings for the active locale (available at render time)
   const localeId = config._activeLocale?.id || 'en';
@@ -543,10 +544,11 @@ export function generateScripts(config: any, options: any) {
   const escape = new MarkdownIt().utils.escapeHtml;
 
   const semanticAttr = isSemantic ? ' data-semantic="true"' : '';
+  const confidenceAttr = ` data-show-confidence="${showConfidence}"`;
 
   const modalHtml = `
   <!-- Search Modal (Injected by @docmd/plugin-search) -->
-  <div id="docmd-search-modal" class="docmd-search-modal" style="display: none;"${semanticAttr}
+  <div id="docmd-search-modal" class="docmd-search-modal" style="display: none;"${semanticAttr}${confidenceAttr}
        data-search-placeholder="${escape(strings.searchPlaceholder || 'Search documentation...')}"
        data-search-no-results="${escape(strings.searchNoResults || 'No results found.')}"
        data-search-error="${escape(strings.searchError || 'Failed to load search index.')}"

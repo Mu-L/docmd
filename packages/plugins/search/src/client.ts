@@ -192,7 +192,8 @@ declare const MiniSearch: any;
                         globalAllVersions,
                         globalVersionColors,
                         selectedIndex,
-                        updateSelection
+                        updateSelection,
+                        showConfidence: searchModal.dataset.showConfidence === 'true'
                     };
 
                     await SemanticSearch.loadSemanticIndex(ctx);
@@ -300,7 +301,8 @@ declare const MiniSearch: any;
                     globalAllVersions,
                     globalVersionColors,
                     selectedIndex,
-                    updateSelection
+                    updateSelection,
+                    showConfidence: searchModal.dataset.showConfidence === 'true'
                 };
                 SemanticSearch.performSemanticSearch(query, ctx);
                 return;
