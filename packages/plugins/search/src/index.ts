@@ -533,6 +533,8 @@ export function generateScripts(config: any, options: any) {
 
   const isSemantic = (options || {}).semantic === true;
   const showConfidence = (options || {}).showConfidence === true;
+  // showFilters defaults to true; set false to hide the version filter bar
+  const showFilters = (options || {}).showFilters !== false;
 
   // Load strings for the active locale (available at render time)
   const localeId = config._activeLocale?.id || 'en';
@@ -545,10 +547,11 @@ export function generateScripts(config: any, options: any) {
 
   const semanticAttr = isSemantic ? ' data-semantic="true"' : '';
   const confidenceAttr = ` data-show-confidence="${showConfidence}"`;
+  const filtersAttr = ` data-show-filters="${showFilters}"`;
 
   const modalHtml = `
   <!-- Search Modal (Injected by @docmd/plugin-search) -->
-  <div id="docmd-search-modal" class="docmd-search-modal" style="display: none;"${semanticAttr}${confidenceAttr}
+  <div id="docmd-search-modal" class="docmd-search-modal" style="display: none;"${semanticAttr}${confidenceAttr}${filtersAttr}
        data-search-placeholder="${escape(strings.searchPlaceholder || 'Search documentation...')}"
        data-search-no-results="${escape(strings.searchNoResults || 'No results found.')}"
        data-search-error="${escape(strings.searchError || 'Failed to load search index.')}"
