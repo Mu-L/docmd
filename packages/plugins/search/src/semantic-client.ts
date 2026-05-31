@@ -70,8 +70,8 @@ export async function loadSemanticIndex(ctx: SemanticSearchContext): Promise<boo
         const div = document.createElement('div');
         div.className = 'search-initial';
         div.textContent = (safeLoaded === safeTotal && safeTotal > 0)
-            ? 'Semantic search ready'
-            : `Loading semantic index… (${safeLoaded}/${safeTotal})`;
+            ? 'Semantic search ready...'
+            : `Loading semantic index... (${safeLoaded}/${safeTotal})`;
         ctx.searchResults.appendChild(div);
     });
 
@@ -185,45 +185,45 @@ export function performSemanticSearch(query: string, ctx: SemanticSearchContext)
         titleDiv.className = 'search-result-title';
         titleDiv.textContent = titleText;
 
-        // Add version badge if applicable
-        if (ctx.globalAllVersions.length > 0) {
-            const semanticVersions = (ctx.globalVersionColors as any).__semanticVersions || [];
-            const verLabel = resolveFileVersion(rawFile, semanticVersions);
-            if (verLabel) {
-                const vc = ctx.globalVersionColors[verLabel];
-                if (vc) {
-                    const badge = document.createElement('span');
-                    badge.className = 'search-result-version';
-                    badge.style.background = vc.bg;
-                    badge.style.color = vc.fg;
-                    badge.textContent = verLabel;
-                    titleDiv.appendChild(badge);
+        // Right-side meta group: version pill + confidence badge
+        // Always right-aligned via margin-left:auto on .search-result-meta
+        const hasVersion = ctx.globalAllVersions.length > 0;
+        const hasConfidence = ctx.showConfidence && typeof result.score === 'number';
+
+        if (hasVersion || hasConfidence) {
+            const metaDiv = document.createElement('div');
+            metaDiv.className = 'search-result-meta';
+
+            // Version pill
+            if (hasVersion) {
+                const semanticVersions = (ctx.globalVersionColors as any).__semanticVersions || [];
+                const verLabel = resolveFileVersion(rawFile, semanticVersions);
+                if (verLabel) {
+                    const vc = ctx.globalVersionColors[verLabel];
+                    if (vc) {
+                        const badge = document.createElement('span');
+                        badge.className = 'search-result-version';
+                        badge.style.background = vc.bg;
+                        badge.style.color = vc.fg;
+                        badge.textContent = verLabel;
+                        metaDiv.appendChild(badge);
+                    }
                 }
             }
+
+            // Confidence badge — CSS classes, no inline styles
+            if (hasConfidence) {
+                const confidenceScore = Math.round(result.score * 100);
+                const scoreBadge = document.createElement('span');
+                scoreBadge.className = 'search-result-confidence' +
+                    (confidenceScore >= 85 ? ' confidence-high' : '');
+                scoreBadge.textContent = `${confidenceScore}%`;
+                metaDiv.appendChild(scoreBadge);
+            }
+
+            titleDiv.appendChild(metaDiv);
         }
 
-        // Add confidence badge if showConfidence is true
-        if (ctx.showConfidence && typeof result.score === 'number') {
-            const confidenceScore = Math.round(result.score * 100);
-            const scoreBadge = document.createElement('span');
-            scoreBadge.className = 'search-result-confidence';
-            scoreBadge.style.fontSize = '0.6875rem';
-            scoreBadge.style.fontWeight = '600';
-            scoreBadge.style.padding = '2px 8px';
-            scoreBadge.style.borderRadius = '100px';
-            scoreBadge.style.marginLeft = '8px';
-            scoreBadge.style.display = 'inline-flex';
-            scoreBadge.style.alignItems = 'center';
-            if (confidenceScore >= 85) {
-                scoreBadge.style.background = 'rgba(22, 163, 74, 0.08)';
-                scoreBadge.style.color = 'var(--docmd-green, #16a34a)';
-            } else {
-                scoreBadge.style.background = 'var(--docmd-accent-soft, rgba(59, 130, 246, 0.08))';
-                scoreBadge.style.color = 'var(--docmd-accent, #3b82f6)';
-            }
-            scoreBadge.textContent = `${confidenceScore}% match`;
-            titleDiv.appendChild(scoreBadge);
-        }
 
         const previewDiv = document.createElement('div');
         previewDiv.className = 'search-result-preview';
