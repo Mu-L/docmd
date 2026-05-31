@@ -98,7 +98,7 @@ async function getLatestDocmdSearchVersion(): Promise<string> {
 }
 
 /**
- * Auto-install docmd-search package.
+ * Auto-install docmd-search package along with its peer dependencies.
  * Installs the latest stable version from npm.
  */
 async function autoInstallDocmdSearch(tui: any, quiet: boolean): Promise<boolean> {
@@ -114,20 +114,33 @@ async function autoInstallDocmdSearch(tui: any, quiet: boolean): Promise<boolean
   const versionedPackage = version === 'latest' ? 'docmd-search' : `docmd-search@${version}`;
 
   if (!quiet && tui) {
-    tui.step(`Installing ${versionedPackage}`, 'WAIT');
+    tui.step(`Installing ${versionedPackage} with peer dependencies`, 'WAIT');
   }
 
+  // docmd-search requires peer dependencies for embedding:
+  // - @huggingface/transformers: the ML model runtime
+  // - onnxruntime-node: ONNX backend for Node.js
+  const peerDeps = ['@huggingface/transformers@^4.0.0', 'onnxruntime-node@^1.20.0'];
+  
   let installCmd = '';
   switch (pkgManager) {
-    case 'pnpm': installCmd = `pnpm add ${versionedPackage}`; break;
-    case 'yarn': installCmd = `yarn add ${versionedPackage}`; break;
-    case 'bun': installCmd = `bun add ${versionedPackage}`; break;
-    default: installCmd = `npm install ${versionedPackage}`; break;
+    case 'pnpm': 
+      installCmd = `pnpm add ${versionedPackage} ${peerDeps.join(' ')}`; 
+      break;
+    case 'yarn': 
+      installCmd = `yarn add ${versionedPackage} ${peerDeps.join(' ')}`; 
+      break;
+    case 'bun': 
+      installCmd = `bun add ${versionedPackage} ${peerDeps.join(' ')}`; 
+      break;
+    default: 
+      installCmd = `npm install ${versionedPackage} ${peerDeps.join(' ')}`; 
+      break;
   }
 
   try {
     const { execSync } = await import('node:child_process');
-    execSync(installCmd, { stdio: 'pipe', cwd, timeout: 120000 });
+    execSync(installCmd, { stdio: 'pipe', cwd, timeout: 180000 });
     
     if (!quiet && tui) {
       tui.step(`docmd-search installed successfully`, 'DONE');
@@ -138,13 +151,13 @@ async function autoInstallDocmdSearch(tui: any, quiet: boolean): Promise<boolean
       tui.step(`Failed to install docmd-search`, 'FAIL');
       tui.warn(
         '  Could not auto-install docmd-search. Please install manually:\n' +
-        '    npm install docmd-search\n' +
+        '    npm install docmd-search @huggingface/transformers onnxruntime-node\n' +
         '  Or disable semantic search: plugins: { search: { semantic: false } }'
       );
     } else {
       console.warn(
         '[plugin-search] Failed to auto-install docmd-search.\n' +
-        '  Run: npm install docmd-search'
+        '  Run: npm install docmd-search @huggingface/transformers onnxruntime-node'
       );
     }
     return false;
