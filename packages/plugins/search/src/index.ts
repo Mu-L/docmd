@@ -65,26 +65,114 @@ function resolveDocmdSearch(): string | null {
 }
 
 /**
- * Ensure docmd-search is installed when semantic: true is requested.
- * If missing, prints a helpful install message and returns false.
+ * Detect the package manager used in the current project.
  */
-async function ensureDocmdSearch(tui: any, quiet: boolean): Promise<boolean> {
-  if (resolveDocmdSearch()) return true;
+function detectPackageManager(cwd: string): 'pnpm' | 'yarn' | 'bun' | 'npm' {
+  let dir = cwd;
+  while (dir !== path.parse(dir).root) {
+    if (nativeFs.existsSync(path.join(dir, 'pnpm-lock.yaml'))) return 'pnpm';
+    if (nativeFs.existsSync(path.join(dir, 'yarn.lock'))) return 'yarn';
+    if (nativeFs.existsSync(path.join(dir, 'bun.lockb'))) return 'bun';
+    if (nativeFs.existsSync(path.join(dir, 'package-lock.json'))) return 'npm';
+    dir = path.dirname(dir);
+  }
+  return 'npm';
+}
+
+/**
+ * Get the latest non-deprecated version of docmd-search from npm.
+ * Falls back to 'latest' tag if fetch fails.
+ */
+async function getLatestDocmdSearchVersion(): Promise<string> {
+  try {
+    const { execSync } = await import('node:child_process');
+    const result = execSync('npm view docmd-search version --json', { 
+      encoding: 'utf-8', 
+      timeout: 10000 
+    });
+    const version = JSON.parse(result.trim());
+    return version || 'latest';
+  } catch {
+    return 'latest';
+  }
+}
+
+/**
+ * Auto-install docmd-search package.
+ * Installs the latest stable version from npm.
+ */
+async function autoInstallDocmdSearch(tui: any, quiet: boolean): Promise<boolean> {
+  const cwd = process.cwd();
+  const pkgManager = detectPackageManager(cwd);
+  
+  // Get latest version (non-deprecated)
+  if (!quiet && tui) {
+    tui.step('Fetching latest docmd-search version', 'WAIT');
+  }
+  
+  const version = await getLatestDocmdSearchVersion();
+  const versionedPackage = version === 'latest' ? 'docmd-search' : `docmd-search@${version}`;
 
   if (!quiet && tui) {
-    tui.warn(
-      '  Semantic search requires "docmd-search" — install it with:\n' +
-      '    npm install docmd-search\n' +
-      '    or disable it: plugins: { search: { semantic: false } }'
-    );
-  } else {
-    console.warn(
-      '[plugin-search] semantic: true requires "docmd-search".\n' +
-      '  Run: npm install docmd-search'
-    );
+    tui.step(`Installing ${versionedPackage}`, 'WAIT');
   }
 
-  return false;
+  let installCmd = '';
+  switch (pkgManager) {
+    case 'pnpm': installCmd = `pnpm add ${versionedPackage}`; break;
+    case 'yarn': installCmd = `yarn add ${versionedPackage}`; break;
+    case 'bun': installCmd = `bun add ${versionedPackage}`; break;
+    default: installCmd = `npm install ${versionedPackage}`; break;
+  }
+
+  try {
+    const { execSync } = await import('node:child_process');
+    execSync(installCmd, { stdio: 'pipe', cwd, timeout: 120000 });
+    
+    if (!quiet && tui) {
+      tui.step(`docmd-search installed successfully`, 'DONE');
+    }
+    return true;
+  } catch (err: any) {
+    if (!quiet && tui) {
+      tui.step(`Failed to install docmd-search`, 'FAIL');
+      tui.warn(
+        '  Could not auto-install docmd-search. Please install manually:\n' +
+        '    npm install docmd-search\n' +
+        '  Or disable semantic search: plugins: { search: { semantic: false } }'
+      );
+    } else {
+      console.warn(
+        '[plugin-search] Failed to auto-install docmd-search.\n' +
+        '  Run: npm install docmd-search'
+      );
+    }
+    return false;
+  }
+}
+
+/**
+ * Ensure docmd-search is installed when semantic: true is requested.
+ * If missing, attempts to auto-install the latest version.
+ */
+async function ensureDocmdSearch(tui: any, quiet: boolean): Promise<boolean> {
+  // Already installed?
+  if (resolveDocmdSearch()) return true;
+
+  // Attempt auto-install
+  const installed = await autoInstallDocmdSearch(tui, quiet);
+  if (!installed) return false;
+
+  // Verify installation succeeded
+  const resolved = resolveDocmdSearch();
+  if (!resolved) {
+    if (!quiet && tui) {
+      tui.warn('  docmd-search was installed but could not be resolved. Please restart the build.');
+    }
+    return false;
+  }
+
+  return true;
 }
 
 /**
