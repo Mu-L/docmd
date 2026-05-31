@@ -349,6 +349,10 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
           // Track version-to-pathPrefix mapping for the client filter
           const versionMap: Array<{ label: string; pathPrefix: string }> = [];
 
+          // Always exclude semantic index output dir and --ui artifacts from indexing
+          const builtinExcludes = ['**/.docmd-search/**', '**/_site/**', '**/_ui/**'];
+          const mergedExclude = [...builtinExcludes, ...(pluginOptions.exclude || [])];
+
           for (const ver of versions) {
             const tmpOut = path.join(tmpBase, ver.id);
             try {
@@ -358,7 +362,7 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
                   outDir: tmpOut,
                   model: pluginOptions.model,
                   include: pluginOptions.include,
-                  exclude: pluginOptions.exclude,
+                  exclude: mergedExclude,
                   chunkSize: pluginOptions.chunkSize,
                   chunkOverlap: pluginOptions.chunkOverlap,
                 },
@@ -435,13 +439,21 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
         }
 
         // ── Single-version semantic indexing ─────────────────────────────
+        // Always exclude the semantic index output directory itself and any
+        // docmd-search --ui artifacts (_site/, _ui/) so the indexer never
+        // crawls its own output. Merge with any user-supplied excludes.
+        const builtinExcludes = ['**/.docmd-search/**', '**/_site/**', '**/_ui/**'];
+        const mergedExclude = [
+          ...builtinExcludes,
+          ...(pluginOptions.exclude || []),
+        ];
         await docmdSearch.indexDirectory(
           {
             rootDir: docsDir,
             outDir: semanticOutDir,
             model: pluginOptions.model,           // undefined → uses global/default
             include: pluginOptions.include,
-            exclude: pluginOptions.exclude,
+            exclude: mergedExclude,
             chunkSize: pluginOptions.chunkSize,
             chunkOverlap: pluginOptions.chunkOverlap,
           },

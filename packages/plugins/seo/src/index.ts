@@ -184,4 +184,17 @@ export async function onPostBuild({ config, outputDir, log }: any) {
   
   await fs.writeFile(robotsPath, robotsContent);
   if (log) log('Generated robots.txt');
+
+  // Auto-generate .nojekyll at the site root.
+  // GitHub Pages runs Jekyll by default, which silently drops every file or
+  // directory whose name starts with a dot — including .docmd-search/ (the
+  // semantic index) and .docmd-search-client.js (the browser bundle).
+  // An empty .nojekyll file disables Jekyll so those assets are served as-is.
+  // This is a zero-config fix: users deploying to GitHub Pages never need to
+  // think about it.
+  const nojekyllPath = path.join(outputDir, '.nojekyll');
+  if (!nativeFs.existsSync(nojekyllPath)) {
+    await fs.writeFile(nojekyllPath, '');
+    if (log) log('Generated .nojekyll (disables Jekyll on GitHub Pages)');
+  }
 }
