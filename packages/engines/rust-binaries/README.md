@@ -6,23 +6,23 @@
 
 ```
 native/
-  Cargo.toml          — Rust crate definition
-  build.rs            — napi-rs build script
-  src/lib.rs          — All Rust engine capabilities (edit this to add features)
+  Cargo.toml          - Rust crate definition
+  build.rs            - napi-rs build script
+  src/lib.rs          - All Rust engine capabilities (edit this to add features)
 
 bin/
-  docmd-engine-darwin-arm64.node   — macOS Apple Silicon (753KB)
-  docmd-engine-darwin-x64.node     — macOS Intel
-  docmd-engine-linux-x64.node      — Linux x64
-  docmd-engine-linux-arm64.node    — Linux ARM64
-  docmd-engine-win32-x64.node      — Windows x64
+  docmd-engine-darwin-arm64.node   - macOS Apple Silicon (753KB)
+  docmd-engine-darwin-x64.node     - macOS Intel
+  docmd-engine-linux-x64.node      - Linux x64
+  docmd-engine-linux-arm64.node    - Linux ARM64
+  docmd-engine-win32-x64.node      - Windows x64
 ```
 
 ## For Maintainers
 
 ### Adding new capabilities
 
-1. Edit `native/src/lib.rs` — add your new task handler
+1. Edit `native/src/lib.rs` - add your new task handler
 2. Run `pnpm --filter @docmd/engine-rust-binaries run build`
 3. Commit the updated binary in `bin/`
 4. The new capability is now available to all users

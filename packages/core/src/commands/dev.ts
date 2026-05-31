@@ -23,7 +23,7 @@ import { loadConfig } from '../utils/config-loader.js';
 import { createRequire } from 'module';
 import { createActionDispatcher, loadPlugins, hooks } from '@docmd/api';
 import {
-  formatPathForDisplay, getNetworkIp, serveStatic, findAvailablePort,
+  formatPathForDisplay, getNetworkIp, serveStatic, findAvailablePort, openBrowser,
 } from '../utils/dev-utils.js';
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
@@ -128,6 +128,73 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
   let isRebuilding = false;
   let rebuildQueued = false;
   let rebuildTimeout: any = null;
+  let lastRebuildAt = 0;
+  // Brief quiet window after a rebuild to absorb phantom fs.watch events
+  // that macOS emits for newly-written output files. NOT a fake UX delay —
+  // the absolute-path exclusion below is the primary guard; this is backup.
+  const REBUILD_QUIET_MS = 500;
+
+  // Resolved output dir for robust exclusion (never retrigger on build output)
+  const resolvedOutputDir = path.resolve(CWD, config.out || 'site');
+
+  let configLock = false;
+  let configDebounce: any = null;
+  async function reloadConfigAndRebuild(changedFilePath: string) {
+    if (configLock) return;
+    configLock = true;
+
+    const baseName = path.basename(changedFilePath);
+    const configElapsed = TUI.timer();
+    TUI.step(`Reloading config and rebuilding due to change in: ${baseName}`, 'WAIT', TUI.blue, true);
+
+    try {
+      // Close all watchers
+      watchers.forEach(w => w.close());
+      watchers.length = 0;
+      if (rebuildTimeout) { clearTimeout(rebuildTimeout); rebuildTimeout = null; }
+      isRebuilding = false;
+      rebuildQueued = false;
+
+      // Reload config
+      config = await loadConfig(configPathOption, { isDev: true, quiet: true });
+      paths = resolveConfigPaths(config);
+      state.outputDir = paths.outputDir;
+
+      if (workerPool) await workerPool.terminateAll();
+      const workerScript = path.resolve(__dirname, '../engine/worker-parser.js');
+      workerPool = new WorkerPool(workerScript, { config, cwd: CWD });
+
+      // Full rebuild
+      await buildSite(configPathOption, { 
+        isDev: true, 
+        preserve: options.preserve,
+        quiet: true,
+        workerPool
+      });
+
+      lastRebuildAt = Date.now();
+      TUI.step(`Config reloaded and rebuilt in ${configElapsed()}`, 'DONE', TUI.blue, true);
+
+      // Re-setup watchers after a brief pause to let fs.watch settle
+      setTimeout(() => {
+        setupContentWatchers();
+        setupConfigWatcher();
+        configLock = false;
+      }, REBUILD_QUIET_MS);
+
+      broadcastReload();
+    } catch (error: any) {
+      TUI.step(`Config reload: ${baseName}`, 'FAIL', TUI.blue, true);
+      TUI.error('Config reload failed', error.message);
+      
+      // Re-setup watchers to continue listening
+      setTimeout(() => {
+        setupContentWatchers();
+        setupConfigWatcher();
+        configLock = false;
+      }, REBUILD_QUIET_MS);
+    }
+  }
 
   function setupContentWatchers() {
     const contentPaths = [paths.srcDirToWatch];
@@ -144,43 +211,68 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
       );
     }
 
+    // Resolved output dir — used for robust exclusion below
+    const resolvedOut = path.resolve(CWD, paths.outputDir);
+
     for (const watchPath of contentPaths) {
       if (!nativeFs.existsSync(watchPath)) continue;
 
       const watcher = nativeFs.watch(watchPath, { recursive: true }, (event, filename) => {
         if (!filename) return;
-        
-        const filePath = path.join(watchPath, filename);
-        const relativeFilePath = path.relative(CWD, filePath);
-        
+
+        // Post-rebuild quiet period: swallow stale fs.watch events
+        if (Date.now() - lastRebuildAt < REBUILD_QUIET_MS) return;
+
+        const filePath = path.resolve(watchPath, filename);
+
+        // Exclude build output dir (absolute path check — reliable across platforms)
+        if (filePath.startsWith(resolvedOut + path.sep) || filePath === resolvedOut) return;
+
+        // Common noise exclusions
         if (
-          relativeFilePath.startsWith(path.relative(CWD, paths.outputDir)) ||
-          filename.includes('.git') || 
-          filename.includes('node_modules') || 
+          filename.includes('.git') ||
+          filename.includes('node_modules') ||
           filename.startsWith('.') ||
-          relativeFilePath.includes('.DS_Store')
+          filename.includes('.DS_Store')
         ) return;
 
+        const relativeFilePath = path.relative(CWD, filePath);
+        const isAsset = filePath.startsWith(path.resolve(paths.userAssetsDir));
+        const isConfigOrNav =
+          filename.includes('navigation.json') ||
+          (filename.includes('docmd.config') && !filename.includes('docmd.config-'));
+
+        if (isConfigOrNav) {
+          // Debounce config/nav reloads separately to collapse macOS multi-fire
+          if (configDebounce) clearTimeout(configDebounce);
+          configDebounce = setTimeout(() => {
+            configDebounce = null;
+            reloadConfigAndRebuild(filePath);
+          }, 400);
+          return;
+        }
+
+        // Debounce: wait until user stops making changes before rebuilding.
+        // Each new save resets this timer, so the build only runs after
+        // the last change — like Vite's approach.
         if (rebuildTimeout) clearTimeout(rebuildTimeout);
         rebuildTimeout = setTimeout(() => {
           const executeBuildFn = async () => {
             if (isRebuilding) { rebuildQueued = true; return; }
-            
+
             const rebuildElapsed = TUI.timer();
             const sp = TUI.spinner(`Rebuilding: ${relativeFilePath}`, TUI.blue);
             isRebuilding = true;
             rebuildQueued = false;
             try {
-              await buildSite(configPathOption, { 
-                isDev: true, 
+              await buildSite(configPathOption, {
+                isDev: true,
                 preserve: options.preserve,
                 quiet: true,
-                // No targetFiles → full rebuild on every change.
-                // A targeted rebuild only regenerates the changed file, leaving the
-                // navigation HTML in all other pages stale. A full rebuild is ~250ms
-                // for typical doc projects — negligible for dev ergonomics.
+                targetFiles: isAsset ? undefined : [filePath],
                 workerPool
               });
+              lastRebuildAt = Date.now();
               sp.done(`Rebuilt: ${relativeFilePath} in ${rebuildElapsed()}`, true);
               broadcastReload();
             } catch (error: any) {
@@ -192,73 +284,28 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
             }
           };
           executeBuildFn();
-        }, 150);
+        }, 600); // 600ms: rebuild fires 600ms after user stops saving
       });
       watchers.push(watcher);
     }
   }
 
+  const setupConfigWatcher = () => {
+    if (!hasConfigFile) return;
+    let cfgDebounce: any = null;
+    const configWatcher = nativeFs.watch(configWatchPath, () => {
+      // Debounce: collapse the 3-6 rapid events macOS fires per save into one
+      if (cfgDebounce) clearTimeout(cfgDebounce);
+      cfgDebounce = setTimeout(() => {
+        cfgDebounce = null;
+        reloadConfigAndRebuild(configWatchPath);
+      }, 500);
+    });
+    watchers.push(configWatcher);
+  };
+
   setupContentWatchers();
-
-  // Config file watcher - reload config, rebuild, re-setup watchers
-  if (hasConfigFile) {
-    let configLock = false;
-    const setupConfigWatcher = () => {
-      const configWatcher = nativeFs.watch(configWatchPath, () => {
-        if (configLock) return;
-        configLock = true;
-
-        setTimeout(async () => {
-          const configName = path.basename(configWatchPath);
-          const configElapsed = TUI.timer();
-          TUI.step(`Reloading config: ${configName}`, 'WAIT', TUI.blue, true);
-          try {
-            // Tear down all watchers (including this config watcher)
-            watchers.forEach(w => w.close());
-            watchers.length = 0;
-            if (rebuildTimeout) { clearTimeout(rebuildTimeout); rebuildTimeout = null; }
-            isRebuilding = false;
-            rebuildQueued = false;
-
-            // Reload config, update paths
-            config = await loadConfig(configPathOption, { isDev: true, quiet: true });
-            paths = resolveConfigPaths(config);
-            state.outputDir = paths.outputDir;
-
-            if (workerPool) await workerPool.terminateAll();
-            const workerScript = path.resolve(__dirname, '../engine/worker-parser.js');
-            workerPool = new WorkerPool(workerScript, { config, cwd: CWD });
-
-            // Full rebuild with fresh config
-            await buildSite(configPathOption, { 
-              isDev: true, 
-              preserve: options.preserve,
-              quiet: true,
-              workerPool
-            });
-
-            TUI.step(`Config reloaded and rebuilt in ${configElapsed()}`, 'DONE', TUI.blue, true);
-
-            // Re-setup all watchers
-            setupContentWatchers();
-            setupConfigWatcher();
-
-            broadcastReload();
-          } catch (error: any) {
-            TUI.step(`Config reload: ${configName}`, 'FAIL', TUI.blue, true);
-            TUI.error('Config reload failed', error.message);
-            // Recover
-            setupContentWatchers();
-            setupConfigWatcher();
-          } finally {
-            configLock = false;
-          }
-        }, 300);
-      });
-      watchers.push(configWatcher);
-    };
-    setupConfigWatcher();
-  }
+  setupConfigWatcher();
 
   // Server Startup Logic
   const PORT = parseInt(options.port || process.env.PORT || 3000, 10);
@@ -326,6 +373,9 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
         if (!await fs.pathExists(path.join(paths.outputDir, 'index.html'))) {
           TUI.warn('Root index.html not found. Build may be incomplete.');
         }
+
+        // Auto-launch localhost URL in default browser
+        openBrowser(localUrl);
       })
       .once('error', (err: any) => {
         if (err.code === 'EADDRINUSE') {

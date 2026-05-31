@@ -23,7 +23,7 @@ function serializeConfig(obj: any) {
   return `export default ${cleanJs};\n`;
 }
 
-export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: boolean; vitepress?: boolean; starlight?: boolean }) {
+export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: boolean; vitepress?: boolean; starlight?: boolean; upgrade?: boolean }) {
   const CWD = process.cwd();
 
   const moveFilesToBackup = async (backupDir: string) => {
@@ -230,5 +230,129 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
     TUI.success('Astro Starlight migration complete.');
     TUI.info(`Original files moved to: ${TUI.cyan('starlight-backup/')}`);
     TUI.info(`Run ${TUI.cyan('docmd dev')} to preview your site.`);
+  } else if (options.upgrade) {
+    TUI.section('Upgrading Configuration');
+    
+    const jsonPath = path.resolve(CWD, 'docmd.config.json');
+    const jsPath = path.resolve(CWD, 'docmd.config.js');
+    const tsPath = path.resolve(CWD, 'docmd.config.ts');
+
+    let activePath = '';
+    let format: 'json' | 'js' | 'ts' = 'json';
+
+    if (nativeFs.existsSync(jsonPath)) {
+      activePath = jsonPath;
+      format = 'json';
+    } else if (nativeFs.existsSync(jsPath)) {
+      activePath = jsPath;
+      format = 'js';
+    } else if (nativeFs.existsSync(tsPath)) {
+      activePath = tsPath;
+      format = 'ts';
+    }
+
+    if (!activePath) {
+      TUI.error('Upgrade Failed', 'No docmd configuration file (docmd.config.json/js/ts) found in current directory.');
+      return;
+    }
+
+    TUI.step(`Found configuration: ${TUI.cyan(path.basename(activePath))}`, 'WAIT');
+
+    try {
+      const raw = await nativeFs.promises.readFile(activePath, 'utf8');
+      let configObj: any = {};
+      let isUpgraded = false;
+
+      if (format === 'json') {
+        configObj = JSON.parse(raw);
+      } else {
+        // Dynamic import to read current exported config values
+        const module = await import(`file://${activePath}`);
+        configObj = module.default || {};
+      }
+
+      // 1. Upgrade legacy top-level 'projects' to 'workspace.projects'
+      if (configObj.projects && Array.isArray(configObj.projects) && !configObj.workspace) {
+        configObj.workspace = {
+          projects: configObj.projects,
+          switcher: {
+            enabled: true,
+            position: 'sidebar-top'
+          }
+        };
+        delete configObj.projects;
+        isUpgraded = true;
+        TUI.step('Upgraded legacy top-level "projects" to "workspace" schema.', 'DONE');
+      }
+
+      // 2. Upgrade legacy 'siteTitle' to 'title'
+      if (configObj.siteTitle && !configObj.title) {
+        configObj.title = configObj.siteTitle;
+        delete configObj.siteTitle;
+        isUpgraded = true;
+        TUI.step('Upgraded "siteTitle" to "title".', 'DONE');
+      }
+
+      // 3. Upgrade legacy 'siteUrl' / 'baseUrl' to 'url'
+      if (configObj.siteUrl && !configObj.url) {
+        configObj.url = configObj.siteUrl;
+        delete configObj.siteUrl;
+        isUpgraded = true;
+        TUI.step('Upgraded "siteUrl" to "url".', 'DONE');
+      }
+      if (configObj.baseUrl && !configObj.url) {
+        configObj.url = configObj.baseUrl;
+        delete configObj.baseUrl;
+        isUpgraded = true;
+        TUI.step('Upgraded "baseUrl" to "url".', 'DONE');
+      }
+
+      // 4. Upgrade legacy 'srcDir' to 'src'
+      if (configObj.srcDir && !configObj.src) {
+        configObj.src = configObj.srcDir;
+        delete configObj.srcDir;
+        isUpgraded = true;
+        TUI.step('Upgraded "srcDir" to "src".', 'DONE');
+      }
+
+      // 5. Upgrade legacy 'outputDir' to 'out'
+      if (configObj.outputDir && !configObj.out) {
+        configObj.out = configObj.outputDir;
+        delete configObj.outputDir;
+        isUpgraded = true;
+        TUI.step('Upgraded "outputDir" to "out".', 'DONE');
+      }
+
+      // 6. Upgrade legacy 'defaultLocale' to 'i18n.default'
+      if (configObj.defaultLocale) {
+        configObj.i18n = configObj.i18n || {};
+        configObj.i18n.default = configObj.defaultLocale;
+        delete configObj.defaultLocale;
+        isUpgraded = true;
+        TUI.step('Upgraded "defaultLocale" to "i18n.default".', 'DONE');
+      }
+
+      if (!isUpgraded) {
+        TUI.footer();
+        TUI.success('Configuration is already up to date with the latest schema.');
+        return;
+      }
+
+      // Write upgraded config back
+      if (format === 'json') {
+        await nativeFs.promises.writeFile(activePath, JSON.stringify(configObj, null, 2) + '\n');
+      } else {
+        let content = serializeConfig(configObj);
+        if (format === 'ts') {
+          content = `import { UserConfig } from '@docmd/api';\n\nconst config: UserConfig = ${JSON.stringify(configObj, null, 2).replace(/"([^"]+)":/g, '$1:')};\n\nexport default config;\n`;
+        }
+        await nativeFs.promises.writeFile(activePath, content);
+      }
+
+      TUI.footer();
+      TUI.success(`Successfully upgraded config file to modern schema.`);
+    } catch (error: any) {
+      TUI.error('Upgrade Error', `Failed to parse or write config file: ${error.message}`);
+    }
   }
 }

@@ -174,7 +174,13 @@ export async function detectWorkspace(configPathOption: string): Promise<Workspa
         };
       }
 
-      return rawConfig as WorkspaceRootConfig;
+      // Return workspace config only if it has workspace settings
+      // This prevents false positives when a config has a 'workspace' field but no projects
+      if (rawConfig.workspace && rawConfig.workspace.projects) {
+        return rawConfig as WorkspaceRootConfig;
+      }
+
+      return null;
     }
     return null;
   } catch {
@@ -341,7 +347,10 @@ export async function buildWorkspace(
       await buildSite(configFileToUse, {
         isDev:   opts.isDev   || false,
         offline: opts.offline || false,
-        quiet:   true,
+        // Pass through quiet so the first build (quiet:false) shows git/search
+        // indexing progress. Live-reload rebuilds always arrive with quiet:true
+        // from buildWorkspaceProject, so they stay silent.
+        quiet:   opts.quiet   || false,
         _globalDefaults: globalDefaults,
         _workspace: workspace,
         _activePrefix: prefix
@@ -459,7 +468,7 @@ export async function devWorkspace(
   const CWD = process.cwd();
   const rootOutDir = path.resolve(CWD, workspaceConfig.out || 'site');
 
-  const { serveStatic, findAvailablePort, formatPathForDisplay, getNetworkIp } = await import('../utils/dev-utils.js');
+  const { serveStatic, findAvailablePort, formatPathForDisplay, getNetworkIp, openBrowser } = await import('../utils/dev-utils.js');
   const http = await import('http');
   const { WebSocketServer, WebSocket } = await import('ws');
 
@@ -503,10 +512,17 @@ export async function devWorkspace(
     }
     TUI.item('', '', TUI.dim, TUI.green);
     TUI.footer(TUI.green);
+
+    // Auto-launch localhost URL in default browser
+    openBrowser(localUrl);
   });
 
   let isRebuilding = false;
   let rebuildTimeout: any = null;
+  let lastRebuildAt = 0;
+  // Absorbs phantom fs.watch events macOS emits after a rebuild writes output files.
+  // The absolute-path exclusion is the primary guard; this is a short backup window.
+  const REBUILD_QUIET_MS = 500;
 
   const workspace = workspaceConfig.workspace!;
   for (const project of workspace.projects) {
@@ -516,16 +532,25 @@ export async function devWorkspace(
 
     nativeFs.watch(projectSrcDir, { recursive: true }, (event, filename) => {
       if (!filename) return;
+
+      // Post-rebuild quiet period
+      if (Date.now() - lastRebuildAt < REBUILD_QUIET_MS) return;
+
       if (filename.includes('.git') || filename.includes('node_modules') ||
           filename.includes('.DS_Store') || filename.startsWith('.') ||
           filename.includes('docmd.config-') || filename.endsWith('.js.bak')) return;
+
+      // Exclude build output
+      const resolvedOut = path.resolve(CWD, workspaceConfig.out || 'site');
+      const filePath = path.resolve(projectSrcDir, filename);
+      if (filePath.startsWith(resolvedOut + path.sep) || filePath === resolvedOut) return;
 
       if (rebuildTimeout) clearTimeout(rebuildTimeout);
       rebuildTimeout = setTimeout(async () => {
         if (isRebuilding) return;
         isRebuilding = true;
 
-        const isConfigUpdate = filename.includes('docmd.config') && !filename.includes('docmd.config-');
+        const isConfigUpdate = (filename.includes('docmd.config') && !filename.includes('docmd.config-')) || filename.includes('navigation.json');
         const label = project.prefix === '/' ? '/' : project.prefix;
         const displayPath = filename.replace(/^[^/]+\//, '');
         const rebuildElapsed = TUI.timer();
@@ -542,6 +567,7 @@ export async function devWorkspace(
             isDev: true,
             targetFiles: isConfigUpdate ? undefined : [fullChangedPath]
           });
+          lastRebuildAt = Date.now();
           broadcastReload();
           TUI.step(`Rebuilt [${label}] ${isConfigUpdate ? 'with new config' : displayPath} in ${rebuildElapsed()}`, 'DONE', TUI.blue, true);
         } catch (err: any) {
@@ -550,18 +576,16 @@ export async function devWorkspace(
         } finally {
           isRebuilding = false;
         }
-      }, 200);
+      }, 600); // 600ms idle: rebuild only after user stops saving
     });
   }
 
   if (workspaceConfig._resolvedPath && nativeFs.existsSync(workspaceConfig._resolvedPath)) {
-    let rootConfigLock = false;
+    let rootConfigDebounce: any = null;
     nativeFs.watch(workspaceConfig._resolvedPath, () => {
-      if (rootConfigLock) return;
-      rootConfigLock = true;
-
-      if (rebuildTimeout) clearTimeout(rebuildTimeout);
-      rebuildTimeout = setTimeout(async () => {
+      if (rootConfigDebounce) clearTimeout(rootConfigDebounce);
+      rootConfigDebounce = setTimeout(async () => {
+        rootConfigDebounce = null;
         if (isRebuilding) return;
         isRebuilding = true;
 
@@ -574,6 +598,7 @@ export async function devWorkspace(
           if (newWorkspaceConfig) {
             Object.assign(workspaceConfig, newWorkspaceConfig);
             await buildWorkspace(newWorkspaceConfig, { isDev: true, quiet: true });
+            lastRebuildAt = Date.now();
             broadcastReload();
             TUI.step(`Rebuilt entire workspace with new config in ${rebuildElapsed()}`, 'DONE', TUI.blue, true);
           }
@@ -582,9 +607,8 @@ export async function devWorkspace(
           TUI.error('Rebuild failed', err.message);
         } finally {
           isRebuilding = false;
-          setTimeout(() => { rootConfigLock = false; }, 500);
         }
-      }, 300);
+      }, 500);
     });
   }
 
@@ -608,7 +632,7 @@ export async function devWorkspace(
         } finally {
           isRebuilding = false;
         }
-      }, 200);
+      }, 600); // 600ms idle: rebuild only after user stops saving
     });
   }
 

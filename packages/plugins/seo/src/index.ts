@@ -12,13 +12,16 @@
  * --------------------------------------------------------------------
  */
 
+import path from 'path';
+import fs from 'fs/promises';
+import nativeFs from 'fs';
 import type { PluginDescriptor } from '@docmd/api';
 import { outputPathToPathname, sanitizeUrl } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'seo',
-  version: '0.8.4',
-  capabilities: ['head']
+  version: '0.8.5',
+  capabilities: ['head', 'post-build']
 };
 
 /**
@@ -41,7 +44,9 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
   }
 
   // 1.5 AI Bots Control
-  const aiBots = seo.aiBots ?? globalSeo.aiBots;
+  // By default (aiBots: true), AI bots are allowed to index content
+  // Set aiBots: false to block AI training bots
+  const aiBots = seo.aiBots ?? globalSeo.aiBots ?? true; // Default: true (allow)
   if (aiBots === false) {
     const bots = ['GPTBot', 'ChatGPT-User', 'Google-Extended', 'CCBot', 'anthropic-ai', 'Omgilibot', 'Omgili', 'FacebookBot', 'Diffbot', 'Bytespider', 'ImagesiftBot', 'cohere-ai'];
     bots.forEach(bot => {
@@ -114,4 +119,69 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
   }
 
   return html;
+}
+
+/**
+ * Post-build hook to auto-generate robots.txt if missing.
+ * This ensures SEO best practices without overwriting existing customizations.
+ * 
+ * @param {Object} context
+ * @param {Object} context.config - The parsed project config
+ * @param {string} context.outputDir - Absolute path to output directory
+ * @param {Function} context.log - Logger function
+ */
+export async function onPostBuild({ config, outputDir, log }: any) {
+  const robotsPath = path.join(outputDir, 'robots.txt');
+  const seoConfig = config.plugins?.seo || {};
+
+  // Check all possible locations for existing robots.txt
+  // Priority: site root > assets folder
+  const possibleLocations = [
+    path.join(outputDir, 'robots.txt'),              // site/robots.txt (already in output)
+    path.join(outputDir, 'assets', 'robots.txt'),     // site/assets/robots.txt (copied from assets)
+  ];
+  
+  // Find existing robots.txt
+  let existingRobotsPath: string | null = null;
+  for (const loc of possibleLocations) {
+    if (nativeFs.existsSync(loc)) {
+      existingRobotsPath = loc;
+      break;
+    }
+  }
+  
+  // If found, copy to site root if not already there
+  if (existingRobotsPath) {
+    if (existingRobotsPath !== robotsPath) {
+      // Copy from assets to site root (recommended location)
+      await fs.copyFile(existingRobotsPath, robotsPath);
+      if (log) log('Copied robots.txt from assets to site root');
+    } else {
+      if (log) log('robots.txt already exists in site root, preserving');
+    }
+    return;
+  }
+
+  // No robots.txt found anywhere - generate one
+  const siteUrl = config.url ? config.url.replace(/\/$/, '') : '';
+  const sitemapUrl = siteUrl ? `${siteUrl}/sitemap.xml` : '';
+  
+  let robotsContent = 'User-agent: *\nAllow: /\n';
+  
+  // Add sitemap reference if site URL is configured
+  if (sitemapUrl) {
+    robotsContent += `\n# Sitemap\nSitemap: ${sitemapUrl}\n`;
+  }
+  
+  // Add AI bot restrictions if configured (default: true = allow, false = block)
+  if (seoConfig.aiBots === false) {
+    robotsContent += '\n# Block AI training bots\n';
+    const aiBots = ['GPTBot', 'ChatGPT-User', 'Google-Extended', 'CCBot', 'anthropic-ai', 'Omgilibot', 'Omgili', 'FacebookBot', 'Diffbot', 'Bytespider', 'ImagesiftBot', 'cohere-ai'];
+    aiBots.forEach(bot => {
+      robotsContent += `User-agent: ${bot}\nDisallow: /\n`;
+    });
+  }
+  
+  await fs.writeFile(robotsPath, robotsContent);
+  if (log) log('Generated robots.txt');
 }

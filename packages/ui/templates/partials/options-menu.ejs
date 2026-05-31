@@ -15,15 +15,15 @@
     </button>
     <% } %>
 
-    <% if (locals.allLocales && allLocales && allLocales.length > 1 && locals.config && config.i18n && config.i18n.position === 'options-menu') { %>
-    <div class="options-menu-language">
-        <%- await include('language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: true, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
+    <% if (locals.workspace && workspace.switcher.enabled && workspace.switcher.position === 'options-menu') { %>
+    <div class="options-menu-project-switcher">
+        <%- await include('project-switcher', { workspace, config, renderIcon, compact: true }) %>
     </div>
     <% } %>
 
-    <% if (locals.workspace && workspace.switcher && workspace.switcher.position === 'options-menu') { %>
-    <div class="options-menu-project-switcher">
-        <%- await include('project-switcher', { workspace, config, renderIcon, compact: true }) %>
+    <% if (locals.allLocales && allLocales && allLocales.length > 1 && locals.config && config.i18n && config.i18n.position === 'options-menu') { %>
+    <div class="options-menu-language">
+        <%- await include('language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: true, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
     </div>
     <% } %>
 

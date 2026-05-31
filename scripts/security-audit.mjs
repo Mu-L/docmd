@@ -20,10 +20,7 @@ const AUDIT_CONFIG = {
             name: 'Potential DOM XSS (innerHTML)',
             regex: /\.innerHTML\s*=\s*/g,
             severity: 'HIGH',
-            exclude: [
-                /packages\/plugins\/search\/src\/client\.ts/, // Fixed with escaping
-                /packages\/plugins\/threads\/src\/client\.js/
-            ]
+            exclude: []
         },
         {
             name: 'Raw EJS Output (<%-)',

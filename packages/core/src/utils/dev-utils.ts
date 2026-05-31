@@ -16,7 +16,7 @@ import http from 'http';
 import os from 'os';
 import path from 'path';
 import crypto from 'crypto';
-import { execSync } from 'child_process';
+import { execSync, spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { fsUtils as fs } from '@docmd/utils';
 
@@ -205,4 +205,22 @@ export async function findAvailablePort(startPort: number): Promise<number> {
     port++;
   }
   return port;
+}
+
+/**
+ * Open a URL in the user's default browser.
+ */
+export function openBrowser(url: string): void {
+  let command = 'xdg-open';
+  let args = [url];
+
+  if (process.platform === 'darwin') {
+    command = 'open';
+  } else if (process.platform === 'win32') {
+    command = 'cmd';
+    args = ['/c', 'start', '""', url];
+  }
+
+  const child = spawn(command, args, { stdio: 'ignore', detached: true });
+  child.unref();
 }

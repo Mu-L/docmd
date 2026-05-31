@@ -6,7 +6,7 @@
 %>
 
 <% 
-if (locals.workspace && workspace.projects && workspace.projects.length > 1) { 
+if (locals.workspace && workspace.projects && workspace.projects.length > 0) { 
   const currentPrefix = config._activePrefix || '/';
   const switcherConfig = workspace.switcher || { enabled: true, position: 'sidebar-top' };
   

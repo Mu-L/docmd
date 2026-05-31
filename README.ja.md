@@ -125,7 +125,7 @@ docmd deploy  # Docker, Nginx, Caddyの設定を即座に生成
 my-docs/
 ├── docs/
 ├── assets/
-├── docmd.config.js (オプション)
+├── docmd.config.json (オプション)
 └── package.json
 ```
 
@@ -139,7 +139,7 @@ my-docs/
 
 開始にあたって設定は不要です。
 
-より詳細なコントロールが必要な場合のみ、プロジェクトのルートに設定ファイル (`docmd.config.js`) を追加してください。
+より詳細なコントロールが必要な場合のみ、プロジェクトのルートに設定ファイル (`docmd.config.json`) を追加してください。
 
 ```js
 const { defineConfig } = require('@docmd/core');
@@ -185,7 +185,7 @@ module.exports = defineConfig({
 ```js
 const { build, buildLive } = require('@docmd/core');
 
-await build('./docmd.config.js', { isDev: false });
+await build('./docmd.config.json', { isDev: false });
 await buildLive();
 ```
 

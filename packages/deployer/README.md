@@ -1,6 +1,6 @@
 # @docmd/deployer
 
-Deployment configuration generator for **[docmd](https://github.com/docmd-io/docmd)** — the zero-config documentation engine.
+Deployment configuration generator for **[docmd](https://github.com/docmd-io/docmd)** - the zero-config documentation engine.
 
 Generates production-ready deployment files from your `docmd.config.json`. All outputs are personalised to your project; no generic copy-paste templates.
 
@@ -49,7 +49,7 @@ Every run reads your `docmd.config.json` and regenerates the files to match. Zer
 @docmd/deployer
   src/
     context.ts          Shared DeployContext type
-    index.ts            Orchestrator — resolves options, writes files
+    index.ts            Orchestrator - resolves options, writes files
     providers/
       docker.ts         Dockerfile + .dockerignore
       nginx.ts          nginx.conf
@@ -59,7 +59,7 @@ Every run reads your `docmd.config.json` and regenerates the files to match. Zer
       netlify.ts        netlify.toml
 ```
 
-Each provider is a pure function `(ctx: DeployContext) => string` — no side effects, no I/O. File writing is handled by the orchestrator. Adding a new provider is a single file with no changes to other providers.
+Each provider is a pure function `(ctx: DeployContext) => string` - no side effects, no I/O. File writing is handled by the orchestrator. Adding a new provider is a single file with no changes to other providers.
 
 **Dependency graph (no cycles):**
 
@@ -75,4 +75,4 @@ See **[docmd.io/deployment](https://docmd.io/deployment)** for detailed, service
 
 ## License
 
-MIT — Copyright (c) 2025-present docmd.io
+MIT - Copyright (c) 2025-present docmd.io

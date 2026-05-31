@@ -18,9 +18,22 @@
  * --------------------------------------------------------------------
  */
 
-/* global requestAnimationFrame, cancelAnimationFrame */
+/* global requestAnimationFrame, cancelAnimationFrame, CSS */
 
 (function () {
+
+  function findTargetElement(hash) {
+    if (!hash) return null;
+    const cleanHash = hash.substring(1);
+    if (!cleanHash) return null;
+    try {
+      let target = document.getElementById(cleanHash) || document.querySelector(hash);
+      if (target) return target;
+      target = document.querySelector('[id$="-' + CSS.escape(cleanHash) + '"]');
+      if (target) return target;
+    } catch (_e) { /* ignore */ }
+    return null;
+  }
 
   // 1. EVENT DELEGATION
   document.addEventListener('click', (e) => {
@@ -465,7 +478,7 @@
       if (url.pathname === window.location.pathname && url.hash) {
         e.preventDefault();
         history.pushState({}, '', url.href);
-        const target = document.querySelector(url.hash) || document.getElementById(url.hash.substring(1));
+        const target = findTargetElement(url.hash);
         if (target) target.scrollIntoView({ behavior: 'smooth' });
         return;
       }
@@ -479,7 +492,7 @@
       if (window.location.pathname === currentPath) {
         const hash = window.location.hash;
         if (hash) {
-          const target = document.querySelector(hash) || document.getElementById(hash.substring(1));
+          const target = findTargetElement(hash);
           if (target) target.scrollIntoView({ behavior: 'smooth' });
         }
         return;
@@ -623,8 +636,7 @@
         requestAnimationFrame(() => {
           if (requestedHash) {
             try {
-              const target = document.querySelector(requestedHash)
-                || document.getElementById(requestedHash.substring(1));
+              const target = findTargetElement(requestedHash);
               if (target) target.scrollIntoView({ behavior: 'smooth' });
             } catch { /* invalid selector - ignore */ }
           } else {
@@ -700,7 +712,7 @@
       }
       if (window.location.hash) {
         try {
-          const target = document.querySelector(window.location.hash) || document.getElementById(window.location.hash.substring(1));
+          const target = findTargetElement(window.location.hash);
           if (target) target.scrollIntoView({ behavior: 'smooth' });
         } catch { /* ignore */ }
       }

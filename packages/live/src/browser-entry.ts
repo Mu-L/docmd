@@ -143,7 +143,10 @@ async function compile(markdown: string, config: any = {}) {
 
         isActivePage: true,
         editUrl: null,
-        editLinkText: ''
+        editLinkText: '',
+
+        // Workspace is not applicable in the live browser environment
+        workspace: null
     };
 
     // 5. Render

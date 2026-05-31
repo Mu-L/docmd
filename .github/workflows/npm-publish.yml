@@ -1,4 +1,4 @@
-name: docmd Release to NPM
+name: Release docmd to NPM
 
 on:
   release:
@@ -11,7 +11,7 @@ permissions:
   packages: write
 
 # ---------------------------------------------------------------------------
-# Job 1 — Build Rust native binaries (matrix, one runner per platform)
+# Job 1: Build Rust native binaries (matrix, one runner per platform)
 #
 # Each runner compiles the napi-rs addon for its target, then uploads the
 # resulting .node file as a workflow artifact. The publish job downloads
@@ -99,7 +99,7 @@ jobs:
           if-no-files-found: error
 
   # ---------------------------------------------------------------------------
-  # Job 2 — Publish all packages to npm
+  # Job 2: Publish all packages to npm
   #
   # Runs after all matrix builds succeed. Downloads every .node artifact into
   # rust-binaries/bin/ so the package contains the binaries when npm publish runs.

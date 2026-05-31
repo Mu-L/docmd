@@ -169,6 +169,97 @@ const handlers: Record<string, TaskHandler> = {
     };
     return JSON.stringify(index);
   },
+
+  // ── docmd-search semantic tasks ──────────────────────────────────────────
+
+  /**
+   * search:chunk — Split a document into overlapping chunks by heading + word count.
+   * payload: { text, file, chunkSize?, chunkOverlap? }
+   * returns: Array<{ file, heading?, text, range: [start, end] }>
+   */
+  'search:chunk': async ({ text, file, chunkSize = 256, chunkOverlap = 32 }) => {
+    const chunks: Array<{ file: string; heading?: string; text: string; range: [number, number] }> = [];
+    let currentHeading: string | undefined;
+    let currentWords: string[] = [];
+    let currentStart = 0;
+    let bytePos = 0;
+
+    for (const line of (text as string).split('\n')) {
+      const lineBytes = line.length + 1;
+
+      if (/^#{1,6}\s/.test(line)) {
+        // Flush current chunk before heading
+        if (currentWords.length > 0) {
+          chunks.push({ file, heading: currentHeading, text: currentWords.join(' '), range: [currentStart, bytePos] });
+          currentWords = currentWords.slice(-chunkOverlap);
+          currentStart = bytePos;
+        }
+        currentHeading = line.replace(/^#+\s*/, '').trim();
+      } else {
+        const words = line.split(/\s+/).filter(Boolean);
+        currentWords.push(...words);
+
+        if (currentWords.length >= chunkSize) {
+          chunks.push({ file, heading: currentHeading, text: currentWords.join(' '), range: [currentStart, bytePos + lineBytes] });
+          currentWords = currentWords.slice(-chunkOverlap);
+          currentStart = bytePos;
+        }
+      }
+
+      bytePos += lineBytes;
+    }
+
+    if (currentWords.length > 0) {
+      chunks.push({ file, heading: currentHeading, text: currentWords.join(' '), range: [currentStart, bytePos] });
+    }
+
+    return chunks;
+  },
+
+  /**
+   * search:quantize — Float32 → Int8 per-vector quantization.
+   * payload: { vectors: number[][], dimensions: number }
+   * returns: { quantized: number[][], mins: number[], ranges: number[] }
+   */
+  'search:quantize': async ({ vectors, dimensions = 384 }) => {
+    const quantized: number[][] = [];
+    const mins: number[] = [];
+    const ranges: number[] = [];
+
+    for (const vec of (vectors as number[][])) {
+      const v = vec.length === dimensions ? vec : Array.from({ length: dimensions }, (_, i) => vec[i] ?? 0);
+      const min = Math.min(...v);
+      const max = Math.max(...v);
+      const range = Math.abs(max - min) < 1e-10 ? 1.0 : max - min;
+
+      const q = v.map(x => Math.round(((x - min) / range) * 255 - 128));
+      quantized.push(q);
+      mins.push(min);
+      ranges.push(range);
+    }
+
+    return { quantized, mins, ranges };
+  },
+
+  /**
+   * search:cosine — Batch cosine similarity between a query vector and a corpus.
+   * payload: { query: number[], vectors: number[][], topK?: number }
+   * returns: Array<{ index: number, score: number }>
+   */
+  'search:cosine': async ({ query, vectors, topK = 10 }) => {
+    const q = query as number[];
+    const qNorm = Math.sqrt(q.reduce((s: number, v: number) => s + v * v, 0));
+    if (qNorm < 1e-10) return [];
+
+    const scores = (vectors as number[][]).map((vec, idx) => {
+      const dot = q.reduce((s: number, v: number, i: number) => s + v * (vec[i] ?? 0), 0);
+      const vNorm = Math.sqrt(vec.reduce((s: number, v: number) => s + v * v, 0));
+      const sim = vNorm < 1e-10 ? 0 : dot / (qNorm * vNorm);
+      return { index: idx, score: sim };
+    });
+
+    return scores.sort((a, b) => b.score - a.score).slice(0, topK);
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -184,7 +275,7 @@ const handlers: Record<string, TaskHandler> = {
 export function createJsEngine(): Engine {
   return {
     name: 'js',
-    version: '0.8.4',
+    version: '0.8.5',
 
     supports(taskType: string): boolean {
       return taskType in handlers;

@@ -41,7 +41,10 @@
   },
 
   "plugins": {
-    "search": {},
+    "search": {
+      "semantic": true,
+      "showConfidence": true
+    },
     "seo": {},
     "sitemap": {},
     "analytics": {
