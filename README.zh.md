@@ -129,7 +129,7 @@ docmd deploy    # 瞬间生成 Docker/Nginx/Caddy 配置文件
 my-docs/
 ├── docs/
 ├── assets/
-├── docmd.config.js（可选）
+├── docmd.config.json（可选）
 └── package.json
 ```
 
@@ -143,7 +143,7 @@ my-docs/
 
 开始使用无需任何配置。
 
-仅在需要更多控制时，在项目根目录添加配置文件（`docmd.config.js`）。
+仅在需要更多控制时，在项目根目录添加配置文件（`docmd.config.json`）。
 
 ```js
 const { defineConfig } = require('@docmd/core');
@@ -189,7 +189,7 @@ module.exports = defineConfig({
 ```js
 const { build, buildLive } = require('@docmd/core');
 
-await build('./docmd.config.js', { isDev: false });
+await build('./docmd.config.json', { isDev: false });
 await buildLive();
 ```
 
