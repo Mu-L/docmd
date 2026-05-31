@@ -128,8 +128,11 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
   let isRebuilding = false;
   let rebuildQueued = false;
   let rebuildTimeout: any = null;
-  let lastRebuildAt = 0;           // timestamp; used for post-rebuild quiet period
-  const REBUILD_QUIET_MS = 1200;   // ignore watcher events for this long after a rebuild
+  let lastRebuildAt = 0;
+  // Brief quiet window after a rebuild to absorb phantom fs.watch events
+  // that macOS emits for newly-written output files. NOT a fake UX delay —
+  // the absolute-path exclusion below is the primary guard; this is backup.
+  const REBUILD_QUIET_MS = 500;
 
   // Resolved output dir for robust exclusion (never retrigger on build output)
   const resolvedOutputDir = path.resolve(CWD, config.out || 'site');
@@ -249,6 +252,9 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
           return;
         }
 
+        // Debounce: wait until user stops making changes before rebuilding.
+        // Each new save resets this timer, so the build only runs after
+        // the last change — like Vite's approach.
         if (rebuildTimeout) clearTimeout(rebuildTimeout);
         rebuildTimeout = setTimeout(() => {
           const executeBuildFn = async () => {
@@ -278,7 +284,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
             }
           };
           executeBuildFn();
-        }, 150);
+        }, 600); // 600ms: rebuild fires 600ms after user stops saving
       });
       watchers.push(watcher);
     }

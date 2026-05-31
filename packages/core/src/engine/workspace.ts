@@ -517,7 +517,9 @@ export async function devWorkspace(
   let isRebuilding = false;
   let rebuildTimeout: any = null;
   let lastRebuildAt = 0;
-  const REBUILD_QUIET_MS = 1200;
+  // Absorbs phantom fs.watch events macOS emits after a rebuild writes output files.
+  // The absolute-path exclusion is the primary guard; this is a short backup window.
+  const REBUILD_QUIET_MS = 500;
 
   const workspace = workspaceConfig.workspace!;
   for (const project of workspace.projects) {
@@ -571,7 +573,7 @@ export async function devWorkspace(
         } finally {
           isRebuilding = false;
         }
-      }, 200);
+      }, 600); // 600ms idle: rebuild only after user stops saving
     });
   }
 
@@ -627,7 +629,7 @@ export async function devWorkspace(
         } finally {
           isRebuilding = false;
         }
-      }, 200);
+      }, 600); // 600ms idle: rebuild only after user stops saving
     });
   }
 
