@@ -122,10 +122,11 @@ function runCmd(cmd, cwd, silent = true) {
     // ═════════════════════════════════════════════════════════════
     
     TUI.section('Type Safety & Integrity');
-    
+
     // 1a. TypeScript type-checking across ALL packages
+    // Order matters: leaf packages first, then dependents
     TUI.step('Type-checking monorepo packages', 'WAIT');
-    const typeCheckPackages = ['tui', 'utils', 'api', 'parser', 'core'];
+    const typeCheckPackages = ['utils', 'tui', 'ui', 'themes', 'parser', 'api', 'live', 'deployer', 'core'];
     // Engine packages live under packages/engines/<name> — check them separately
     const typeCheckEngines = ['engines/js', 'engines/rust'];
     const typeErrors = [];
