@@ -12,7 +12,7 @@ packages/engines/*/dist
 packages/*/site
 packages/_playground/site
 
-# Test and playground
+# Not needed in Docker image
 packages/_playground
 
 # Development files
