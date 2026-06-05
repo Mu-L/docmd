@@ -176,19 +176,24 @@ jobs:
 
       - name: Test build command
         run: |
+          # Create test directory with proper permissions for container user (UID 1001)
+          mkdir -p /tmp/docmd-test
+          sudo chown -R 1001:1001 /tmp/docmd-test
+
           # Simulate exactly what a new user does: init a project then build it
           docker run --rm \
             -v /tmp/docmd-test:/workspace \
             --workdir /workspace \
-            --entrypoint /bin/bash \
             ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.build.outputs.version }} \
-            -c "cp -r /template/. /workspace/ && node /app/packages/core/dist/bin/docmd.js build"
+            sh -c "cp -r /template/. /workspace/ && docmd build"
 
       - name: Verify build output
         run: |
           if [ -f "/tmp/docmd-test/site/index.html" ]; then
             echo "✅ Build successful - site/index.html exists"
+            echo "📊 Site size: $(du -sh /tmp/docmd-test/site | cut -f1)"
           else
             echo "❌ Build failed - site/index.html not found"
+            ls -la /tmp/docmd-test/
             exit 1
           fi
