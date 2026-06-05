@@ -90,6 +90,10 @@
     --sidebar-group-bg: #3352660d;
     --sidebar-group-border: transparent;
     color-scheme: light;
+
+    --image-shadow: 0 0 15px -5px rgba(102, 102, 102, 0.3);
+    --image-border-radius: 6px;
+    --image-border-color: #ededed;
 }
 
 :root[data-theme=dark] {
@@ -518,6 +522,11 @@ img {
     color: var(--link-color);
 }
 
+.toc-level-1 {
+    margin-left: 0;
+    font-weight: 600;
+}
+
 .toc-level-2 {
     margin-left: 0;
 }
@@ -564,10 +573,62 @@ img {
     justify-content: center;
 }
 
+.docmd-breadcrumbs-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.docmd-breadcrumbs-spacer {
+    flex-grow: 1;
+}
+
+.docmd-copy-widgets {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.docmd-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.775rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background-color: var(--code-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    line-height: 1;
+}
+
+.docmd-copy-btn:hover {
+    background-color: var(--sidebar-link-active-bg);
+    color: var(--text-color);
+    border-color: var(--border-color-hover);
+}
+
+.docmd-copy-btn .docmd-btn-icon svg {
+    width: 13px;
+    height: 13px;
+    display: block;
+}
+
+.docmd-copy-btn.copied {
+    background-color: rgba(34, 197, 94, 0.15) !important;
+    color: #22c55e !important;
+    border-color: rgba(34, 197, 94, 0.4) !important;
+}
+
 .docmd-breadcrumbs {
     font-size: 0.8125rem;
     color: var(--text-muted);
-    margin-bottom: var(--space-4);
     display: block;
 }
 
@@ -866,6 +927,9 @@ body.has-menubar-header .docmd-menubar {
     width: 240px;
     flex-shrink: 0;
     margin: 1rem 0;
+    max-height: calc(100vh - var(--sticky-top-offset) - 4rem);
+    overflow-y: auto;
+    scrollbar-width: thin;
 }
 
 .docmd-options-menu {
@@ -1904,7 +1968,7 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
     list-style: none;
     padding: .5em .25em;
     margin: 0;
-    overflow-y: auto
+    overflow-y: visible
 }
 
 .toc-item {
@@ -2001,7 +2065,7 @@ img.size-large {
 
 img.with-border {
     border: 1px solid var(--image-border-color);
-    padding: 4px
+    border-radius: var(--image-border-radius);
 }
 
 img.with-shadow {

@@ -75,6 +75,26 @@ process.stdout.write(`\n`);
 // 5. Final Reset Report
 run('node scripts/status.js reset', false);
 
-// 6. Verify (this builds and optionally links)
+// 6. Verify Docker setup (optional)
+try {
+    const hasDocker = require('child_process').execSync('which docker 2>/dev/null', { 
+        encoding: 'utf8', 
+        stdio: ['pipe', 'pipe', 'pipe'] 
+    }).trim();
+    
+    if (hasDocker || process.env.DOCKER_HOST) {
+        process.stdout.write(`\x1b[36m│\x1b[0m  \x1b[2mChecking Docker setup\x1b[0m`.padEnd(45));
+        try {
+            require('child_process').execSync('docker --version', { stdio: 'ignore' });
+            process.stdout.write(` \x1b[32m[ AVAILABLE ]\x1b[0m\n`);
+        } catch {
+            process.stdout.write(` \x1b[33m[ NOT INSTALLED ]\x1b[0m\n`);
+        }
+    }
+} catch {
+    // Docker not installed, skip check silently
+}
+
+// 7. Verify (this builds and optionally links)
 // Pass --skip-header to avoid duplicate logo
 run(`node scripts/verify.js ${args.join(' ')} --skip-header`, false);

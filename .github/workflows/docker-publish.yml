@@ -1,0 +1,210 @@
+# --------------------------------------------------------------------
+# docmd : the minimalist, zero-config documentation generator.
+#
+# @package     @docmd/core (and ecosystem)
+# @website     https://docmd.io
+# @repository  https://github.com/docmd-io/docmd
+# @license     MIT
+# @copyright   Copyright (c) 2025-present docmd.io
+#
+# [docmd-source] - Please do not remove this header.
+# --------------------------------------------------------------------
+#
+# GitHub Actions workflow for building and publishing Docker images
+# Uses OIDC (OpenID Connect) for passwordless authentication to GHCR
+#
+# Triggers:
+#   - Release published on GitHub
+#   - Manual workflow dispatch
+#   - Push to main (for testing)
+#
+# --------------------------------------------------------------------
+
+name: Build and Push Docker Image
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      push_image:
+        description: 'Push image to registry'
+        required: false
+        default: true
+        type: boolean
+      version:
+        description: 'Version tag (e.g., 0.8.6)'
+        required: false
+        type: string
+  push:
+    branches:
+      - main
+    paths:
+      - 'docker/Dockerfile'
+      - 'docker/.dockerignore'
+      - 'packages/**'
+      - '!.github/**'
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write  # Required for OIDC
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Build and push Docker image
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      tags: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # -------------------------------------------------------------------------
+      # Set up Docker Buildx for multi-platform builds
+      # -------------------------------------------------------------------------
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # -------------------------------------------------------------------------
+      # Login to GitHub Container Registry using OIDC
+      # The id-token: write permission enables passwordless authentication
+      # -------------------------------------------------------------------------
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # -------------------------------------------------------------------------
+      # Extract metadata for Docker
+      # -------------------------------------------------------------------------
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}
+          tags: |
+            # For releases: use the release tag
+            type=ref,event=tag
+            # For manual dispatch: use provided version or default
+            type=raw,value=${{ inputs.version }},enable=${{ github.event_name == 'workflow_dispatch' && inputs.version != '' }}
+            # For main branch: use 'latest' and 'edge'
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
+            # Add commit SHA for traceability
+            type=sha,prefix=
+          labels: |
+            org.opencontainers.image.title=docmd
+            org.opencontainers.image.description=The minimalist, zero-config documentation generator
+            org.opencontainers.image.vendor=docmd.io
+            org.opencontainers.image.licenses=MIT
+
+      # -------------------------------------------------------------------------
+      # Build and push Docker image
+      # Multi-platform: linux/amd64, linux/arm64
+      # -------------------------------------------------------------------------
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.push_image) }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+      # -------------------------------------------------------------------------
+      # Output build info
+      # -------------------------------------------------------------------------
+      - name: Output image info
+        run: |
+          echo "## Docker Image Published! :whale:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Image Details" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Registry | \`${{ env.REGISTRY }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | \`${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.meta.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | \`${{ steps.meta.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Platforms | \`linux/amd64, linux/arm64\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Usage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "# Pull the image" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.meta.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# Run development server" >> $GITHUB_STEP_SUMMARY
+          echo "docker run -v \$(pwd)/docs:/docs -p 3000:3000 ${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.meta.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# Build static site" >> $GITHUB_STEP_SUMMARY
+          echo "docker run -v \$(pwd)/docs:/docs -v \$(pwd)/site:/site ${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.meta.outputs.version }} build" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+  # ---------------------------------------------------------------------------
+  # Test the Docker image (optional but recommended)
+  # ---------------------------------------------------------------------------
+  test:
+    name: Test Docker Image
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.push_image)
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull image
+        run: docker pull ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.build.outputs.version }}
+
+      - name: Create test docs
+        run: |
+          mkdir -p test-docs
+          echo "# Test Documentation" > test-docs/index.md
+          echo "" >> test-docs/index.md
+          echo "This is a test page for docmd Docker image." >> test-docs/index.md
+
+      - name: Test build command
+        run: |
+          docker run --rm \
+            -v $(pwd)/test-docs:/docs \
+            -v $(pwd)/test-site:/site \
+            ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.build.outputs.version }} \
+            build
+
+      - name: Verify build output
+        run: |
+          if [ -f "test-site/index.html" ]; then
+            echo "✅ Build successful - index.html created"
+          else
+            echo "❌ Build failed - index.html not found"
+            exit 1
+          fi
+
+      - name: Cleanup
+        run: rm -rf test-docs test-site

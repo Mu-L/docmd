@@ -34,6 +34,7 @@
       <a href="https://docmd.io">ウェブサイト</a> • 
       <a href="https://docs.docmd.io">ドキュメント</a> • 
       <a href="https://live.docmd.io">ライブエディタ</a> •
+      <a href="https://github.com/docmd-io/docmd-skills">Agent Skills</a> •
       <a href="https://github.com/docmd-io/docmd/issues">バグを報告</a>
     </h4>
   </p>
@@ -45,7 +46,7 @@
       <img width="800" alt="docmd preview" src="https://raw.githubusercontent.com/docmd-io/docmd/refs/heads/main/assets/docmd-cover.webp" />
     </a>
     <br/>
-    <sup><i>docmd `default` テーマ  -  ライトモードとダークモードのプレビュー</i></sup>
+    <sup><i>docmd `default` テーマ  -  ライトモード and ダークモードのプレビュー</i></sup>
   </p>
 
 </div>
@@ -77,9 +78,16 @@ npx @docmd/core build
 npm install -g @docmd/core
 ```
 
+または Docker で実行：
+
+```bash
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest
+```
+
 ```bash
 docmd dev     # 開発サーバーの起動
 docmd build   # デプロイ用のビルド作成
+docmd migrate # 他のツール（Docusaurus、VitePress、MkDocsなど）からの移行
 docmd deploy  # Docker, Nginx, Caddyの設定を即座に生成
 ```
 
@@ -96,7 +104,7 @@ docmd deploy  # Docker, Nginx, Caddyの設定を即座に生成
 ### 実運用可能な出力
 
 * 静的HTML生成
-* SEO最適化 (sitemap, canonical, リダイレクト)
+* SEO优化 (sitemap, canonical, リダイレクト)
 * 極小のJavaScriptペイロード
 
 ### 組み込み機能
@@ -107,6 +115,13 @@ docmd deploy  # Docker, Nginx, Caddyの設定を即座に生成
 * PWA対応
 * アナリティクス
 * AI文脈 (`llms.txt`)
+
+### AI-First 統合
+
+* ネイティブ **MCP サーバー** (`docmd mcp`) — AI エージェントが stdio 経由でドキュメントを検索、読み取り、検証
+* エージェントスキルセット ([docmd-skills](https://github.com/docmd-io/docmd-skills)) — LLM および IDE エージェント用のモジュール式スキル
+* `llms.txt` / `llms-full.txt` — ビルド時に生成される完全なドキュメントコンテキスト
+* Copy Markdown / Copy Context ウィジェット — AI チャット向けに最適化されたブラウザボタン
 
 ### 必要に応じて拡張可能
 
@@ -227,15 +242,18 @@ docmd add <plugin-name>
 | :---------------- | :------------------------ | :------------------- | :-------------- | :--------------- | :--------------- |
 | **言語**          | **Node.js**               | React.js             | Python          | Vue              | SaaS             |
 | **設定の必要性**  | **なし**                  | `docusaurus.config.js` | `mkdocs.yml`  | `config.mts`     | `mint.json`      |
+| **複数プロジェクト**| **ネイティブ**             | プラグイン           | プラグイン      | なし             | なし             |
 | **初期ペイロード**| **~18kb**                 | ~250kb               | ~40kb           | ~50kb            | ~120kb           |
 | **ナビゲーション**| **即座にSPA**             | React SPA            | フルリロード    | Vue SPA          | ホスト型SPA      |
 | **バージョニング**| **組み込み**              | ネイティブ（複雑）   | mikeプラグイン   | 手動             | ネイティブ       |
 | **i18n**          | **組み込み**              | ネイティブ（複雑）   | プラグインベース | 手動             | ネイティブ       |
 | **検索**          | **組み込み（オフライン）**| Algolia（クラウド）  | 組み込み        | MiniSearch        | クラウド         |
 | **AI文脈**        | **組み込み（`llms.txt`）**| 手動                 | なし            | なし             | プロプライエタリ |
+| **MCP サーバー**  | **組み込み**              | なし                 | なし            | なし             | 組み込み         |
+| **Agent Skills**  | **組み込み**              | なし                 | なし            | なし             | 組み込み         |
+| **Dockerイメージ**| **公式**                  | なし                 | 公式            | なし             | N/A              |
 | **PWA**           | **公式プラグイン**        | コミュニティプラグイン | なし            | なし             | ホスト型         |
 | **セルフホスト**  | **はい**                  | はい                 | はい            | はい             | いいえ           |
-| **ゼロ設定**      | **`npx @docmd/core dev`** | いいえ               | いいえ          | いいえ           | いいえ           |
 | **コスト**        | **無料 (OSS)**            | 無料 (OSS)           | 無料 (OSS)      | 無料 (OSS)       | フリーミアム     |
 
 シンプルに始まり、摩擦なく拡張できます。

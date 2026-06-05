@@ -1,0 +1,83 @@
+# --------------------------------------------------------------------
+# docmd : the minimalist, zero-config documentation generator.
+#
+# @package     @docmd/core (and ecosystem)
+# @website     https://docmd.io
+# @repository  https://github.com/docmd-io/docmd
+# @license     MIT
+# @copyright   Copyright (c) 2025-present docmd.io
+#
+# [docmd-source] - Please do not remove this header.
+# --------------------------------------------------------------------
+
+# Dependencies
+node_modules
+packages/*/node_modules
+packages/plugins/*/node_modules
+packages/engines/*/node_modules
+
+# Build outputs
+dist
+*.tsbuildinfo
+packages/*/dist
+packages/plugins/*/dist
+packages/engines/*/dist
+
+# Generated sites
+site
+packages/*/site
+packages/plugins/*/site
+public
+
+# Development files
+.git
+.gitignore
+.github
+.vscode
+.idea
+*.md
+!README.md
+
+# Test and playground files
+packages/_playground
+temp-*
+*.log
+*.tsbuildinfo
+
+# Native build artifacts (will be downloaded at runtime)
+packages/engines/rust-binaries/native/target
+
+# Documentation
+docs
+*.md
+!README.md
+!LICENSE
+
+# CI/CD files
+.github
+.travis.yml
+.circleci
+
+# Editor files
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Test files
+test
+tests
+__tests__
+coverage
+.nyc_output
+
+# Misc
+*.tgz
+*.bak
+tmp
+temp

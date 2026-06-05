@@ -177,25 +177,47 @@
           <main class="content-area" id="main-content">
             <div class="content-layout">
               <div class="main-content">
-                <% if (config.layout?.breadcrumbs !== false && locals.breadcrumbs && breadcrumbs.length > 0) { %>
-                  <nav aria-label="<%= typeof t === 'function' ? t('breadcrumb') : 'Breadcrumb' %>" class="docmd-breadcrumbs">
-                    <ol>
-                      <% const _bcPrefix = (typeof outputPrefix !== 'undefined' && outputPrefix) ? outputPrefix : ''; %>
-                      <% breadcrumbs.forEach((crumb, index) => { %>
-                        <li class="breadcrumb-item <%= index === breadcrumbs.length - 1 ? 'active' : '' %>" <%= index === breadcrumbs.length - 1 ? 'aria-current="page"' : '' %>>
-                          <% if (crumb.path && index < breadcrumbs.length - 1) { %>
-                            <a href="<%= relativePathToRoot %><%= _bcPrefix %><%= crumb.path.startsWith('/') ? crumb.path.substring(1) : crumb.path %>"><%= crumb.title %></a>
-                          <% } else { %>
-                            <span><%= crumb.title %></span>
-                          <% } %>
-                          <% if (index < breadcrumbs.length - 1) { %>
-                            <span class="breadcrumb-separator"><%- renderIcon('chevron-right') %></span>
-                          <% } %>
-                        </li>
-                      <% }) %>
-                    </ol>
-                  </nav>
-                <% } %>
+                <div class="docmd-breadcrumbs-row">
+                  <div id="docmd-raw-markdown" data-content="<%= encodeURIComponent(rawMarkdown) %>" style="display: none;"></div>
+                  <% if (config.layout?.breadcrumbs !== false && locals.breadcrumbs && breadcrumbs.length > 0) { %>
+                    <nav aria-label="<%= typeof t === 'function' ? t('breadcrumb') : 'Breadcrumb' %>" class="docmd-breadcrumbs">
+                      <ol>
+                        <% const _bcPrefix = (typeof outputPrefix !== 'undefined' && outputPrefix) ? outputPrefix : ''; %>
+                        <% breadcrumbs.forEach((crumb, index) => { %>
+                          <li class="breadcrumb-item <%= index === breadcrumbs.length - 1 ? 'active' : '' %>" <%= index === breadcrumbs.length - 1 ? 'aria-current="page"' : '' %>>
+                            <% if (crumb.path && index < breadcrumbs.length - 1) { %>
+                              <a href="<%= relativePathToRoot %><%= _bcPrefix %><%= crumb.path.startsWith('/') ? crumb.path.substring(1) : crumb.path %>"><%= crumb.title %></a>
+                            <% } else { %>
+                              <span><%= crumb.title %></span>
+                            <% } %>
+                            <% if (index < breadcrumbs.length - 1) { %>
+                              <span class="breadcrumb-separator"><%- renderIcon('chevron-right') %></span>
+                            <% } %>
+                          </li>
+                        <% }) %>
+                      </ol>
+                    </nav>
+                  <% } else { %>
+                    <div class="docmd-breadcrumbs-spacer"></div>
+                  <% } %>
+
+                  <% if (config.theme?.copyWidgets?.enabled !== false) { %>
+                    <div class="docmd-copy-widgets">
+                      <% if (config.theme?.copyWidgets?.raw !== false) { %>
+                        <button class="docmd-copy-btn docmd-copy-raw-btn" data-copied="<%= typeof t === 'function' ? t('copiedToClipboard') : 'Copied!' %>" title="<%= typeof t === 'function' ? t('copyMarkdown') : 'Copy Markdown' %>">
+                          <span class="docmd-btn-icon"><%- renderIcon('copy') %></span>
+                          <span class="docmd-btn-text"><%= typeof t === 'function' ? t('copyMarkdown') : 'Copy Markdown' %></span>
+                        </button>
+                      <% } %>
+                      <% if (config.theme?.copyWidgets?.context !== false) { %>
+                        <button class="docmd-copy-btn docmd-copy-context-btn" data-copied="<%= typeof t === 'function' ? t('copiedToClipboard') : 'Copied!' %>" title="<%= typeof t === 'function' ? t('copyContext') : 'Copy Context' %>">
+                          <span class="docmd-btn-icon"><%- renderIcon('message-square') || renderIcon('copy') %></span>
+                          <span class="docmd-btn-text"><%= typeof t === 'function' ? t('copyContext') : 'Copy Context' %></span>
+                        </button>
+                      <% } %>
+                    </div>
+                  <% } %>
+                </div>
                 <% if (headerConfig?.enabled===false) { %>
                   <h1>
                     <%= pageTitle %>

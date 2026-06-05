@@ -34,6 +34,7 @@
       <a href="https://docmd.io">Sitio web</a> • 
       <a href="https://docs.docmd.io">Documentación</a> • 
       <a href="https://live.docmd.io">Editor en vivo</a> •
+      <a href="https://github.com/docmd-io/docmd-skills">Agent Skills</a> •
       <a href="https://github.com/docmd-io/docmd/issues">Reportar error</a>
     </h4>
   </p>
@@ -77,9 +78,16 @@ npx @docmd/core build
 npm install -g @docmd/core
 ```
 
+O ejecutar mediante Docker:
+
+```bash
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest
+```
+
 ```bash
 docmd dev     # iniciar servidor de desarrollo
 docmd build   # construir para despliegue
+docmd migrate # migrar desde otras herramientas (como Docusaurus, VitePress, MkDocs, etc.)
 docmd deploy  # generar configs de docker, nginx o caddy
 ```
 
@@ -107,6 +115,13 @@ Diseñado para empezar al instante y escalar sin fricciones.
 * Soporte PWA
 * Analítica
 * Contexto para AI (`llms.txt`)
+
+### Integración AI-First
+
+* **Servidor MCP** Nativo (`docmd mcp`) — Los agentes AI buscan, leen y validan documentos a través de stdio
+* Conjunto de habilidades de agente ([docmd-skills](https://github.com/docmd-io/docmd-skills)) — habilidades modulares para LLMs y agentes de IDE
+* `llms.txt` / `llms-full.txt` — contexto de documentación completo generado en tiempo de compilación
+* Widgets de Copiar Markdown / Copiar Contexto — botones del navegador optimizados para chat AI
 
 ### Extensible cuando sea necesario
 
@@ -227,15 +242,18 @@ docmd add <plugin-name>
 | :--------------- | :------------------------ | :------------------- | :-------------- | :--------------- | :--------------- |
 | **Lenguaje**     | **Node.js**               | React.js             | Python          | Vue              | SaaS             |
 | **Config. req.** | **Ninguna**               | `docusaurus.config.js` | `mkdocs.yml`  | `config.mts`     | `mint.json`      |
+| **Multi-proyecto**| **Nativo**                | Plugin               | Plugin          | No               | No               |
 | **Carga inicial**| **~18kb**                 | ~250kb               | ~40kb           | ~50kb            | ~120kb           |
 | **Navegación**   | **SPA Instantánea**       | React SPA            | Recarga total   | Vue SPA          | SPA Alojada      |
 | **Versiones**    | **Integrada**             | Nativa (compleja)    | mike plugin     | Manual           | Nativa           |
 | **i18n**         | **Integrada**             | Nativa (compleja)    | Basada en plugins| Manual           | Nativa           |
 | **Búsqueda**     | **Integrada (offline)**   | Algolia (nube)       | Integrada       | MiniSearch        | Nube             |
 | **Contexto AI**  | **Integrada (`llms.txt`)**| Manual               | Ninguno         | Ninguno          | Propietario      |
+| **Servidor MCP** | **Integrada**             | Ninguno              | Ninguno         | Ninguno          | Integrado        |
+| **Agent Skills**  | **Integrada**             | Ninguno              | Ninguno         | Ninguno          | Integrado        |
+| **Imagen Docker** | **Oficial**               | Ninguno              | Oficial         | Ninguno          | N/A              |
 | **PWA**          | **Plugin Oficial**        | Plugin comunidad     | Ninguno         | Ninguno          | Alojado          |
 | **Autohospedado**| **Sí**                    | Sí                   | Sí              | Sí               | No               |
-| **Zero-config**  | **`npx @docmd/core dev`** | No                   | No              | No               | No               |
 | **Costo**        | **Gratis (OSS)**          | Gratis (OSS)         | Gratis (OSS)    | Gratis (OSS)     | Freemium         |
 
 Empieza simple. Escala sin fricción.

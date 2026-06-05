@@ -24,5 +24,7 @@
   "latest": "最新",
   "translationUnavailable": "このバージョンの翻訳は利用できません",
   "unavailable": "なし",
-  "fallbackMessage": "このページは {active} ではまだ利用できません。デフォルトの言語 ({default}) で表示しています。"
+  "fallbackMessage": "このページは {active} ではまだ利用できません。デフォルトの言語 ({default}) で表示しています。",
+  "copyMarkdown": "Markdownをコピー",
+  "copyContext": "コンテキストをコピー"
 }

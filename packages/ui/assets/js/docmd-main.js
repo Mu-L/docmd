@@ -295,6 +295,93 @@
         });
       }
     }
+
+    function parseFrontmatter(markdown) {
+      const trimmed = markdown.trim();
+      const meta = {};
+      let body = trimmed;
+      if (trimmed.startsWith('---')) {
+        const nextSeparator = trimmed.indexOf('---', 3);
+        if (nextSeparator !== -1) {
+          const fmText = trimmed.substring(3, nextSeparator);
+          body = trimmed.substring(nextSeparator + 3).trim();
+          const lines = fmText.split('\n');
+          for (const line of lines) {
+            const colonIdx = line.indexOf(':');
+            if (colonIdx !== -1) {
+              const key = line.substring(0, colonIdx).trim();
+              let val = line.substring(colonIdx + 1).trim();
+              if (val.startsWith('"') && val.endsWith('"')) {
+                val = val.substring(1, val.length - 1);
+              } else if (val.startsWith("'") && val.endsWith("'")) {
+                val = val.substring(1, val.length - 1);
+              }
+              meta[key] = val;
+            }
+          }
+        }
+      }
+      return { meta, body };
+    }
+
+    // Copy Raw Markdown Button
+    const rawCopyBtn = e.target.closest('.docmd-copy-raw-btn');
+    if (rawCopyBtn) {
+      const rawEl = document.getElementById('docmd-raw-markdown');
+      if (rawEl) {
+        const rawContent = decodeURIComponent(rawEl.getAttribute('data-content') || '');
+        const { body } = parseFrontmatter(rawContent);
+        navigator.clipboard.writeText(body).then(() => {
+          const btnText = rawCopyBtn.querySelector('.docmd-btn-text');
+          const originalText = btnText ? btnText.textContent : 'Copy Markdown';
+          const copiedText = rawCopyBtn.getAttribute('data-copied') || 'Copied!';
+          if (btnText) btnText.textContent = copiedText;
+          rawCopyBtn.classList.add('copied');
+          setTimeout(() => {
+            if (btnText) btnText.textContent = originalText;
+            rawCopyBtn.classList.remove('copied');
+          }, 2000);
+        });
+      }
+    }
+
+    // Copy Context Button
+    const contextCopyBtn = e.target.closest('.docmd-copy-context-btn');
+    if (contextCopyBtn) {
+      const rawEl = document.getElementById('docmd-raw-markdown');
+      if (rawEl) {
+        const rawContent = decodeURIComponent(rawEl.getAttribute('data-content') || '');
+        const { meta, body } = parseFrontmatter(rawContent);
+        const title = document.title || '';
+        const descMeta = document.querySelector('meta[name="description"]');
+        const desc = descMeta ? descMeta.getAttribute('content') || '' : '';
+        
+        let contextStr = `Source URL: ${window.location.href}\nTitle: ${title}\n`;
+        if (desc) {
+          contextStr += `Description: ${desc}\n`;
+        }
+        if (Object.keys(meta).length > 0) {
+          contextStr += `\nMetadata:\n`;
+          for (const [k, v] of Object.entries(meta)) {
+            contextStr += `- ${k}: ${v}\n`;
+          }
+        }
+        contextStr += `\n---\n\n${body}`;
+
+        navigator.clipboard.writeText(contextStr).then(() => {
+          const btnText = contextCopyBtn.querySelector('.docmd-btn-text');
+          const originalText = btnText ? btnText.textContent : 'Copy Context';
+          const copiedText = contextCopyBtn.getAttribute('data-copied') || 'Copied!';
+          if (btnText) btnText.textContent = copiedText;
+          contextCopyBtn.classList.add('copied');
+          setTimeout(() => {
+            if (btnText) btnText.textContent = originalText;
+            contextCopyBtn.classList.remove('copied');
+          }, 2000);
+        });
+      }
+    }
+
     // Hero Slider
     const sliderBtn = e.target.closest('.hero-slider-btn, .hero-slider-dot');
     if (sliderBtn) {
@@ -385,29 +472,40 @@
   }
 
   let scrollObserver = null;
+  let lastActiveId = null;
+  let scrollTimeout = null;
+  
   function initializeScrollSpy() {
     if (scrollObserver) scrollObserver.disconnect();
     const tocLinks = document.querySelectorAll('.toc-link');
-    const headings = document.querySelectorAll('.main-content h2, .main-content h3, .main-content h4');
-    const tocContainer = document.querySelector('.toc-list');
+    const headings = document.querySelectorAll('.main-content h1, .main-content h2, .main-content h3, .main-content h4');
+    const tocContainer = document.querySelector('.toc-sidebar');
 
     if (tocLinks.length === 0 || headings.length === 0) return;
 
     scrollObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          tocLinks.forEach(link => link.classList.remove('active'));
           const id = entry.target.getAttribute('id');
+          
+          // Skip if this is already the active item
+          if (id === lastActiveId) return;
+          lastActiveId = id;
+          
+          tocLinks.forEach(link => link.classList.remove('active'));
           const activeLink = document.querySelector(`.toc-link[href="#${id}"]`);
 
           if (activeLink) {
             activeLink.classList.add('active');
             if (tocContainer) {
-              const linkRect = activeLink.getBoundingClientRect();
-              const containerRect = tocContainer.getBoundingClientRect();
-              if (linkRect.bottom > containerRect.bottom || linkRect.top < containerRect.top) {
-                tocContainer.scrollTo({ top: activeLink.offsetTop - (containerRect.height / 2) + (linkRect.height / 2), behavior: 'smooth' });
-              }
+              // Debounce scroll to prevent jittery behavior
+              if (scrollTimeout) clearTimeout(scrollTimeout);
+              scrollTimeout = setTimeout(() => {
+                const linkRect = activeLink.getBoundingClientRect();
+                const containerRect = tocContainer.getBoundingClientRect();
+                const scrollTop = activeLink.offsetTop - (containerRect.height / 2) + (linkRect.height / 2);
+                tocContainer.scrollTo({ top: Math.max(0, scrollTop), behavior: 'smooth' });
+              }, 100);
             }
           }
         }

@@ -34,6 +34,7 @@
       <a href="https://docmd.io">官网</a> • 
       <a href="https://docs.docmd.io">文档</a> • 
       <a href="https://live.docmd.io">在线编辑器</a> •
+      <a href="https://github.com/docmd-io/docmd-skills">Agent 技能</a> •
       <a href="https://github.com/docmd-io/docmd/issues">报告问题</a>
     </h4>
   </p>
@@ -77,6 +78,12 @@ npx @docmd/core build
 npm install -g @docmd/core
 ```
 
+或者通过 Docker 运行：
+
+```bash
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest
+```
+
 ```bash
 docmd dev     # 启动开发服务器
 docmd build   # 构建部署产物
@@ -111,6 +118,13 @@ docmd deploy    # 瞬间生成 Docker/Nginx/Caddy 配置文件
 * PWA 支持
 * 数据分析
 * AI 上下文（`llms.txt`）
+
+### AI-First 集成
+
+* 原生 **MCP 服务端** (`docmd mcp`) — AI Agent 通过 stdio 搜索、读取和验证文档
+* Agent 技能集 ([docmd-skills](https://github.com/docmd-io/docmd-skills)) — 为 LLM 和 IDE Agent 提供的模块化技能
+* `llms.txt` / `llms-full.txt` — 构建时生成的完整文档上下文
+* 复制 Markdown / 复制上下文 — 为 AI 对话优化的浏览器按钮
 
 ### 按需扩展
 
@@ -231,12 +245,16 @@ docmd add <plugin-name>
 | :----------: | :------------: | :----------: | :----------: | :-----------: | :----------: |
 | **语言**      | **Node.js**    | React.js     | Python       | Vue          | SaaS         |
 | **配置要求**  | **无**         | `docusaurus.config.js` | `mkdocs.yml` | `config.mts` | `mint.json`  |
+| **多项目支持** | **原生**       | 插件         | 插件         | 无           | 无           |
 | **初始负载**  | **~18kb**      | ~250kb       | ~40kb        | ~50kb        | ~120kb       |
 | **导航**      | **即时 SPA**   | React SPA    | 页面刷新     | Vue SPA      | 托管 SPA     |
 | **版本管理**  | **内置**       | 原生（复杂） |mike 插件 | 手动 | 原生 |
 | **i18n**     | **内置**       | 原生（复杂） | 基于插件 | 手动 | 原生 |
 | **搜索**      | **内置（离线）** | Algolia（云端） | 内置 | MiniSearch | 云端 |
-| **AI 上下文** | **内置（`llms.txt`）** | 手动 | 无 | 无 | 专有 |
+| **AI 上下文** | **内置（`llms.txt`）** | 无 | 无 | 无 | 内置 |
+| **MCP 服务端** | **内置** | 无 | 无 | 无 | 内置 |
+| **Agent 技能** | **内置** | 无 | 无 | 无 | 内置 |
+| **Docker 镜像**| **官方**       | 无           | 官方         | 无           | N/A          |
 | **PWA**      | **官方插件**   | 社区插件     | 无           | 无           | 托管         |
 | **自托管**    | **是**         | 是           | 是           | 是           | 否           |
 | **费用**      | **免费（OSS）** | 免费（OSS） | 免费（OSS） | 免费（OSS） | 免费增值     |
