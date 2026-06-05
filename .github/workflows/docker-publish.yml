@@ -36,14 +36,6 @@ on:
         description: 'Version tag (e.g., 0.8.6)'
         required: false
         type: string
-  push:
-    branches:
-      - main
-    paths:
-      - 'docker/Dockerfile'
-      - 'docker/.dockerignore'
-      - 'packages/**'
-      - '!.github/**'
 
 permissions:
   contents: read
