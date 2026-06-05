@@ -1664,7 +1664,7 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
     position: absolute;
     top: 0.75rem;
     bottom: 0.75rem;
-    left: 0.875rem;
+    left: 0.83rem;
     width: 2px;
     background: linear-gradient(to bottom, var(--border-color) 0%, var(--border-color) 80%, transparent 100%);
     z-index: 0;
@@ -1877,7 +1877,7 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
     bottom: 2rem;
     left: var(--space-6);
     width: 2px;
-    background: linear-gradient(to bottom, transparent 0%, var(--border-color) 15%, var(--border-color) 85%, transparent 100%);
+    background: linear-gradient(to bottom, transparent 0%, var(--border-color) 3%, var(--border-color) 90%, transparent 100%);
     pointer-events: none;
     z-index: 0;
 }
