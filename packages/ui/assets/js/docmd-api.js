@@ -43,15 +43,21 @@
   const pendingCalls = new Map(); // id → { resolve, reject }
   const eventListeners = new Map(); // name → Set<callback>
 
+  // retryCount lives outside connect() so it persists across reconnect calls.
+  // This ensures maxRetries is actually enforced — previously it reset to 0
+  // on every invocation, causing infinite reconnection loops on static servers.
+  let retryCount = 0;
+  const maxRetries = 5;
+
   function connect() {
     if (socket && (socket.readyState === 0 || socket.readyState === 1)) return;
+    if (retryCount >= maxRetries) return; // give up — not a dev server
+
     socket = new WebSocket('ws://' + window.location.host);
-    let retryCount = 0;
-    const maxRetries = 50;
 
     socket.onopen = () => {
       console.log('⚡ docmd connected');
-      retryCount = 0;
+      retryCount = 0; // reset on successful connection
     };
 
     socket.onmessage = (e) => {
@@ -81,11 +87,15 @@
       }
     };
 
+    // Suppress the browser's default connection-refused error in the console.
+    socket.onerror = () => { /* handled via onclose */ };
+
     socket.onclose = () => {
+      retryCount++;
       if (retryCount < maxRetries) {
-        retryCount++;
         setTimeout(connect, Math.min(1000 * (1.5 ** retryCount), 5000));
       }
+      // No log on final failure — this is expected when serving a static build.
     };
   }
 
