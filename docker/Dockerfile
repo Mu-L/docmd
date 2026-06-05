@@ -52,12 +52,18 @@ COPY . .
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Build all packages except:
-#   - _playground  (dev sandbox, not needed in the image)
-#   - engine-rust-binaries  (requires cargo; pre-built .node files are committed)
-RUN pnpm -r run build \
-    --filter=!@docmd/playground \
-    --filter=!@docmd/engine-rust-binaries
+# Stub out build scripts that can't run in Docker:
+#   - engine-rust-binaries: requires cargo (Rust compiler), not available here
+#   - _playground: runs a full docmd build, not needed in the image
+RUN node -e "const fs=require('fs'); \
+  ['packages/engines/rust-binaries/package.json','packages/_playground/package.json'].forEach(p=>{ \
+    const pkg=JSON.parse(fs.readFileSync(p,'utf8')); \
+    pkg.scripts=pkg.scripts||{}; pkg.scripts.build='echo skipped'; \
+    fs.writeFileSync(p,JSON.stringify(pkg,null,2)); \
+  });"
+
+# Build all packages
+RUN pnpm -r run build
 
 # Resolve workspace:* deps to real version numbers for standalone use
 RUN node scripts/resolve-ws-deps.js
