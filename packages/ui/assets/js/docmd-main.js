@@ -529,6 +529,16 @@
     if (location.protocol === 'file:') return;
     if (document.body.dataset.spaEnabled !== 'true') return;
 
+    // Convert all initial relative assets in head to absolute URLs to prevent
+    // dynamic base resolution issues during SPA pushState / popstate updates.
+    const assetSelectors = 'link[rel="stylesheet"], link[rel="icon"], link[rel="shortcut icon"]';
+    document.querySelectorAll(assetSelectors).forEach(asset => {
+      const href = asset.getAttribute('href');
+      if (href) {
+        asset.setAttribute('href', new URL(href, window.location.href).href);
+      }
+    });
+
     let currentPath = window.location.pathname;
     const pageCache = new Map();
     let prefetchTimer = null;
