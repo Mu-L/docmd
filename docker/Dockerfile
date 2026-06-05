@@ -169,9 +169,8 @@ WORKDIR /docs
 EXPOSE 3000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3000/ || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD curl -f http://localhost:3000/ || exit 1
 
-# Default command
+# Default command — exec form (preferred, no shell wrapping, signals pass through)
 ENTRYPOINT ["docmd"]
 CMD ["dev", "--host", "0.0.0.0"]
