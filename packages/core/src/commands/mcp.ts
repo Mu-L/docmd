@@ -260,22 +260,49 @@ export async function runMcpServer() {
 
         if (uri === "docmd://context/skill") {
           const skillFile = path.resolve(process.cwd(), 'SKILL.md');
+          let content = '';
           if (fs.existsSync(skillFile)) {
             try {
-              const content = fs.readFileSync(skillFile, 'utf8');
-              sendResponse(id, {
-                contents: [{
-                  uri,
-                  mimeType: "text/markdown",
-                  text: content
-                }]
-              });
+              content = fs.readFileSync(skillFile, 'utf8');
             } catch (err: any) {
               sendResponse(id, { content: [{ type: "text", text: `Error reading SKILL.md: ${err.message}` }] });
+              return;
             }
           } else {
-            sendResponse(id, { content: [{ type: "text", text: "Error: SKILL.md not found in workspace root." }] });
+            content = [
+              "---",
+              "name: docmd",
+              "description: Fallback agent instruction set for docmd.",
+              "skills: https://github.com/docmd-io/docmd-skills",
+              "docs: https://docs.docmd.io",
+              "llms-context: https://docs.docmd.io/llms-full.txt",
+              "---",
+              "",
+              "# docmd Agent Skills",
+              "",
+              "This project uses **docmd**, the zero-config AI-first documentation engine.",
+              "",
+              "## Agent Instructions & Skills Reference",
+              "The authoritative prompt library and instruction set for docmd is maintained in the official repository:",
+              "👉 **[github.com/docmd-io/docmd-skills](https://github.com/docmd-io/docmd-skills)**",
+              "",
+              "To fetch specific skills, you can reference the modules at `docmd-skills`:",
+              "- **CLI / Config / Plugins**: For configuration rules, commands, and plugin setup.",
+              "- **Formatting / Syntax**: For Callouts, tabs, steps, grids, and URL embeds.",
+              "- **API**: MCP integrations, client-side events, and live editor.",
+              "",
+              "### Local Customisation",
+              "To create a customized instruction set for this specific workspace, create a `SKILL.md` file in the root of your project."
+            ].join('\n');
           }
+
+          sendResponse(id, {
+            contents: [{
+              uri,
+              mimeType: "text/markdown",
+              text: content
+            }]
+          });
           return;
         }
 

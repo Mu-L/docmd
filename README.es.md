@@ -15,9 +15,9 @@
   
   <!-- ONE LINE SUMMARY -->
   <p>
-    <b>Motor de documentación AI-First y Zero-Config para desarrolladores y agentes LLM.</b>
+    <b>Crea documentación lista para producción a partir de Markdown en segundos.</b>
     <br/>
-    Configuración cero al empezar. Control total cuando lo necesites.
+    Motor de documentación AI-First y Zero-Config para desarrolladores y agentes LLM.
   </p>
   
   <!-- BADGES -->
