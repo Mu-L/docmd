@@ -15,9 +15,9 @@
   
   <!-- ONE LINE SUMMARY -->
   <p>
-    <b>AI-First & Zero-Config Dokumentations-Engine für Entwickler und LLM-Agenten.</b>
+    <b>Erstellen Sie in Sekundenschnelle produktionsreife Dokumentationen aus Markdown.</b>
     <br/>
-    Zero Setup am Anfang. Volle Kontrolle, wenn Sie sie brauchen.
+    AI-First & Zero-Config Dokumentations-Engine für Entwickler und LLM-Agenten.
   </p>
   
   <!-- BADGES -->
