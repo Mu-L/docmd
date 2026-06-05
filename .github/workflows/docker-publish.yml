@@ -187,4 +187,14 @@ jobs:
             --entrypoint sh \
             ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.build.outputs.version }} \
             -c "cp -r /template/. /workspace/ && docmd build"
+
+      - name: Verify build output
+        run: |
+          if [ -f "/tmp/docmd-test/site/index.html" ]; then
+            echo "✅ Build successful - site/index.html exists"
+            echo "📊 Site size: $(du -sh /tmp/docmd-test/site | cut -f1)"
+          else
+            echo "❌ Build failed - site/index.html not found"
+            ls -la /tmp/docmd-test/
+            exit 1
           fi
