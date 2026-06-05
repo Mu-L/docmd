@@ -69,16 +69,18 @@ COPY packages/engines/rust/scripts ./packages/engines/rust/scripts/
 COPY packages/engines/rust-binaries/package.json ./packages/engines/rust-binaries/
 
 # Copy plugins package.json files
-COPY packages/plugins/plugin-analytics/package.json ./packages/plugins/plugin-analytics/
-COPY packages/plugins/plugin-git/package.json ./packages/plugins/plugin-git/
-COPY packages/plugins/plugin-installer/package.json ./packages/plugins/plugin-installer/
-COPY packages/plugins/plugin-llms/package.json ./packages/plugins/plugin-llms/
-COPY packages/plugins/plugin-mermaid/package.json ./packages/plugins/plugin-mermaid/
-COPY packages/plugins/plugin-openapi/package.json ./packages/plugins/plugin-openapi/
-COPY packages/plugins/plugin-pwa/package.json ./packages/plugins/plugin-pwa/
-COPY packages/plugins/plugin-search/package.json ./packages/plugins/plugin-search/
-COPY packages/plugins/plugin-seo/package.json ./packages/plugins/plugin-seo/
-COPY packages/plugins/plugin-sitemap/package.json ./packages/plugins/plugin-sitemap/
+COPY packages/plugins/analytics/package.json ./packages/plugins/analytics/
+COPY packages/plugins/git/package.json ./packages/plugins/git/
+COPY packages/plugins/installer/package.json ./packages/plugins/installer/
+COPY packages/plugins/llms/package.json ./packages/plugins/llms/
+COPY packages/plugins/math/package.json ./packages/plugins/math/
+COPY packages/plugins/mermaid/package.json ./packages/plugins/mermaid/
+COPY packages/plugins/openapi/package.json ./packages/plugins/openapi/
+COPY packages/plugins/pwa/package.json ./packages/plugins/pwa/
+COPY packages/plugins/search/package.json ./packages/plugins/search/
+COPY packages/plugins/seo/package.json ./packages/plugins/seo/
+COPY packages/plugins/sitemap/package.json ./packages/plugins/sitemap/
+COPY packages/plugins/threads/package.json ./packages/plugins/threads/
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
