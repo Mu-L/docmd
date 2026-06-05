@@ -1345,15 +1345,15 @@ blockquote.docmd-embed {
     position: relative;
 }
 
-.content-area::before {
+:root[data-theme=dark] .content-area::before {
     content: "";
     position: absolute;
-    top: 0;
+    top: 0px;
     left: 50%;
-    transform: translate(-50%, -100px);
-    width: 1000px;
-    height: 400px;
-    background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
+    transform: translate(-100%, -50%);
+    width: 100%;
+    height: 50%;
+    background: radial-gradient(rgba(12, 138, 213, 0.05) 30%, transparent 70%);
     pointer-events: none;
     z-index: 0;
 }
@@ -1659,33 +1659,75 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 }
 
 .docmd-container.steps-reset {
-    counter-reset: step-counter 0
+    counter-reset: step-counter 0;
 }
 
 .docmd-container.steps-reset ol.steps-list {
+    position: relative;
+    padding-left: 2.5rem;
+    list-style: none !important;
+    margin: 1.5rem 0;
     counter-reset: list-counter 0;
-    list-style: none
+}
+
+.docmd-container.steps-reset ol.steps-list::before {
+    content: "";
+    position: absolute;
+    top: 0.75rem;
+    bottom: 0.75rem;
+    left: 0.875rem;
+    width: 2px;
+    background-color: var(--border-color);
+    z-index: 0;
 }
 
 .docmd-container.steps-reset ol.steps-list>li.step-item {
     counter-increment: list-counter 1;
     position: relative;
-    padding-left: 0;
-    margin-bottom: 2.5rem
+    padding-left: 0.5rem;
+    margin-bottom: 2rem;
+    list-style: none !important;
+}
+
+.docmd-container.steps-reset ol.steps-list>li.step-item:last-child {
+    margin-bottom: 0;
 }
 
 .docmd-container.steps-reset ol.steps-list>li.step-item::before {
-    font-size: 2rem
+    content: counter(list-counter) !important;
+    position: absolute;
+    left: -2.5rem;
+    top: 0.15rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    background-color: var(--bg-color);
+    border: 2px solid var(--border-color);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--link-color);
+    z-index: 1;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-right: 0 !important;
+}
+
+.docmd-container.steps-reset ol.steps-list>li.step-item:hover::before {
+    border-color: var(--link-color);
+    box-shadow: 0 0 0 4px rgba(6, 138, 213, 0.15);
 }
 
 .docmd-container.steps-reset .docmd-container.steps-reset ol.steps-list,
 .docmd-container.steps-reset ol.steps-list[start] {
-    counter-reset: list-counter 0
+    counter-reset: list-counter 0;
 }
 
 .docmd-container.steps-reset .docmd-container.steps-reset ol.steps-list>li.step-item,
 .docmd-container.steps-reset ol.steps-list[start]>li.step-item {
-    counter-increment: list-counter 1
+    counter-increment: list-counter 1;
 }
 
 .docmd-container.steps-reset ol:not(.steps-list)::before,
@@ -1843,27 +1885,27 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
 .docmd-container.changelog-timeline::before {
     content: "";
     position: absolute;
-    top: 1rem;
+    top: 0.5rem;
     bottom: 2rem;
-    left: calc(180px + 1rem - 1px);
+    left: 8px;
     width: 2px;
     background: linear-gradient(to bottom, var(--border-color) 0%, var(--border-color) 90%, transparent 100%);
     pointer-events: none;
+    z-index: 0;
 }
 
 .changelog-entry {
-    display: grid;
-    grid-template-columns: 180px 1fr;
-    gap: 2rem;
-    margin-bottom: 3rem;
     position: relative;
+    padding-left: 28px;
+    margin-bottom: 3rem;
+    display: block;
 }
 
 .changelog-entry::after {
     content: "";
     position: absolute;
-    left: calc(180px + 1rem - 4px);
-    top: 0.8rem;
+    left: 5px;
+    top: 0.5rem;
     width: 8px;
     height: 8px;
     background-color: var(--bg-color);
@@ -1881,26 +1923,28 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
 }
 
 .changelog-meta {
-    text-align: right;
-    padding-top: 0.5rem;
+    display: block;
+    text-align: left;
+    margin-bottom: 0.6rem;
+    padding-top: 0;
 }
 
 .changelog-date {
     display: inline-block;
-    background-color: var(--sidebar-bg);
-    color: var(--accent-color, var(--link-color));
-    border: 1px solid var(--border-color);
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 0.75rem;
+    background-color: var(--sidebar-link-active-bg);
+    color: var(--link-color);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.725rem;
     font-weight: 600;
     font-family: var(--font-family-mono);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
 
 .changelog-body {
     border-left: none;
-    padding-left: 1rem;
+    padding-left: 0;
     padding-bottom: 0.5rem;
 }
 
