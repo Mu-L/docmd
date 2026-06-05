@@ -80,6 +80,11 @@ RUN apk add --no-cache \
 # Install pnpm globally
 RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
 
+# Configure pnpm global directories
+ENV PNPM_HOME="/usr/local/share/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN mkdir -p $PNPM_HOME && pnpm setup
+
 # Create non-root user for security
 RUN addgroup -g 1001 -S docmd && \
     adduser -S -D -H -u 1001 -h /app -s /bin/bash -G docmd -g docmd docmd
