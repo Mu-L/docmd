@@ -204,9 +204,8 @@
                   <% if (config.theme?.copyWidgets?.enabled !== false) { %>
                     <div class="docmd-copy-widgets">
                       <% if (config.theme?.copyWidgets?.raw !== false) { %>
-                        <button class="docmd-copy-btn docmd-copy-raw-btn" data-copied="<%= typeof t === 'function' ? t('copiedToClipboard') : 'Copied!' %>" title="<%= typeof t === 'function' ? t('copyMarkdown') : 'Copy Markdown' %>">
+                        <button class="docmd-copy-btn docmd-copy-raw-btn" data-copied="<%= typeof t === 'function' ? t('copiedToClipboard') : 'Copied!' %>" title="<%= typeof t === 'function' ? t('copyMarkdown') : 'Copy Markdown' %>" aria-label="<%= typeof t === 'function' ? t('copyMarkdown') : 'Copy Markdown' %>">
                           <span class="docmd-btn-icon"><%- renderIcon('copy') %></span>
-                          <span class="docmd-btn-text"><%= typeof t === 'function' ? t('copyMarkdown') : 'Copy Markdown' %></span>
                         </button>
                       <% } %>
                       <% if (config.theme?.copyWidgets?.context !== false) { %>
