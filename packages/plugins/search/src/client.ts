@@ -231,9 +231,15 @@ declare const MiniSearch: any;
                     globalVersionColors[v] = { bg: `hsl(${hue}, 55%, 92%)`, fg: `hsl(${hue}, 60%, 35%)` };
                 });
 
+                const CJK_AND_SPACELESS_REGEX = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff66-\uff9f\uac00-\ud7af\u1100-\u11ff\u3130-\u318f\u0e00-\u0e7f\u0e80-\u0eff\u1780-\u17ff\u1000-\u109f\u0f00-\u0fff]/g;
                 miniSearch = MiniSearch.loadJSON(jsonString, {
                     fields: ['title', 'headings', 'text'],
                     storeFields: ['title', 'id', 'text', 'version'],
+                    tokenize: (text: string) => {
+                        const spaced = text.replace(CJK_AND_SPACELESS_REGEX, ' $& ');
+                        const defaultTokenize = MiniSearch.getDefault ? MiniSearch.getDefault('tokenize') : null;
+                        return defaultTokenize ? defaultTokenize(spaced) : spaced.toLowerCase().split(/[^a-zA-Z0-9_'\u00C0-\u017F\u00d0\u00f0\u00df\u00f8\u00e6\u0153\u03ac-\u03ce\u0400-\u04ff]+/u).filter(Boolean);
+                    },
                     searchOptions: { fuzzy: 0.2, prefix: true, boost: { title: 2, headings: 1.5 } }
                 });
                 

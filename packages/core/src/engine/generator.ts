@@ -396,7 +396,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       const htmlOutputPath = effectivelyIndex
         ? path.posix.join(outputPrefix, slugifiedDir, 'index.html').replace(/^\/?/, '')
         : path.posix.join(outputPrefix, withoutExt, 'index.html').replace(/^\/?/, '');
-      pages.push({ ...processed, sourcePath: targetFilePath, outputPath: htmlOutputPath });
+      pages.push({ ...processed, sourcePath: targetFilePath, outputPath: htmlOutputPath, rawMarkdown: rawContent });
     }
 
     // Report progress after each batch
@@ -563,6 +563,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       }
       let fullHtml = await parser.renderTemplateAsync(templateString, {
         content: page.htmlContent,
+        rawMarkdown: page.rawMarkdown || '',
         frontmatter: page.frontmatter,
         headings: page.headings,
         config,

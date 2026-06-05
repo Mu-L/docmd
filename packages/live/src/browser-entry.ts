@@ -51,14 +51,7 @@ async function compile(markdown: string, config: any = {}) {
     const assetsRoot = './assets';
 
     // 1. CSS Injection
-    const cssTags = [
-        `<link rel="stylesheet" href="${assetsRoot}/css/docmd-main.css">`
-    ];
-
-    if (defaults.theme.codeHighlight !== false) {
-        const mode = defaults.theme.appearance === 'dark' ? 'dark' : 'light';
-        cssTags.push(`<link rel="stylesheet" href="${assetsRoot}/css/docmd-highlight-${mode}.css">`);
-    }
+    const cssTags: string[] = [];
 
     if (defaults.theme.name && defaults.theme.name !== 'default') {
         cssTags.push(`<link rel="stylesheet" href="${assetsRoot}/css/docmd-theme-${defaults.theme.name}.css">`);

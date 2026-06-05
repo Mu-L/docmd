@@ -24,5 +24,7 @@
   "latest": "Neueste",
   "translationUnavailable": "Übersetzung für diese Version nicht verfügbar",
   "unavailable": "N. v.",
-  "fallbackMessage": "Diese Seite ist in {active} noch nicht verfügbar. Es wird die Standardsprache ({default}) angezeigt."
+  "fallbackMessage": "Diese Seite ist in {active} noch nicht verfügbar. Es wird die Standardsprache ({default}) angezeigt.",
+  "copyMarkdown": "Markdown kopieren",
+  "copyContext": "Kontext kopieren"
 }
