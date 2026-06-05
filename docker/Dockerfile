@@ -52,8 +52,12 @@ COPY . .
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Build all packages
-RUN pnpm -r run build
+# Build all packages except:
+#   - _playground  (dev sandbox, not needed in the image)
+#   - engine-rust-binaries  (requires cargo; pre-built .node files are committed)
+RUN pnpm -r run build \
+    --filter=!@docmd/playground \
+    --filter=!@docmd/engine-rust-binaries
 
 # Resolve workspace:* deps to real version numbers for standalone use
 RUN node scripts/resolve-ws-deps.js
