@@ -24,5 +24,7 @@
   "latest": "最新",
   "translationUnavailable": "此版本暂无翻译",
   "unavailable": "N/A",
-  "fallbackMessage": "此页面暂无{active}版本。显示默认语言（{default}）。"
+  "fallbackMessage": "此页面暂无{active}版本。显示默认语言（{default}）。",
+  "copyMarkdown": "复制 Markdown",
+  "copyContext": "复制上下文"
 }

@@ -1,6 +1,6 @@
 {
   "name": "@docmd/monorepo",
-  "version": "0.8.5",
+  "version": "0.8.6",
   "private": true,
   "description": "The minimalist, zero-config documentation generator monorepo.",
   "scripts": {
@@ -13,6 +13,10 @@
     "verify": "node scripts/verify.js",
     "lint": "eslint .",
     "bump": "node scripts/bump.js",
+    "docker:build": "docker build -t docmd:latest -f docker/Dockerfile .",
+    "docker:build:version": "node -e \"const v=require('./package.json').version; require('child_process').execSync('docker build -t docmd:' + v + ' -t docmd:latest -f docker/Dockerfile .', {stdio:'inherit'})\"",
+    "docker:test": "docker run --rm -v $(pwd)/docs:/docs docmd:latest --version",
+    "docker:run": "docker run -p 3000:3000 docmd:latest",
     "stop": "node packages/core/dist/bin/docmd.js stop >/dev/null 2>&1 || true",
     "clean": "rm -rf node_modules packages/*/node_modules packages/plugins/*/node_modules packages/engines/*/node_modules packages/*/dist packages/plugins/*/dist packages/engines/*/dist packages/engines/rust/native/bin/*.node packages/*/public packages/plugins/*/public packages/*/site packages/plugins/*/site *.tsbuildinfo temp-* >/dev/null 2>&1;",
     "unlink": "npm uninstall -g @docmd/core @docmd/monorepo docmd docmd-live -s >/dev/null 2>&1 || true; pnpm uninstall -g @docmd/core @docmd/monorepo docmd docmd-live -s >/dev/null 2>&1 || true; rm -f $(which -a docmd 2>/dev/null) $(which -a docmd-live 2>/dev/null) >/dev/null 2>&1 || true;",
@@ -27,7 +31,7 @@
     "eslint": "^10.4.1",
     "globals": "^17.6.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.60.0"
+    "typescript-eslint": "^8.60.1"
   },
   "engines": {
     "node": ">=18.0.0"

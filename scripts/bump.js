@@ -59,8 +59,27 @@ function updateCargoVersion(pkgDir) {
   }
 }
 
+function updateDockerVersion() {
+  // Update Docker workflow if it exists
+  const dockerWorkflowPath = path.join(root, ".github", "workflows", "docker-publish.yml");
+  if (fs.existsSync(dockerWorkflowPath)) {
+    let content = fs.readFileSync(dockerWorkflowPath, "utf8");
+    // Update any hardcoded version references in comments or examples
+    // This is mainly for documentation purposes in the workflow
+    const versionCommentRegex = /# Version:\s*v?[\d.]+/g;
+    if (versionCommentRegex.test(content)) {
+      content = content.replace(versionCommentRegex, `# Version: v${newVersion}`);
+      fs.writeFileSync(dockerWorkflowPath, content);
+      console.log(`Updated Docker Workflow Version → ${newVersion}`);
+    }
+  }
+}
+
 // 1️⃣ Update root
 updateVersion(path.join(root, "package.json"));
+
+// 2️⃣ Update Docker version references
+updateDockerVersion();
 
 // 2️⃣ Recursively update all packages
 function walk(dir) {

@@ -15,9 +15,9 @@ const shouldShowToc = typeof isActivePage !== 'undefined' ? isActivePage :
 if (shouldShowToc && !frontmatter?.toc || frontmatter?.toc !== 'false') {
   let tocHeadings = [];
   if (headings && headings.length > 0) {
-    tocHeadings = headings.filter(h => h.level >= 2 && h.level <= 4);
+    tocHeadings = headings.filter(h => h.level >= 1 && h.level <= 4);
   } else if (content) {
-    const headingRegex = /<h([2-4])[^>]*?(?:id="([^"]*)")?[^>]*?>([\s\S]*?)<\/h\1>/g;
+    const headingRegex = /<h([1-4])[^>]*?(?:id="([^"]*)")?[^>]*?>([\s\S]*?)<\/h\1>/g;
     let match;
     let contentStr = content.toString();
     while ((match = headingRegex.exec(contentStr)) !== null) {

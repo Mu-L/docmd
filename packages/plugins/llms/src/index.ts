@@ -19,18 +19,12 @@ import { outputPathToPathname, sanitizeUrl } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'llms',
-  version: '0.8.5',
+  version: '0.8.6',
   capabilities: ['post-build']
 };
 
 export async function onPostBuild({ config, pages, outputDir, log }: any) {
-  // Validation
-  if (!config.url) {
-    if (log) log('Skipping llms.txt: "url" is missing in config', 'SKIP');
-    return;
-  }
-
-  const siteUrl = config.url.replace(/\/$/, '');
+  const siteUrl = (config.url || '').replace(/\/$/, '');
   const _options = config.plugins?.llms || {};
 
   if (log) log('Generating LLMs context files');
@@ -100,4 +94,25 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
   }
 
   await fs.writeFile(path.join(outputDir, 'llms-full.txt'), fullContent);
+
+  // Generate llms.json
+  const llmsJson = {
+    title: config.title || 'Documentation',
+    description: config.description || '',
+    pages: validPages.map(page => {
+      const pathname = outputPathToPathname(page.outputPath);
+      const fullUrl = sanitizeUrl(siteUrl + pathname);
+      return {
+        title: page.frontmatter.title || 'Untitled',
+        url: fullUrl,
+        description: page.frontmatter.description || '',
+        priority: page.frontmatter.priority || (pathname === '/' ? 'high' : 'medium')
+      };
+    })
+  };
+
+  await fs.writeFile(
+    path.join(outputDir, 'llms.json'),
+    JSON.stringify(llmsJson, null, 2)
+  );
 }

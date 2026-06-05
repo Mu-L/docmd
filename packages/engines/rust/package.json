@@ -1,6 +1,6 @@
 {
   "name": "@docmd/engine-rust",
-  "version": "0.8.5",
+  "version": "0.8.6",
   "description": "Rust-accelerated engine for docmd. Downloads pre-built binary at install time.",
   "type": "module",
   "main": "dist/index.js",

@@ -23,6 +23,8 @@ import { buildLive } from '../commands/live.js';
 import { migrateProject } from '../commands/migrate.js';
 import { stopServer } from '../commands/stop.js';
 import { initDeploy } from '../commands/deploy.js';
+import { runMcpServer } from '../commands/mcp.js';
+import { validateProject } from '../commands/validate.js';
 
 import { TUI } from '@docmd/api';
 import { installPlugin, removePlugin } from '@docmd/plugin-installer';
@@ -41,7 +43,8 @@ const options = {
   verbose: { type: 'boolean', short: 'V' },
   version: { type: 'boolean', short: 'v' },
   help: { type: 'boolean', short: 'h' },
-  force: { type: 'boolean' }
+  force: { type: 'boolean' },
+  json: { type: 'boolean' }
 } as const;
 
 let parsed;
@@ -84,6 +87,8 @@ if (!command || values.help) {
     ['migrate', 'Migrate from Docusaurus, MkDocs, VitePress, etc.'],
     ['deploy', 'Generate production deployment configurations'],
     ['stop', 'Kill all running background docmd dev servers'],
+    ['mcp', 'Run docmd as a Model Context Protocol (MCP) server'],
+    ['validate', 'Validate documentation files and check for broken relative links'],
     ['add', 'Install and configure a docmd plugin'],
     ['remove', 'Remove and unconfigure a docmd plugin']
   ];
@@ -119,10 +124,11 @@ const opts = {
   port: values.port,
   buildOnly: values['build-only'],
   verbose: values.verbose,
-  force: values.force
+  force: values.force,
+  json: values.json
 };
 
-if (command !== 'stop') {
+if (command !== 'stop' && !values.json) {
   TUI.banner(undefined, version);
 }
 
@@ -251,6 +257,16 @@ if (command === 'init') {
     process.exit(1);
   }
   removePlugin(positionals[1], opts);
+} else if (command === 'mcp') {
+  runMcpServer().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+} else if (command === 'validate') {
+  validateProject({ json: opts.json }).catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
 } else {
   console.error(`Unknown command: ${command}`);
   console.log(`\nRun 'docmd --help' for the list of available commands.\n`);

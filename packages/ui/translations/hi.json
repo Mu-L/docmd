@@ -24,5 +24,7 @@
   "latest": "नवीनतम",
   "translationUnavailable": "इस संस्करण के लिए अनुवाद उपलब्ध नहीं",
   "unavailable": "N/A",
-  "fallbackMessage": "यह पृष्ठ अभी {active} में उपलब्ध नहीं है। डिफ़ॉल्ट भाषा ({default}) दिखा रहा है।"
+  "fallbackMessage": "यह पृष्ठ अभी {active} में उपलब्ध नहीं है। डिफ़ॉल्ट भाषा ({default}) दिखा रहा है।",
+  "copyMarkdown": "मार्कडाउन कॉपी करें",
+  "copyContext": "संदर्भ कॉपी करें"
 }

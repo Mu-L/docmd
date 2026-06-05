@@ -25,7 +25,7 @@ function hasMarkdownFiles(dir: string, maxDepth = 2, currentDepth = 0): boolean 
   try {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
-      if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+      if (entry.name === 'node_modules' || entry.name.startsWith('.') || entry.name === 'site' || entry.name === 'dist' || entry.name === 'out') continue;
       if (entry.isFile() && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown') || entry.name.endsWith('.ejs'))) return true;
       if (entry.isDirectory()) {
         if (hasMarkdownFiles(path.join(dir, entry.name), maxDepth, currentDepth + 1)) return true;
@@ -33,6 +33,95 @@ function hasMarkdownFiles(dir: string, maxDepth = 2, currentDepth = 0): boolean 
     }
   } catch { /* ignore */ }
   return false;
+}
+
+function detectHeuristics(cwd: string, srcDir: string) {
+  const absSrcDir = path.join(cwd, srcDir);
+  let items: any[] = [];
+  try {
+    items = fs.readdirSync(absSrcDir, { withFileTypes: true });
+  } catch {
+    return { versions: null, i18n: null };
+  }
+
+  const versionFolders: string[] = [];
+  const localeFolders: string[] = [];
+
+  const langMap: Record<string, string> = {
+    en: 'English',
+    de: 'Deutsch',
+    zh: '简体中文',
+    fr: 'Français',
+    ja: '日本語',
+    es: 'Español',
+    ru: 'Русский',
+    it: 'Italiano',
+    pt: 'Português'
+  };
+
+  const isVersion = (name: string) => /^v\d/i.test(name);
+  const isLocale = (name: string) => /^[a-z]{2}(-[A-Z]{2})?$/i.test(name);
+
+  for (const item of items) {
+    if (!item.isDirectory()) continue;
+    if (item.name.startsWith('.') || item.name === 'node_modules') continue;
+
+    if (isVersion(item.name)) {
+      versionFolders.push(item.name);
+    } else if (isLocale(item.name)) {
+      localeFolders.push(item.name);
+    }
+  }
+
+  // Sort versions descending (v0.8, v0.7, etc.)
+  versionFolders.sort((a, b) => b.localeCompare(a, undefined, { numeric: true, sensitivity: 'base' }));
+
+  let finalVersions: any = null;
+  let finalI18n: any = null;
+
+  if (versionFolders.length > 0) {
+    finalVersions = {
+      all: versionFolders.map(v => ({
+        id: v,
+        dir: path.join(srcDir, v),
+        label: v
+      })),
+      current: versionFolders[0]
+    };
+
+    // Check if the current/first version contains locales
+    const currentVerDir = path.join(absSrcDir, versionFolders[0]);
+    if (fs.existsSync(currentVerDir)) {
+      try {
+        const verItems = fs.readdirSync(currentVerDir, { withFileTypes: true });
+        const verLocales = verItems
+          .filter(item => item.isDirectory() && isLocale(item.name))
+          .map(item => item.name);
+        
+        if (verLocales.length > 0) {
+          const defaultLoc = verLocales.includes('en') ? 'en' : verLocales[0];
+          finalI18n = {
+            default: defaultLoc,
+            locales: verLocales.map(loc => ({
+              id: loc,
+              label: langMap[loc.toLowerCase()] || loc.toUpperCase()
+            }))
+          };
+        }
+      } catch { /* ignore read errors */ }
+    }
+  } else if (localeFolders.length > 0) {
+    const defaultLoc = localeFolders.includes('en') ? 'en' : localeFolders[0];
+    finalI18n = {
+      default: defaultLoc,
+      locales: localeFolders.map(loc => ({
+        id: loc,
+        label: langMap[loc.toLowerCase()] || loc.toUpperCase()
+      }))
+    };
+  }
+
+  return { versions: finalVersions, i18n: finalI18n };
 }
 
 async function buildZeroConfig(cwd: string, isDev = false, quiet = false, options: any = {}) {
@@ -48,18 +137,25 @@ async function buildZeroConfig(cwd: string, isDev = false, quiet = false, option
   const candidates = ['docs', 'src/docs', 'documentation', 'content'];
   let srcDir: string | null = null;
   for (const c of candidates) {
-    if (fs.existsSync(path.join(cwd, c))) {
+    if (fs.existsSync(path.join(cwd, c)) && hasMarkdownFiles(path.join(cwd, c), 2)) {
       srcDir = c;
       break;
     }
   }
 
   if (!srcDir) {
-    TUI.error('Configuration Error', 'No documentation directory found.');
-    TUI.info(`Zero-Config expects one of: ${candidates.join(', ')}`);
-    TUI.info('Create one of these folders or provide a docmd.config.js file.');
+    // Check if the root directory itself has markdown files
+    if (hasMarkdownFiles(cwd, 1)) {
+      srcDir = '.';
+    }
+  }
 
-    const err: any = new Error('No candidate documentation directory found.');
+  if (!srcDir) {
+    TUI.error('Configuration Error', 'No documentation directory or files found.');
+    TUI.info(`Zero-Config expects one of: ${candidates.join(', ')} or markdown files in the project root.`);
+    TUI.info('Create one of these folders, place markdown files in the root, or provide a docmd.config.js file.');
+
+    const err: any = new Error('No candidate documentation directory or files found.');
     err.silent = true;
     throw err;
   }
@@ -89,18 +185,30 @@ async function buildZeroConfig(cwd: string, isDev = false, quiet = false, option
     }
   } catch { /* ignore */ }
 
-  // Dynamically build the navigation tree
-  const autoNav = buildAutoNav(absSrcDir);
+  const { versions, i18n } = detectHeuristics(cwd, srcDir);
 
-  const autoConfig = {
+  // Dynamically build the navigation tree only if we do not have versions/locales at root
+  // (otherwise navigation is handled at version/locale level)
+  const autoNav = (!versions && !i18n) ? buildAutoNav(absSrcDir) : null;
+
+  const autoConfig: any = {
     title: autoTitle,
     description: autoDesc,
-    srcDir: srcDir,
-    outputDir: 'site',
-    navigation: autoNav,
+    src: srcDir,
+    out: 'site',
     layout: { spa: true },
     theme: { name: 'default', appearance: 'system' }
   };
+
+  if (autoNav) {
+    autoConfig.navigation = autoNav;
+  }
+  if (versions) {
+    autoConfig.versions = versions;
+  }
+  if (i18n) {
+    autoConfig.i18n = i18n;
+  }
 
   // Merge with global defaults
   const merged = { ...(options._globalDefaults || {}), ...autoConfig };
@@ -132,13 +240,50 @@ export async function loadConfig(configPath: string, options: any = {}) {
     }
 
     if (!found) {
-      // Fallback to Zero-Config if nothing is found to prevent crashing!
-      if (!(global as any).__DOCMD_NO_CONFIG_LOGGED && !options.quiet) {
-        TUI.warn('No config found. Running in auto mode. Run `docmd init` to create one.');
-        (global as any).__DOCMD_NO_CONFIG_LOGGED = true;
+      // Check if we have docs directory with markdown files or if root has them.
+      // If we don't even have a docs directory, or if it's empty, auto-run init:
+      const docCandidates = ['docs', 'src/docs', 'documentation', 'content'];
+      let hasDocs = false;
+      for (const d of docCandidates) {
+        const dp = path.join(cwd, d);
+        if (fs.existsSync(dp) && hasMarkdownFiles(dp, 2)) {
+          hasDocs = true;
+          break;
+        }
       }
-      const autoConfig = await buildZeroConfig(cwd, options.isDev, options.quiet, options);
-      return JSON.parse(JSON.stringify(autoConfig));
+
+      if (!hasDocs && hasMarkdownFiles(cwd, 1)) {
+        hasDocs = true;
+      }
+
+      if (!hasDocs) {
+        if (process.argv.includes('--json') || options.quiet) {
+          throw new Error('No documentation directory or configuration found.');
+        }
+        TUI.warn('No documentation or configuration found. Initializing new project...');
+        const { initProject } = await import('../commands/init.js');
+        await initProject();
+
+        // Re-check config candidates
+        for (const c of candidates) {
+          const p = path.resolve(cwd, c);
+          if (fs.existsSync(p)) {
+            absoluteConfigPath = p;
+            found = true;
+            break;
+          }
+        }
+      }
+
+      if (!found) {
+        // Fallback to Zero-Config if nothing is found to prevent crashing!
+        if (!(global as any).__DOCMD_NO_CONFIG_LOGGED && !options.quiet) {
+          TUI.warn('No config found. Running in auto mode. Run `docmd init` to create one.');
+          (global as any).__DOCMD_NO_CONFIG_LOGGED = true;
+        }
+        const autoConfig = await buildZeroConfig(cwd, options.isDev, options.quiet, options);
+        return JSON.parse(JSON.stringify(autoConfig));
+      }
     }
   } else if (!fs.existsSync(absoluteConfigPath)) {
     throw new Error(`Config file not found: ${absoluteConfigPath}`);
