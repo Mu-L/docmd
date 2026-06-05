@@ -83,7 +83,7 @@ RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
 # Configure pnpm global directories
 ENV PNPM_HOME="/usr/local/share/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN mkdir -p $PNPM_HOME && pnpm setup
+RUN mkdir -p $PNPM_HOME
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S docmd && \
@@ -97,8 +97,8 @@ COPY --from=builder /tarballs /tarballs
 # Install ONLY @docmd/core from the tarball — this pulls in all its dependencies
 # from the other tarballs, creating the exact same structure as `npm install @docmd/core`
 RUN pnpm add --global /tarballs/docmd-core-*.tgz \
-    --prefer-offline \
-    --registry file:///tarballs
+    --global-bin-dir=$PNPM_HOME \
+    --global-dir=/usr/local/lib/pnpm-global
 
 # Clean up tarballs and pnpm cache to reduce image size
 RUN rm -rf /tarballs ~/.local/share/pnpm/store
