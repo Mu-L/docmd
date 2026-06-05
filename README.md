@@ -15,7 +15,7 @@
   
   <!-- ONE LINE SUMMARY -->
   <p>
-    <b>Build production-ready documentation from Markdown in seconds.</b>
+    <b>AI-First & Zero-Config Documentation Engine for developers and LLM agents.</b>
     <br/>
     Zero setup when you start. Full control when you need it.
   </p>
