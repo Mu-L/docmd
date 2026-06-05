@@ -174,29 +174,21 @@ jobs:
       - name: Pull image
         run: docker pull ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.build.outputs.version }}
 
-      - name: Create test docs
-        run: |
-          mkdir -p test-docs
-          echo "# Test Documentation" > test-docs/index.md
-          echo "" >> test-docs/index.md
-          echo "This is a test page for docmd Docker image." >> test-docs/index.md
-
       - name: Test build command
         run: |
+          # Simulate exactly what a new user does: init a project then build it
           docker run --rm \
-            -v $(pwd)/test-docs:/docs \
-            -v $(pwd)/test-site:/site \
+            -v /tmp/docmd-test:/workspace \
+            --workdir /workspace \
+            --entrypoint /bin/bash \
             ${{ env.REGISTRY }}/${{ github.repository }}:${{ needs.build.outputs.version }} \
-            build
+            -c "cp -r /template/. /workspace/ && node /app/packages/core/dist/bin/docmd.js build"
 
       - name: Verify build output
         run: |
-          if [ -f "test-site/index.html" ]; then
-            echo "✅ Build successful - index.html created"
+          if [ -f "/tmp/docmd-test/site/index.html" ]; then
+            echo "✅ Build successful - site/index.html exists"
           else
-            echo "❌ Build failed - index.html not found"
+            echo "❌ Build failed - site/index.html not found"
             exit 1
           fi
-
-      - name: Cleanup
-        run: rm -rf test-docs test-site
