@@ -50,8 +50,6 @@
     </title>
     <%- faviconLinkHtml || '' %>
     <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-main.css?v=<%= buildHash %>">
-    <%# Git Plugin core CSS (injected directly since git is a core plugin) %>
-    <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-git.css?v=<%= buildHash %>">
     <% if (config.theme?.codeHighlight !==false) { const isDarkDefault=appearance==='dark' ; %>
     <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-light.css?v=<%= buildHash %>" id="hljs-light" <%=isDarkDefault ? 'disabled' : '' %>>
     <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-dark.css?v=<%= buildHash %>" id="hljs-dark" <%=isDarkDefault ? '' : 'disabled' %>>
