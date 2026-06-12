@@ -1,4 +1,6 @@
 packages:
   - 'packages/*'
+  - 'packages/legacy/*'
   - 'packages/plugins/*'
+  - 'packages/templates/*'
   - 'packages/engines/*'

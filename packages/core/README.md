@@ -1,4 +1,3 @@
-
 <div align="center">
 
   <!-- PROJECT TITLE -->
@@ -12,7 +11,7 @@
   <p>
     <b>Build production-ready documentation from Markdown in seconds.</b>
     <br/>
-    Zero setup when you start. Full control when you need it.
+    AI-First & Zero-Config Documentation Engine for developers and LLM agents.
   </p>
   
   <!-- BADGES -->
@@ -29,6 +28,7 @@
       <a href="https://docmd.io">Website</a> • 
       <a href="https://docs.docmd.io">Documentation</a> • 
       <a href="https://live.docmd.io">Live Editor</a> •
+      <a href="https://github.com/docmd-io/docmd-skills">Agent Skills</a> •
       <a href="https://github.com/docmd-io/docmd/issues">Report Bug</a>
     </h4>
   </p>
@@ -72,6 +72,12 @@ npx @docmd/core build
 npm install -g @docmd/core
 ```
 
+Or run via Docker:
+
+```bash
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest
+```
+
 ```bash
 docmd dev     # start dev server
 docmd build   # build for deployment
@@ -107,6 +113,13 @@ Designed to start instantly and scale without friction.
 * Analytics
 * AI context (`llms.txt`)
 
+### AI-First Integration
+
+* Native **MCP Server** (`docmd mcp`) — AI agents search, read, and validate docs via stdio
+* Agent instruction set ([docmd-skills](https://github.com/docmd-io/docmd-skills)) — modular skills for LLMs and IDE agents
+* `llms.txt` / `llms-full.txt` — full documentation context generated at build time
+* Copy Markdown / Copy Context widgets — browser buttons optimised for AI chat
+
 ### Extensible when needed
 
 * Plugin support
@@ -124,7 +137,7 @@ Keeps your project simple.
 my-docs/
 ├── docs/
 ├── assets/
-├── docmd.config.js (optional)
+├── docmd.config.json (optional)
 └── package.json
 ```
 
@@ -138,7 +151,7 @@ A browser-based editor for writing and previewing docs instantly. No setup requi
 
 No configuration is required to get started.
 
-Add a config file (`docmd.config.js` in the project root) only when you need more control.
+Add a config file (`docmd.config.json` in the project root) only when you need more control.
 
 ```js
 const { defineConfig } = require('@docmd/core');
@@ -184,7 +197,7 @@ Use in scripts or CI pipelines:
 ```js
 const { build, buildLive } = require('@docmd/core');
 
-await build('./docmd.config.js', { isDev: false });
+await build('./docmd.config.json', { isDev: false });
 await buildLive();
 ```
 
@@ -225,15 +238,18 @@ docmd add <plugin-name>
 | Feature             | docmd           | Docusaurus             | MkDocs       | VitePress    | Mintlify    |
 | :-----------------: | :-------------: | :--------------------: | :----------: | :----------: | :---------: |
 | **Language**        | **Node.js**     | React.js               | Python       | Vue          | SaaS        |
-| **Require Config**  | **None (Auto)** | `docusaurus.config.js` | `mkdocs.yml` | `config.mts` | `mint.json` |
+| **Require Config**  | **None (Auto)** | `docusaurus.config.js` | `mkdocs.yml` | `config.mts` | `docs.json` |
 | **Multi-project**   | **Native**      | Plugin                 | Plugin       | No           | No          |
 | **Initial payload** | **~18kb**       | ~250kb                 | ~40kb        | ~50kb        | ~120kb      |
 | **Navigation**      | **Instant SPA** | React SPA              | Full reloads | Vue SPA      | Hosted SPA  |
 | **Versioning**      | **Native**      | Native (complex)       | mike plugin  | Manual       | Native      |
-| **i18n**            | **Native**      | Native (complex)       | Plugin-based | Manual       | Native      |
+| **i18n**            | **Native**      | Native (complex)       | Plugin-based | Native       | Native      |
 | **Search**          | **Built-in**    | Algolia (cloud)        | Built-in     | MiniSearch   | Cloud       |
-| **AI Context**      | **Built-in**    | Manual                 | None         | None         | Proprietary |
-| **PWA**             | **Plugin**      | Community plugin       | None         | None         | Hosted      |
+| **AI Context**      | **Built-in**    | None                   | None         | None         | Built-in    |
+| **MCP Server**      | **Built-in**    | None                   | None         | None         | Built-in    |
+| **Agent Skills**    | **Built-in**    | None                   | None         | None         | Built-in    |
+| **Docker Image**    | **Official**    | None                   | Official     | None         | N/A         |
+| **PWA**             | **Plugin**      | Plugin                 | None         | None         | Hosted      |
 | **Self-hosted**     | **Yes**         | Yes                    | Yes          | Yes          | No          |
 | **Cost**            | **Free (OSS)**  | Free (OSS)             | Free (OSS)   | Free (OSS)   | Freemium    |
 

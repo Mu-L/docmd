@@ -148,7 +148,7 @@ jobs:
 
       - name: Copy LICENSE into each package
         run: |
-          find packages -mindepth 1 -maxdepth 3 -name "package.json" \
+          find packages -mindepth 1 -maxdepth 4 -name "package.json" \
             -not -path "*/node_modules/*" \
             -exec dirname {} \; | xargs -I % cp LICENSE %
 
@@ -157,7 +157,7 @@ jobs:
 
       - name: Publish to npm
         run: |
-          for dir in packages/* packages/plugins/* packages/engines/*; do
+          for dir in packages/* packages/legacy/* packages/plugins/* packages/engines/*; do
             if [ -f "$dir/package.json" ]; then
               # Skip private packages
               if grep -q '"private": true' "$dir/package.json"; then

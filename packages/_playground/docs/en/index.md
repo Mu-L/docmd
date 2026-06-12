@@ -86,3 +86,26 @@ function hello() {
 $$
 \sum_{i=1}^n i^2 = \frac{n(n+1)(2n+1)}{6}
 $$
+
+### 🪜 Steps Container Test
+
+::: steps
+1. #### Step One: Initialization
+   Install dependencies and configure your environment.
+2. #### Step Two: Configuration
+   Modify `docmd.config.json` to suit your project needs.
+3. #### Step Three: Build
+   Run `pnpm build` to compile the templates and documents.
+:::
+
+### 📅 Changelog Container Test
+
+::: changelog
+== v0.8.7 - "Refining Summer Theme"
+Refined the Summer theme Table of Contents thread, active ancestor branch indicators, and spacing of components.
+* Fixed search modal styling.
+* Added custom styling for steps, tabs, cards, and details containers.
+
+== v0.8.0 - "Release of docmd 0.8"
+Initial preview of the zero-config documentation engine with monorepo workspace support.
+:::

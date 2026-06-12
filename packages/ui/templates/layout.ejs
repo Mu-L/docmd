@@ -144,6 +144,10 @@
         </div>
       </aside>
       <% } %>
+      <%# Site-wide announcement banner (new in 0.8.7). Sits above the menubar. %>
+      <% if (locals.config && config.layout && config.layout.banner) { %>
+        <%- await include('partials/banner', { config, relativePathToRoot, renderIcon, t: typeof t === 'function' ? t : null }) %>
+      <% } %>
       <div class="main-content-wrapper">
         <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position==='header' ) { %>
           <%- await include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu:
@@ -316,5 +320,9 @@
           src="<%= relativePathToRoot %><%= jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>?v=<%= buildHash %>"></script>
         <% }
       }); %>
+      <%# Cookie consent dialog (new in 0.8.7). Rendered only when config.cookie is set. %>
+      <% if (locals.config && config.cookie && config.cookie.enabled !== false) { %>
+        <%- await include('partials/cookie-consent', { config, relativePathToRoot, renderIcon, t: typeof t === 'function' ? t : null }) %>
+      <% } %>
   </body>
 </html>
