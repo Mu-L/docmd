@@ -1,0 +1,809 @@
+<!--
+  ---------------------------------------------------------------
+  docmd : the zero-config documentation engine.
+  @website https://docmd.io
+  [docmd-source] - Please do not remove this header.
+  ---------------------------------------------------------------
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="generator" content="docmd v0.5.x">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>/**
+ * --------------------------------------------------------------------
+ * docmd : the zero-config documentation engine.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+(function () {
+  try {
+    // 1. Determine Theme
+    var localValue = localStorage.getItem('docmd-theme');
+    var configValue = window.DOCMD_DEFAULT_MODE || 'light';
+    var theme = localValue ? localValue : configValue;
+
+    if (theme === 'system') {
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    // 2. Apply to Root
+    document.documentElement.setAttribute('data-theme', theme);
+
+    // 3. Highlight.js Toggle Strategy
+    var lightLink = document.getElementById('hljs-light');
+    var darkLink = document.getElementById('hljs-dark');
+
+    if (lightLink && darkLink) {
+      if (theme === 'dark') {
+        lightLink.disabled = true;
+        darkLink.disabled = false;
+      } else {
+        lightLink.disabled = false;
+        darkLink.disabled = true;
+      }
+    }
+
+    document.documentElement.style.visibility = "visible";
+  } catch (e) {
+    document.documentElement.style.visibility = "visible";
+    console.error('Theme init failed', e);
+  }
+})();</script>
+    <style>
+      html {
+        visibility: hidden;
+      }
+    </style>
+    
+    <script>
+      var root = "../";
+      if (root && !root.endsWith('/')) root += '/';
+      if (root === '') root = './';
+      window.DOCMD_ROOT = root;
+
+      var siteRoot = "../";
+      if (siteRoot && !siteRoot.endsWith('/')) siteRoot += '/';
+      if (siteRoot === '') siteRoot = './';
+      window.DOCMD_SITE_ROOT = siteRoot;
+
+      window.DOCMD_APPEARANCE = "light";
+      window.DOCMD_VERSION_ROOT = "/";
+      window.DOCMD_BASE = "/";
+      window.DOCMD_LOCALE = "";
+      window.DOCMD_DEFAULT_LOCALE = "";
+    </script>
+    <title>
+      docmd _playground : sky-test
+    </title>
+    <link id="site-favicon" rel="icon" href="../assets/favicon.ico?v=mqahl3d6">
+    <link rel="stylesheet" href="../assets/css/docmd-main.css?v=mqahl3d6">
+    
+    <link rel="stylesheet" href="../assets/css/docmd-highlight-light.css?v=mqahl3d6" id="hljs-light" >
+    <link rel="stylesheet" href="../assets/css/docmd-highlight-dark.css?v=mqahl3d6" id="hljs-dark" disabled>
+    
+    
+<meta name="description" content="A testing ground for docmd core engine features.">
+<link rel="canonical" href="/en/">
+<meta property="og:title" content="docmd _playground - sky-test">
+<meta property="og:description" content="A testing ground for docmd core engine features.">
+<meta property="og:url" content="/en/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="docmd _playground - sky-test">
+<meta name="twitter:description" content="A testing ground for docmd core engine features.">
+
+
+    <!-- GA4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X9WTDL262N"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X9WTDL262N');
+    </script>
+
+
+<link rel="stylesheet" href="../assets/css/docmd-theme-sky.css?v=mqahl3d6" >
+<link rel="stylesheet" href="../assets/css/docmd-git.css?v=mqahl3d6" >
+<link rel="stylesheet" href="../assets/css/docmd-openapi.css?v=mqahl3d6" >
+
+    
+    <script>/**
+ * --------------------------------------------------------------------
+ * docmd : the zero-config documentation engine.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+(function () {
+  try {
+    // 1. Determine Theme
+    var localValue = localStorage.getItem('docmd-theme');
+    var configValue = window.DOCMD_DEFAULT_MODE || 'light';
+    var theme = localValue ? localValue : configValue;
+
+    if (theme === 'system') {
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    // 2. Apply to Root
+    document.documentElement.setAttribute('data-theme', theme);
+
+    // 3. Highlight.js Toggle Strategy
+    var lightLink = document.getElementById('hljs-light');
+    var darkLink = document.getElementById('hljs-dark');
+
+    if (lightLink && darkLink) {
+      if (theme === 'dark') {
+        lightLink.disabled = true;
+        darkLink.disabled = false;
+      } else {
+        lightLink.disabled = false;
+        darkLink.disabled = true;
+      }
+    }
+
+    document.documentElement.style.visibility = "visible";
+  } catch (e) {
+    document.documentElement.style.visibility = "visible";
+    console.error('Theme init failed', e);
+  }
+})();</script>
+  </head>
+  <body
+    class="sidebar-collapsible has-menubar has-menubar-header"
+    data-default-collapsed="false"
+    data-copy-code-enabled="true" data-spa-enabled="false" data-source-file="docs/en/index.md">
+
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    
+    
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          
+            <h1><a href="../">
+                sky-test
+              </a></h1>
+          
+          <span class="mobile-view sidebar-menu-button float-right">
+            
+<svg class="lucide-icon icon-menu " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-menu"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M4 5h16" />
+  <path d="M4 12h16" />
+  <path d="M4 19h16" />
+</svg>
+
+          </span>
+        </div>
+        <div class="sidebar-top-group">
+          
+          
+          
+          
+        </div>
+        
+
+<nav class="sidebar-nav" aria-label="Main Navigation">
+  <ul>
+    
+      <li class="" >
+      
+        <a href="../" class=" "
+          >
+           
+<svg class="lucide-icon icon-home " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-house"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
+  <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+</svg>
+
+          
+          <span class="nav-item-title">
+            Home
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+  </ul>
+</nav>
+        <div class="sidebar-bottom-group mt-auto">
+          
+          
+          
+          
+        </div>
+      </aside>
+      
+      
+      
+      <div class="main-content-wrapper">
+        
+          
+
+
+
+<div class="docmd-menubar">
+  <div class="menubar-inner">
+    <div class="menubar-left">
+    
+      </div>
+      <div class="menubar-right">
+        
+        
+          <div class="menubar-options">
+            
+
+
+<div class="docmd-options-menu">
+    
+    <button class="docmd-search-trigger" aria-label="Search">
+        
+<svg class="lucide-icon icon-search " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-search"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m21 21-4.34-4.34" />
+  <circle cx="11" cy="11" r="8" />
+</svg>
+
+        <span class="search-label">Search</span>
+        <span class="search-keys"><kbd class="docmd-kbd">⌘</kbd><kbd class="docmd-kbd">K</kbd></span>
+    </button>
+    
+
+    
+
+    
+
+    
+    <button class="theme-toggle-button" aria-label="Toggle theme">
+        
+<svg class="lucide-icon icon-sun icon-sun" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-sun"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <circle cx="12" cy="12" r="4" />
+  <path d="M12 2v2" />
+  <path d="M12 20v2" />
+  <path d="m4.93 4.93 1.41 1.41" />
+  <path d="m17.66 17.66 1.41 1.41" />
+  <path d="M2 12h2" />
+  <path d="M20 12h2" />
+  <path d="m6.34 17.66-1.41 1.41" />
+  <path d="m19.07 4.93-1.41 1.41" />
+</svg>
+ 
+<svg class="lucide-icon icon-moon icon-moon" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-moon"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" />
+</svg>
+
+    </button>
+    
+
+    
+</div>
+
+          </div>
+        
+    </div>
+  </div>
+</div>
+        
+        
+          <header class="page-header">
+            <div class="header-left">
+              
+                <button id="sidebar-toggle-button" class="sidebar-toggle-button"
+                  aria-label="Toggle Sidebar">
+                  
+<svg class="lucide-icon icon-chevron-left " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-chevron-left"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m15 18-6-6 6-6" />
+</svg>
+
+                </button>
+              
+              <div class="header-titles-wrapper">
+                <span class="header-title">
+                  docmd _playground
+                </span>
+              </div>
+            </div>
+            <div class="header-right">
+              
+            </div>
+          </header>
+        
+        <div class="content-theme-cover">
+          <main class="content-area" id="main-content">
+            <div class="content-layout">
+              <div class="main-content">
+                <div class="docmd-breadcrumbs-row">
+                  <div id="docmd-raw-markdown" data-content="---%0Atitle%3A%20%22docmd%20_playground%22%0Adescription%3A%20%22A%20testing%20ground%20for%20docmd%20core%20engine%20features.%22%0A---%0A%0AThis%20playground%20is%20used%20to%20verify%20core%20engine%20changes%20in%20real-time.%20Use%20this%20to%20ensure%20your%20modifications%20to%20the%20Markdown%20parser%20or%20UI%20components%20behave%20as%20expected.%0A%0A%3A%3A%3A%20callout%20tip%20%22How%20to%20work%20here%22%0ATo%20test%20your%20changes%2C%20keep%20the%20dev%20server%20running%20(%60pnpm%20run%20dev%60).%20Any%20change%20you%20make%20to%20%60packages%2Fcore%60%20or%20%60packages%2Fparser%60%20will%20trigger%20a%20hot-reload%20here%20instantly.%0A%3A%3A%3A%0A%0A%23%20H1%20Test%20Heading%0A%0AThis%20is%20a%20test%20H1%20heading%20to%20verify%20it%20appears%20in%20the%20TOC%20and%20has%20proper%20anchor%20links.%0A%0A%23%23%23%20Component%20Verification%0A%0ATest%20your%20UI%20components%20and%20parser%20rules%20here%20to%20ensure%20consistency%3A%0A%0A%3A%3A%3A%20card%20%22Container%20Test%22%0A%20%20%20%20Test%20nested%20callouts%20and%20containers.%0A%0A%20%20%20%20%3A%3A%3A%20callout%20warning%20%22Warning%22%0A%20%20%20%20Ensure%20nested%20items%20render%20correctly.%0A%20%20%20%20%3A%3A%3A%0A%3A%3A%3A%0A%0A%3A%3A%3A%20tabs%0A%3D%3D%20tab%20%22Feature%20A%22%0A%23%23%23%23%20Feature%20A%0AVerification%20content.%0A%3D%3D%20tab%20%22Feature%20B%22%0A%23%23%23%23%20Feature%20B%0AVerification%20content.%0A%3A%3A%3A%0A%0A%23%23%23%20%F0%9F%94%97%20Useful%20Links%0A%0A-%20%5BOfficial%20Documentation%5D(https%3A%2F%2Fdocs.docmd.io)%0A-%20%5BGitHub%20Repository%5D(https%3A%2F%2Fgithub.com%2Fdocmd-io%2Fdocmd)%0A-%20%5BReport%20an%20Issue%5D(https%3A%2F%2Fgithub.com%2Fdocmd-io%2Fdocmd%2Fissues)%0A%0A%23%23%23%20%F0%9F%A7%AA%20Developer%20Checklist%0A-%20%5B%20%5D%20**Parser%3A**%20Does%20the%20Markdown%20output%20match%20the%20HTML%20in%20%60packages%2Fparser%2Fsrc%2Fhtml-renderer.js%60%3F%0A-%20%5B%20%5D%20**UI%3A**%20Does%20the%20theme%20CSS%20apply%20to%20this%20page%20correctly%3F%0A-%20%5B%20%5D%20**SPA%3A**%20Does%20navigation%20between%20pages%20work%20without%20a%20hard%20refresh%3F%0A%0A%23%23%23%20%F0%9F%A7%9C%E2%80%8D%E2%99%80%EF%B8%8F%20Mermaid%20Interactive%20Test%0A%0ATest%20the%20new%20interactive%20controls%20(Pan%2C%20Zoom%2C%20Fullscreen)%20and%20Lucide%20icon%20support%20here%3A%0A%0A%23%23%23%23%20Complex%20Flowchart%0A%60%60%60mermaid%0Agraph%20TD%0A%20%20%20%20Start((Start))%20--%3E%20Process1%5BProcess%20One%5D%0A%20%20%20%20Process1%20--%3E%20Decision%7BIs%20it%20valid%3F%7D%0A%20%20%20%20Decision%20--%20Yes%20--%3E%20Process2%5BProcess%20Two%5D%0A%20%20%20%20Decision%20--%20No%20--%3E%20Error%5BError%20Handling%5D%0A%20%20%20%20Process2%20--%3E%20Subgraph1%0A%20%20%20%20subgraph%20Subgraph1%20%5BCritical%20Path%5D%0A%20%20%20%20%20%20%20%20Step1%5BStep%201%5D%20--%3E%20Step2%5BStep%202%5D%0A%20%20%20%20end%0A%20%20%20%20Step2%20--%3E%20End((End))%0A%20%20%20%20Error%20--%3E%20End%0A%60%60%60%0A%0A%23%23%23%23%20Architecture%20Diagram%20(Lucide%20Icons)%0A%60%60%60mermaid%0Aflowchart%20TD%0A%20%20%20%20A%5BTrigger%3A%20aaaa%5D%20--%3E%20B%5Btake%20an%20action%5D%0A%20%20%20%20B%20--%3E%20C%5Bx%5D%0A%20%20%20%20C%20--%3E%20D%7Byyy%3F%7D%0A%20%20%20%20D%20--%3E%7CNo%7C%20E%5BReturn%5D%0A%20%20%20%20D%20--%3E%7CYes%7C%20F%7Bzzz%3F%7D%0A%60%60%60%0A%0A%23%23%23%23%20Code%20Block%20with%20Title%0A%60%60%60typescript%20%22main.ts%22%0Afunction%20hello()%20%7B%0A%20%20console.log(%22Hello%20from%20docmd!%22)%3B%0A%7D%0A%60%60%60%0A%0A%23%23%23%23%20Math%20Plugin%20Test%0A%0A%24%24%0A%5Csum_%7Bi%3D1%7D%5En%20i%5E2%20%3D%20%5Cfrac%7Bn(n%2B1)(2n%2B1)%7D%7B6%7D%0A%24%24" style="display: none;"></div>
+                  
+                    <div class="docmd-breadcrumbs-spacer"></div>
+                  
+
+                  
+                    <div class="docmd-copy-widgets">
+                      
+                        <button class="docmd-copy-btn docmd-copy-raw-btn" data-copied="Copied!" title="Copy Markdown" aria-label="Copy Markdown">
+                          <span class="docmd-btn-icon">
+<svg class="lucide-icon icon-copy " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-copy"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+</svg>
+</span>
+                        </button>
+                      
+                      
+                        <button class="docmd-copy-btn docmd-copy-context-btn" data-copied="Copied!" title="Copy Context">
+                          <span class="docmd-btn-icon">
+<svg class="lucide-icon icon-message-square " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-message-square"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" />
+</svg>
+</span>
+                          <span class="docmd-btn-text">Copy Context</span>
+                        </button>
+                      
+                    </div>
+                  
+                </div>
+                
+                <p>This playground is used to verify core engine changes in real-time. Use this to ensure your modifications to the Markdown parser or UI components behave as expected.</p>
+<div class="docmd-container callout callout-tip"><div class="callout-title">How to work here</div><div class="callout-content">
+<p>To test your changes, keep the dev server running (<code>pnpm run dev</code>). Any change you make to <code>packages/core</code> or <code>packages/parser</code> will trigger a hot-reload here instantly.</p>
+</div></div>
+<h1 id="h1-test-heading" class="docmd-heading"><a href="#h1-test-heading" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>H1 Test Heading</h1>
+<p>This is a test H1 heading to verify it appears in the TOC and has proper anchor links.</p>
+<h3 id="h1-test-heading-component-verification" class="docmd-heading"><a href="#h1-test-heading-component-verification" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Component Verification</h3>
+<p>Test your UI components and parser rules here to ensure consistency:</p>
+<div class="docmd-container card"><div class="card-title">Container Test</div><div class="card-content">
+<p>Test nested callouts and containers.</p>
+<div class="docmd-container callout callout-warning"><div class="callout-title">Warning</div><div class="callout-content">
+<p>Ensure nested items render correctly.</p>
+</div></div>
+</div></div>
+<div class="docmd-tabs">
+<div class="docmd-tabs-nav"><div class="docmd-tabs-nav-item active"><span>Feature A</span></div><div class="docmd-tabs-nav-item "><span>Feature B</span></div></div><div class="docmd-tabs-content"><div class="docmd-tab-pane active"><h4>Feature A</h4>
+<p>Verification content.</p>
+</div><div class="docmd-tab-pane "><h4>Feature B</h4>
+<p>Verification content.</p>
+</div></div></div><h3 id="h1-test-heading-useful-links" class="docmd-heading"><a href="#h1-test-heading-useful-links" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>🔗 Useful Links</h3>
+<ul>
+<li><a href="https://docs.docmd.io">Official Documentation</a></li>
+<li><a href="https://github.com/docmd-io/docmd">GitHub Repository</a></li>
+<li><a href="https://github.com/docmd-io/docmd/issues">Report an Issue</a></li>
+</ul>
+<h3 id="h1-test-heading-developer-checklist" class="docmd-heading"><a href="#h1-test-heading-developer-checklist" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>🧪 Developer Checklist</h3>
+<ul class="contains-task-list">
+<li><input class="task-list-item-checkbox" disabled="" type="checkbox"> <strong>Parser:</strong> Does the Markdown output match the HTML in <code>packages/parser/src/html-renderer.js</code>?</li>
+<li><input class="task-list-item-checkbox" disabled="" type="checkbox"> <strong>UI:</strong> Does the theme CSS apply to this page correctly?</li>
+<li><input class="task-list-item-checkbox" disabled="" type="checkbox"> <strong>SPA:</strong> Does navigation between pages work without a hard refresh?</li>
+</ul>
+<h3 id="h1-test-heading-mermaid-interactive-test" class="docmd-heading"><a href="#h1-test-heading-mermaid-interactive-test" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>🧜‍♀️ Mermaid Interactive Test</h3>
+<p>Test the new interactive controls (Pan, Zoom, Fullscreen) and Lucide icon support here:</p>
+<h4 id="h1-test-heading-mermaid-interactive-test-complex-flowchart" class="docmd-heading"><a href="#h1-test-heading-mermaid-interactive-test-complex-flowchart" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Complex Flowchart</h4>
+<div class="mermaid">graph TD
+    Start((Start)) --&gt; Process1[Process One]
+    Process1 --&gt; Decision{Is it valid?}
+    Decision -- Yes --&gt; Process2[Process Two]
+    Decision -- No --&gt; Error[Error Handling]
+    Process2 --&gt; Subgraph1
+    subgraph Subgraph1 [Critical Path]
+        Step1[Step 1] --&gt; Step2[Step 2]
+    end
+    Step2 --&gt; End((End))
+    Error --&gt; End
+</div>
+<h4 id="h1-test-heading-mermaid-interactive-test-architecture-diagram-lucide-icons" class="docmd-heading"><a href="#h1-test-heading-mermaid-interactive-test-architecture-diagram-lucide-icons" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Architecture Diagram (Lucide Icons)</h4>
+<div class="mermaid">flowchart TD
+    A[Trigger: aaaa] --&gt; B[take an action]
+    B --&gt; C[x]
+    C --&gt; D{yyy?}
+    D --&gt;|No| E[Return]
+    D --&gt;|Yes| F{zzz?}
+</div>
+<h4 id="h1-test-heading-mermaid-interactive-test-code-block-with-title" class="docmd-heading"><a href="#h1-test-heading-mermaid-interactive-test-code-block-with-title" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Code Block with Title</h4>
+<div class="docmd-code-block-wrapper"><div class="docmd-code-block-header"><span class="docmd-code-block-title">main.ts</span></div><pre class="hljs"><code><span class="hljs-keyword">function</span> <span class="hljs-title function_">hello</span>() {
+  console.<span class="hljs-title function_">log</span>(<span class="hljs-string">&quot;Hello from docmd!&quot;</span>);
+}
+</code></pre>
+</div><h4 id="h1-test-heading-mermaid-interactive-test-math-plugin-test" class="docmd-heading"><a href="#h1-test-heading-mermaid-interactive-test-math-plugin-test" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Math Plugin Test</h4>
+<p>$$<br>
+\sum_{i=1}^n i^2 = \frac{n(n+1)(2n+1)}{6}<br>
+$$</p>
+
+                
+              </div>
+              <div class="toc-sidebar">
+                
+
+
+  <div class="toc-container">
+    <h2 class="toc-title">On This Page<span class="mobile-view toc-menu-button float-right">
+<svg class="lucide-icon icon-chevron-down " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-chevron-down"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m6 9 6 6 6-6" />
+</svg>
+</span></h2>
+    <ul class="toc-list">
+      
+        <li class="toc-item toc-level-1">
+          <a href="#h1-test-heading" class="toc-link">H1 Test Heading</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#h1-test-heading-component-verification" class="toc-link">Component Verification</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#h1-test-heading-useful-links" class="toc-link">🔗 Useful Links</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#h1-test-heading-developer-checklist" class="toc-link">🧪 Developer Checklist</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#h1-test-heading-mermaid-interactive-test" class="toc-link">🧜‍♀️ Mermaid Interactive Test</a>
+        </li>
+      
+        <li class="toc-item toc-level-4">
+          <a href="#h1-test-heading-mermaid-interactive-test-complex-flowchart" class="toc-link">Complex Flowchart</a>
+        </li>
+      
+        <li class="toc-item toc-level-4">
+          <a href="#h1-test-heading-mermaid-interactive-test-architecture-diagram-lucide-icons" class="toc-link">Architecture Diagram (Lucide Icons)</a>
+        </li>
+      
+        <li class="toc-item toc-level-4">
+          <a href="#h1-test-heading-mermaid-interactive-test-code-block-with-title" class="toc-link">Code Block with Title</a>
+        </li>
+      
+        <li class="toc-item toc-level-4">
+          <a href="#h1-test-heading-mermaid-interactive-test-math-plugin-test" class="toc-link">Math Plugin Test</a>
+        </li>
+      
+    </ul>
+  </div>
+
+              </div>
+            </div>
+            <div class="page-footer-actions">
+              
+              
+                <span class="git-last-updated" data-timestamp="1780648388000">
+                  <svg class="git-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <span class="git-label">Last updated:</span>
+                  <span class="git-time" data-timestamp="1780648388000"></span>
+                  
+                  <div class="git-commit-tooltip" role="tooltip">
+                    <div class="git-tooltip-title">Recent commits</div>
+                    <ul class="git-commit-list">
+                      
+                        <li class="git-commit-item">
+                          <div class="git-commit-avatar" title="Ghazi">
+                            
+                              <img src="https://www.gravatar.com/avatar/3d5ff960d1bb8dd8c99ef041d5ed5f21?d=mp&amp;s=64" alt="Ghazi">
+                            
+                          </div>
+                          <div class="git-commit-details">
+                            <div class="git-commit-message" title="fix(ui): resolve SPA head asset duplication on client-side navigation">fix(ui): resolve SPA head asset dupli...</div>
+                            <div class="git-commit-meta">
+                              <span class="git-commit-author">Ghazi</span>
+                              <span class="git-commit-date" data-timestamp="1780648388000"></span>
+                            </div>
+                          </div>
+                        </li>
+                      
+                        <li class="git-commit-item">
+                          <div class="git-commit-avatar" title="Ghazi">
+                            
+                              <img src="https://www.gravatar.com/avatar/3d5ff960d1bb8dd8c99ef041d5ed5f21?d=mp&amp;s=64" alt="Ghazi">
+                            
+                          </div>
+                          <div class="git-commit-details">
+                            <div class="git-commit-message" title="chore(release): prep docmd v0.8.6 - AI-First pivot, Model Context Protocol, smart zero-config, and docker-first workflow">chore(release): prep docmd v0.8.6 - A...</div>
+                            <div class="git-commit-meta">
+                              <span class="git-commit-author">Ghazi</span>
+                              <span class="git-commit-date" data-timestamp="1780640126000"></span>
+                            </div>
+                          </div>
+                        </li>
+                      
+                        <li class="git-commit-item">
+                          <div class="git-commit-avatar" title="Ghazi">
+                            
+                              <img src="https://www.gravatar.com/avatar/3d5ff960d1bb8dd8c99ef041d5ed5f21?d=mp&amp;s=64" alt="Ghazi">
+                            
+                          </div>
+                          <div class="git-commit-details">
+                            <div class="git-commit-message" title="chore: stabilize Docmd v0.8.0 release">chore: stabilize Docmd v0.8.0 release</div>
+                            <div class="git-commit-meta">
+                              <span class="git-commit-author">Ghazi</span>
+                              <span class="git-commit-date" data-timestamp="1778511705000"></span>
+                            </div>
+                          </div>
+                        </li>
+                      
+                        <li class="git-commit-item">
+                          <div class="git-commit-avatar" title="Ghazi">
+                            
+                              <img src="https://www.gravatar.com/avatar/3d5ff960d1bb8dd8c99ef041d5ed5f21?d=mp&amp;s=64" alt="Ghazi">
+                            
+                          </div>
+                          <div class="git-commit-details">
+                            <div class="git-commit-message" title="feat(v0.8.0): multi-threaded build engine, unified TUI system, failsafe V5.0">feat(v0.8.0): multi-threaded build en...</div>
+                            <div class="git-commit-meta">
+                              <span class="git-commit-author">Ghazi</span>
+                              <span class="git-commit-date" data-timestamp="1778427474000"></span>
+                            </div>
+                          </div>
+                        </li>
+                      
+                        <li class="git-commit-item">
+                          <div class="git-commit-avatar" title="Ghazi">
+                            
+                              <img src="https://www.gravatar.com/avatar/3d5ff960d1bb8dd8c99ef041d5ed5f21?d=mp&amp;s=64" alt="Ghazi">
+                            
+                          </div>
+                          <div class="git-commit-details">
+                            <div class="git-commit-message" title="feat: multi-project support, TUI design system, targeted dev rebuilds">feat: multi-project support, TUI desi...</div>
+                            <div class="git-commit-meta">
+                              <span class="git-commit-author">Ghazi</span>
+                              <span class="git-commit-date" data-timestamp="1777569199000"></span>
+                            </div>
+                          </div>
+                        </li>
+                      
+                    </ul>
+                  </div>
+                  
+                </span>
+              
+              <span class="git-spacer"></span>
+              
+                <a href="https://github.com/docmd-io/docmd/edit/main/packages/_playground/docs/en/index.md" target="_blank" rel="noopener noreferrer" class="edit-link">
+                  
+<svg class="lucide-icon icon-pencil " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-pencil"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
+  <path d="m15 5 4 4" />
+</svg>
+
+                  Edit this page
+                </a>
+              
+            </div>
+          </main>
+          
+
+
+<footer class="page-footer">
+  <div class="footer-content">
+    <div class="user-footer"></div>
+    
+      <div class="branding-footer">
+        Built with <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path><path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"></path><path d="m18 15-2-2"></path><path d="m15 18-2-2"></path></svg> <a href="https://docmd.io" target="_blank" rel="noopener">docmd.</a>
+      </div>
+    
+  </div>
+</footer>
+
+        </div>
+      </div>
+      
+      <script src="../assets/js/docmd-main.js?v=mqahl3d6"></script>
+      
+      <script src="../assets/js/docmd-git.js?v=mqahl3d6"></script>
+      <script src="../assets/js/docmd-image-lightbox.js?v=mqahl3d6" ></script>
+<script src="https://cdn.jsdelivr.net/npm/minisearch@7.2.0/dist/umd/index.min.js" ></script>
+<script src="../assets/js/docmd-search.js?v=mqahl3d6" ></script>
+<script src="../assets/js/init-mermaid.js?v=mqahl3d6" type="module"></script>
+<script src="../assets/js/docmd-git.js?v=mqahl3d6" type="module"></script>
+
+  <!-- Search Modal (Injected by @docmd/plugin-search) -->
+  <div id="docmd-search-modal" class="docmd-search-modal" style="display: none;" data-show-confidence="false" data-show-filters="true"
+       data-search-placeholder="Search documentation..."
+       data-search-no-results="No results found."
+       data-search-error="Failed to load search index."
+       data-search-initial="Type to start searching..."
+       data-search-navigate="to navigate"
+       data-search-escape="to close">
+      <div class="docmd-search-box">
+          <div class="docmd-search-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-icon icon-search"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+              <input type="text" id="docmd-search-input" placeholder="Search documentation..." autocomplete="off" spellcheck="false">
+              <button onclick="window.closeDocmdSearch()" class="docmd-search-close" aria-label="Close search">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-icon icon-x"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+              </button>
+          </div>
+          <div id="docmd-search-results" class="docmd-search-results"></div>
+          <div class="docmd-search-footer">
+              <span><kbd class="docmd-kbd">↑</kbd> <kbd class="docmd-kbd">↓</kbd> to navigate</span>
+              <span><kbd class="docmd-kbd">ESC</kbd> to close</span>
+          </div>
+      </div>
+  </div>
+
+    <script>
+      (function() {
+        var searchDebounceTimer;
+
+        document.addEventListener('click', function(e) {
+          var link = e.target.closest('a');
+          if (!link || !window.gtag) return;
+          
+          var url = link.href;
+          var hostname = window.location.hostname;
+          var isExternal = link.hostname && link.hostname !== hostname;
+          var isDownload = link.hasAttribute('download') || url.match(/\.(pdf|zip|tar|gz|exe|pkg)$/i);
+          
+          if (isExternal) {
+            gtag('event', 'click_external', { 'url': url, 'link_text': link.innerText.trim() });
+          } else if (isDownload) {
+            gtag('event', 'download', { 'file_name': url.split('/').pop(), 'url': url });
+          }
+
+          // TOC tracking
+          if (link.classList.contains('toc-link')) {
+            gtag('event', 'toc_click', { 'target_id': link.getAttribute('href'), 'title': link.innerText.trim() });
+          }
+
+          // Permalink tracking
+          if (link.classList.contains('heading-anchor')) {
+            gtag('event', 'permalink_click', { 'url': url });
+          }
+        });
+
+        
+        // Search Keyword Tracking
+        document.addEventListener('input', function(e) {
+          if (e.target.id === 'docmd-search-input' && window.gtag) {
+            var query = e.target.value.trim();
+            if (query.length < 3) return;
+            
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(function() {
+              gtag('event', 'search', { 'search_term': query });
+            }, 1000);
+          }
+        });
+        
+      })();
+    </script>
+
+<script>window.__git_config={"repo":"https://github.com/docmd-io/docmd","branch":"main","editLink":true,"lastUpdated":true,"commitHistory":true,"maxCommits":5,"dateFormat":"relative"};window.__git_i18n={"lastUpdated":"Last updated","recentCommits":"Recent commits","viewCommitHistory":"View commit history","editOnGitHub":"Edit on GitHub","editOnGitLab":"Edit on GitLab","editOnBitbucket":"Edit on Bitbucket","editThisPage":"Edit this page","justNow":"just now","minutesAgo":"{n}m ago","hoursAgo":"{n}h ago","daysAgo":"{n}d ago"}</script>
+      
+      
+      
+  </body>
+</html>

@@ -19,7 +19,7 @@ import { loadConfig } from '../utils/config-loader.js';
 import { TUI, loadPlugins } from '@docmd/api';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-import { prepareAssets } from '../engine/assets.js';
+import { prepareAssets, prepareTemplateAssets } from '../engine/assets.js';
 import { buildLocales, generateLocaleRedirect, preCountPages } from '../engine/i18n.js';
 
 export async function buildSite(configPath: string, opts: any = {}) {
@@ -88,15 +88,23 @@ export async function buildSite(configPath: string, opts: any = {}) {
     // Helper: Build Assets for a specific output directory
     const buildAssetsForDir = async (targetOutDir: string) => {
       await prepareAssets(config, targetOutDir, options);
+      // New in 0.8.7: copy template assets (CSS/JS bundles shipped by
+      // template plugins) into `assets/template/`.
+      await prepareTemplateAssets(config, targetOutDir);
       if (hooks.assets) {
         for (const getAssetsFn of hooks.assets) {
           const assets = getAssetsFn();
           if (Array.isArray(assets)) {
             for (const asset of assets) {
-              if (asset.src && asset.dest) {
-                const destPath = path.join(targetOutDir, asset.dest);
+              // Backwards-compat: legacy assets used `src`/`dest` and
+              // `location`. The new typed `Asset` interface uses `path` and
+              // `position`. Accept both spellings here.
+              const src = (asset as any).src ?? (asset as any).path;
+              const dest = (asset as any).dest ?? (asset as any).url;
+              if (src && dest) {
+                const destPath = path.join(targetOutDir, dest);
                 await fs.ensureDir(path.dirname(destPath));
-                await fs.copy(asset.src, destPath);
+                await fs.copy(src, destPath);
               }
             }
           }

@@ -7,7 +7,7 @@
   "minify": true,
   "copyCode": true,
   "theme": {
-    "name": "default",
+    "name": "summer",
     "appearance": "light",
     "codeHighlight": true,
     "customCss": []
@@ -87,8 +87,20 @@
   },
 
   "navigation": [
-    { "title": "Latest Home", "path": "/", "icon": "home" },
-    { "title": "Nostyle", "path": "/nostyle", "icon": "file" },
-    { "title": "Mermaid icon test", "path": "/mermaid-icon-test", "icon": "mermaid"}
+    {
+      "title": "Getting Started",
+      "children": [
+        { "title": "Latest Home", "path": "/", "icon": "home" },
+        {
+          "title": "Mermaid icon test",
+          "path": "/mermaid-icon-test",
+          "icon": "mermaid",
+          "children": [
+            { "title": "Nested Page 1", "path": "/nested-page-1" },
+            { "title": "Nested Page 2", "path": "/nested-page-2" }
+          ]
+        }
+      ]
+    }
   ]
 }

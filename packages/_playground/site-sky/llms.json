@@ -1,0 +1,30 @@
+{
+  "title": "sky-test",
+  "description": "",
+  "pages": [
+    {
+      "title": "docmd _playground",
+      "url": "/en/",
+      "description": "A testing ground for docmd core engine features.",
+      "priority": "medium"
+    },
+    {
+      "title": "Mermaid Icon Test",
+      "url": "/en/mermaid-icon-test/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Untitled",
+      "url": "/en/nostyle/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "docmd _playground (हिन्दी)",
+      "url": "/hi/",
+      "description": "",
+      "priority": "medium"
+    }
+  ]
+}

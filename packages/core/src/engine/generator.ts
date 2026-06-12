@@ -164,15 +164,53 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
   // Footer Processing
   const footerHtml = config.footer?.content ? mdProcessor.renderInline(config.footer.content) : '';
 
-  // --- 1. Identify Assets (Plugin Injection) ---
-  const assetTags: { head: any[], body: any[] } = { head: [], body: [] };
+  // --- 1. Identify Assets (Plugin + Template Injection) ---
+  // Each entry is `{ priority, gen }` so we can sort by load order:
+  //   0  = base (docmd-main.css)
+  //   5  = theme colour overlay (docmd-theme-sky.css etc.)
+  //   10 = template structure (NEW in 0.8.7)
+  //   15 = user customCss (always wins)
+  //   20 = other plugins
+  // Within the same priority, the order of registration is preserved.
+  const assetTags: { head: { priority: number; gen: (rel: string) => string }[]; body: { priority: number; gen: (rel: string) => string }[] } = {
+    head: [],
+    body: [],
+  };
 
-  // Theme CSS
-  if (config.theme.name && config.theme.name !== 'default') {
-    assetTags.head.push((rel: string) => generateAssetTag(`${rel}assets/css/docmd-theme-${config.theme.name}.css?v=${buildHash}`, 'css'));
+  // Theme CSS (priority 5 — overrides base, overridden by template & customCss)
+  // Skipped when:
+  //   - name is 'default' (no overlay) or 'none' (explicitly disabled)
+  //   - name was promoted to a template name (see config-schema §4.0)
+  //   - the template opted out of CSS overlay via _noCssOverlay
+  const themeName = config.theme.name;
+  const themeIsTemplate = config.theme._noCssOverlay === true;
+  if (themeName && themeName !== 'default' && themeName !== 'none' && !themeIsTemplate) {
+    assetTags.head.push({
+      priority: 5,
+      gen: (rel: string) => generateAssetTag(`${rel}assets/css/docmd-theme-${themeName}.css?v=${buildHash}`, 'css'),
+    });
   }
-  // Lightbox
-  assetTags.body.push((rel: string) => generateAssetTag(`${rel}assets/js/docmd-image-lightbox.js?v=${buildHash}`, 'js'));
+  // Lightbox (priority 20 — always last, no theme/template should override it)
+  assetTags.body.push({
+    priority: 20,
+    gen: (rel: string) => generateAssetTag(`${rel}assets/js/docmd-image-lightbox.js?v=${buildHash}`, 'js'),
+  });
+
+  // Template assets (priority 10 by default — overrides theme, overridden by customCss)
+  if (hooks.templateAssets && Array.isArray(hooks.templateAssets)) {
+    for (const asset of hooks.templateAssets) {
+      if (!asset || !asset.path || (asset.type !== 'css' && asset.type !== 'js')) continue;
+      const baseName = path.basename(asset.path);
+      const position = (asset.position || (asset.type === 'css' ? 'head' : 'body')) as 'head' | 'body';
+      const priority = typeof asset.priority === 'number' ? asset.priority : 10;
+      const bucket = position === 'head' ? assetTags.head : assetTags.body;
+      // The URL is computed per-page (relativePathToRoot varies by depth).
+      bucket.push({
+        priority,
+        gen: (rel: string) => generateAssetTag(`${rel}assets/template/${baseName}?v=${buildHash}`, asset.type),
+      });
+    }
+  }
 
   // Plugin Assets
   if (hooks.assets) {
@@ -190,11 +228,21 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
           } else if (asset.url) {
             tagGen = () => generateAssetTag(asset.url, asset.type, asset.attributes);
           }
-          if (tagGen) assetTags[asset.location === 'head' ? 'head' : 'body'].push(tagGen);
+          if (tagGen) {
+            // Plugin assets without an explicit priority land at 20 (last).
+            const priority = typeof asset.priority === 'number' ? asset.priority : 20;
+            const bucket = asset.location === 'head' ? assetTags.head : assetTags.body;
+            bucket.push({ priority, gen: tagGen });
+          }
         }
       }
     }
   }
+
+  // Sort each bucket by priority (stable).
+  const sortByPriority = (a: { priority: number }, b: { priority: number }) => a.priority - b.priority;
+  assetTags.head.sort(sortByPriority);
+  assetTags.body.sort(sortByPriority);
 
   // --- 2. Process Content ---
   // Build a set of file paths that the auto-router designated as folder-level indexes
@@ -477,8 +525,8 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       };
 
       // Inject Assets
-      const assetHeadHtml = assetTags.head.map((gen: any) => gen(relativePathToRoot)).join('\n');
-      const assetBodyHtml = assetTags.body.map((gen: any) => gen(relativePathToRoot)).join('\n');
+      const assetHeadHtml = assetTags.head.map((e: any) => e.gen(relativePathToRoot)).join('\n');
+      const assetBodyHtml = assetTags.body.map((e: any) => e.gen(relativePathToRoot)).join('\n');
       
       // ── Phase 3A: Invoke onBeforeRender Hook ──
       const pageContext = { 
@@ -554,12 +602,31 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       }, { filename: ui.getTemplatePath('navigation') });
 
       // Render Full Page
-      // Template selection: frontmatter.template > frontmatter.noStyle > default layout
+      // Template selection (new in 0.8.7): resolveTemplate() honours
+      //   frontmatter.template > config.templates[glob] > config.theme.template > default
+      // and falls back to the default layout if the resolved file is missing.
+      // noStyle pages (no chrome) continue to use templates.noStyle as before.
       let templateString = templates.layout;
-      if (page.frontmatter.template && templates[page.frontmatter.template as keyof typeof templates]) {
-        templateString = templates[page.frontmatter.template as keyof typeof templates];
-      } else if (page.frontmatter.noStyle) {
+      let resolvedTemplateInfo: any = null;
+      if (page.frontmatter.noStyle) {
         templateString = templates.noStyle;
+      } else {
+        try {
+          const resolved = ui.resolveTemplate({
+            type: 'layout',
+            pagePath: page.outputPath,
+            frontmatter: page.frontmatter,
+            config,
+            localeId: config._activeLocale?.id,
+            versionId: config._activeVersion?.id,
+          });
+          if (resolved && resolved.templatePath) {
+            templateString = await nativeFs.promises.readFile(resolved.templatePath, 'utf8');
+            resolvedTemplateInfo = resolved;
+          }
+        } catch (e: any) {
+          TUI.warn(`Template resolver failed for "${page.outputPath}" — falling back to default. ${e.message}`);
+        }
       }
       let fullHtml = await parser.renderTemplateAsync(templateString, {
         content: page.htmlContent,
@@ -617,7 +684,10 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
         workspace: config._workspace,
         themeCssLinkHtml: '',
         metaTagsHtml: '',
-        pluginStylesHtml: ''
+        pluginStylesHtml: '',
+        // New in 0.8.7: resolved template metadata, available to the
+        // template if it needs to know which template handled this page.
+        _template: resolvedTemplateInfo,
       }, { filename: ui.getTemplatePath('layout') });
 
       const pageObj = {

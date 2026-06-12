@@ -78,6 +78,33 @@ export async function prepareAssets(config: any, outputDir: string, options: any
   }
 }
 
+// ---------------------------------------------------------------------------
+// Template Assets (new in 0.8.7)
+// Templates ship their own CSS/JS bundles. We copy them into
+// `assets/template/<basename>` so they survive minification and
+// can be referenced with a stable URL.
+// ---------------------------------------------------------------------------
+export async function prepareTemplateAssets(config: any, outputDir: string) {
+  // The hooks object is exported by @docmd/api. We import lazily to avoid
+  // a hard build-time cycle between @docmd/core ↔ @docmd/api.
+  const { hooks } = await import('@docmd/api');
+  if (!hooks || !Array.isArray(hooks.templateAssets) || hooks.templateAssets.length === 0) return;
+
+  const templateDir = path.join(outputDir, 'assets', 'template');
+  await fs.ensureDir(templateDir);
+
+  for (const asset of hooks.templateAssets) {
+    if (!asset || !asset.path || !asset.type) continue;
+    if (asset.type !== 'css' && asset.type !== 'js') continue;
+    if (!await fs.exists(asset.path)) {
+      // Don't crash the build — the resolver already warned at render time.
+      continue;
+    }
+    const dest = path.join(templateDir, path.basename(asset.path));
+    await fs.copy(asset.path, dest);
+  }
+}
+
 async function minifyDir(dir: string) {
   const assets = await findFilesRecursive(dir, ['.css', '.js']);
   for (const file of assets) {
