@@ -116,20 +116,29 @@
           // Smart Switcher: Check if the exact page exists in the target version
           fetch(targetHref, { method: 'HEAD' })
             .then(response => {
-              if (response.ok) {
-                window.location.href = targetHref; // Exact match found
+              const finalHref = response.ok ? targetHref : normTargetRoot;
+              if (typeof window.docmdNavigate === 'function' && document.body.dataset.spaEnabled === 'true' && window.location.protocol !== 'file:') {
+                window.docmdNavigate(finalHref);
               } else {
-                window.location.href = normTargetRoot; // Fallback to version root
+                window.location.href = finalHref;
               }
             })
             .catch(() => {
-              window.location.href = normTargetRoot; // Network error fallback
+              if (typeof window.docmdNavigate === 'function' && document.body.dataset.spaEnabled === 'true' && window.location.protocol !== 'file:') {
+                window.docmdNavigate(normTargetRoot);
+              } else {
+                window.location.href = normTargetRoot;
+              }
             });
           return;
         }
       }
       // If we are outside the root (or targetRoot is missing), just use the href defined in the link
-      window.location.href = versionLink.href;
+      if (typeof window.docmdNavigate === 'function' && document.body.dataset.spaEnabled === 'true' && window.location.protocol !== 'file:') {
+        window.docmdNavigate(versionLink.href);
+      } else {
+        window.location.href = versionLink.href;
+      }
     }
 
     // Close Dropdown if clicked outside
@@ -235,13 +244,28 @@
         var localePages = manifest[localeId];
         if (localePages && localePages.indexOf(lookupPath) !== -1) {
           // Page exists in target locale - navigate directly
-          window.location.href = targetHref + window.location.hash;
+          const finalHref = targetHref + window.location.hash;
+          if (typeof window.docmdNavigate === 'function' && document.body.dataset.spaEnabled === 'true' && window.location.protocol !== 'file:') {
+            window.docmdNavigate(finalHref);
+          } else {
+            window.location.href = finalHref;
+          }
         } else if (localePages && localePages.length > 0) {
           // Locale exists but this page doesn't - go to locale root
-          window.location.href = base + targetLocPrefix;
+          const finalHref = base + targetLocPrefix;
+          if (typeof window.docmdNavigate === 'function' && document.body.dataset.spaEnabled === 'true' && window.location.protocol !== 'file:') {
+            window.docmdNavigate(finalHref);
+          } else {
+            window.location.href = finalHref;
+          }
         } else {
           // Locale has no pages at all - stay on current page
-          window.location.href = base + currentPath;
+          const finalHref = base + currentPath;
+          if (typeof window.docmdNavigate === 'function' && document.body.dataset.spaEnabled === 'true' && window.location.protocol !== 'file:') {
+            window.docmdNavigate(finalHref);
+          } else {
+            window.location.href = finalHref;
+          }
         }
         return;
       }
@@ -249,14 +273,20 @@
       // Fallback: no manifest available - use HEAD fetch (legacy/graceful degradation)
       fetch(targetHref, { method: 'HEAD' })
         .then(function (response) {
-          if (response.ok) {
-            window.location.href = targetHref + window.location.hash;
+          const finalHref = response.ok ? (targetHref + window.location.hash) : (base + targetLocPrefix);
+          if (typeof window.docmdNavigate === 'function' && document.body.dataset.spaEnabled === 'true' && window.location.protocol !== 'file:') {
+            window.docmdNavigate(finalHref);
           } else {
-            window.location.href = base + targetLocPrefix;
+            window.location.href = finalHref;
           }
         })
         .catch(function () {
-          window.location.href = base + targetLocPrefix;
+          const finalHref = base + targetLocPrefix;
+          if (typeof window.docmdNavigate === 'function' && document.body.dataset.spaEnabled === 'true' && window.location.protocol !== 'file:') {
+            window.docmdNavigate(finalHref);
+          } else {
+            window.location.href = finalHref;
+          }
         });
       return;
     }
@@ -725,18 +755,24 @@
           '.page-header .header-title',
           '.page-footer',
           '.footer-complete',
-          '.page-footer-actions'
+          '.page-footer-actions',
+          '.docmd-language-switcher',
+          '.docmd-version-dropdown',
+          '.docmd-project-switcher'
         ];
 
         selectorsToSwap.forEach(selector => {
-          const oldEl = document.querySelector(selector);
-          const newEl = doc.querySelector(selector);
-          if (oldEl && newEl) {
-            oldEl.textContent = '';
-            while (newEl.firstChild) {
-              oldEl.appendChild(newEl.firstChild);
+          const oldEls = document.querySelectorAll(selector);
+          const newEls = doc.querySelectorAll(selector);
+          oldEls.forEach((oldEl, idx) => {
+            const newEl = newEls[idx];
+            if (oldEl && newEl) {
+              oldEl.textContent = '';
+              while (newEl.firstChild) {
+                oldEl.appendChild(newEl.firstChild);
+              }
             }
-          }
+          });
         });
 
         // Scroll after the browser has painted the new content.
@@ -769,6 +805,7 @@
         window.location.assign(url);
       }
     }
+    window.docmdNavigate = navigateTo;
   }
 
   // 4. BOOTSTRAP
@@ -802,6 +839,8 @@
     initializeScrollSpy();
     initializeHeroSliders();
     initializeSPA();
+    initBanner();
+    initCookieConsent();
 
     setTimeout(() => {
       // PWA Unregistration Safety Net:
@@ -833,3 +872,87 @@
     bootstrap();
   }
 })();
+// ---------------------------------------------------------------------------
+// Banner (new in 0.8.7)
+// Per-session dismissable announcement bar. Stored in sessionStorage so a
+// fresh visit re-shows the banner.
+/* global sessionStorage */
+// ---------------------------------------------------------------------------
+function initBanner() {
+  const banner = document.querySelector('[data-docmd-banner]');
+  if (!banner) return;
+  try {
+    if (sessionStorage.getItem('docmd-banner-dismissed') === '1') {
+      banner.remove();
+      return;
+    }
+  } catch (_) { /* sessionStorage blocked — leave visible */ }
+  const closeBtn = banner.querySelector('[data-docmd-banner-dismiss]');
+  if (!closeBtn) return;
+  closeBtn.addEventListener('click', () => {
+    banner.style.transition = 'opacity 0.15s ease, max-height 0.25s ease, padding 0.25s ease, margin 0.25s ease';
+    banner.style.overflow = 'hidden';
+    banner.style.maxHeight = banner.offsetHeight + 'px';
+    // Force reflow before collapsing
+    void banner.offsetHeight;
+    banner.style.opacity = '0';
+    banner.style.maxHeight = '0';
+    banner.style.padding = '0';
+    banner.style.margin = '0';
+    setTimeout(() => {
+      banner.remove();
+      try { sessionStorage.setItem('docmd-banner-dismissed', '1'); } catch (_) { /* ignore */ }
+    }, 260);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Cookie consent (new in 0.8.7)
+// Opt-in. Shows a banner unless a previous choice is stored in
+// localStorage. 'accept' / 'decline' values are persisted.
+// ---------------------------------------------------------------------------
+function initCookieConsent() {
+  const banner = document.querySelector('[data-cookie-consent]');
+  if (!banner) return;
+  const STORAGE_KEY = 'docmd-cookie-consent';
+  const expiryDays = parseInt(banner.getAttribute('data-cookie-expiry') || '180', 10);
+
+  function readChoice() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !parsed.value || !parsed.expires) return null;
+      if (Date.now() > parsed.expires) {
+        localStorage.removeItem(STORAGE_KEY);
+        return null;
+      }
+      return parsed.value;
+    } catch (_) { return null; }
+  }
+
+  function writeChoice(value) {
+    try {
+      const expires = Date.now() + (expiryDays * 24 * 60 * 60 * 1000);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ value, expires, ts: Date.now() }));
+    } catch (_) { /* storage blocked — UI still works for this session */ }
+  }
+
+  if (readChoice()) return; // already chosen
+
+  banner.hidden = false;
+
+  banner.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-cookie-accept], [data-cookie-decline], [data-cookie-dismiss]');
+    if (!t) return;
+    if (t.hasAttribute('data-cookie-accept')) writeChoice('accept');
+    else if (t.hasAttribute('data-cookie-decline')) writeChoice('decline');
+    // dismiss counts as decline-but-silent
+    else if (t.hasAttribute('data-cookie-dismiss')) writeChoice('dismissed');
+    banner.hidden = true;
+    // Fire a CustomEvent so themes/plugins can hook in.
+    try {
+      window.dispatchEvent(new CustomEvent('docmd:cookie-consent', { detail: { value: readChoice() || 'dismissed' } }));
+    } catch (_) { /* ignore */ }
+  });
+}

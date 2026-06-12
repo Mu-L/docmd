@@ -1,0 +1,92 @@
+<%# ---------------------------------------------------------------
+  # @docmd/template-summer  —  partials/menubar.ejs
+  #
+  # Sits in a sticky sub-nav bar BELOW the top header. Each item is
+  # rendered as a tab. Supports dropdowns, icons, and a trailing
+  # action slot (right side of the bar) used for tertiary controls.
+  # ---------------------------------------------------------------
+%>
+<%
+  const menubar = (typeof menubarConfig !== 'undefined' ? menubarConfig : (locals.menubarConfig || {}));
+  const left = Array.isArray(menubar.left) ? menubar.left : [];
+  const right = Array.isArray(menubar.right) ? menubar.right : [];
+
+  // Detect the active item: prefer explicit `active` flag, else match by URL
+  function isActive(item) {
+    if (item.active) return true;
+    if (!currentPagePath) return false;
+    const itemUrl = (item.url || item.path || '').replace(/^\/+/, '').replace(/^index\.html$/, '').replace(/\/$/, '');
+    const cur = (currentPagePath || '').replace(/^\/+/, '').replace(/^index\.html$/, '').replace(/\/$/, '');
+    if (!itemUrl) return false;
+    return cur === itemUrl || cur.startsWith(itemUrl + '/');
+  }
+
+  function itemHref(item) {
+    if (item.url) return buildRelativeUrl(item.url);
+    if (item.path) return buildRelativeUrl(item.path);
+    return '#';
+  }
+
+  function renderTab(item) {
+    const active = isActive(item);
+    const href = itemHref(item);
+    const external = !!item.external;
+    const target = external ? ' target="_blank" rel="noopener noreferrer"' : '';
+    const cls = 'summer-subnav__tab' + (active ? ' active' : '');
+    const icon = item.icon ? `<span class="summer-subnav__tab-icon">${renderIcon(item.icon)}</span>` : '';
+    const text = item.text || item.title || '';
+    return `<a href="${href}" class="${cls}"${target}${active ? ' aria-current="page"' : ''}>${icon}<span>${text}</span>${external ? '<span class="summer-subnav__tab-chevron">↗</span>' : ''}</a>`;
+  }
+%>
+<div class="summer-subnav__inner">
+  <% left.forEach(item => { %>
+    <% if (item.type === 'dropdown') { %>
+      <div class="summer-subnav__dropdown" data-summer-dropdown>
+        <button type="button" class="summer-subnav__tab" aria-haspopup="true" aria-expanded="false">
+          <% if (item.icon) { %><span class="summer-subnav__tab-icon"><%- renderIcon(item.icon) %></span><% } %>
+          <span><%= item.text || item.title %></span>
+          <span class="summer-subnav__tab-chevron"><%- renderIcon('chevron-down', { class: 'summer-subnav__tab-chev' }) %></span>
+        </button>
+        <div class="summer-subnav__menu" role="menu">
+          <% (item.items || []).forEach(sub => { %>
+            <a href="<%= sub.external ? (sub.url || '#') : buildRelativeUrl(sub.url || sub.path || '#') %>" class="summer-subnav__menuitem" role="menuitem" <%= sub.external ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
+              <% if (sub.icon) { %><span class="summer-subnav__menuitem-icon"><%- renderIcon(sub.icon) %></span><% } %>
+              <span><%= sub.text || sub.title %></span>
+              <% if (sub.description) { %><span class="summer-subnav__menuitem-desc"><%= sub.description %></span><% } %>
+            </a>
+          <% }) %>
+        </div>
+      </div>
+    <% } else { %>
+      <%- renderTab(item) %>
+    <% } %>
+  <% }) %>
+
+  <% if (left.length && right.length) { %>
+    <div class="summer-subnav__spacer"></div>
+  <% } %>
+
+  <div class="summer-subnav__right">
+    <% right.forEach(item => { %>
+      <% if (item.type === 'dropdown') { %>
+        <div class="summer-subnav__dropdown" data-summer-dropdown>
+          <button type="button" class="summer-subnav__tab" aria-haspopup="true" aria-expanded="false">
+            <% if (item.icon) { %><span class="summer-subnav__tab-icon"><%- renderIcon(item.icon) %></span><% } %>
+            <span><%= item.text || item.title %></span>
+            <span class="summer-subnav__tab-chevron"><%- renderIcon('chevron-down', { class: 'summer-subnav__tab-chev' }) %></span>
+          </button>
+          <div class="summer-subnav__menu" role="menu">
+            <% (item.items || []).forEach(sub => { %>
+              <a href="<%= sub.external ? (sub.url || '#') : buildRelativeUrl(sub.url || sub.path || '#') %>" class="summer-subnav__menuitem" role="menuitem" <%= sub.external ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
+                <% if (sub.icon) { %><span class="summer-subnav__menuitem-icon"><%- renderIcon(sub.icon) %></span><% } %>
+                <span><%= sub.text || sub.title %></span>
+              </a>
+            <% }) %>
+          </div>
+        </div>
+      <% } else { %>
+        <%- renderTab(item) %>
+      <% } %>
+    <% }) %>
+  </div>
+</div>

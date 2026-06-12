@@ -3464,3 +3464,279 @@ ul.contains-task-list>li::marker {
         margin-left: 0;
     }
 }
+/* =========================================================================
+   docmd-banner (new in 0.8.7)
+   Site-wide announcement bar. Above the menubar, below the page header.
+   Customisable per template; user customCss always wins (no !important).
+   ========================================================================= */
+
+.docmd-banner {
+  width: 100%;
+  border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  font-size: 0.9rem;
+  line-height: 1.5;
+  background-color: var(--bg-color, #fff);
+  color: var(--text-color, #1f2937);
+}
+
+.docmd-banner--info {
+  background-color: color-mix(in srgb, var(--accent-color, #3b82f6) 8%, var(--bg-color, #fff));
+  border-bottom-color: color-mix(in srgb, var(--accent-color, #3b82f6) 20%, transparent);
+}
+
+.docmd-banner--success {
+  background-color: color-mix(in srgb, #10b981 8%, var(--bg-color, #fff));
+  border-bottom-color: color-mix(in srgb, #10b981 20%, transparent);
+}
+
+.docmd-banner--warning {
+  background-color: color-mix(in srgb, #f59e0b 10%, var(--bg-color, #fff));
+  border-bottom-color: color-mix(in srgb, #f59e0b 25%, transparent);
+}
+
+.docmd-banner--danger {
+  background-color: color-mix(in srgb, #ef4444 8%, var(--bg-color, #fff));
+  border-bottom-color: color-mix(in srgb, #ef4444 20%, transparent);
+}
+
+.docmd-banner__inner {
+  max-width: var(--content-max-width, 1400px);
+  margin: 0 auto;
+  padding: 0.65rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.docmd-banner__icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--text-heading, inherit);
+}
+
+.docmd-banner__icon svg {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.docmd-banner__content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.docmd-banner__text {
+  word-break: break-word;
+}
+
+.docmd-banner__text code {
+  font-size: 0.85em;
+  padding: 0.05em 0.3em;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.docmd-banner__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: inherit;
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 1px;
+  white-space: nowrap;
+}
+
+.docmd-banner__link:hover {
+  opacity: 0.85;
+}
+
+.docmd-banner__link-icon {
+  width: 0.95em;
+  height: 0.95em;
+}
+
+.docmd-banner__close {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+  border-radius: 4px;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.docmd-banner__close:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.docmd-banner__close svg {
+  width: 1em;
+  height: 1em;
+}
+
+.docmd-banner[hidden] {
+  display: none;
+}
+
+/* =========================================================================
+   docmd-cookie-banner (new in 0.8.7)
+   Cookie consent dialog. Opt-in via `config.cookie`. Persistence handled
+   in docmd-main.js; styling deliberately uses CSS custom properties so a
+   template can retheme without !important.
+   ========================================================================= */
+
+.docmd-cookie-banner {
+  position: fixed;
+  z-index: 9999;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-color, #1f2937);
+  background-color: var(--bg-color, #fff);
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  max-width: min(560px, calc(100vw - 2rem));
+  animation: docmd-cookie-banner-in 0.25s ease-out;
+}
+
+.docmd-cookie-banner--bottom {
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+}
+
+.docmd-cookie-banner--bottom-left {
+  left: 1.5rem;
+  bottom: 1.5rem;
+}
+
+.docmd-cookie-banner--bottom-right {
+  right: 1.5rem;
+  bottom: 1.5rem;
+}
+
+.docmd-cookie-banner--center {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.docmd-cookie-banner__inner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  flex-wrap: wrap;
+}
+
+.docmd-cookie-banner__content {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.docmd-cookie-banner__message {
+  margin: 0;
+  color: var(--text-color, inherit);
+}
+
+.docmd-cookie-banner__policy {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-size: 0.85em;
+  text-decoration: underline;
+  color: inherit;
+  opacity: 0.85;
+}
+
+.docmd-cookie-banner__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.docmd-cookie-banner__btn {
+  appearance: none;
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.12));
+  background-color: var(--bg-color, #fff);
+  color: var(--text-color, inherit);
+  border-radius: var(--radius-sm, 6px);
+  padding: 0.4rem 0.85rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.docmd-cookie-banner__btn--accept {
+  background-color: var(--accent-color, #3b82f6);
+  border-color: var(--accent-color, #3b82f6);
+  color: #fff;
+}
+
+.docmd-cookie-banner__btn--accept:hover {
+  filter: brightness(0.95);
+}
+
+.docmd-cookie-banner__btn--decline:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.docmd-cookie-banner__close {
+  appearance: none;
+  background-color: transparent;
+  border: none;
+  padding: 0.25rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+  color: inherit;
+  border-radius: 4px;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.docmd-cookie-banner__close:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.docmd-cookie-banner__close svg {
+  width: 1em;
+  height: 1em;
+}
+
+.docmd-cookie-banner[hidden] {
+  display: none;
+}
+
+@keyframes docmd-cookie-banner-in {
+  from { opacity: 0; transform: translate(-50%, 1rem); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.docmd-cookie-banner--bottom-left,
+.docmd-cookie-banner--bottom-right {
+  animation-name: docmd-cookie-banner-in-corner;
+}
+
+@keyframes docmd-cookie-banner-in-corner {
+  from { opacity: 0; transform: translateY(1rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
