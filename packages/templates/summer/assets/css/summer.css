@@ -1,0 +1,2640 @@
+/* =========================================================================
+   @docmd/template-summer  —  summer.css
+   A complete, self-contained documentation design system inspired by
+   modern docs platforms (GitBook, Linear, Notion). Warm, bright, and
+   modern — designed to feel like its own product, not a recolor.
+
+   This stylesheet is intentionally independent of docmd-main.css. The
+   layout in templates/layout.ejs does NOT load the base stylesheet, so
+   everything below (reset, tokens, layout, components) is defined here.
+
+   Load order (priority chain):
+     0  (docmd-main.css is NOT loaded by the summer layout)
+     5  theme CSS          — palette overlay
+     10 summer.css (this)  — distinctive "summer" design system
+     15 customCss[]        — always wins
+
+   IMPORTANT: Do NOT use !important. User customCss (priority 15) must
+   always win so users can restyle any selector without forking the template.
+   ========================================================================= */
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   1. DESIGN TOKENS
+   ──────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Sizing */
+  --summer-sidebar-width: 288px;
+  --summer-toc-width: 240px;
+  --summer-content-max: 896px;
+  --summer-page-max: 1728px;
+  --summer-topbar-height: 64px;
+  --summer-subnav-height: 44px;
+
+  /* Geometry */
+  --summer-radius-xs: 4px;
+  --summer-radius-sm: 6px;
+  --summer-radius: 8px;
+  --summer-radius-lg: 12px;
+  --summer-radius-xl: 18px;
+
+  /* Typography */
+  --summer-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                      Oxygen, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+  --summer-font-mono: "JetBrains Mono", "SF Mono", ui-monospace, SFMono-Regular,
+                      Menlo, Monaco, "Cascadia Code", "Liberation Mono", monospace;
+
+  /* Type scale */
+  --summer-text-xs: 0.75rem;
+  --summer-text-sm: 0.875rem;
+  --summer-text-base: 1rem;
+  --summer-text-md: 1.125rem;
+  --summer-text-lg: 1.25rem;
+  --summer-text-xl: 1.5rem;
+  --summer-text-2xl: 1.875rem;
+  --summer-text-3xl: 2.25rem;
+
+  /* Motion */
+  --summer-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --summer-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --summer-fast: 120ms;
+  --summer-med: 220ms;
+  --summer-slow: 360ms;
+
+  /* Z-index */
+  --summer-z-base: 1;
+  --summer-z-raised: 10;
+  --summer-z-sticky: 30;
+  --summer-z-dropdown: 50;
+  --summer-z-overlay: 100;
+  --summer-z-modal: 200;
+
+  /* LIGHT palette — GitBook-inspired neutral with warm personality. */
+  --summer-bg:            #ffffff;   /* page background (clean white) */
+  --summer-bg-subtle:     #fafafa;   /* subtle alternate */
+  --summer-surface:       #ffffff;   /* cards, panels */
+  --summer-surface-2:     #f7f7f7;   /* nested cards */
+  --summer-surface-3:     #f1f1ef;   /* code inline bg */
+  --summer-surface-sunken:#f5f5f4;   /* recessed */
+  --summer-border:        #e5e5e5;   /* default border */
+  --summer-border-soft:   #f0f0f0;   /* very light border */
+  --summer-border-strong: #d4d4d4;   /* strong border */
+
+  --summer-fg:            #1d1d1d;   /* primary text (GitBook exact) */
+  --summer-fg-soft:       #4a4a4a;   /* secondary text */
+  --summer-fg-muted:      #6e6e6e;   /* tertiary (GitBook exact) */
+  --summer-fg-faint:      #a3a3a3;   /* placeholder */
+
+  --summer-accent:        #fe551b;   /* GitBook's exact orange */
+  --summer-accent-hover:  #e64500;
+  --summer-accent-soft:   #fff3ed;   /* tinted backgrounds */
+  --summer-accent-faint:  #ffe4d4;   /* hover/active for soft */
+
+  --summer-amber:         #f59e0b;
+  --summer-amber-soft:    #fff7e6;
+  --summer-sun:           #fbbf24;
+  --summer-rose:          #e11d48;
+  --summer-sky:           #0284c7;
+  --summer-sky-soft:      #e0f2fe;
+  --summer-green:         #16a34a;
+  --summer-green-soft:    #dcfce7;
+
+  --summer-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --summer-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --summer-shadow:    0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --summer-shadow-lg: 0 12px 32px -8px rgba(0, 0, 0, 0.12), 0 4px 8px -4px rgba(0, 0, 0, 0.06);
+  --summer-shadow-xl: 0 24px 48px -12px rgba(0, 0, 0, 0.18);
+
+  --summer-ring: 0 0 0 3px rgba(254, 85, 27, 0.20);
+  --summer-ring-soft: 0 0 0 3px rgba(254, 85, 27, 0.10);
+
+  /* Header bottom hairline (GitBook exact) */
+  --summer-header-divider: 0 1px 0 0 rgba(29, 29, 29, 0.08);
+
+  /* Layout grid (responsive overrides in media queries) */
+  --summer-grid-template: var(--summer-sidebar-width) 1fr var(--summer-toc-width);
+}
+
+/* DARK palette — GitBook-inspired dark mode. */
+html[data-theme="dark"] {
+  --summer-bg:            #131110;
+  --summer-bg-subtle:     #1a1815;
+  --summer-surface:       #1d1b17;
+  --summer-surface-2:     #25221c;
+  --summer-surface-3:     #2c2820;
+  --summer-surface-sunken:#100e0b;
+  --summer-border:        #2e2a23;
+  --summer-border-soft:   #25221c;
+  --summer-border-strong: #3d382e;
+
+  --summer-fg:            #f5f0e6;
+  --summer-fg-soft:       #c5bfb0;
+  --summer-fg-muted:      #8a8473;
+  --summer-fg-faint:      #5a5448;
+
+  --summer-accent:        #ff8a5c;
+  --summer-accent-hover:  #ffa47d;
+  --summer-accent-soft:   #2a1810;
+  --summer-accent-faint:  #3a1f10;
+
+  --summer-amber:         #fbbf24;
+  --summer-amber-soft:    #2a1f08;
+  --summer-sun:           #fde047;
+  --summer-sky:           #38bdf8;
+  --summer-sky-soft:      #082f3f;
+  --summer-green:         #4ade80;
+  --summer-green-soft:    #052e1a;
+
+  --summer-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --summer-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --summer-shadow:    0 4px 12px -2px rgba(0, 0, 0, 0.45), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --summer-shadow-lg: 0 12px 32px -8px rgba(0, 0, 0, 0.55), 0 4px 8px -4px rgba(0, 0, 0, 0.4);
+  --summer-shadow-xl: 0 24px 48px -12px rgba(0, 0, 0, 0.6);
+
+  --summer-ring: 0 0 0 3px rgba(255, 138, 92, 0.25);
+  --summer-ring-soft: 0 0 0 3px rgba(255, 138, 92, 0.12);
+
+  --summer-header-divider: 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   2. RESET + BASE TYPOGRAPHY
+   ──────────────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+
+html, body { margin: 0; padding: 0; }
+
+html {
+  /* Anti-FOUC: hidden until theme-init sets the data-theme attribute. */
+  visibility: hidden;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  tab-size: 4;
+}
+html.summer-ready, html[data-theme] { visibility: visible; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body.summer-template {
+  font-family: var(--summer-font-sans);
+  font-size: var(--summer-text-base);
+  line-height: 1.6;
+  color: var(--summer-fg);
+  background: var(--summer-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  min-height: 100vh;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+img, svg, video, canvas { display: block; max-width: 100%; height: auto; }
+input, button, textarea, select { font: inherit; color: inherit; }
+button { background: none; border: none; cursor: pointer; padding: 0; }
+a { color: inherit; text-decoration: none; transition: color var(--summer-fast) var(--summer-ease); }
+a:hover { color: var(--summer-fg); }
+
+::selection { background: var(--summer-accent); color: #fff; }
+
+/* Focus visibility — keyboard only */
+:focus { outline: none; }
+:focus-visible {
+  outline: none;
+  box-shadow: var(--summer-ring);
+  border-radius: var(--summer-radius-sm);
+}
+
+/* Scrollbars (subtle, themed) */
+.summer-template *::-webkit-scrollbar { width: 10px; height: 10px; }
+.summer-template *::-webkit-scrollbar-track { background: transparent; }
+.summer-template *::-webkit-scrollbar-thumb {
+  background: var(--summer-border);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.summer-template *::-webkit-scrollbar-thumb:hover { background: var(--summer-border-strong); background-clip: padding-box; }
+
+/* Skip link (a11y) */
+.summer-template .skip-link {
+  position: fixed;
+  top: -100px;
+  left: 12px;
+  background: var(--summer-accent);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: var(--summer-radius);
+  z-index: var(--summer-z-modal);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--summer-shadow);
+  transition: top var(--summer-med) var(--summer-ease);
+}
+.summer-template .skip-link:focus { top: 12px; }
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   3. TOP BAR  (logo, search, actions)
+   ──────────────────────────────────────────────────────────────────────── */
+
+.summer-topbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--summer-z-sticky);
+  background: color-mix(in srgb, var(--summer-bg) 88%, transparent);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  box-shadow: var(--summer-header-divider);
+}
+
+.summer-topbar__inner {
+  max-width: var(--summer-page-max);
+  margin: 0 auto;
+  height: var(--summer-topbar-height);
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: minmax(180px, auto) 1fr minmax(180px, auto);
+  gap: 24px;
+  align-items: center;
+}
+
+/* Logo */
+.summer-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--summer-fg);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity var(--summer-fast) var(--summer-ease);
+}
+.summer-logo:hover { opacity: 0.7; color: var(--summer-fg); }
+.summer-logo img { max-height: 24px; max-width: 140px; object-fit: contain; }
+.summer-logo--text { font-family: var(--summer-font-sans); }
+.summer-logo__icon {
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  background: var(--summer-fg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--summer-bg);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: -0.02em;
+}
+html:not([data-theme="dark"]) .summer-logo__dark  { display: none; }
+html[data-theme="dark"]    .summer-logo__light { display: none; }
+
+/* Center: search (GitBook-style pill) */
+.summer-topbar__center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.summer-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 480px;
+  height: 36px;
+  padding: 0 10px 0 14px;
+  background: var(--summer-surface);
+  border: 1px solid var(--summer-border);
+  border-radius: 999px;            /* pill — GitBook exact */
+  color: var(--summer-fg-muted);
+  font-size: var(--summer-text-sm);
+  font-weight: 400;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--summer-fast) var(--summer-ease),
+              background var(--summer-fast) var(--summer-ease),
+              box-shadow var(--summer-fast) var(--summer-ease);
+}
+.summer-search:hover, .summer-search:focus-visible {
+  border-color: var(--summer-border-strong);
+  background: var(--summer-bg);
+  color: var(--summer-fg);
+  box-shadow: var(--summer-shadow-sm);
+}
+.summer-search__icon {
+  flex-shrink: 0;
+  color: var(--summer-fg-muted);
+}
+.summer-search__placeholder {
+  flex: 1;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.summer-search__kbd {
+  display: inline-flex;
+  gap: 2px;
+  flex-shrink: 0;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--summer-fg-muted);
+}
+.summer-search__kbd kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--summer-border);
+  border-radius: 4px;
+  background: var(--summer-bg);
+  font-family: var(--summer-font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--summer-fg-muted);
+}
+
+/* Right: actions — contain overflowing dropdowns (lang switcher, etc.) */
+.summer-topbar__right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  color: var(--summer-fg-muted);
+  position: relative;
+}
+.summer-topbar__right > .summer-options-menu__item {
+  position: relative;
+  max-height: 36px;
+  overflow: visible;
+}
+.summer-topbar__right .summer-options-menu__item > * {
+  max-height: 36px;
+  overflow: visible;
+}
+
+.summer-iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--summer-radius-sm);
+  color: var(--summer-fg-soft);
+  background: transparent;
+  border: 1px solid transparent;
+  transition: background var(--summer-fast) var(--summer-ease),
+              color var(--summer-fast) var(--summer-ease),
+              border-color var(--summer-fast) var(--summer-ease);
+  position: relative;
+}
+.summer-iconbtn:hover {
+  background: var(--summer-surface-2);
+  color: var(--summer-fg);
+}
+.summer-iconbtn svg { width: 16px; height: 16px; }
+
+/* Mobile-only top-bar elements */
+.summer-topbar__mobile { display: none; align-items: center; gap: 6px; }
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   4. SUB-NAVIGATION (menubar)  — tabs / product switcher
+   ──────────────────────────────────────────────────────────────────────── */
+
+.summer-subnav {
+  position: sticky;
+  top: var(--summer-topbar-height);
+  z-index: calc(var(--summer-z-sticky) - 1);
+  background: color-mix(in srgb, var(--summer-bg) 88%, transparent);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  /* No border — single hairline only at the very top of the page */
+}
+.summer-template.has-menubar .summer-topbar {
+  box-shadow: none;
+}
+.summer-template.has-menubar .summer-subnav {
+  box-shadow: var(--summer-header-divider);
+}
+.summer-subnav__inner {
+  max-width: var(--summer-page-max);
+  margin: 0 auto;
+  padding: 0 24px;
+  height: var(--summer-subnav-height);
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.summer-subnav__inner::-webkit-scrollbar { display: none; }
+
+.summer-subnav__tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--summer-fg-muted);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 400;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: -0.005em;
+  transition: background var(--summer-fast) var(--summer-ease),
+              color var(--summer-fast) var(--summer-ease);
+}
+.summer-subnav__tab:hover {
+  background: var(--summer-surface-2);
+  color: var(--summer-fg);
+}
+.summer-subnav__tab.active,
+.summer-subnav__tab[aria-current="page"] {
+  color: var(--summer-accent);
+  font-weight: 500;
+}
+.summer-subnav__tab svg { width: 15px; height: 15px; flex-shrink: 0; }
+.summer-subnav__tab-chevron { opacity: 0.6; margin-left: 1px; }
+
+/* Dropdown menu (menubar dropdowns) */
+.summer-subnav__dropdown { position: relative; }
+.summer-subnav__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 200px;
+  padding: 6px;
+  background: var(--summer-surface);
+  border: 1px solid var(--summer-border);
+  border-radius: var(--summer-radius);
+  box-shadow: var(--summer-shadow-lg);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity var(--summer-fast) var(--summer-ease),
+              transform var(--summer-fast) var(--summer-ease),
+              visibility 0s linear var(--summer-fast);
+  z-index: var(--summer-z-overlay);
+}
+.summer-subnav__dropdown[data-open="true"] .summer-subnav__menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition: opacity var(--summer-fast) var(--summer-ease),
+              transform var(--summer-fast) var(--summer-ease),
+              visibility 0s;
+}
+.summer-subnav__menuitem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--summer-radius-sm);
+  color: var(--summer-fg-soft);
+  text-decoration: none;
+  font-size: var(--summer-text-sm);
+  font-weight: 500;
+  transition: background var(--summer-fast) var(--summer-ease), color var(--summer-fast) var(--summer-ease);
+}
+.summer-subnav__menuitem:hover {
+  background: var(--summer-surface-2);
+  color: var(--summer-fg);
+}
+.summer-subnav__menuitem-icon { display: inline-flex; color: var(--summer-fg-muted); }
+.summer-subnav__menuitem-icon svg { width: 15px; height: 15px; }
+.summer-subnav__menuitem-desc {
+  display: block;
+  font-size: var(--summer-text-xs);
+  font-weight: 400;
+  color: var(--summer-fg-muted);
+  margin-top: 1px;
+}
+
+.summer-subnav__spacer { flex: 1; min-width: 8px; }
+
+.summer-subnav__right { display: inline-flex; align-items: center; gap: 4px; }
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   5. PAGE HEADER  (breadcrumb, title, copy widgets)
+   ──────────────────────────────────────────────────────────────────────── */
+
+.summer-pageheader {
+  position: sticky;
+  top: calc(var(--summer-topbar-height) + var(--summer-subnav-height));
+  z-index: calc(var(--summer-z-sticky) - 2);
+  background: color-mix(in srgb, var(--summer-bg) 88%, transparent);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  /* No border — clean like GitBook */
+  margin-left: calc(-1 * var(--summer-gutter, 0px));
+  margin-right: calc(-1 * var(--summer-gutter, 0px));
+  padding: 0 0 14px;
+}
+.summer-pageheader__inner {
+  max-width: var(--summer-content-max);
+  margin: 0 auto;
+  padding: 14px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 40px;
+}
+.summer-pageheader__meta {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summer-breadcrumbs {
+  font-size: var(--summer-text-sm);
+  color: var(--summer-fg-muted);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.summer-breadcrumbs__list {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.summer-breadcrumbs__item { display: inline-flex; align-items: center; gap: 4px; }
+.summer-breadcrumbs__item + .summer-breadcrumbs__item::before {
+  content: "";
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='9 18 15 12 9 6'/></svg>") no-repeat center / contain;
+          mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='9 18 15 12 9 6'/></svg>") no-repeat center / contain;
+  opacity: 0.5;
+  margin-right: 4px;
+}
+.summer-breadcrumbs__link {
+  color: var(--summer-fg-muted);
+  text-decoration: none;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color var(--summer-fast) var(--summer-ease);
+}
+.summer-breadcrumbs__link:hover { color: var(--summer-fg); }
+.summer-breadcrumbs__current { color: var(--summer-fg); font-weight: 500; }
+
+/* Copy buttons — proper full-width clickable buttons (GitBook-style) */
+.summer-copy-widgets {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.summer-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  background: transparent;
+  border: 1px solid var(--summer-border);
+  border-radius: 999px;
+  color: var(--summer-fg-soft);
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: all var(--summer-fast) var(--summer-ease);
+}
+.summer-copy-btn:hover {
+  background: var(--summer-surface-2);
+  border-color: var(--summer-border-strong);
+  color: var(--summer-fg);
+}
+.summer-copy-btn:active { transform: scale(0.97); }
+.summer-copy-btn.is-copied {
+  background: var(--summer-green-soft);
+  border-color: var(--summer-green);
+  color: var(--summer-green);
+}
+.summer-copy-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+.summer-copy-btn--icon-only { padding: 0 8px; }
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   6. LAYOUT GRID
+   ──────────────────────────────────────────────────────────────────────── */
+
+.summer-layout {
+  display: grid;
+  grid-template-columns: var(--summer-grid-template);
+  max-width: var(--summer-page-max);
+  margin: 0 auto;
+  gap: 0;
+  padding: 0;
+  position: relative;
+  flex: 1 0 auto;
+  width: 100%;
+}
+
+.summer-template.no-toc .summer-layout { grid-template-columns: var(--summer-sidebar-width) 1fr; }
+.summer-template.no-sidebar .summer-layout { grid-template-columns: 1fr var(--summer-toc-width); }
+.summer-template.no-sidebar.no-toc .summer-layout { grid-template-columns: 1fr; }
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   7. SIDEBAR
+   ──────────────────────────────────────────────────────────────────────── */
+
+.summer-sidebar {
+  position: sticky;
+  top: calc(var(--summer-topbar-height) + var(--summer-subnav-height) + 16px);
+  align-self: start;
+  max-height: calc(100vh - var(--summer-topbar-height) - var(--summer-subnav-height) - 32px);
+  overflow-y: auto;
+  padding: 22px 8px 60px 32px;
+  border-right: none;
+  background: var(--summer-bg);
+}
+
+.summer-sidebar::-webkit-scrollbar { width: 6px; }
+.summer-sidebar::-webkit-scrollbar-track { background: transparent; }
+.summer-sidebar::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+}
+.summer-sidebar:hover::-webkit-scrollbar-thumb {
+  background: var(--summer-border-soft);
+}
+
+.summer-sidebar nav ul { list-style: none; padding: 0; margin: 0; }
+.summer-sidebar nav > ul { display: flex; flex-direction: column; gap: 2px; }
+
+/* 1. Top-level Group Headers (Uppercase, GitBook-style) */
+.summer-sidebar nav > ul > li.nav-group > .nav-label,
+.summer-sidebar nav > ul > li.nav-group > a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-top: 20px;
+  margin-bottom: 4px;
+  color: var(--summer-fg-muted);
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  user-select: none;
+}
+.summer-sidebar nav > ul > li.nav-group:first-child > .nav-label,
+.summer-sidebar nav > ul > li.nav-group:first-child > a {
+  margin-top: 0;
+}
+
+.summer-sidebar nav > ul > li.nav-group > .nav-label svg,
+.summer-sidebar nav > ul > li.nav-group > a svg:not(.nav-external-icon):not(.collapse-icon) {
+  width: 14px; height: 14px;
+  color: var(--summer-fg-muted);
+  flex-shrink: 0;
+  transition: color var(--summer-fast) var(--summer-ease);
+}
+.summer-sidebar nav > ul > li.nav-group > .nav-label:hover,
+.summer-sidebar nav > ul > li.nav-group > a:hover {
+  color: var(--summer-fg);
+}
+.summer-sidebar nav > ul > li.nav-group > .nav-label:hover svg,
+.summer-sidebar nav > ul > li.nav-group > a:hover svg:not(.nav-external-icon):not(.collapse-icon) {
+  color: var(--summer-accent);
+}
+
+/* 2. Regular sidebar items (both leaves and collapsible submenu links) */
+.summer-sidebar nav li > a:not(.nav-group),
+.summer-sidebar nav li:not(.nav-group) > .nav-label,
+.summer-sidebar nav .submenu li > a,
+.summer-sidebar nav .submenu li > .nav-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  margin: 1px 8px;
+  color: var(--summer-fg-soft);
+  font-size: 0.875rem; /* 14px */
+  font-weight: 450;
+  text-decoration: none;
+  border-radius: var(--summer-radius-sm);
+  line-height: 1.4;
+  position: relative;
+  transition: background var(--summer-fast) var(--summer-ease),
+              color var(--summer-fast) var(--summer-ease);
+}
+
+.summer-sidebar nav li > a:not(.nav-group) svg:not(.nav-external-icon):not(.collapse-icon),
+.summer-sidebar nav li:not(.nav-group) > .nav-label svg:not(.nav-external-icon):not(.collapse-icon),
+.summer-sidebar nav .submenu li > a svg:not(.nav-external-icon):not(.collapse-icon),
+.summer-sidebar nav .submenu li > .nav-label svg:not(.nav-external-icon):not(.collapse-icon) {
+  width: 14px; height: 14px;
+  flex-shrink: 0;
+  color: var(--summer-fg-faint);
+  transition: color var(--summer-fast) var(--summer-ease);
+}
+
+.summer-sidebar nav li > a:hover,
+.summer-sidebar nav li > .nav-label:hover {
+  background: var(--summer-surface-2);
+  color: var(--summer-fg);
+}
+.summer-sidebar nav li > a:hover svg:not(.nav-external-icon):not(.collapse-icon),
+.summer-sidebar nav li > .nav-label:hover svg:not(.nav-external-icon):not(.collapse-icon) {
+  color: var(--summer-fg-soft);
+}
+
+/* 3. Active state styling - thin left border, color highlights */
+/* Top-level active items (display border-left on the element itself) */
+.summer-sidebar nav > ul > li > a.active,
+.summer-sidebar nav > ul > li > .nav-label.active {
+  background: transparent;
+  color: var(--summer-accent);
+  font-weight: 500;
+  border-left: 2px solid var(--summer-accent);
+  border-radius: 0;
+  padding-left: 10px; /* text aligns perfectly (10px + 2px border = 12px padding) */
+}
+
+/* Nested active items (overlay accent bar on the parent submenu's border-left thread) */
+.summer-sidebar nav .submenu li > a.active,
+.summer-sidebar nav .submenu li > .nav-label.active {
+  background: transparent;
+  color: var(--summer-accent);
+  font-weight: 500;
+  border-left: none; /* no border on the item itself */
+  padding-left: 12px; /* standard padding */
+}
+
+.summer-sidebar nav .submenu li > a.active::before,
+.summer-sidebar nav .submenu li > .nav-label.active::before {
+  content: "";
+  position: absolute;
+  left: -13px; /* align exactly with the parent's border-left */
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--summer-accent);
+  display: block;
+}
+
+.summer-sidebar nav li > a.active:hover,
+.summer-sidebar nav li > .nav-label.active:hover {
+  background: var(--summer-surface-2);
+}
+
+.summer-sidebar nav li > a.active svg:not(.nav-external-icon):not(.collapse-icon),
+.summer-sidebar nav li > .nav-label.active svg:not(.nav-external-icon):not(.collapse-icon) {
+  color: var(--summer-accent);
+}
+
+/* 4. Collapse trigger icon styling & transitions */
+.summer-sidebar nav .collapse-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  color: var(--summer-fg-faint);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: transform var(--summer-med) var(--summer-ease),
+              color var(--summer-fast) var(--summer-ease);
+}
+.summer-sidebar nav .collapse-icon-wrapper:hover {
+  color: var(--summer-fg-soft);
+}
+.summer-sidebar nav .collapse-icon {
+  width: 10px;
+  height: 10px;
+  transform: rotate(90deg); /* Expanded is pointing down (90deg) */
+  transition: transform var(--summer-med) var(--summer-ease);
+}
+
+/* Collapsed chevron points right (0deg) */
+.summer-sidebar nav li[aria-expanded="false"] > a .collapse-icon,
+.summer-sidebar nav li[aria-expanded="false"] > .nav-label .collapse-icon,
+.summer-sidebar nav li:not(.expanded) > a .collapse-icon,
+.summer-sidebar nav li:not(.expanded) > .nav-label .collapse-icon {
+  transform: rotate(0deg);
+}
+
+.summer-sidebar .nav-item-title {
+  flex: 1;
+}
+
+.summer-sidebar .nav-external-icon {
+  width: 11px;
+  height: 11px;
+  margin-left: auto;
+  color: var(--summer-fg-faint);
+}
+
+/* 5. Submenu & Nested tracks styling */
+.summer-sidebar nav .submenu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  max-height: 2000px;
+  transition: max-height var(--summer-slow) var(--summer-ease);
+  /* Indent nesting with a beautiful thread line */
+  border-left: 1px solid var(--summer-border-soft);
+  margin-left: 20px;
+  padding-left: 4px;
+}
+.summer-sidebar nav li[aria-expanded="false"] > .submenu,
+.summer-sidebar nav li:not(.expanded) > .submenu {
+  max-height: 0;
+}
+/* Sidebar widgets & dropdowns (Version Switcher, Language Switcher, Project Switcher) */
+.summer-sidebar__top,
+.summer-sidebar__bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 8px;
+  margin-bottom: 16px;
+}
+.summer-sidebar__bottom {
+  margin-top: 24px;
+  margin-bottom: 0;
+}
+
+.summer-sidebar-widget {
+  width: 100%;
+}
+
+.summer-sidebar-widget .docmd-version-dropdown,
+.summer-sidebar-widget .docmd-project-switcher,
+.summer-sidebar-widget .docmd-language-switcher {
+  width: 100%;
+  position: relative;
+}
+
+.summer-sidebar-widget .version-dropdown-toggle,
+.summer-sidebar-widget .project-switcher-toggle,
+.summer-sidebar-widget .language-switcher-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  background-color: var(--summer-surface-1);
+  border: 1px solid var(--summer-border-soft);
+  border-radius: var(--summer-radius-sm);
+  color: var(--summer-fg-soft);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--summer-fast) var(--summer-ease);
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.summer-sidebar-widget .version-dropdown-toggle:hover,
+.summer-sidebar-widget .project-switcher-toggle:hover,
+.summer-sidebar-widget .language-switcher-toggle:hover {
+  background-color: var(--summer-surface-2);
+  color: var(--summer-fg);
+  border-color: var(--summer-border);
+}
+
+.summer-sidebar-widget .version-icon,
+.summer-sidebar-widget .project-icon,
+.summer-sidebar-widget .language-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--summer-fg-faint);
+  flex-shrink: 0;
+}
+
+.summer-sidebar-widget .version-chevron,
+.summer-sidebar-widget .project-chevron,
+.summer-sidebar-widget .language-chevron {
+  width: 12px;
+  height: 12px;
+  margin-left: auto;
+  color: var(--summer-fg-faint);
+  transition: transform var(--summer-med) var(--summer-ease);
+}
+
+/* Open states */
+.summer-sidebar-widget .docmd-version-dropdown.open .version-chevron,
+.summer-sidebar-widget .docmd-project-switcher.open .project-chevron {
+  transform: rotate(180deg);
+}
+
+/* Dropdown menus positioning */
+.summer-sidebar-widget .version-dropdown-menu,
+.summer-sidebar-widget .project-switcher-menu,
+.summer-sidebar-widget .language-switcher-menu {
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: var(--summer-bg);
+  border: 1px solid var(--summer-border);
+  border-radius: var(--summer-radius-md);
+  box-shadow: var(--summer-shadow-lg);
+  padding: 4px;
+  margin: 4px 0 0 0;
+  list-style: none;
+  z-index: var(--summer-z-dropdown);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.summer-sidebar-widget .docmd-version-dropdown.open .version-dropdown-menu,
+.summer-sidebar-widget .docmd-project-switcher.open .project-switcher-menu {
+  display: block;
+}
+.summer-sidebar-widget .docmd-language-switcher.open .language-switcher-menu {
+  display: block;
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+
+/* Bottom sidebar widgets open upwards to avoid clipping */
+.summer-sidebar__bottom .version-dropdown-menu,
+.summer-sidebar__bottom .project-switcher-menu,
+.summer-sidebar__bottom .language-switcher-menu {
+  top: auto;
+  bottom: calc(100% + 4px);
+  margin: 0 0 4px 0;
+}
+
+/* Dropdown items styling */
+.summer-sidebar-widget .version-dropdown-item,
+.summer-sidebar-widget .project-switcher-item,
+.summer-sidebar-widget .language-switcher-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  color: var(--summer-fg-soft);
+  font-size: 0.82rem;
+  text-decoration: none;
+  border-radius: var(--summer-radius-sm);
+  transition: background var(--summer-fast) var(--summer-ease),
+              color var(--summer-fast) var(--summer-ease);
+  cursor: pointer;
+}
+
+.summer-sidebar-widget .version-dropdown-item:hover,
+.summer-sidebar-widget .project-switcher-item:hover,
+.summer-sidebar-widget .language-switcher-item:hover {
+  background: var(--summer-surface-2);
+  color: var(--summer-fg);
+}
+
+.summer-sidebar-widget .version-dropdown-item.active,
+.summer-sidebar-widget .project-switcher-item.active,
+.summer-sidebar-widget .language-switcher-item.active {
+  background: var(--summer-accent-soft);
+  color: var(--summer-accent);
+  font-weight: 500;
+}
+
+.summer-sidebar-widget .version-check,
+.summer-sidebar-widget .project-check,
+.summer-sidebar-widget .language-check {
+  width: 12px;
+  height: 12px;
+  margin-left: auto;
+  color: var(--summer-accent);
+}
+
+.summer-sidebar-widget .version-latest-badge {
+  font-size: 0.65rem;
+  padding: 1px 4px;
+  background: var(--summer-surface-2);
+  border: 1px solid var(--summer-border-soft);
+  border-radius: 4px;
+  color: var(--summer-fg-muted);
+  font-weight: normal;
+}
+
+/* Sidebar close (mobile) */
+.summer-sidebar-close {
+  display: none;
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--summer-radius-sm);
+  color: var(--summer-fg-soft);
+  background: transparent;
+}
+.summer-sidebar-close:hover { background: var(--summer-surface-2); color: var(--summer-fg); }
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   8. MAIN CONTENT
+   ──────────────────────────────────────────────────────────────────────── */
+
+.summer-main {
+  min-width: 0;
+  padding: 32px 48px 64px;
+  --summer-gutter: 48px;
+  display: flex;
+  flex-direction: column;
+}
+
+.summer-content {
+  max-width: var(--summer-content-max);
+  font-size: 1.0625rem;           /* Refined GitBook size: 17px */
+  line-height: 1.625;
+  color: var(--summer-fg-soft);
+  flex: 1 0 auto;
+}
+
+.summer-content__title {
+  font-size: var(--summer-text-3xl);  /* 36px like GitBook */
+  font-weight: 700;
+  color: var(--summer-fg);
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  margin: 8px 0 20px;
+}
+
+.summer-content > * + * { margin-top: 1.1em; }
+
+/* Headings — GitBook exact scale */
+.summer-content h1,
+.summer-content h2,
+.summer-content h3,
+.summer-content h4,
+.summer-content h5,
+.summer-content h6 {
+  font-family: var(--summer-font-sans);
+  color: var(--summer-fg);
+  font-weight: 700;
+  line-height: 1.25;
+  scroll-margin-top: calc(var(--summer-topbar-height) + var(--summer-subnav-height) + 24px);
+}
+.summer-content h1 {
+  font-size: 2.25rem;          /* 36px GitBook exact */
+  margin-top: 0;
+  margin-bottom: 0.6em;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.summer-content h2 {
+  font-size: 1.875rem;         /* 30px GitBook exact */
+  margin-top: 1.6em;
+  margin-bottom: 0.6em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+.summer-content h3 {
+  font-size: 1.5rem;          /* 24px GitBook exact */
+  margin-top: 1.6em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+}
+.summer-content h4 {
+  font-size: 1.125rem;        /* 18px GitBook exact */
+  margin-top: 1.4em;
+  margin-bottom: 0.4em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.summer-content h5 {
+  font-size: 1rem;
+  margin-top: 1.2em;
+  margin-bottom: 0.3em;
+  font-weight: 600;
+}
+.summer-content h6 {
+  font-size: 0.8125rem;
+  margin-top: 1em;
+  margin-bottom: 0.3em;
+  color: var(--summer-fg-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-weight: 700;
+}
+
+/* Paragraph + inline — Refined premium sizing */
+.summer-content p { margin: 0 0 1.1em; line-height: inherit; }
+.summer-content strong { color: var(--summer-fg); font-weight: 600; }
+.summer-content em { font-style: italic; }
+.summer-content a {
+  color: var(--summer-fg);
+  text-decoration: underline;
+  text-decoration-color: var(--summer-border-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--summer-fast) var(--summer-ease), color var(--summer-fast) var(--summer-ease);
+}
+.summer-content a:hover {
+  color: var(--summer-accent);
+  text-decoration-color: var(--summer-accent);
+}
+
+/* Lists */
+.summer-content ul,
+.summer-content ol {
+  padding-left: 1.4em;
+  margin: 0 0 1em;
+}
+.summer-content li { margin: 0.4em 0; line-height: 1.55; }
+.summer-content ul li::marker { color: var(--summer-fg-muted); }
+.summer-content ol li::marker { color: var(--summer-fg-soft); font-weight: 600; }
+.summer-content ul ul, .summer-content ol ol, .summer-content ul ol, .summer-content ol ul { margin: 0.4em 0; }
+
+/* Horizontal rule */
+.summer-content hr {
+  border: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--summer-border), transparent);
+  margin: 2.5em 0;
+}
+
+/* Heading anchors (clickable # links) */
+.summer-content .docmd-heading,
+.summer-content h1, .summer-content h2, .summer-content h3, .summer-content h4 {
+  position: relative;
+}
+.summer-content .heading-anchor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  margin-left: 0.4em;
+  opacity: 0;
+  color: var(--summer-fg-faint);
+  vertical-align: middle;
+  transition: opacity var(--summer-fast) var(--summer-ease), color var(--summer-fast) var(--summer-ease);
+}
+.summer-content h1:hover .heading-anchor,
+.summer-content h2:hover .heading-anchor,
+.summer-content h3:hover .heading-anchor,
+.summer-content h4:hover .heading-anchor,
+.summer-content .heading-anchor:focus { opacity: 1; }
+.summer-content .heading-anchor:hover { color: var(--summer-accent); }
+.summer-content .heading-anchor svg { width: 100%; height: 100%; }
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   9. RIGHT-RAIL TOC
+   ──────────────────────────────────────────────────────────────────────── */
+
+.summer-toc {
+  position: sticky;
+  top: calc(var(--summer-topbar-height) + var(--summer-subnav-height) + 16px);
+  align-self: start;
+  max-height: calc(100vh - var(--summer-topbar-height) - var(--summer-subnav-height) - 32px);
+  overflow-y: auto;
+  padding: 24px 32px 60px 24px;
+  font-size: 0.8125rem;
+}
+.summer-toc::-webkit-scrollbar { width: 6px; }
+.summer-toc::-webkit-scrollbar-track { background: transparent; }
+.summer-toc::-webkit-scrollbar-thumb {
+  background: var(--summer-border);
+  border-radius: 3px;
+}
+
+.summer-toc__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--summer-fg-muted);
+}
+.summer-toc__title svg {
+  color: var(--summer-fg-muted);
+  flex-shrink: 0;
+}
+
+.summer-toc__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  position: relative;
+}
+.summer-toc__list::before {
+  display: none;
+}
+
+.summer-toc__item {
+  margin: 0;
+  position: relative;
+}
+
+/* Individual line segment for each list item */
+.summer-toc__item::after {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 22px;
+  bottom: -6px;
+  width: 2px;
+  background: var(--summer-border-soft);
+  z-index: 0;
+}
+
+/* Hide line segment on the last item */
+.summer-toc__list li:last-child::after {
+  display: none;
+}
+
+/* Parent/preceding highlighted segments */
+.summer-toc__item.is-ancestor::after {
+  background: var(--summer-accent);
+}
+
+/* Per-item dot marker */
+.summer-toc__item::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 12px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--summer-bg);
+  border: 2px solid var(--summer-border-soft);
+  transition: border-color var(--summer-med) var(--summer-ease),
+              background var(--summer-med) var(--summer-ease),
+              transform var(--summer-med) var(--summer-ease);
+  z-index: 1;
+}
+
+/* Active dot: filled with orange */
+.summer-toc__item:has(> a.active)::before,
+.summer-toc__item:has(> .summer-toc__link.active)::before {
+  background: var(--summer-accent);
+  border-color: var(--summer-accent);
+  transform: scale(1.1);
+}
+
+/* Ancestor dot: orange ring with bg color */
+.summer-toc__item.is-ancestor::before {
+  border-color: var(--summer-accent);
+  background: var(--summer-bg);
+}
+
+.summer-toc__link {
+  display: block;
+  padding: 4px 10px 4px 28px;
+  color: var(--summer-fg-muted);
+  text-decoration: none;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.5;
+  transition: color var(--summer-fast) var(--summer-ease);
+  position: relative;
+}
+.summer-toc__link:hover { color: var(--summer-fg); }
+.summer-toc__link.active {
+  color: var(--summer-accent);
+  font-weight: 500;
+}
+
+.summer-toc__list .summer-toc__list { padding-left: 0; margin-left: 0; }
+.summer-toc__item--level-2 .summer-toc__link { padding-left: 40px; font-size: 0.78rem; }
+.summer-toc__item--level-3 .summer-toc__link { padding-left: 52px; font-size: 0.76rem; }
+.summer-toc__item--level-4 .summer-toc__link { padding-left: 64px; font-size: 0.74rem; }
+
+/* TOC scroll-to-top button */
+.summer-totop {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--summer-accent);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--summer-shadow-lg);
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity var(--summer-med) var(--summer-ease), transform var(--summer-med) var(--summer-ease);
+  z-index: var(--summer-z-overlay);
+}
+.summer-totop.is-visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.summer-totop:hover { background: var(--summer-accent-hover); }
+.summer-totop svg { width: 18px; height: 18px; }
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   10. PAGE NAVIGATION (prev / next)
+   ──────────────────────────────────────────────────────────────────────── */
+
+.summer-pagenav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid var(--summer-border-soft);
+}
+.summer-pagenav__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border: 1px solid var(--summer-border-soft);
+  border-radius: var(--summer-radius);
+  background: var(--summer-surface);
+  color: var(--summer-fg-soft);
+  text-decoration: none;
+  transition: all var(--summer-fast) var(--summer-ease);
+  min-height: 64px;
+}
+.summer-pagenav__link:hover {
+  border-color: var(--summer-accent);
+  background: var(--summer-accent-soft);
+  color: var(--summer-fg);
+  transform: translateY(-1px);
+  box-shadow: var(--summer-shadow-sm);
+}
+.summer-pagenav__link--next { justify-content: flex-end; text-align: right; }
+.summer-pagenav__link--disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  background: transparent;
+}
+.summer-pagenav__icon {
+  flex-shrink: 0;
+  width: 18px; height: 18px;
+  color: var(--summer-accent);
+  transition: transform var(--summer-fast) var(--summer-ease);
+}
+.summer-pagenav__link--prev:hover .summer-pagenav__icon { transform: translateX(-3px); }
+.summer-pagenav__link--next:hover .summer-pagenav__icon { transform: translateX(3px); }
+.summer-pagenav__label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.summer-pagenav__small {
+  font-size: var(--summer-text-xs);
+  color: var(--summer-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+.summer-pagenav__title {
+  font-size: var(--summer-text-sm);
+  font-weight: 600;
+  color: var(--summer-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+/* Page actions footer (edit link + last updated) */
+.summer-pagefooter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 32px;
+  padding: 16px 0;
+  border-top: 1px solid var(--summer-border-soft);
+  font-size: var(--summer-text-sm);
+  color: var(--summer-fg-muted);
+}
+.summer-pagefooter a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--summer-fg-soft);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color var(--summer-fast) var(--summer-ease);
+}
+.summer-pagefooter a:hover { color: var(--summer-accent); }
+.summer-pagefooter a svg { width: 14px; height: 14px; }
+.summer-pagefooter__time { display: inline-flex; align-items: center; gap: 6px; }
+.summer-pagefooter__time svg { width: 14px; height: 14px; color: var(--summer-fg-faint); }
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   11. CODE, TABLES, CALLOUTS
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* Inline code */
+.summer-content :not(pre) > code {
+  display: inline-block;
+  padding: 1px 6px;
+  background: var(--summer-surface-3);
+  border: 1px solid var(--summer-border);
+  border-radius: 5px;
+  font-family: var(--summer-font-mono);
+  font-size: 0.85em;
+  color: var(--summer-fg);
+  font-weight: 500;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+html[data-theme="dark"] .summer-content :not(pre) > code {
+  color: #f5c089;
+  background: rgba(255, 138, 92, 0.10);
+  border-color: rgba(255, 138, 92, 0.20);
+}
+
+/* Code block wrapper — GitBook-style dark block with header */
+.summer-codeblock {
+  position: relative;
+  margin: 1.4em 0;
+  background: #1d1b17;
+  border: 1px solid var(--summer-border);
+  border-radius: var(--summer-radius);
+  overflow: hidden;
+  box-shadow: var(--summer-shadow-xs);
+}
+html[data-theme="dark"] .summer-codeblock {
+  background: #100e0b;
+  border-color: var(--summer-border);
+}
+
+.summer-codeblock__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px 9px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.025);
+  font-size: var(--summer-text-xs);
+  color: #c8bfae;
+  font-family: var(--summer-font-mono);
+}
+html[data-theme="dark"] .summer-codeblock__header {
+  border-bottom-color: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.summer-codeblock__filename {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.summer-codeblock__filename-icon {
+  display: inline-flex;
+  color: #8a8170;
+}
+.summer-codeblock__filename-icon svg { width: 13px; height: 13px; }
+.summer-codeblock__lang {
+  display: inline-flex;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #a8a08e;
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.summer-codeblock__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: #8a8170;
+  font-size: var(--summer-text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--summer-fast) var(--summer-ease);
+}
+.summer-codeblock__copy:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f5efe0;
+}
+.summer-codeblock__copy.is-copied {
+  background: var(--summer-green-soft);
+  border-color: var(--summer-green);
+  color: var(--summer-green);
+}
+.summer-codeblock__copy svg { width: 12px; height: 12px; }
+
+.summer-codeblock pre {
+  margin: 0 !important;
+  padding: 16px 18px !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  font-family: var(--summer-font-mono) !important;
+  font-size: 0.84rem !important;
+  line-height: 1.65 !important;
+  color: #e7dfcf;
+  overflow-x: auto;
+}
+.summer-codeblock pre code { color: inherit !important; }
+
+.summer-content pre:not(.summer-codeblock pre) {
+  margin: 1.4em 0;
+  padding: 16px 18px;
+  background: #1c1813;
+  border: 1px solid var(--summer-border);
+  border-radius: var(--summer-radius);
+  font-family: var(--summer-font-mono);
+  font-size: 0.84rem;
+  line-height: 1.65;
+  color: #e7dfcf;
+  overflow-x: auto;
+  box-shadow: var(--summer-shadow-sm);
+}
+html[data-theme="dark"] .summer-content pre:not(.summer-codeblock pre) {
+  background: #0f0d0a;
+  color: #e7dfcf;
+}
+
+/* Tables */
+.summer-content table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 1.4em 0;
+  font-size: 0.9rem;
+  border: 1px solid var(--summer-border-soft);
+  border-radius: var(--summer-radius);
+  overflow: hidden;
+}
+.summer-content th, .summer-content td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--summer-border-soft);
+}
+.summer-content th {
+  background: var(--summer-surface-2);
+  font-weight: 600;
+  color: var(--summer-fg);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.summer-content tr:last-child td { border-bottom: 0; }
+.summer-content tr:hover td { background: var(--summer-surface-2); }
+
+/* Blockquote / callouts */
+.summer-content blockquote {
+  margin: 1.4em 0;
+  padding: 14px 18px;
+  background: var(--summer-accent-soft);
+  border-left: 4px solid var(--summer-accent);
+  border-radius: 0 var(--summer-radius) var(--summer-radius) 0;
+  color: var(--summer-fg);
+  font-style: normal;
+}
+.summer-content blockquote > :first-child { margin-top: 0; }
+.summer-content blockquote > :last-child { margin-bottom: 0; }
+.summer-content blockquote p { margin: 0.5em 0; }
+
+/* GitBook-style callouts (left-bordered, light-tint) */
+.summer-content .callout,
+.summer-content details[class*="callout"],
+.summer-content .markdown-alert {
+  margin: 1.6em 0;
+  padding: 16px 20px;
+  border-radius: var(--summer-radius);
+  border: 1px solid var(--summer-border-soft);
+  border-left-width: 4px;
+}
+.summer-content .callout-note,    .summer-content .markdown-alert-note    { background: var(--summer-sky-soft);   border-color: color-mix(in srgb, var(--summer-sky) 20%, var(--summer-border-soft)); border-left-color: var(--summer-sky); }
+.summer-content .callout-tip,     .summer-content .markdown-alert-tip     { background: var(--summer-green-soft); border-color: color-mix(in srgb, var(--summer-green) 20%, var(--summer-border-soft)); border-left-color: var(--summer-green); }
+.summer-content .callout-warn,    .summer-content .markdown-alert-warning { background: var(--summer-amber-soft); border-color: color-mix(in srgb, var(--summer-amber) 25%, var(--summer-border-soft)); border-left-color: var(--summer-amber); }
+.summer-content .callout-danger,  .summer-content .markdown-alert-caution { background: rgba(244, 63, 94, 0.06); border-color: color-mix(in srgb, var(--summer-rose) 20%, var(--summer-border-soft)); border-left-color: var(--summer-rose); }
+html[data-theme="dark"] .summer-content .callout-danger,
+html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2a0e10; }
+
+/* Images */
+.summer-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--summer-radius);
+  margin: 1em 0;
+  box-shadow: var(--summer-shadow-sm);
+}
+.summer-content figure { margin: 1.4em 0; }
+.summer-content figcaption {
+  text-align: center;
+  color: var(--summer-fg-muted);
+  font-size: var(--summer-text-sm);
+  margin-top: 8px;
+}
+
+/* Keyboard keys (kbd) */
+.summer-content kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  font: 12px/1.6 var(--summer-font-mono);
+  color: var(--summer-fg-soft);
+  background: var(--summer-surface);
+  border: 1px solid var(--summer-border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  box-shadow: 0 1px 0 var(--summer-border-soft);
+}
+
+/* Mark / highlights */
+.summer-content mark {
+  background: var(--summer-amber-soft);
+  color: var(--summer-fg);
+  padding: 0 3px;
+  border-radius: 3px;
+}
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   12. FOOTER
+   ──────────────────────────────────────────────────────────────────────── */
+
+.summer-footer {
+  margin-top: auto;
+  padding: 24px 0 32px;
+  border-top: 1px solid var(--summer-border-soft);
+  background: var(--summer-bg-subtle);
+  flex-shrink: 0;
+}
+.summer-footer__inner {
+  max-width: var(--summer-page-max);
+  margin: 0 auto;
+  padding: 0 28px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: var(--summer-text-sm);
+  color: var(--summer-fg-muted);
+}
+.summer-footer__user { max-width: 100%; }
+.summer-footer__branding { display: inline-flex; align-items: center; gap: 4px; color: var(--summer-fg-muted); }
+.summer-footer__branding a { color: var(--summer-fg-soft); font-weight: 600; text-decoration: none; }
+.summer-footer__branding a:hover { color: var(--summer-accent); }
+.summer-footer__branding svg { width: 16px; height: 16px; color: var(--summer-accent); }
+
+/* Complete footer (multi-column) */
+.summer-footer.summer-footer--complete {
+  padding: 48px 0 32px;
+}
+.summer-footer__top {
+  max-width: var(--summer-page-max);
+  margin: 0 auto;
+  padding: 0 28px 32px;
+  display: grid;
+  grid-template-columns: 1.5fr repeat(auto-fit, minmax(160px, 1fr));
+  gap: 32px;
+  border-bottom: 1px solid var(--summer-border-soft);
+}
+.summer-footer__brand-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.summer-footer__brand-logo img { max-height: 28px; }
+.summer-footer__desc { color: var(--summer-fg-muted); font-size: var(--summer-text-sm); line-height: 1.6; }
+.summer-footer__col-title {
+  font-size: var(--summer-text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--summer-fg);
+  margin-bottom: 12px;
+}
+.summer-footer__col ul { list-style: none; padding: 0; margin: 0; }
+.summer-footer__col li { margin: 6px 0; }
+.summer-footer__col a {
+  color: var(--summer-fg-soft);
+  font-size: var(--summer-text-sm);
+  text-decoration: none;
+  transition: color var(--summer-fast) var(--summer-ease);
+}
+.summer-footer__col a:hover { color: var(--summer-accent); }
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   13. BANNER (config.layout.banner)
+   ──────────────────────────────────────────────────────────────────────── */
+
+.summer-banner {
+  position: relative;
+  z-index: calc(var(--summer-z-sticky) + 1);
+  background: linear-gradient(90deg, var(--summer-accent-soft), var(--summer-amber-soft));
+  border-bottom: 1px solid var(--summer-border-soft);
+  color: var(--summer-fg);
+  font-size: var(--summer-text-sm);
+}
+.summer-banner__inner {
+  max-width: var(--summer-page-max);
+  margin: 0 auto;
+  padding: 10px 28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+.summer-banner a { color: var(--summer-accent); font-weight: 600; }
+.summer-banner__close {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--summer-fg-soft);
+  border-radius: 4px;
+}
+.summer-banner__close:hover { background: var(--summer-surface); color: var(--summer-fg); }
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   14. RESPONSIVE — Tablet
+   ──────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 1280px) {
+  :root {
+    --summer-sidebar-width: 256px;
+    --summer-toc-width: 220px;
+  }
+  .summer-main { padding: 24px 32px 60px; --summer-gutter: 32px; }
+  .summer-toc { padding-right: 24px; padding-left: 20px; }
+  .summer-sidebar { padding-left: 20px; }
+  .summer-topbar__inner { padding: 0 20px; gap: 16px; }
+  .summer-subnav__inner { padding: 0 20px; }
+  .summer-footer__inner, .summer-footer__top, .summer-banner__inner { padding-left: 20px; padding-right: 20px; }
+}
+
+@media (max-width: 1100px) {
+  /* Hide TOC on medium screens; keep sidebar */
+  :root { --summer-grid-template: var(--summer-sidebar-width) 1fr; }
+  .summer-toc { display: none; }
+}
+
+@media (max-width: 900px) {
+  .summer-topbar { position: static; }
+  .summer-topbar__inner {
+    grid-template-columns: 1fr auto;
+    padding: 0 16px;
+    gap: 12px;
+  }
+  .summer-topbar__center { display: none; }
+  .summer-topbar__mobile { display: inline-flex; }
+
+  .summer-subnav { position: static; }
+  .summer-subnav__inner { padding: 0 16px; }
+
+  :root { --summer-grid-template: 1fr; }
+  .summer-sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    z-index: var(--summer-z-overlay);
+    width: 84vw; max-width: 320px;
+    height: 100vh;
+    border-right: 1px solid var(--summer-border);
+    background: var(--summer-bg);
+    transform: translateX(-100%);
+    transition: transform var(--summer-med) var(--summer-ease);
+    box-shadow: var(--summer-shadow-xl);
+    padding-top: 48px;
+  }
+  body.summer-sidebar-open .summer-sidebar { transform: translateX(0); }
+  body.summer-sidebar-open::after {
+    content: "";
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: calc(var(--summer-z-overlay) - 1);
+    backdrop-filter: blur(2px);
+  }
+  .summer-sidebar-close { display: inline-flex; }
+
+  .summer-pageheader { position: static; }
+  .summer-main { padding: 16px 20px 40px; --summer-gutter: 20px; }
+  .summer-content { font-size: 1rem; }
+  .summer-content h1 { font-size: 1.75rem; }
+  .summer-content h2 { font-size: 1.45rem; }
+  .summer-content h3 { font-size: 1.25rem; }
+
+  .summer-pagenav { grid-template-columns: 1fr; }
+  .summer-pagenav__link--next { text-align: left; justify-content: flex-start; }
+  .summer-pagenav__link--next .summer-pagenav__icon { order: -1; }
+
+  .summer-totop { right: 16px; bottom: 16px; }
+}
+
+@media (max-width: 480px) {
+  .summer-topbar__inner { padding: 0 12px; }
+}
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   15. UTILITIES
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* Hide elements when sidebar/toc is disabled */
+.summer-template.no-sidebar .summer-sidebar { display: none; }
+.summer-template.no-toc .summer-toc { display: none; }
+
+/* Print styles */
+@media print {
+  .summer-topbar, .summer-subnav, .summer-sidebar, .summer-toc,
+  .summer-pagenav, .summer-pagefooter, .summer-footer,
+  .summer-banner, .summer-copy-widgets, .summer-totop,
+  .summer-codeblock__copy { display: none !important; }
+  .summer-main { padding: 0; max-width: 100%; }
+  .summer-content { color: #000; max-width: 100%; }
+  .summer-content pre, .summer-content table { page-break-inside: avoid; }
+  .summer-content h1, .summer-content h2, .summer-content h3 { page-break-after: avoid; }
+}
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   16. CUSTOM CONTAINERS
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* Steps Container */
+.steps-list {
+  counter-reset: step-counter;
+  list-style: none;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+  position: relative;
+}
+.step-item {
+  counter-increment: step-counter;
+  position: relative;
+  padding-left: 48px !important;
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+  list-style: none !important;
+}
+.step-item::before {
+  content: counter(step-counter);
+  position: absolute;
+  left: 0;
+  top: 2px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--summer-surface-2);
+  border: 1.5px solid var(--summer-border-strong);
+  color: var(--summer-fg);
+  font-size: 0.875rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  box-shadow: var(--summer-shadow-xs);
+  transition: all var(--summer-fast) var(--summer-ease);
+}
+.step-item:hover::before {
+  border-color: var(--summer-accent);
+  color: var(--summer-accent);
+}
+.step-item::after {
+  content: "";
+  position: absolute;
+  left: 15px;
+  top: 36px;
+  bottom: -36px;
+  width: 2px;
+  background: var(--summer-border-soft);
+  z-index: 0;
+}
+.step-item:last-child::after {
+  display: none;
+}
+
+/* Changelog Container */
+.changelog-timeline {
+  position: relative;
+  padding-left: 32px;
+  margin: 2.5rem 0;
+}
+.changelog-timeline::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--summer-border-soft);
+}
+.changelog-entry {
+  position: relative;
+  margin-bottom: 2.5rem;
+}
+.changelog-entry::before {
+  content: "";
+  position: absolute;
+  left: -30px;
+  top: 6px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--summer-bg);
+  border: 3px solid var(--summer-accent);
+  z-index: 1;
+  transition: transform var(--summer-fast) var(--summer-ease);
+}
+.changelog-entry:hover::before {
+  transform: scale(1.25);
+}
+.changelog-meta {
+  margin-bottom: 0.5rem;
+}
+.changelog-date {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--summer-accent);
+}
+.changelog-body {
+  font-size: 1rem;
+  color: var(--summer-fg-soft);
+}
+.changelog-body > :first-child {
+  margin-top: 0;
+}
+
+/* Tabs Container */
+.docmd-tabs {
+  margin: 1.8rem 0;
+  border: 1px solid var(--summer-border-soft);
+  border-radius: var(--summer-radius-lg);
+  overflow: hidden;
+  background: var(--summer-bg);
+  box-shadow: var(--summer-shadow-xs);
+}
+.docmd-tabs-nav {
+  display: flex;
+  background: var(--summer-surface-subtle, var(--summer-bg-subtle));
+  border-bottom: 1px solid var(--summer-border-soft);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.docmd-tabs-nav::-webkit-scrollbar {
+  display: none;
+}
+.docmd-tabs-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--summer-fg-soft);
+  border-bottom: 2px solid transparent;
+  transition: all var(--summer-fast) var(--summer-ease);
+  user-select: none;
+}
+.docmd-tabs-nav-item:hover {
+  color: var(--summer-fg);
+  background: rgba(0, 0, 0, 0.02);
+}
+html[data-theme="dark"] .docmd-tabs-nav-item:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+.docmd-tabs-nav-item.active {
+  color: var(--summer-accent);
+  border-bottom-color: var(--summer-accent);
+  background: var(--summer-bg);
+  font-weight: 600;
+}
+.docmd-tabs-content {
+  padding: 20px;
+}
+.docmd-tab-pane {
+  display: none;
+}
+.docmd-tab-pane.active {
+  display: block;
+}
+
+/* Cards Container */
+.docmd-container.card {
+  margin: 1.5rem 0;
+  border: 1px solid var(--summer-border-soft);
+  border-radius: var(--summer-radius-lg);
+  padding: 24px;
+  background: var(--summer-bg);
+  box-shadow: var(--summer-shadow-xs);
+  transition: all var(--summer-med) var(--summer-ease);
+}
+.docmd-container.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--summer-accent-hover, var(--summer-accent));
+  box-shadow: var(--summer-shadow);
+}
+.docmd-container.card .card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--summer-fg);
+  margin-bottom: 12px;
+}
+.docmd-container.card .card-title svg {
+  width: 20px;
+  height: 20px;
+  color: var(--summer-accent);
+  flex-shrink: 0;
+}
+.docmd-container.card .card-content {
+  font-size: 0.95rem;
+  color: var(--summer-fg-soft);
+  line-height: 1.6;
+}
+
+/* Details / Collapsible Container */
+.docmd-container.collapsible {
+  margin: 1.2rem 0;
+  border: 1px solid var(--summer-border-soft);
+  border-radius: var(--summer-radius);
+  background: var(--summer-bg);
+  overflow: hidden;
+  box-shadow: var(--summer-shadow-xs);
+  transition: border-color var(--summer-fast) var(--summer-ease);
+}
+.docmd-container.collapsible:hover {
+  border-color: var(--summer-accent);
+}
+.collapsible-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  font-weight: 600;
+  color: var(--summer-fg);
+  cursor: pointer;
+  user-select: none;
+  background: var(--summer-surface-2);
+  list-style: none !important;
+}
+.collapsible-summary::-webkit-details-marker {
+  display: none !important;
+}
+.collapsible-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+}
+.collapsible-title svg {
+  width: 16px;
+  height: 16px;
+  color: var(--summer-accent);
+  flex-shrink: 0;
+}
+.collapsible-arrow {
+  display: inline-flex;
+  color: var(--summer-fg-muted);
+  transition: transform var(--summer-med) var(--summer-ease);
+}
+.collapsible-arrow svg {
+  width: 16px;
+  height: 16px;
+}
+.docmd-container.collapsible[open] .collapsible-arrow {
+  transform: rotate(180deg);
+}
+.collapsible-content {
+  padding: 18px;
+  border-top: 1px solid var(--summer-border-soft);
+  font-size: 0.975rem;
+  color: var(--summer-fg-soft);
+  line-height: 1.6;
+  background: var(--summer-bg);
+}
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   17. RIGHT-RAIL BENDING TOC (FUMADOCS-STYLE)
+   ──────────────────────────────────────────────────────────────────────── */
+
+.summer-toc__item--level-1 { --toc-indent-curr: 0; }
+.summer-toc__item--level-2 { --toc-indent-curr: 1; }
+.summer-toc__item--level-3 { --toc-indent-curr: 2; }
+.summer-toc__item--level-4 { --toc-indent-curr: 3; }
+
+.summer-toc__item[data-prev-level="1"] { --toc-indent-prev: 0; }
+.summer-toc__item[data-prev-level="2"] { --toc-indent-prev: 1; }
+.summer-toc__item[data-prev-level="3"] { --toc-indent-prev: 2; }
+.summer-toc__item[data-prev-level="4"] { --toc-indent-prev: 3; }
+
+/* Turn off all circles/dots completely */
+.summer-toc__item::before {
+  display: none !important;
+}
+
+/* Lower straight segment on each item */
+.summer-toc__item::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  left: calc(10px + var(--toc-indent-curr) * 12px) !important;
+  top: 14px !important;
+  bottom: -14px !important;
+  width: 2px !important;
+  background: var(--summer-border-strong) !important;
+  z-index: 1 !important;
+}
+
+/* Hide line segment on the last item */
+.summer-toc__list li:last-child::after {
+  display: none !important;
+}
+
+/* Upper segment (connecting line) on link element */
+.summer-toc__link::before {
+  content: "" !important;
+  position: absolute !important;
+  top: -14px !important;
+  height: 28px !important;
+  box-sizing: border-box !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+/* First item has no line coming from above */
+.summer-toc__list li:first-child .summer-toc__link::before {
+  display: none !important;
+}
+
+/* 1. Straight vertical transition (prev == curr) */
+.summer-toc__item[data-prev-level="1"][data-level="1"] .summer-toc__link::before,
+.summer-toc__item[data-prev-level="2"][data-level="2"] .summer-toc__link::before,
+.summer-toc__item[data-prev-level="3"][data-level="3"] .summer-toc__link::before,
+.summer-toc__item[data-prev-level="4"][data-level="4"] .summer-toc__link::before {
+  left: calc(10px + var(--toc-indent-curr) * 12px) !important;
+  width: 2px !important;
+  background: var(--summer-border-strong) !important;
+  border: none !important;
+}
+
+/* 2. Indenting transition (prev < curr) - top-right curve */
+.summer-toc__item[data-prev-level="1"][data-level="2"] .summer-toc__link::before,
+.summer-toc__item[data-prev-level="1"][data-level="3"] .summer-toc__link::before,
+.summer-toc__item[data-prev-level="1"][data-level="4"] .summer-toc__link::before,
+.summer-toc__item[data-prev-level="2"][data-level="3"] .summer-toc__link::before,
+.summer-toc__item[data-prev-level="2"][data-level="4"] .summer-toc__link::before,
+.summer-toc__item[data-prev-level="3"][data-level="4"] .summer-toc__link::before {
+  left: calc(10px + var(--toc-indent-prev) * 12px) !important;
+  width: calc((var(--toc-indent-curr) - var(--toc-indent-prev)) * 12px + 2px) !important;
+  border-top: 2px solid var(--summer-border-strong) !important;
+  border-right: 2px solid var(--summer-border-strong) !important;
+  border-top-right-radius: 6px !important;
+  background: transparent !important;
+}
+
+/* 3. Outdenting transition (prev > curr) - top-left curve */
+.summer-toc__item[data-prev-level="2"][data-level="1"] .summer-toc__link::before,
+.summer-toc__item[data-prev-level="3"][data-level="1"] .summer-toc__link::before,
+.summer-toc__item[data-prev-level="4"][data-level="1"] .summer-toc__link::before,
+.summer-toc__item[data-prev-level="3"][data-level="2"] .summer-toc__link::before,
+.summer-toc__item[data-prev-level="4"][data-level="2"] .summer-toc__link::before,
+.summer-toc__item[data-prev-level="4"][data-level="3"] .summer-toc__link::before {
+  left: calc(10px + var(--toc-indent-curr) * 12px) !important;
+  width: calc((var(--toc-indent-prev) - var(--toc-indent-curr)) * 12px + 2px) !important;
+  border-top: 2px solid var(--summer-border-strong) !important;
+  border-left: 2px solid var(--summer-border-strong) !important;
+  border-top-left-radius: 6px !important;
+  background: transparent !important;
+}
+
+/* Active and Ancestor highlight styles */
+.summer-toc__item.is-ancestor::after {
+  background: var(--summer-accent) !important;
+}
+.summer-toc__item.is-ancestor .summer-toc__link::before,
+.summer-toc__item:has(> .summer-toc__link.active) .summer-toc__link::before {
+  border-color: var(--summer-accent) !important;
+  background: var(--summer-accent) !important;
+}
+/* For curve segments: background must stay transparent while borders get color */
+.summer-toc__item.is-ancestor[data-prev-level]:not([data-prev-level="1"][data-level="1"]):not([data-prev-level="2"][data-level="2"]):not([data-prev-level="3"][data-level="3"]):not([data-prev-level="4"][data-level="4"]) .summer-toc__link::before,
+.summer-toc__item:has(> .summer-toc__link.active)[data-prev-level]:not([data-prev-level="1"][data-level="1"]):not([data-prev-level="2"][data-level="2"]):not([data-prev-level="3"][data-level="3"]):not([data-prev-level="4"][data-level="4"]) .summer-toc__link::before {
+  background: transparent !important;
+  border-color: var(--summer-accent) !important;
+}
+
+/* Adjust link text paddings dynamically based on level */
+.summer-toc__link {
+  padding-left: calc(24px + var(--toc-indent-curr) * 12px) !important;
+}
+.summer-toc__item--level-2 .summer-toc__link,
+.summer-toc__item--level-3 .summer-toc__link,
+.summer-toc__item--level-4 .summer-toc__link {
+  padding-left: calc(24px + var(--toc-indent-curr) * 12px) !important;
+}
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   18. SEARCH MODAL OVERRIDES (GITBOOK-STYLE)
+   ──────────────────────────────────────────────────────────────────────── */
+
+.docmd-search-modal {
+  background-color: rgba(19, 17, 16, 0.4) !important;
+  backdrop-filter: saturate(120%) blur(4px) !important;
+  -webkit-backdrop-filter: saturate(120%) blur(4px) !important;
+}
+.docmd-search-box {
+  background-color: var(--summer-bg) !important;
+  border: 1px solid var(--summer-border-strong) !important;
+  border-radius: var(--summer-radius-lg) !important;
+  box-shadow: var(--summer-shadow-xl) !important;
+}
+.docmd-search-header {
+  border-bottom: 1px solid var(--summer-border-soft) !important;
+  padding: 1.25rem 1.5rem !important;
+}
+.docmd-search-header svg {
+  color: var(--summer-accent) !important;
+}
+#docmd-search-input {
+  font-family: var(--summer-font-sans) !important;
+  color: var(--summer-fg) !important;
+  font-size: 1rem !important;
+}
+#docmd-search-input::placeholder {
+  color: var(--summer-fg-muted) !important;
+}
+.docmd-search-close {
+  color: var(--summer-fg-muted) !important;
+  transition: color var(--summer-fast) var(--summer-ease) !important;
+}
+.docmd-search-close:hover {
+  color: var(--summer-fg) !important;
+}
+.search-result-item {
+  border-radius: var(--summer-radius) !important;
+  border-left-width: 3px !important;
+  margin-bottom: 4px !important;
+  padding: 0.85rem 1.25rem !important;
+  transition: all var(--summer-fast) var(--summer-ease) !important;
+}
+.search-result-item.selected,
+.search-result-item:focus,
+.search-result-item:hover {
+  background-color: var(--summer-surface-2) !important;
+  border-left-color: var(--summer-accent) !important;
+}
+.search-result-title {
+  color: var(--summer-fg) !important;
+  font-family: var(--summer-font-sans) !important;
+}
+.search-result-item.selected .search-result-title,
+.search-result-item:hover .search-result-title {
+  color: var(--summer-accent) !important;
+}
+.search-result-preview {
+  color: var(--summer-fg-soft) !important;
+}
+.search-result-preview mark {
+  background-color: rgba(254, 85, 27, 0.15) !important;
+  color: var(--summer-accent) !important;
+  padding: 0 4px !important;
+  border-radius: 3px !important;
+  font-weight: 600 !important;
+}
+.docmd-search-footer {
+  background-color: var(--summer-surface-sunken) !important;
+  border-top: 1px solid var(--summer-border-soft) !important;
+  color: var(--summer-fg-muted) !important;
+}
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   19. PAGE HEADER TITLE (ABOVE BREADCRUMBS)
+   ──────────────────────────────────────────────────────────────────────── */
+
+.summer-pageheader__title {
+  font-size: var(--summer-text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--summer-fg-muted);
+  margin-bottom: 4px;
+  display: block;
+}
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   20. INLINE HEADER SEARCH (GITBOOK-STYLE DROPDOWN)
+   ──────────────────────────────────────────────────────────────────────── */
+
+.summer-search-container {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+}
+.summer-search-input {
+  width: 100%;
+  padding: 8px 12px 8px 36px;
+  font-size: 0.875rem;
+  font-family: var(--summer-font-sans);
+  color: var(--summer-fg);
+  background: var(--summer-surface-2);
+  border: 1px solid var(--summer-border-strong);
+  border-radius: var(--summer-radius);
+  outline: none;
+  transition: all var(--summer-fast) var(--summer-ease);
+}
+.summer-search-input:focus {
+  background: var(--summer-bg);
+  border-color: var(--summer-accent);
+  box-shadow: var(--summer-ring-soft);
+}
+.summer-search-container .summer-search__icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--summer-fg-muted);
+  pointer-events: none;
+}
+.summer-search-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 500px;
+  background: var(--summer-bg);
+  border: 1px solid var(--summer-border-strong);
+  border-radius: var(--summer-radius-lg);
+  box-shadow: var(--summer-shadow-xl);
+  z-index: 1000;
+  overflow: hidden;
+  max-height: 480px;
+  display: flex;
+  flex-direction: column;
+}
+@media (max-width: 768px) {
+  .summer-search-dropdown {
+    width: calc(100vw - 32px);
+    left: 0;
+    transform: none;
+  }
+}
+.summer-search-results-wrapper {
+  overflow-y: auto;
+  max-height: 380px;
+  padding: 8px;
+}
+.summer-search-dropdown-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--summer-surface-sunken);
+  border-top: 1px solid var(--summer-border-soft);
+  font-size: 0.75rem;
+  color: var(--summer-fg-muted);
+}
+.summer-search-dropdown-footer kbd {
+  background: var(--summer-surface-2);
+  border: 1px solid var(--summer-border-strong);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 0.7rem;
+}
+
+/* Ensure inside the inline dropdown, search result overrides still apply */
+.summer-search-results-wrapper .docmd-search-results {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.summer-search-results-wrapper .search-result-item {
+  border-radius: var(--summer-radius) !important;
+  border-left-width: 3px !important;
+  margin-bottom: 4px !important;
+  padding: 0.85rem 1.25rem !important;
+  transition: all var(--summer-fast) var(--summer-ease) !important;
+}
+.summer-search-results-wrapper .search-result-item.selected,
+.summer-search-results-wrapper .search-result-item:focus,
+.summer-search-results-wrapper .search-result-item:hover {
+  background-color: var(--summer-surface-2) !important;
+  border-left-color: var(--summer-accent) !important;
+}
+
+/* =========================================================================
+   18. LANGUAGE SWITCHER DROPDOWN (GITBOOK-STYLE)
+   ========================================================================= */
+.docmd-language-switcher {
+  position: relative;
+  display: inline-block;
+}
+
+.language-switcher-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--summer-radius-sm);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--summer-fg-muted);
+  cursor: pointer;
+  transition: all var(--summer-fast) var(--summer-ease);
+}
+
+.language-switcher-toggle:hover {
+  background: var(--summer-surface-2);
+  color: var(--summer-fg);
+  border-color: var(--summer-border-soft);
+}
+
+.language-switcher-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 180px;
+  padding: 6px;
+  margin: 0;
+  list-style: none;
+  background: var(--summer-bg);
+  border: 1px solid var(--summer-border-strong);
+  border-radius: var(--summer-radius);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: opacity var(--summer-med) var(--summer-ease),
+              transform var(--summer-med) var(--summer-ease),
+              visibility var(--summer-med) var(--summer-ease);
+  z-index: var(--summer-z-overlay);
+}
+
+.docmd-language-switcher.open .language-switcher-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.language-switcher-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  color: var(--summer-fg-soft);
+  text-decoration: none;
+  border-radius: var(--summer-radius-sm);
+  transition: all var(--summer-fast) var(--summer-ease);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.language-switcher-item:hover {
+  background: var(--summer-surface-2);
+  color: var(--summer-fg);
+}
+
+.language-switcher-item.active {
+  background: var(--summer-accent-soft);
+  color: var(--summer-accent);
+  font-weight: 600;
+}
+
+.language-switcher-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.language-check {
+  width: 14px;
+  height: 14px;
+  color: var(--summer-accent);
+}
+
+.language-unavailable-badge {
+  font-size: 0.65rem;
+  background: var(--summer-surface-sunken);
+  color: var(--summer-fg-muted);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   19. IMAGE LIGHTBOX (docmd-lightbox)
+   ──────────────────────────────────────────────────────────────────────── */
+.docmd-lightbox {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.85);
+  z-index: 10000;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.docmd-lightbox-content {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+  text-align: center;
+}
+
+.docmd-lightbox-content img {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  margin: 0 auto;
+  border-radius: var(--summer-radius);
+  box-shadow: var(--summer-shadow-xl);
+}
+
+.docmd-lightbox-caption {
+  color: #fff;
+  padding: 1rem;
+  font-size: 1rem;
+  max-width: 100%;
+  font-family: var(--summer-font-sans);
+}
+
+.docmd-lightbox-close {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  color: #fff;
+  font-size: 2.5rem;
+  cursor: pointer;
+  z-index: 10001;
+  transition: opacity var(--summer-fast) var(--summer-ease);
+}
+
+.docmd-lightbox-close:hover {
+  opacity: 0.8;
+}
+
+img.lightbox {
+  cursor: zoom-in;
+}
