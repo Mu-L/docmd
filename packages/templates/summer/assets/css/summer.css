@@ -39,21 +39,21 @@
   --summer-radius-lg: 12px;
   --summer-radius-xl: 18px;
 
-  /* Typography */
-  --summer-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-                      Oxygen, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+  /* Typography — Inter (loaded via Google Fonts) matching GitBook's type system */
+  --summer-font-sans: "Inter", "InterVariable", ui-sans-serif, -apple-system,
+                      BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   --summer-font-mono: "JetBrains Mono", "SF Mono", ui-monospace, SFMono-Regular,
                       Menlo, Monaco, "Cascadia Code", "Liberation Mono", monospace;
 
-  /* Type scale */
-  --summer-text-xs: 0.75rem;
-  --summer-text-sm: 0.875rem;
-  --summer-text-base: 1rem;
-  --summer-text-md: 1.125rem;
-  --summer-text-lg: 1.25rem;
-  --summer-text-xl: 1.5rem;
-  --summer-text-2xl: 1.875rem;
-  --summer-text-3xl: 2.25rem;
+  /* Type scale — calibrated for Inter at GitBook sizes */
+  --summer-text-xs: 0.6875rem;    /* 11px */
+  --summer-text-sm: 0.8125rem;    /* 13px */
+  --summer-text-base: 0.9375rem;  /* 15px — GitBook body size */
+  --summer-text-md: 1.0625rem;    /* 17px */
+  --summer-text-lg: 1.25rem;      /* 20px */
+  --summer-text-xl: 1.5rem;       /* 24px */
+  --summer-text-2xl: 1.875rem;    /* 30px */
+  --summer-text-3xl: 2.25rem;     /* 36px */
 
   /* Motion */
   --summer-ease: cubic-bezier(0.32, 0.72, 0, 1);
@@ -190,11 +190,12 @@ html.summer-ready, html[data-theme] { visibility: visible; }
 body.summer-template {
   font-family: var(--summer-font-sans);
   font-size: var(--summer-text-base);
-  line-height: 1.6;
+  line-height: 1.7;
   color: var(--summer-fg);
   background: var(--summer-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
   text-rendering: optimizeLegibility;
   min-height: 100vh;
   overflow-x: hidden;
@@ -1086,24 +1087,24 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
 
 .summer-content {
   max-width: var(--summer-content-max);
-  font-size: 1.0625rem;           /* Refined GitBook size: 17px */
-  line-height: 1.625;
+  font-size: var(--summer-text-base);    /* 15px — GitBook body base */
+  line-height: 1.7;
   color: var(--summer-fg-soft);
   flex: 1 0 auto;
 }
 
 .summer-content__title {
-  font-size: var(--summer-text-3xl);  /* 36px like GitBook */
+  font-size: 2rem;                   /* 32px — GitBook page title */
   font-weight: 700;
   color: var(--summer-fg);
-  letter-spacing: -0.025em;
-  line-height: 1.25;
-  margin: 8px 0 20px;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  margin: 0 0 24px;
 }
 
 .summer-content > * + * { margin-top: 1.1em; }
 
-/* Headings — GitBook exact scale */
+/* Headings — Inter optical sizing, matching GitBook */
 .summer-content h1,
 .summer-content h2,
 .summer-content h3,
@@ -1112,55 +1113,55 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
 .summer-content h6 {
   font-family: var(--summer-font-sans);
   color: var(--summer-fg);
-  font-weight: 700;
-  line-height: 1.25;
+  font-weight: 600;
+  line-height: 1.3;
   scroll-margin-top: calc(var(--summer-topbar-height) + var(--summer-subnav-height) + 24px);
 }
 .summer-content h1 {
-  font-size: 2.25rem;          /* 36px GitBook exact */
+  font-size: 1.875rem;         /* 30px — GitBook H1 */
   margin-top: 0;
-  margin-bottom: 0.6em;
-  letter-spacing: -0.025em;
+  margin-bottom: 0.5em;
+  letter-spacing: -0.03em;
   font-weight: 700;
   line-height: 1.25;
 }
 .summer-content h2 {
-  font-size: 1.875rem;         /* 30px GitBook exact */
-  margin-top: 1.6em;
-  margin-bottom: 0.6em;
+  font-size: 1.5rem;           /* 24px — GitBook H2 */
+  margin-top: 2em;
+  margin-bottom: 0.5em;
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   line-height: 1.3;
 }
 .summer-content h3 {
-  font-size: 1.5rem;          /* 24px GitBook exact */
-  margin-top: 1.6em;
-  margin-bottom: 0.5em;
+  font-size: 1.25rem;          /* 20px — GitBook H3 */
+  margin-top: 1.75em;
+  margin-bottom: 0.4em;
   font-weight: 600;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
   line-height: 1.35;
 }
 .summer-content h4 {
-  font-size: 1.125rem;        /* 18px GitBook exact */
-  margin-top: 1.4em;
-  margin-bottom: 0.4em;
+  font-size: 1.0625rem;        /* 17px */
+  margin-top: 1.5em;
+  margin-bottom: 0.35em;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 .summer-content h5 {
-  font-size: 1rem;
-  margin-top: 1.2em;
+  font-size: var(--summer-text-base);
+  margin-top: 1.25em;
   margin-bottom: 0.3em;
   font-weight: 600;
 }
 .summer-content h6 {
-  font-size: 0.8125rem;
+  font-size: var(--summer-text-sm);
   margin-top: 1em;
   margin-bottom: 0.3em;
-  color: var(--summer-fg-soft);
+  color: var(--summer-fg-muted);
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-weight: 600;
 }
 
 /* Paragraph + inline — Refined premium sizing */
