@@ -2,17 +2,24 @@
    @docmd/template-summer  —  summer.js
    Runtime interactions for the Summer template. Vanilla JS, no deps.
 
-   What it does
-   ------------
-   - Theme switching hook (delegates to the existing docmd core)
-   - Sidebar: collapse groups, mobile drawer
-   - TOC: scroll-spy active state, smooth-scroll on click
-   - Copy buttons for code blocks (auto-attach)
-   - Copy raw markdown / context buttons (forward to docmd-main if present)
-   - Top scroll-to-top button (revealed on scroll)
-   - Search button (delegates to existing search trigger if present)
-   - Banner close button (persists in localStorage)
-   - Mobile sidebar toggle
+   What it does (the rest is handled by docmd-main.js, already loaded
+   by templates/layout.ejs — see packages/ui/assets/js/docmd-main.js for
+   SPA routing, theme toggle, sidebar drawer, version/project/language
+   switchers, code-block copy, page copy, banner, cookie consent and
+   search-trigger event delegation):
+
+   - Inline topbar search dropdown that re-homes docmd-search.js's
+     full-screen modal into the topbar, forwarding keyboard nav
+     (↑↓ Enter Esc) to the hidden plugin input
+   - TOC scroll-spy with a custom SVG path track (the GitBook-style
+     "folding line" that follows the active heading's indent level)
+   - TOC smooth-scroll (offset for the sticky topbar + subnav + pageheader)
+   - Scroll-to-top button (revealed on scroll)
+   - Git "last-updated" popover (relative dates + recent commits)
+   - Relative date rendering for any [data-timestamp] element
+
+   Everything is idempotent — per-page wires re-run after every
+   docmd:page-mounted event (fired by docmd-main.js on SPA nav).
    ========================================================================= */
 (function () {
   'use strict';
@@ -35,145 +42,6 @@
     };
   }
 
-  function isMac() { return /Mac|iPhone|iPad/.test(navigator.platform); }
-
-  // -------- Theme toggle --------------------------------------------------
-
-  function wireThemeToggle() {
-    $$('[data-summer-theme-toggle]').forEach(function (btn) {
-      btn.addEventListener('click', function (e) {
-        e.preventDefault();
-        var current = document.documentElement.getAttribute('data-theme') || 'light';
-        var next = current === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', next);
-        try { localStorage.setItem('docmd-theme', next); } catch (_) {}
-        // Notify docmd core if it has a global handler
-        if (typeof window.applyDocmdTheme === 'function') {
-          window.applyDocmdTheme(next);
-        }
-        // Notify any other listeners
-        document.dispatchEvent(new CustomEvent('docmd:themechange', { detail: { theme: next } }));
-      });
-    });
-  }
-
-  // -------- Subnav: dropdowns -------------------------------------------
-
-  function wireSubnavDropdowns() {
-    $$('[data-summer-dropdown]').forEach(function (wrap) {
-      var btn = wrap.querySelector('.summer-subnav__tab');
-      if (!btn) return;
-      btn.addEventListener('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var isOpen = wrap.getAttribute('data-open') === 'true';
-        // Close other open dropdowns
-        $$('[data-summer-dropdown]').forEach(function (other) {
-          if (other !== wrap) other.setAttribute('data-open', 'false');
-        });
-        wrap.setAttribute('data-open', isOpen ? 'false' : 'true');
-        btn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
-      });
-    });
-    // Close on outside click
-    document.addEventListener('click', function () {
-      $$('[data-summer-dropdown]').forEach(function (wrap) {
-        wrap.setAttribute('data-open', 'false');
-        var btn = wrap.querySelector('.summer-subnav__tab');
-        if (btn) btn.setAttribute('aria-expanded', 'false');
-      });
-    });
-    // Close on escape
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') {
-        $$('[data-summer-dropdown]').forEach(function (wrap) {
-          wrap.setAttribute('data-open', 'false');
-        });
-      }
-    });
-  }
-
-  // -------- Sidebar: mobile drawer ---------------------------------------
-
-  function wireSidebar() {
-    var toggles = $$('[data-summer-sidebar-toggle]');
-    var closeBtn = $('[data-summer-sidebar-close]');
-    var MOBILE_BP = '(max-width: 900px)';
-    function isMobile() { return window.matchMedia(MOBILE_BP).matches; }
-    function closeDrawer() { document.body.classList.remove('summer-sidebar-open'); }
-
-    toggles.forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        document.body.classList.toggle('summer-sidebar-open');
-      });
-    });
-    if (closeBtn) {
-      closeBtn.addEventListener('click', closeDrawer);
-    }
-    // Close on outside click
-    document.addEventListener('click', function (e) {
-      if (!document.body.classList.contains('summer-sidebar-open')) return;
-      var sidebar = $('.summer-sidebar');
-      var toggle = e.target.closest('[data-summer-sidebar-toggle]');
-      if (toggle || (sidebar && sidebar.contains(e.target))) return;
-      closeDrawer();
-    });
-    // Close on escape
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && document.body.classList.contains('summer-sidebar-open')) {
-        closeDrawer();
-      }
-    });
-    // Auto-close drawer when crossing back to the desktop breakpoint
-    var mql = window.matchMedia(MOBILE_BP);
-    var onBp = function (e) { if (!e.matches) closeDrawer(); };
-    if (mql.addEventListener) mql.addEventListener('change', onBp);
-    else if (mql.addListener) mql.addListener(onBp);
-    // Close on initial load if we're not mobile (avoid stale state)
-    if (!isMobile()) closeDrawer();
-  }
-
-  // -------- Sidebar: collapse groups -------------------------------------
-
-  function wireSidebarGroups() {
-    var groups = $$('.summer-sidebar nav li.nav-group');
-    groups.forEach(function (group) {
-      var key = 'summer-sidebar:' + (group.querySelector('.nav-item-title')?.textContent.trim() || 'group');
-
-      // Restore persisted collapse state on load
-      try {
-        var saved = localStorage.getItem(key);
-        if (saved === '0') {
-          group.setAttribute('aria-expanded', 'false');
-          group.classList.add('collapsed');
-          group.classList.remove('expanded');
-        } else if (saved === '1') {
-          group.setAttribute('aria-expanded', 'true');
-          group.classList.add('expanded');
-          group.classList.remove('collapsed');
-        }
-      } catch (_) {}
-
-      var toggle = group.querySelector(':scope > .nav-label, :scope > a');
-      if (!toggle) return;
-      toggle.addEventListener('click', function (e) {
-        // Only intercept clicks on the group header itself, not on subitems
-        if (e.target.closest('.submenu')) return;
-        // Stop docmd-main.js's document-level handler from also toggling
-        // and clobbering our state (it uses classList.contains('expanded')
-        // while we use aria-expanded, so they conflict).
-        e.preventDefault();
-        e.stopPropagation();
-        var expanded = group.getAttribute('aria-expanded') !== 'false';
-        group.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-        group.classList.toggle('expanded', !expanded);
-        group.classList.toggle('collapsed', expanded);
-        try {
-          localStorage.setItem(key, expanded ? '0' : '1');
-        } catch (_) {}
-      });
-    });
-  }
 
   // -------- TOC: SVG path track (Fumadocs-style) -----------------------
 
@@ -415,209 +283,6 @@
     });
   }
 
-  // -------- Copy buttons for code blocks --------------------------------
-
-  function attachCodeCopyButtons() {
-    $$('.summer-content pre').forEach(function (pre) {
-      if (pre.dataset.summerCopyAttached === '1') return;
-      pre.dataset.summerCopyAttached = '1';
-
-      // Wrap in a codeblock container so we can add a header with copy button
-      var code = pre.querySelector('code');
-      if (!code) return;
-
-      // Skip if no language class — we can still copy, just no filename
-      var lang = '';
-      var m = code.className.match(/language-([\w-]+)/);
-      if (m) lang = m[1];
-
-      // Build the wrapper
-      var wrap = document.createElement('div');
-      wrap.className = 'summer-codeblock';
-      pre.parentNode.insertBefore(wrap, pre);
-      wrap.appendChild(pre);
-
-      // Build header using safe DOM construction (avoids innerHTML).
-      var header = document.createElement('div');
-      header.className = 'summer-codeblock__header';
-
-      // LEFT — file icon + filename + language pill
-      var leftGroup = document.createElement('div');
-      leftGroup.style.display = 'inline-flex';
-      leftGroup.style.alignItems = 'center';
-      leftGroup.style.gap = '10px';
-      leftGroup.style.minWidth = '0';
-      leftGroup.style.overflow = 'hidden';
-
-      var iconWrap = document.createElement('span');
-      iconWrap.className = 'summer-codeblock__filename-icon';
-      // Build the icon via safe DOM construction (avoids innerHTML).
-      var fileIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      fileIcon.setAttribute('viewBox', '0 0 24 24');
-      fileIcon.setAttribute('fill', 'none');
-      fileIcon.setAttribute('stroke', 'currentColor');
-      fileIcon.setAttribute('stroke-width', '2');
-      fileIcon.setAttribute('stroke-linecap', 'round');
-      fileIcon.setAttribute('stroke-linejoin', 'round');
-      var fileIconPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      fileIconPath.setAttribute('d', 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z');
-      var fileIconPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-      fileIconPoly.setAttribute('points', '14 2 14 8 20 8');
-      fileIcon.appendChild(fileIconPath);
-      fileIcon.appendChild(fileIconPoly);
-      iconWrap.appendChild(fileIcon);
-      leftGroup.appendChild(iconWrap);
-
-      var filename = document.createElement('span');
-      filename.className = 'summer-codeblock__filename';
-      filename.textContent = lang || 'snippet';
-      filename.style.overflow = 'hidden';
-      filename.style.textOverflow = 'ellipsis';
-      filename.style.whiteSpace = 'nowrap';
-      leftGroup.appendChild(filename);
-
-      if (lang) {
-        var langPill = document.createElement('span');
-        langPill.className = 'summer-codeblock__lang';
-        langPill.textContent = lang;
-        leftGroup.appendChild(langPill);
-      }
-
-      header.appendChild(leftGroup);
-
-      // RIGHT — copy button
-      var copyBtn = document.createElement('button');
-      copyBtn.className = 'summer-codeblock__copy';
-      copyBtn.type = 'button';
-      copyBtn.setAttribute('aria-label', 'Copy code');
-
-      var copyIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      copyIcon.setAttribute('width', '13');
-      copyIcon.setAttribute('height', '13');
-      copyIcon.setAttribute('viewBox', '0 0 24 24');
-      copyIcon.setAttribute('fill', 'none');
-      copyIcon.setAttribute('stroke', 'currentColor');
-      copyIcon.setAttribute('stroke-width', '2');
-      copyIcon.setAttribute('stroke-linecap', 'round');
-      copyIcon.setAttribute('stroke-linejoin', 'round');
-      var rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      rect.setAttribute('x', '9'); rect.setAttribute('y', '9');
-      rect.setAttribute('width', '13'); rect.setAttribute('height', '13');
-      rect.setAttribute('rx', '2'); rect.setAttribute('ry', '2');
-      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1');
-      copyIcon.appendChild(rect);
-      copyIcon.appendChild(path);
-      copyBtn.appendChild(copyIcon);
-
-      var copyLabel = document.createElement('span');
-      copyLabel.textContent = 'Copy';
-      copyBtn.appendChild(copyLabel);
-
-      header.appendChild(copyBtn);
-      wrap.insertBefore(header, pre);
-
-      // Wire the copy button
-      var copyBtn = header.querySelector('.summer-codeblock__copy');
-      copyBtn.addEventListener('click', function () {
-        var text = code.innerText;
-        copyToClipboard(text).then(function () {
-          copyBtn.classList.add('is-copied');
-          var span = copyBtn.querySelector('span');
-          if (span) span.textContent = 'Copied!';
-          setTimeout(function () {
-            copyBtn.classList.remove('is-copied');
-            if (span) span.textContent = 'Copy';
-          }, 1800);
-        });
-      });
-    });
-  }
-
-  function copyToClipboard(text) {
-    if (navigator.clipboard && window.isSecureContext) {
-      return navigator.clipboard.writeText(text);
-    }
-    return new Promise(function (resolve, reject) {
-      try {
-        var ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        resolve();
-      } catch (e) { reject(e); }
-    });
-  }
-
-  // -------- Page copy buttons (raw / context) ---------------------------
-
-  function wirePageCopyButtons() {
-    // Reuse the data-copied attribute that docmd uses for feedback
-    var rawBtn = $('.summd-copy-raw, .docmd-copy-raw-btn');
-    var contextBtn = $('.summer-copy-context, .docmd-copy-context-btn');
-    var rawContainer = $('#docmd-raw-markdown');
-    if (rawBtn && rawContainer) {
-      rawBtn.addEventListener('click', function (e) {
-        e.preventDefault();
-        var text = decodeURIComponent(rawContainer.getAttribute('data-content') || '');
-        copyToClipboard(text).then(function () {
-          var label = rawBtn.getAttribute('data-copied') || 'Copied!';
-          showCopiedFeedback(rawBtn, label);
-        });
-      });
-    }
-    if (contextBtn) {
-      contextBtn.addEventListener('click', function (e) {
-        e.preventDefault();
-        var path = location.pathname;
-        var title = document.title;
-        var text = '[Doc context]\nTitle: ' + title + '\nPath: ' + path + '\n\n';
-        var main = $('.summer-content');
-        if (main) text += main.innerText;
-        copyToClipboard(text).then(function () {
-          var label = contextBtn.getAttribute('data-copied') || 'Copied!';
-          showCopiedFeedback(contextBtn, label);
-        });
-      });
-    }
-  }
-
-  function showCopiedFeedback(btn, label) {
-    var span = btn.querySelector('span') || btn;
-    var original = btn.dataset.originalLabel || span.textContent;
-    if (!btn.dataset.originalLabel) btn.dataset.originalLabel = original;
-    span.textContent = label;
-    btn.classList.add('is-copied');
-    setTimeout(function () {
-      span.textContent = original;
-      btn.classList.remove('is-copied');
-    }, 1800);
-  }
-
-  // -------- Banner close ------------------------------------------------
-
-  function wireBannerClose() {
-    $$('[data-summer-banner-close]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var banner = btn.closest('.summer-banner');
-        if (banner) {
-          banner.style.display = 'none';
-          try { localStorage.setItem('summer-banner-dismissed', '1'); } catch (_) {}
-        }
-      });
-    });
-    try {
-      if (localStorage.getItem('summer-banner-dismissed') === '1') {
-        var b = $('.summer-banner');
-        if (b) b.style.display = 'none';
-      }
-    } catch (_) {}
-  }
-
   // -------- Inline Header Search & Dropdown ----------------------------
 
   function wireHeaderSearch() {
@@ -750,46 +415,6 @@
     });
   }
 
-  // -------- Switcher dropdowns (version / project / language) ---------
-  // These ship as raw partials from docmd core (no JS), so summer wires
-  // the open/close behaviour and outside-click handling itself.
-
-  function wireSwitcherDropdowns() {
-    var groups = $$('.docmd-version-dropdown, .docmd-project-switcher, .docmd-language-switcher');
-    if (!groups.length) return;
-
-    function closeAll(except) {
-      groups.forEach(function (g) {
-        if (g === except) return;
-        g.classList.remove('open');
-        var btn = g.querySelector('button[aria-expanded]');
-        if (btn) btn.setAttribute('aria-expanded', 'false');
-      });
-    }
-
-    groups.forEach(function (group) {
-      var btn = group.querySelector('button[aria-expanded], .version-dropdown-toggle, .project-switcher-toggle, .language-switcher-toggle');
-      if (!btn) return;
-      btn.addEventListener('click', function (e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        var willOpen = !group.classList.contains('open');
-        closeAll(group);
-        group.classList.toggle('open', willOpen);
-        btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-      });
-    });
-
-    document.addEventListener('click', function (e) {
-      if (!e.target.closest('.docmd-version-dropdown, .docmd-project-switcher, .docmd-language-switcher')) {
-        closeAll(null);
-      }
-    });
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') closeAll(null);
-    });
-  }
-
   // -------- Git last-updated popover toggle (keyboard) ---------------
   // Hover is handled in CSS; this adds click + keyboard support so the
   // popover is reachable without a mouse.
@@ -869,24 +494,27 @@
 
   // Re-runnable body of init logic. Idempotent: every wire is guarded
   // with a data-attribute check so calling this twice is safe.
+  //
+  // Cross-cutting behaviour (theme toggle, sidebar drawer, version /
+  // project / language switchers, code-block copy, page copy, banner
+  // close, SPA router) is owned by packages/ui/assets/js/docmd-main.js,
+  // already loaded by templates/layout.ejs. What stays here is the
+  // summer-specific stuff: topbar search dropdown (re-homes the
+  // docmd-search.js modal into the topbar), TOC scroll-spy, git commit
+  // popover, scroll-to-top button, and relative-date rendering.
   function summerInit() {
     if (document.documentElement.dataset.summerWired !== '1') {
-      // First run: bind document-level listeners + header/footer/sidebar wires
+      // First run: bind document-level listeners + topbar/footer wires
       document.documentElement.dataset.summerWired = '1';
-      wireThemeToggle();
       wireScrollToTop();
-      wireBannerClose();
       wireHeaderSearch();
-      wireSidebar();
-      wireSubnavDropdowns();
-      wireSwitcherDropdowns();
     }
-    // Per-page wires — always re-run after SPA nav (the page content was swapped)
-    wireSidebarGroups();
+    // Per-page wires — always re-run after SPA nav (the page content
+    // was swapped). The header search is also re-attempted on every
+    // page so its polling can find a modal that didn't exist on the
+    // first page (e.g. when docmd-search.js loads lazily).
     wireTocScrollSpy();
     wireTocSmoothScroll();
-    attachCodeCopyButtons();
-    wirePageCopyButtons();
     wireGitPopover();
     renderRelativeTimestamps();
   }
