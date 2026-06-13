@@ -159,7 +159,11 @@
       toggle.addEventListener('click', function (e) {
         // Only intercept clicks on the group header itself, not on subitems
         if (e.target.closest('.submenu')) return;
+        // Stop docmd-main.js's document-level handler from also toggling
+        // and clobbering our state (it uses classList.contains('expanded')
+        // while we use aria-expanded, so they conflict).
         e.preventDefault();
+        e.stopPropagation();
         var expanded = group.getAttribute('aria-expanded') !== 'false';
         group.setAttribute('aria-expanded', expanded ? 'false' : 'true');
         group.classList.toggle('expanded', !expanded);
@@ -768,7 +772,7 @@
       if (!btn) return;
       btn.addEventListener('click', function (e) {
         e.preventDefault();
-        e.stopPropagation();
+        e.stopImmediatePropagation();
         var willOpen = !group.classList.contains('open');
         closeAll(group);
         group.classList.toggle('open', willOpen);
@@ -866,7 +870,7 @@
   // Re-runnable body of init logic. Idempotent: every wire is guarded
   // with a data-attribute check so calling this twice is safe.
   function summerInit() {
-    if (document.documentElement.dataset.summerWired === '1') {
+    if (document.documentElement.dataset.summerWired !== '1') {
       // First run: bind document-level listeners + header/footer/sidebar wires
       document.documentElement.dataset.summerWired = '1';
       wireThemeToggle();
