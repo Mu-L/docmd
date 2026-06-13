@@ -2235,6 +2235,82 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
 }
 .summer-git-popover__author { font-weight: 500; }
 
+/* ── Options menu slot (pageheader, when optionsMenu.position === 'header') ── */
+.summer-options-menu-slot { display: inline-flex; align-items: center; }
+.summer-options-menu-slot .docmd-options-menu {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.summer-options-menu-slot .docmd-options-menu .theme-toggle-button,
+.summer-options-menu-slot .docmd-options-menu .sponsor-link-button,
+.summer-options-menu-slot .docmd-options-menu .docmd-search-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--summer-border-soft);
+  border-radius: var(--summer-radius-sm);
+  color: var(--summer-fg-muted);
+  cursor: pointer;
+  transition: background var(--summer-fast) var(--summer-ease),
+              color var(--summer-fast) var(--summer-ease),
+              border-color var(--summer-fast) var(--summer-ease);
+}
+.summer-options-menu-slot .docmd-options-menu .theme-toggle-button,
+.summer-options-menu-slot .docmd-options-menu .sponsor-link-button { width: 30px; }
+.summer-options-menu-slot .docmd-options-menu .sponsor-link-button {
+  color: #e94e60;
+  border-color: color-mix(in srgb, #e94e60 25%, var(--summer-border-soft));
+}
+.summer-options-menu-slot .docmd-options-menu .sponsor-link-button:hover {
+  background: #e94e60;
+  color: #fff;
+  border-color: #e94e60;
+}
+.summer-options-menu-slot .docmd-options-menu .docmd-search-trigger {
+  width: auto;
+  padding: 0 10px;
+  gap: 8px;
+  background: var(--summer-surface);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--summer-fg-soft);
+}
+.summer-options-menu-slot .docmd-options-menu button:hover:not(.sponsor-link-button) {
+  background: var(--summer-surface-2);
+  color: var(--summer-fg);
+  border-color: var(--summer-border);
+}
+.summer-options-menu-slot .docmd-options-menu .search-label { font-size: 0.78rem; }
+.summer-options-menu-slot .docmd-options-menu .search-keys { display: inline-flex; gap: 2px; margin-left: 4px; }
+.summer-options-menu-slot .docmd-options-menu .docmd-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--summer-bg);
+  border: 1px solid var(--summer-border-soft);
+  border-radius: 3px;
+  font-family: var(--summer-font-sans);
+  font-size: 0.65rem;
+  padding: 0 4px;
+  min-width: 14px;
+  height: 16px;
+  color: var(--summer-fg-muted);
+}
+.summer-options-menu-slot .docmd-options-menu .lucide-icon { width: 14px; height: 14px; }
+.summer-options-menu-slot .options-menu-language { display: inline-flex; }
+.summer-options-menu-slot .options-menu-project-switcher { display: inline-flex; }
+
+@media (max-width: 600px) {
+  /* At small widths the pageheader becomes too cramped with options menu
+     in addition to copy widgets; collapse the options menu to a single
+     "..." trigger feel by hiding the kbd hint */
+  .summer-options-menu-slot .docmd-options-menu .search-keys { display: none; }
+}
+
 /* Print styles */
 @media print {
   .summer-topbar, .summer-subnav, .summer-sidebar, .summer-toc,

@@ -351,6 +351,12 @@
               <% } %>
             </div>
 
+            <% if (locals.optionsMenu && optionsMenu.position === 'header') { %>
+              <div class="summer-options-menu-slot">
+                <%- await include('partials/options-menu', { optionsMenu, allLocales: locals.allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config: locals.config, renderIcon, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix, workspace }) %>
+              </div>
+            <% } %>
+
             <div class="summer-copy-widgets">
               <% if (config.theme?.copyWidgets?.raw !== false) { %>
                 <button class="summer-copy-btn docmd-copy-raw-btn" type="button" data-copied="<%= typeof t === 'function' ? t('copiedToClipboard') : 'Copied!' %>" title="<%= typeof t === 'function' ? t('copyMarkdown') : 'Copy page as Markdown' %>" aria-label="<%= typeof t === 'function' ? t('copyMarkdown') : 'Copy Markdown' %>">
