@@ -98,15 +98,17 @@
   function wireSidebar() {
     var toggles = $$('[data-summer-sidebar-toggle]');
     var closeBtn = $('[data-summer-sidebar-close]');
+    var MOBILE_BP = '(max-width: 900px)';
+    function isMobile() { return window.matchMedia(MOBILE_BP).matches; }
+    function closeDrawer() { document.body.classList.remove('summer-sidebar-open'); }
+
     toggles.forEach(function (btn) {
       btn.addEventListener('click', function () {
         document.body.classList.toggle('summer-sidebar-open');
       });
     });
     if (closeBtn) {
-      closeBtn.addEventListener('click', function () {
-        document.body.classList.remove('summer-sidebar-open');
-      });
+      closeBtn.addEventListener('click', closeDrawer);
     }
     // Close on outside click
     document.addEventListener('click', function (e) {
@@ -114,14 +116,21 @@
       var sidebar = $('.summer-sidebar');
       var toggle = e.target.closest('[data-summer-sidebar-toggle]');
       if (toggle || (sidebar && sidebar.contains(e.target))) return;
-      document.body.classList.remove('summer-sidebar-open');
+      closeDrawer();
     });
     // Close on escape
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && document.body.classList.contains('summer-sidebar-open')) {
-        document.body.classList.remove('summer-sidebar-open');
+        closeDrawer();
       }
     });
+    // Auto-close drawer when crossing back to the desktop breakpoint
+    var mql = window.matchMedia(MOBILE_BP);
+    var onBp = function (e) { if (!e.matches) closeDrawer(); };
+    if (mql.addEventListener) mql.addEventListener('change', onBp);
+    else if (mql.addListener) mql.addListener(onBp);
+    // Close on initial load if we're not mobile (avoid stale state)
+    if (!isMobile()) closeDrawer();
   }
 
   // -------- Sidebar: collapse groups -------------------------------------
@@ -854,23 +863,35 @@
 
   // -------- Init --------------------------------------------------------
 
-  ready(function () {
-    // Mark HTML as ready (reveal the page even if docmd core is slow to set data-theme)
-    document.documentElement.classList.add('summer-ready');
-
-    wireThemeToggle();
-    wireSubnavDropdowns();
-    wireSwitcherDropdowns();
-    wireSidebar();
+  // Re-runnable body of init logic. Idempotent: every wire is guarded
+  // with a data-attribute check so calling this twice is safe.
+  function summerInit() {
+    if (document.documentElement.dataset.summerWired === '1') {
+      // First run: bind document-level listeners + header/footer/sidebar wires
+      document.documentElement.dataset.summerWired = '1';
+      wireThemeToggle();
+      wireScrollToTop();
+      wireBannerClose();
+      wireHeaderSearch();
+      wireSidebar();
+      wireSubnavDropdowns();
+      wireSwitcherDropdowns();
+    }
+    // Per-page wires — always re-run after SPA nav (the page content was swapped)
     wireSidebarGroups();
     wireTocScrollSpy();
     wireTocSmoothScroll();
-    wireScrollToTop();
     attachCodeCopyButtons();
     wirePageCopyButtons();
-    wireBannerClose();
-    wireHeaderSearch();
     wireGitPopover();
     renderRelativeTimestamps();
+  }
+
+  ready(function () {
+    // Mark HTML as ready (reveal the page even if docmd core is slow to set data-theme)
+    document.documentElement.classList.add('summer-ready');
+    summerInit();
+    // Re-wire after SPA navigation (docmd core fires this on the document)
+    document.addEventListener('docmd:page-mounted', summerInit);
   });
 })();
