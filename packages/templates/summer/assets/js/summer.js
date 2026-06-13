@@ -147,11 +147,115 @@
     });
   }
 
-  // -------- TOC: scroll-spy ---------------------------------------------
+  // -------- TOC: SVG path track (Fumadocs-style) -----------------------
+
+  var _tocActiveIdx = -1;
+  var _tocScrollDir = 1; // 1 = down, -1 = up
+  var _tocLastScrollY = window.pageYOffset || 0;
+
+  function buildTocSvgTrack() {
+    var list = $('.summer-toc__list');
+    if (!list) return;
+    var items = $$('.summer-toc__item', list);
+    if (!items.length) return;
+
+    // === Tweakable layout ===
+    var BASE_X = 5;              // x position of level-1 items (px from track left)
+    var INDENT = 7;              // px indent per level step
+
+    // === Tweakable bend shape ===
+    // Cubic Bézier between consecutive items at different indent levels.
+    //   BEND_HORIZ_MULT — scales with the horizontal |Δx| (typical Δx = INDENT).
+    //                     Higher = more curve per indent step.
+    //   BEND_VERT_FRAC  — caps the bend as a fraction of the actual vertical
+    //                     gap between item centres. 1.0 = max smooth S-curve,
+    //                     < 1.0 = subtler. Must stay ≤ 1.0 to avoid overshoot.
+    var BEND_HORIZ_MULT = 2.0;
+    var BEND_VERT_FRAC  = 1.0;
+
+    // Measure each item's actual centre y from the DOM. The track is
+    // position:absolute at top:0 of the list, so list-relative coords match
+    // track-local coords and the path lines up with the items exactly.
+    var positions = items.map(function (li) {
+      var lvl = parseInt(li.dataset.level || li.className.match(/level-(\d)/)?.[1] || '1', 10);
+      return {
+        x: BASE_X + (lvl - 1) * INDENT,
+        cy: li.offsetTop + li.offsetHeight / 2
+      };
+    });
+    var xPositions = positions.map(function (p) { return p.x; });
+    var yCentres = positions.map(function (p) { return p.cy; });
+    // Track height = full list content (top of list to bottom of last item)
+    var totalH = items[items.length - 1].offsetTop + items[items.length - 1].offsetHeight;
+
+    // Build the SVG path d-string
+    var d = '';
+    for (var i = 0; i < positions.length; i++) {
+      var x = positions[i].x;
+      var y = yCentres[i];
+      if (i === 0) {
+        d += 'M ' + x + ' 0 L ' + x + ' ' + y;
+      } else {
+        var px = positions[i - 1].x;
+        var py = yCentres[i - 1];
+        if (px === x) {
+          // same level — straight line
+          d += ' L ' + x + ' ' + y;
+        } else {
+          // level change — cubic bezier bend, clamped so the curve never
+          // overshoots past the destination
+          var gap = y - py;
+          var bend = Math.min(gap * BEND_VERT_FRAC, Math.abs(x - px) * BEND_HORIZ_MULT);
+          d += ' C ' + px + ' ' + (py + bend) + ' ' + x + ' ' + (y - bend) + ' ' + x + ' ' + y;
+        }
+      }
+    }
+    // extend to bottom
+    var lastX = positions[positions.length - 1].x;
+    d += ' L ' + lastX + ' ' + totalH;
+
+    var svgW = BASE_X + (4 - 1) * INDENT + 4; // max possible width
+
+    // Create track container
+    var track = document.createElement('div');
+    track.className = 'summer-toc__track';
+    track.style.width = svgW + 'px';
+    track.style.height = totalH + 'px';
+
+    var NS = 'http://www.w3.org/2000/svg';
+
+    // Full (grey) path
+    var svgFull = document.createElementNS(NS, 'svg');
+    svgFull.setAttribute('class', 'summer-toc__track-full');
+    svgFull.setAttribute('width', svgW);
+    svgFull.setAttribute('height', totalH);
+    svgFull.setAttribute('viewBox', '0 0 ' + svgW + ' ' + totalH);
+    var pathFull = document.createElementNS(NS, 'path');
+    pathFull.setAttribute('d', d);
+    svgFull.appendChild(pathFull);
+    track.appendChild(svgFull);
+
+    // Active (accent) path — clipped
+    var svgActive = document.createElementNS(NS, 'svg');
+    svgActive.setAttribute('class', 'summer-toc__track-active');
+    svgActive.setAttribute('width', svgW);
+    svgActive.setAttribute('height', totalH);
+    svgActive.setAttribute('viewBox', '0 0 ' + svgW + ' ' + totalH);
+    svgActive.style.clipPath = 'polygon(0 0, ' + svgW + 'px 0, ' + svgW + 'px 0, 0 0)';
+    var pathActive = document.createElementNS(NS, 'path');
+    pathActive.setAttribute('d', d);
+    svgActive.appendChild(pathActive);
+    track.appendChild(svgActive);
+
+    list.insertBefore(track, list.firstChild);
+
+    return { track: track, svgActive: svgActive, xPositions: xPositions, yCentres: yCentres, d: d, totalH: totalH, svgW: svgW };
+  }
 
   function wireTocScrollSpy() {
     var tocLinks = $$('.summer-toc__link');
     if (!tocLinks.length) return;
+
     var headings = tocLinks
       .map(function (link) {
         var id = (link.getAttribute('href') || '').replace(/^#/, '');
@@ -162,30 +266,94 @@
 
     if (!headings.length) return;
 
-    function setActive(id) {
+    var track = buildTocSvgTrack();
+
+    function setActive(idx) {
+      if (idx === _tocActiveIdx) return;
+      _tocActiveIdx = idx;
+
       tocLinks.forEach(function (l) { l.classList.remove('active'); });
-      $$('.summer-toc__item').forEach(function (li) { li.classList.remove('is-ancestor'); });
-      var match = tocLinks.filter(function (l) { return (l.getAttribute('href') || '') === '#' + id; })[0];
-      if (match) {
-        match.classList.add('active');
-        // Mark all preceding items at a higher level as "ancestors" so the
-        // thread (orange line) extends from the top down through them.
-        var allItems = $$('.summer-toc__item');
-        var matchLi = match.closest('.summer-toc__item');
-        var matchIdx = allItems.indexOf(matchLi);
-        for (var i = 0; i < matchIdx; i++) {
-          allItems[i].classList.add('is-ancestor');
-        }
-      }
+      if (idx < 0 || idx >= tocLinks.length) return;
+
+      tocLinks[idx].classList.add('active');
+
+      if (!track) return;
+
+      var totalH = track.totalH;
+      var svgW = track.svgW;
+
+      // Fill from top down to the active item's centre Y.
+      // If the user has scrolled to the bottom of the page (footer visible),
+      // fill all the way to the bottom of the track so it doesn't appear cut off.
+      var docH = document.documentElement.scrollHeight;
+      var winH = window.innerHeight;
+      var atPageBottom = (window.pageYOffset + winH) >= (docH - 40);
+      var activeY = (atPageBottom || idx === tocLinks.length - 1)
+        ? totalH
+        : track.yCentres[idx];
+
+      track.svgActive.style.clipPath =
+        'polygon(0 0, ' + svgW + 'px 0, ' +
+                svgW + 'px ' + activeY + 'px, 0 ' + activeY + 'px)';
     }
+
+    // Scroll-spy using IntersectionObserver — each heading fills the TOC
+    // as soon as it enters the viewport (visible = active).
+    var TOPBAR_H = parseInt(
+      getComputedStyle(document.documentElement).getPropertyValue('--summer-topbar-height') || '64', 10
+    );
+    var SUBNAV_H = parseInt(
+      getComputedStyle(document.documentElement).getPropertyValue('--summer-subnav-height') || '44', 10
+    );
+    var rootMarginTop = -(TOPBAR_H + SUBNAV_H + 8) + 'px';
+
+    // Build a map from heading id → index
+    var idxMap = {};
+    headings.forEach(function (h, i) { idxMap[h.id] = i; });
+
+    // Track which headings are currently intersecting
+    var visibleSet = {};
 
     var observer = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
-        if (entry.isIntersecting) setActive(entry.target.id);
+        if (entry.isIntersecting) {
+          visibleSet[entry.target.id] = true;
+        } else {
+          delete visibleSet[entry.target.id];
+        }
       });
-    }, { rootMargin: '-110px 0px -70% 0px', threshold: 0 });
+      // Activate the last visible heading (lowest on screen = most advanced)
+      var bestIdx = -1;
+      headings.forEach(function (h, i) {
+        if (visibleSet[h.id] && i >= bestIdx) bestIdx = i;
+      });
+      // Fallback: if nothing visible, find last heading above viewport
+      if (bestIdx === -1) {
+        for (var i = headings.length - 1; i >= 0; i--) {
+          var rect = headings[i].el.getBoundingClientRect();
+          if (rect.bottom < TOPBAR_H + SUBNAV_H + 8) { bestIdx = i; break; }
+        }
+      }
+      if (bestIdx === -1 && headings.length) bestIdx = 0;
+      setActive(bestIdx);
+    }, {
+      rootMargin: rootMarginTop + ' 0px -10% 0px',
+      threshold: 0
+    });
 
     headings.forEach(function (h) { observer.observe(h.el); });
+    // Initial state
+    updateActiveOnce();
+
+    function updateActiveOnce() {
+      var bestIdx = -1;
+      for (var i = headings.length - 1; i >= 0; i--) {
+        var rect = headings[i].el.getBoundingClientRect();
+        if (rect.top <= TOPBAR_H + SUBNAV_H + 80) { bestIdx = i; break; }
+      }
+      if (bestIdx === -1 && headings.length) bestIdx = 0;
+      setActive(bestIdx);
+    }
   }
 
   function wireTocSmoothScroll() {
@@ -435,20 +603,31 @@
     function initSearchIndex() {
       if (indexInitialized) return;
       indexInitialized = true;
+      // Use programmatic click WITHOUT triggering focus shifts that would
+      // scroll the page. We also restore our scroll position afterwards.
+      var scrollY = window.pageYOffset;
       var trigger = $('.docmd-search-trigger, [data-docmd-search-trigger]');
       if (trigger) {
-        trigger.click();
+        trigger.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
       } else {
         var dummy = document.createElement('div');
         dummy.className = 'docmd-search-trigger';
-        dummy.style.display = 'none';
+        dummy.style.position = 'fixed';
+        dummy.style.top = '0';
+        dummy.style.left = '0';
+        dummy.style.width = '1px';
+        dummy.style.height = '1px';
+        dummy.style.opacity = '0';
+        dummy.style.pointerEvents = 'none';
         document.body.appendChild(dummy);
-        dummy.click();
-        dummy.remove();
+        dummy.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+        // Don't remove — the plugin's listener may capture bubbles asynchronously
       }
-      setTimeout(function () {
-        headerInput.focus();
-      }, 100);
+      // Restore scroll & refocus our header input (NOT the plugin's input)
+      requestAnimationFrame(function () {
+        window.scrollTo(0, scrollY);
+        headerInput.focus({ preventScroll: true });
+      });
     }
 
     function tryInitPluginSearch() {
@@ -465,9 +644,19 @@
         resultsWrapper.appendChild(pluginResults);
       }
 
+      // Force the modal off-screen (CSS already does this, but also set inline
+      // as a belt-and-braces measure so it can never auto-scroll into view).
+      searchModal.style.setProperty('position', 'fixed', 'important');
+      searchModal.style.setProperty('top', '-9999px', 'important');
+      searchModal.style.setProperty('left', '-9999px', 'important');
       searchModal.style.setProperty('display', 'none', 'important');
       searchModal.style.setProperty('opacity', '0', 'important');
+      searchModal.style.setProperty('visibility', 'hidden', 'important');
       searchModal.style.setProperty('pointer-events', 'none', 'important');
+
+      // Make the plugin input also off-screen so it cannot grab focus
+      pluginInput.tabIndex = -1;
+      pluginInput.setAttribute('aria-hidden', 'true');
     }
 
     tryInitPluginSearch();
