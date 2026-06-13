@@ -690,9 +690,13 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
 
 .summer-sidebar {
   position: sticky;
-  top: calc(var(--summer-topbar-height) + var(--summer-subnav-height) + var(--summer-banner-height) + var(--summer-pageheader-height) + 16px);
+  /* Sidebar/TOC stick below all top sticky bands (topbar + subnav + banner + pageheader).
+   * `+ 12px` is a small breathing gap so the sidebar's first item doesn't crowd the
+   * pageheader's bottom hairline. The 4-band sum reacts to the menubar / banner /
+   * pageheader enabled-state CSS variables, so this auto-adjusts per config. */
+  top: calc(var(--summer-topbar-height) + var(--summer-subnav-height) + var(--summer-banner-height) + var(--summer-pageheader-height) + 12px);
   align-self: start;
-  max-height: calc(100vh - var(--summer-topbar-height) - var(--summer-subnav-height) - var(--summer-banner-height) - var(--summer-pageheader-height) - 32px);
+  max-height: calc(100vh - var(--summer-topbar-height) - var(--summer-subnav-height) - var(--summer-banner-height) - var(--summer-pageheader-height) - 24px);
   overflow-y: auto;
   padding: 16px 5px 60px;
   border-right: none;
@@ -1065,7 +1069,8 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
 }
 
 /* ── Topbar pill dropdowns (version / project / language switcher) ──
-   Mirrors the sidebar-widget styles but compact, floating below the topbar. */
+   Compact floating trigger (28px tall) so three switchers can sit in the
+   topbar without crowding the theme / sponsor / github icons. */
 .summer-topbar__right .docmd-version-dropdown,
 .summer-topbar__right .docmd-project-switcher,
 .summer-topbar__right .docmd-language-switcher {
@@ -1079,14 +1084,14 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
 .summer-topbar__right .language-switcher-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 10px;
+  gap: 5px;
+  height: 28px;
+  padding: 0 9px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--summer-radius-sm);
+  border-radius: 999px;
   color: var(--summer-fg-soft);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
   transition: background var(--summer-fast) var(--summer-ease),
@@ -1382,9 +1387,12 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
 
 .summer-toc {
   position: sticky;
-  top: calc(var(--summer-topbar-height) + var(--summer-subnav-height) + var(--summer-banner-height) + var(--summer-pageheader-height) + 16px);
+  /* Matches the sidebar's sticky offset so the TOC and sidebar share the same
+   * scroll-anchor line (they sit on the same Y as the main content's
+   * pageheader bottom and adjust together with the menubar / banner / header). */
+  top: calc(var(--summer-topbar-height) + var(--summer-subnav-height) + var(--summer-banner-height) + var(--summer-pageheader-height) + 12px);
   align-self: start;
-  max-height: calc(100vh - var(--summer-topbar-height) - var(--summer-subnav-height) - var(--summer-banner-height) - var(--summer-pageheader-height) - 32px);
+  max-height: calc(100vh - var(--summer-topbar-height) - var(--summer-subnav-height) - var(--summer-banner-height) - var(--summer-pageheader-height) - 24px);
   overflow-y: auto;
   padding: 24px 32px 60px 24px;
   font-size: 0.8125rem;
@@ -1635,11 +1643,11 @@ html[data-theme="dark"] .summer-content :not(pre) > code {
   border-color: rgba(255, 138, 92, 0.20);
 }
 
-/* Code block wrapper — GitBook-style dark block with header */
+/* Code block wrapper — theme-aware (light/dark) with header */
 .summer-codeblock {
   position: relative;
   margin: 1.4em 0;
-  background: #1d1b17;
+  background: var(--summer-surface-2);
   border: 1px solid var(--summer-border);
   border-radius: var(--summer-radius);
   overflow: hidden;
@@ -1655,15 +1663,16 @@ html[data-theme="dark"] .summer-codeblock {
   align-items: center;
   justify-content: space-between;
   padding: 9px 12px 9px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.025);
+  border-bottom: 1px solid var(--summer-border);
+  background: var(--summer-bg-subtle);
   font-size: var(--summer-text-xs);
-  color: #c8bfae;
+  color: var(--summer-fg-muted);
   font-family: var(--summer-font-mono);
 }
 html[data-theme="dark"] .summer-codeblock__header {
-  border-bottom-color: rgba(255, 255, 255, 0.04);
-  background: rgba(255, 255, 255, 0.015);
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.025);
+  color: #c8bfae;
 }
 
 .summer-codeblock__filename {
@@ -1675,15 +1684,15 @@ html[data-theme="dark"] .summer-codeblock__header {
 }
 .summer-codeblock__filename-icon {
   display: inline-flex;
-  color: #8a8170;
+  color: var(--summer-fg-muted);
 }
 .summer-codeblock__filename-icon svg { width: 13px; height: 13px; }
 .summer-codeblock__lang {
   display: inline-flex;
   padding: 1px 6px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #a8a08e;
+  background: var(--summer-surface-3);
+  color: var(--summer-fg-muted);
   font-size: 0.66rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -1698,13 +1707,19 @@ html[data-theme="dark"] .summer-codeblock__header {
   background: transparent;
   border: 1px solid transparent;
   border-radius: 5px;
-  color: #8a8170;
+  color: var(--summer-fg-muted);
   font-size: var(--summer-text-xs);
   font-weight: 500;
   cursor: pointer;
   transition: all var(--summer-fast) var(--summer-ease);
 }
 .summer-codeblock__copy:hover {
+  background: var(--summer-surface);
+  border-color: var(--summer-border);
+  color: var(--summer-fg);
+}
+html[data-theme="dark"] .summer-codeblock__copy { color: #8a8170; }
+html[data-theme="dark"] .summer-codeblock__copy:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.08);
   color: #f5efe0;
@@ -1725,7 +1740,7 @@ html[data-theme="dark"] .summer-codeblock__header {
   font-family: var(--summer-font-mono) !important;
   font-size: 0.84rem !important;
   line-height: 1.65 !important;
-  color: #e7dfcf;
+  color: var(--summer-fg);
   overflow-x: auto;
 }
 .summer-codeblock pre code { color: inherit !important; }
@@ -1733,13 +1748,13 @@ html[data-theme="dark"] .summer-codeblock__header {
 .summer-content pre:not(.summer-codeblock pre) {
   margin: 1.4em 0;
   padding: 16px 18px;
-  background: #1c1813;
+  background: var(--summer-surface-2);
   border: 1px solid var(--summer-border);
   border-radius: var(--summer-radius);
   font-family: var(--summer-font-mono);
   font-size: 0.84rem;
   line-height: 1.65;
-  color: #e7dfcf;
+  color: var(--summer-fg);
   overflow-x: auto;
   box-shadow: var(--summer-shadow-sm);
 }
@@ -1872,6 +1887,9 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
 .summer-footer__branding a { color: var(--summer-fg-soft); font-weight: 600; text-decoration: none; }
 .summer-footer__branding a:hover { color: var(--summer-accent); }
 .summer-footer__branding svg { width: 16px; height: 16px; color: var(--summer-accent); }
+.summer-footer__sep { margin: 0 6px; opacity: 0.5; }
+.summer-footer__sponsor { display: inline-flex; align-items: center; gap: 4px; }
+.summer-footer__sponsor svg { width: 14px; height: 14px; color: var(--summer-accent); }
 
 /* Complete footer (multi-column) */
 .summer-footer.summer-footer--complete {
@@ -1882,9 +1900,15 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   margin: 0 auto;
   padding: 0 28px 32px;
   display: grid;
-  grid-template-columns: 1.5fr repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: 1.5fr 1fr 1fr 1fr;
   gap: 32px;
   border-bottom: 1px solid var(--summer-border-soft);
+}
+@media (max-width: 900px) {
+  .summer-footer__top { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 540px) {
+  .summer-footer__top { grid-template-columns: 1fr; }
 }
 .summer-footer__brand-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .summer-footer__brand-logo img { max-height: 28px; }
@@ -2016,6 +2040,14 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   .summer-pagenav { grid-template-columns: 1fr; }
   .summer-pagenav__link--next { text-align: left; justify-content: flex-start; }
   .summer-pagenav__link--next .summer-pagenav__icon { order: -1; }
+  /* Reset no-prev / no-next single-column edge-pushing — at 1fr the
+   * grid-column 1/2 placement would leave a phantom empty cell. */
+  .summer-pagenav.no-prev .summer-pagenav__link--next,
+  .summer-pagenav.no-next .summer-pagenav__link--prev {
+    grid-column: auto;
+    justify-self: stretch;
+    max-width: none;
+  }
 
   .summer-totop { right: 16px; bottom: 16px; }
 }
@@ -2046,11 +2078,20 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
 .summer-template.no-toc .summer-toc { display: none; }
 .summer-template.no-header .summer-pageheader { display: none; }
 
-/* Prev/next: when one is missing, let the other fill the row */
-.summer-pagenav.no-prev .summer-pagenav__link--next { margin-left: auto; }
-.summer-pagenav.no-next .summer-pagenav__link--prev { margin-right: auto; }
-.summer-pagenav.no-prev .summer-pagenav__link--next,
-.summer-pagenav.no-next .summer-pagenav__link--prev { max-width: 380px; }
+/* Prev/next: when one is missing, push the survivor to its column edge.
+ * `margin-left: auto` doesn't push in grid (only flex), so we use
+ * grid-column + justify-self for the grid case, and fall back to
+ * flex margins when the layout is on a single column (<= 900px). */
+.summer-pagenav.no-prev .summer-pagenav__link--next {
+  grid-column: 2;
+  justify-self: end;
+  max-width: 380px;
+}
+.summer-pagenav.no-next .summer-pagenav__link--prev {
+  grid-column: 1;
+  justify-self: start;
+  max-width: 380px;
+}
 
 /* ── Markdown content additions ─────────────────────────────────────
    Styles for elements not covered by the default GitBook reset. */
