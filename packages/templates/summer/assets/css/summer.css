@@ -29,13 +29,13 @@
   --summer-toc-width: 240px;
   --summer-content-max: 896px;
   --summer-page-max: 1728px;
-  --summer-topbar-height: 64px;
+  --summer-topbar-height: 50px;
   --summer-subnav-height: 44px;
 
   /* Geometry */
   --summer-radius-xs: 4px;
   --summer-radius-sm: 6px;
-  --summer-radius: 8px;
+  --summer-radius: 20px;
   --summer-radius-lg: 12px;
   --summer-radius-xl: 18px;
 
@@ -79,18 +79,15 @@
   --summer-surface-sunken:#f5f5f4;   /* recessed */
   --summer-border:        #e5e5e5;   /* default border */
   --summer-border-soft:   #f0f0f0;   /* very light border */
-  --summer-border-strong: #d4d4d4;   /* strong border */
-
+  --summer-border-strong: #cdcdcd;   /* strong border */
   --summer-fg:            #1d1d1d;   /* primary text (GitBook exact) */
   --summer-fg-soft:       #4a4a4a;   /* secondary text */
   --summer-fg-muted:      #6e6e6e;   /* tertiary (GitBook exact) */
   --summer-fg-faint:      #a3a3a3;   /* placeholder */
-
   --summer-accent:        #fe551b;   /* GitBook's exact orange */
   --summer-accent-hover:  #e64500;
   --summer-accent-soft:   #fff3ed;   /* tinted backgrounds */
   --summer-accent-faint:  #ffe4d4;   /* hover/active for soft */
-
   --summer-amber:         #f59e0b;
   --summer-amber-soft:    #fff7e6;
   --summer-sun:           #fbbf24;
@@ -99,13 +96,11 @@
   --summer-sky-soft:      #e0f2fe;
   --summer-green:         #16a34a;
   --summer-green-soft:    #dcfce7;
-
   --summer-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
   --summer-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
   --summer-shadow:    0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
   --summer-shadow-lg: 0 12px 32px -8px rgba(0, 0, 0, 0.12), 0 4px 8px -4px rgba(0, 0, 0, 0.06);
   --summer-shadow-xl: 0 24px 48px -12px rgba(0, 0, 0, 0.18);
-
   --summer-ring: 0 0 0 3px rgba(254, 85, 27, 0.20);
   --summer-ring-soft: 0 0 0 3px rgba(254, 85, 27, 0.10);
 
@@ -257,8 +252,8 @@ a:hover { color: var(--summer-fg); }
   top: 0;
   z-index: var(--summer-z-sticky);
   background: color-mix(in srgb, var(--summer-bg) 88%, transparent);
-  backdrop-filter: saturate(180%) blur(16px);
-  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(16px);
   box-shadow: var(--summer-header-divider);
 }
 
@@ -426,8 +421,8 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   top: var(--summer-topbar-height);
   z-index: calc(var(--summer-z-sticky) - 1);
   background: color-mix(in srgb, var(--summer-bg) 88%, transparent);
-  backdrop-filter: saturate(180%) blur(16px);
-  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   /* No border — single hairline only at the very top of the page */
 }
 .summer-template.has-menubar .summer-topbar {
@@ -547,17 +542,16 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   top: calc(var(--summer-topbar-height) + var(--summer-subnav-height));
   z-index: calc(var(--summer-z-sticky) - 2);
   background: color-mix(in srgb, var(--summer-bg) 88%, transparent);
-  backdrop-filter: saturate(180%) blur(16px);
-  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   /* No border — clean like GitBook */
   margin-left: calc(-1 * var(--summer-gutter, 0px));
   margin-right: calc(-1 * var(--summer-gutter, 0px));
-  padding: 0 0 14px;
+  padding: 5px 10px;
 }
 .summer-pageheader__inner {
   max-width: var(--summer-content-max);
   margin: 0 auto;
-  padding: 14px 0 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -686,7 +680,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   align-self: start;
   max-height: calc(100vh - var(--summer-topbar-height) - var(--summer-subnav-height) - 32px);
   overflow-y: auto;
-  padding: 22px 8px 60px 32px;
+  padding: 16px 5px 60px;
   border-right: none;
   background: var(--summer-bg);
 }
@@ -1261,14 +1255,12 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   flex-shrink: 0;
 }
 
+/* ── TOC list: no native list styling, we draw the track with SVG ── */
 .summer-toc__list {
   list-style: none;
   padding: 0;
   margin: 0;
   position: relative;
-}
-.summer-toc__list::before {
-  display: none;
 }
 
 .summer-toc__item {
@@ -1276,69 +1268,59 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   position: relative;
 }
 
-/* Individual line segment for each list item */
-.summer-toc__item::after {
-  content: "";
+/* ── SVG track container (injected by JS) ── */
+.summer-toc__track {
   position: absolute;
-  left: 11px;
-  top: 22px;
-  bottom: -6px;
-  width: 2px;
-  background: var(--summer-border-soft);
+  top: 0;
+  inset-inline-start: 0;
+  pointer-events: none;
   z-index: 0;
 }
 
-/* Hide line segment on the last item */
-.summer-toc__list li:last-child::after {
-  display: none;
-}
-
-/* Parent/preceding highlighted segments */
-.summer-toc__item.is-ancestor::after {
-  background: var(--summer-accent);
-}
-
-/* Per-item dot marker */
-.summer-toc__item::before {
-  content: "";
+/* The full-path SVG (grey) */
+.summer-toc__track-full {
   position: absolute;
-  left: 7px;
-  top: 12px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--summer-bg);
-  border: 2px solid var(--summer-border-soft);
-  transition: border-color var(--summer-med) var(--summer-ease),
-              background var(--summer-med) var(--summer-ease),
-              transform var(--summer-med) var(--summer-ease);
-  z-index: 1;
+  top: 0;
+  left: 0;
+  color: var(--summer-border);
+}
+.summer-toc__track-full path {
+  stroke: currentColor;
+  stroke-width: 1;
+  fill: none;
 }
 
-/* Active dot: filled with orange */
-.summer-toc__item:has(> a.active)::before,
-.summer-toc__item:has(> .summer-toc__link.active)::before {
-  background: var(--summer-accent);
-  border-color: var(--summer-accent);
-  transform: scale(1.1);
+/* The active-highlight SVG (accent, clipped to show only active range) */
+.summer-toc__track-active {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--summer-accent);
+  transition: clip-path 160ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.summer-toc__track-active path {
+  stroke: currentColor;
+  stroke-width: 1.5;
+  fill: none;
 }
 
-/* Ancestor dot: orange ring with bg color */
-.summer-toc__item.is-ancestor::before {
-  border-color: var(--summer-accent);
-  background: var(--summer-bg);
-}
+/* dot removed */
 
+/* ── Links ── */
 .summer-toc__link {
   display: block;
-  padding: 4px 10px 4px 28px;
+  padding: 5px 0 5px 20px;
   color: var(--summer-fg-muted);
   text-decoration: none;
-  font-size: 0.8125rem;
+  font-size: 0.8rem;
   font-weight: 400;
   line-height: 1.5;
   transition: color var(--summer-fast) var(--summer-ease);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   position: relative;
+  z-index: 1;
 }
 .summer-toc__link:hover { color: var(--summer-fg); }
 .summer-toc__link.active {
@@ -1346,10 +1328,11 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   font-weight: 500;
 }
 
-.summer-toc__list .summer-toc__list { padding-left: 0; margin-left: 0; }
-.summer-toc__item--level-2 .summer-toc__link { padding-left: 40px; font-size: 0.78rem; }
-.summer-toc__item--level-3 .summer-toc__link { padding-left: 52px; font-size: 0.76rem; }
-.summer-toc__item--level-4 .summer-toc__link { padding-left: 64px; font-size: 0.74rem; }
+/* Indentation by level — padding-left is overridden by JS inline style */
+.summer-toc__item--level-1 .summer-toc__link { padding-left: 20px; }
+.summer-toc__item--level-2 .summer-toc__link { padding-left: 30px; }
+.summer-toc__item--level-3 .summer-toc__link { padding-left: 40px; }
+.summer-toc__item--level-4 .summer-toc__link { padding-left: 50px; }
 
 /* TOC scroll-to-top button */
 .summer-totop {
@@ -1816,10 +1799,10 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
     --summer-sidebar-width: 256px;
     --summer-toc-width: 220px;
   }
-  .summer-main { padding: 24px 32px 60px; --summer-gutter: 32px; }
-  .summer-toc { padding-right: 24px; padding-left: 20px; }
-  .summer-sidebar { padding-left: 20px; }
-  .summer-topbar__inner { padding: 0 20px; gap: 16px; }
+  .summer-main {padding: 20px 32px 60px;--summer-gutter: 32px;}
+  .summer-toc {padding-right: 20px;padding-left: 20px;}
+  .summer-sidebar {}
+  .summer-topbar__inner {padding: 0 20px;gap: 16px;}
   .summer-subnav__inner { padding: 0 20px; }
   .summer-footer__inner, .summer-footer__top, .summer-banner__inner { padding-left: 20px; padding-right: 20px; }
 }
@@ -2172,198 +2155,308 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
 
 
 /* ────────────────────────────────────────────────────────────────────────
-   17. RIGHT-RAIL BENDING TOC (FUMADOCS-STYLE)
+   17. SEARCH — DEFAULT PLUGIN MODAL SUPPRESSION + INLINE DROPDOWN
    ──────────────────────────────────────────────────────────────────────── */
 
-.summer-toc__item--level-1 { --toc-indent-curr: 0; }
-.summer-toc__item--level-2 { --toc-indent-curr: 1; }
-.summer-toc__item--level-3 { --toc-indent-curr: 2; }
-.summer-toc__item--level-4 { --toc-indent-curr: 3; }
-
-.summer-toc__item[data-prev-level="1"] { --toc-indent-prev: 0; }
-.summer-toc__item[data-prev-level="2"] { --toc-indent-prev: 1; }
-.summer-toc__item[data-prev-level="3"] { --toc-indent-prev: 2; }
-.summer-toc__item[data-prev-level="4"] { --toc-indent-prev: 3; }
-
-/* Turn off all circles/dots completely */
-.summer-toc__item::before {
-  display: none !important;
-}
-
-/* Lower straight segment on each item */
-.summer-toc__item::after {
-  content: "" !important;
-  display: block !important;
-  position: absolute !important;
-  left: calc(10px + var(--toc-indent-curr) * 12px) !important;
-  top: 14px !important;
-  bottom: -14px !important;
-  width: 2px !important;
-  background: var(--summer-border-strong) !important;
-  z-index: 1 !important;
-}
-
-/* Hide line segment on the last item */
-.summer-toc__list li:last-child::after {
-  display: none !important;
-}
-
-/* Upper segment (connecting line) on link element */
-.summer-toc__link::before {
-  content: "" !important;
-  position: absolute !important;
-  top: -14px !important;
-  height: 28px !important;
-  box-sizing: border-box !important;
-  pointer-events: none !important;
-  z-index: 1 !important;
-}
-
-/* First item has no line coming from above */
-.summer-toc__list li:first-child .summer-toc__link::before {
-  display: none !important;
-}
-
-/* 1. Straight vertical transition (prev == curr) */
-.summer-toc__item[data-prev-level="1"][data-level="1"] .summer-toc__link::before,
-.summer-toc__item[data-prev-level="2"][data-level="2"] .summer-toc__link::before,
-.summer-toc__item[data-prev-level="3"][data-level="3"] .summer-toc__link::before,
-.summer-toc__item[data-prev-level="4"][data-level="4"] .summer-toc__link::before {
-  left: calc(10px + var(--toc-indent-curr) * 12px) !important;
-  width: 2px !important;
-  background: var(--summer-border-strong) !important;
-  border: none !important;
-}
-
-/* 2. Indenting transition (prev < curr) - top-right curve */
-.summer-toc__item[data-prev-level="1"][data-level="2"] .summer-toc__link::before,
-.summer-toc__item[data-prev-level="1"][data-level="3"] .summer-toc__link::before,
-.summer-toc__item[data-prev-level="1"][data-level="4"] .summer-toc__link::before,
-.summer-toc__item[data-prev-level="2"][data-level="3"] .summer-toc__link::before,
-.summer-toc__item[data-prev-level="2"][data-level="4"] .summer-toc__link::before,
-.summer-toc__item[data-prev-level="3"][data-level="4"] .summer-toc__link::before {
-  left: calc(10px + var(--toc-indent-prev) * 12px) !important;
-  width: calc((var(--toc-indent-curr) - var(--toc-indent-prev)) * 12px + 2px) !important;
-  border-top: 2px solid var(--summer-border-strong) !important;
-  border-right: 2px solid var(--summer-border-strong) !important;
-  border-top-right-radius: 6px !important;
-  background: transparent !important;
-}
-
-/* 3. Outdenting transition (prev > curr) - top-left curve */
-.summer-toc__item[data-prev-level="2"][data-level="1"] .summer-toc__link::before,
-.summer-toc__item[data-prev-level="3"][data-level="1"] .summer-toc__link::before,
-.summer-toc__item[data-prev-level="4"][data-level="1"] .summer-toc__link::before,
-.summer-toc__item[data-prev-level="3"][data-level="2"] .summer-toc__link::before,
-.summer-toc__item[data-prev-level="4"][data-level="2"] .summer-toc__link::before,
-.summer-toc__item[data-prev-level="4"][data-level="3"] .summer-toc__link::before {
-  left: calc(10px + var(--toc-indent-curr) * 12px) !important;
-  width: calc((var(--toc-indent-prev) - var(--toc-indent-curr)) * 12px + 2px) !important;
-  border-top: 2px solid var(--summer-border-strong) !important;
-  border-left: 2px solid var(--summer-border-strong) !important;
-  border-top-left-radius: 6px !important;
-  background: transparent !important;
-}
-
-/* Active and Ancestor highlight styles */
-.summer-toc__item.is-ancestor::after {
-  background: var(--summer-accent) !important;
-}
-.summer-toc__item.is-ancestor .summer-toc__link::before,
-.summer-toc__item:has(> .summer-toc__link.active) .summer-toc__link::before {
-  border-color: var(--summer-accent) !important;
-  background: var(--summer-accent) !important;
-}
-/* For curve segments: background must stay transparent while borders get color */
-.summer-toc__item.is-ancestor[data-prev-level]:not([data-prev-level="1"][data-level="1"]):not([data-prev-level="2"][data-level="2"]):not([data-prev-level="3"][data-level="3"]):not([data-prev-level="4"][data-level="4"]) .summer-toc__link::before,
-.summer-toc__item:has(> .summer-toc__link.active)[data-prev-level]:not([data-prev-level="1"][data-level="1"]):not([data-prev-level="2"][data-level="2"]):not([data-prev-level="3"][data-level="3"]):not([data-prev-level="4"][data-level="4"]) .summer-toc__link::before {
-  background: transparent !important;
-  border-color: var(--summer-accent) !important;
-}
-
-/* Adjust link text paddings dynamically based on level */
-.summer-toc__link {
-  padding-left: calc(24px + var(--toc-indent-curr) * 12px) !important;
-}
-.summer-toc__item--level-2 .summer-toc__link,
-.summer-toc__item--level-3 .summer-toc__link,
-.summer-toc__item--level-4 .summer-toc__link {
-  padding-left: calc(24px + var(--toc-indent-curr) * 12px) !important;
-}
-
-
-/* ────────────────────────────────────────────────────────────────────────
-   18. SEARCH MODAL OVERRIDES (GITBOOK-STYLE)
-   ──────────────────────────────────────────────────────────────────────── */
-
+/* CRITICAL: force the default plugin modal off-screen so browser never
+   scrolls to it when its hidden input gets focused by our inline search. */
 .docmd-search-modal {
-  background-color: rgba(19, 17, 16, 0.4) !important;
-  backdrop-filter: saturate(120%) blur(4px) !important;
-  -webkit-backdrop-filter: saturate(120%) blur(4px) !important;
+  position: fixed !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
 }
-.docmd-search-box {
-  background-color: var(--summer-bg) !important;
-  border: 1px solid var(--summer-border-strong) !important;
-  border-radius: var(--summer-radius-lg) !important;
-  box-shadow: var(--summer-shadow-xl) !important;
+/* When legitimately open (fallback), restore */
+.docmd-search-modal[style*="flex"] {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  background: rgba(0,0,0,0.4) !important;
+  backdrop-filter: blur(4px) !important;
 }
-.docmd-search-header {
-  border-bottom: 1px solid var(--summer-border-soft) !important;
-  padding: 1.25rem 1.5rem !important;
+
+/* ── Inline search dropdown (GitBook-style) ── */
+.summer-search-container {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
 }
-.docmd-search-header svg {
-  color: var(--summer-accent) !important;
+.summer-search-input {
+  width: 100%;
+  padding: 5px 10px 5px 30px;
+  font-size: 0.875rem;
+  font-family: var(--summer-font-sans);
+  color: var(--summer-fg);
+  background: var(--summer-surface-2);
+  border: 1px solid var(--summer-border);
+  border-radius: var(--summer-radius);
+  outline: none;
+  transition: all var(--summer-fast) var(--summer-ease);
 }
-#docmd-search-input {
-  font-family: var(--summer-font-sans) !important;
-  color: var(--summer-fg) !important;
-  font-size: 1rem !important;
+.summer-search-input:focus {
+  background: var(--summer-bg);
+  border-color: var(--summer-border-strong);
+  box-shadow: var(--summer-shadow-sm);
 }
-#docmd-search-input::placeholder {
-  color: var(--summer-fg-muted) !important;
+.summer-search-container .summer-search__icon {
+  position: absolute;
+  left: 10px;
+  top: 48%;
+  transform: translateY(-50%);
+  color: var(--summer-fg-muted);
+  pointer-events: none;
 }
-.docmd-search-close {
-  color: var(--summer-fg-muted) !important;
-  transition: color var(--summer-fast) var(--summer-ease) !important;
+
+/* Dropdown panel */
+.summer-search-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 540px;
+  background: var(--summer-bg);
+  border: 1px solid var(--summer-border);
+  border-radius: var(--summer-radius-lg);
+  box-shadow: var(--summer-shadow-xl);
+  z-index: var(--summer-z-modal);
+  overflow: hidden;
+  max-height: 520px;
+  display: flex;
+  flex-direction: column;
 }
-.docmd-search-close:hover {
-  color: var(--summer-fg) !important;
+@media (max-width: 768px) {
+  .summer-search-dropdown { width: calc(100vw - 24px); left: 0; transform: none; }
 }
+
+.summer-search-results-wrapper {
+  overflow-y: auto;
+  max-height: 430px;
+  padding: 6px;
+  scrollbar-width: thin;
+}
+.summer-search-dropdown-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 14px;
+  background: var(--summer-surface-sunken);
+  border-top: 1px solid var(--summer-border-soft);
+  font-size: 0.72rem;
+  color: var(--summer-fg-muted);
+  gap: 12px;
+}
+.summer-search-dropdown-footer kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--summer-surface-2);
+  border: 1px solid var(--summer-border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.68rem;
+  font-family: var(--summer-font-sans);
+  color: var(--summer-fg-soft);
+}
+
+/* ── Search results: GitBook style ── */
+/* Strip all plugin defaults first */
+.summer-search-results-wrapper .docmd-search-results {
+  padding: 0 !important;
+  margin: 0 !important;
+  background: none !important;
+}
+
+/* Each result item */
+.summer-search-results-wrapper .search-result-item,
 .search-result-item {
-  border-radius: var(--summer-radius) !important;
-  border-left-width: 3px !important;
-  margin-bottom: 4px !important;
-  padding: 0.85rem 1.25rem !important;
-  transition: all var(--summer-fast) var(--summer-ease) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  padding: 8px 10px !important;
+  border-radius: var(--summer-radius-sm) !important;
+  border: none !important;
+  border-left: none !important;
+  margin: 1px 0 !important;
+  background: transparent !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  transition: background var(--summer-fast) var(--summer-ease) !important;
 }
-.search-result-item.selected,
-.search-result-item:focus,
-.search-result-item:hover {
-  background-color: var(--summer-surface-2) !important;
-  border-left-color: var(--summer-accent) !important;
+.summer-search-results-wrapper .search-result-item:hover,
+.summer-search-results-wrapper .search-result-item.selected,
+.search-result-item:hover,
+.search-result-item.selected {
+  background: var(--summer-surface-2) !important;
 }
+
+/* Title row: page icon + title */
 .search-result-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
   color: var(--summer-fg) !important;
   font-family: var(--summer-font-sans) !important;
+  line-height: 1.4 !important;
 }
 .search-result-item.selected .search-result-title,
 .search-result-item:hover .search-result-title {
   color: var(--summer-accent) !important;
 }
+
+/* Preview / snippet */
 .search-result-preview {
-  color: var(--summer-fg-soft) !important;
+  font-size: 0.78rem !important;
+  color: var(--summer-fg-muted) !important;
+  line-height: 1.45 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  padding-left: 0 !important;
 }
 .search-result-preview mark {
-  background-color: rgba(254, 85, 27, 0.15) !important;
+  background: var(--summer-accent-soft) !important;
   color: var(--summer-accent) !important;
-  padding: 0 4px !important;
-  border-radius: 3px !important;
+  padding: 0 2px !important;
+  border-radius: 2px !important;
   font-weight: 600 !important;
 }
-.docmd-search-footer {
-  background-color: var(--summer-surface-sunken) !important;
-  border-top: 1px solid var(--summer-border-soft) !important;
+
+/* Section/page path badge */
+.search-result-section,
+.search-result-path {
+  font-size: 0.7rem !important;
+  color: var(--summer-fg-faint) !important;
+  font-weight: 400 !important;
+  margin-left: auto !important;
+  white-space: nowrap !important;
+}
+
+/* Meta row: version pill + confidence %, on the right of the title */
+.search-result-meta {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-left: auto !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+/* Version pill — overrides plugin's inline HSL styles with !important */
+.search-result-version {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  height: 18px !important;
+  padding: 0 7px !important;
+  border-radius: 999px !important;
+  background: var(--summer-surface-3) !important;
+  color: var(--summer-fg-soft) !important;
+  font-size: 0.68rem !important;
+  font-weight: 500 !important;
+  font-family: var(--summer-font-sans) !important;
+  line-height: 1 !important;
+  border: 1px solid var(--summer-border) !important;
+  letter-spacing: 0.01em !important;
+  transition: background var(--summer-fast) var(--summer-ease), color var(--summer-fast) var(--summer-ease);
+}
+.search-result-item:hover .search-result-version,
+.search-result-item.selected .search-result-version {
+  background: var(--summer-bg) !important;
   color: var(--summer-fg-muted) !important;
+}
+
+/* Confidence percentage — soft, secondary */
+.search-result-confidence {
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 18px !important;
+  padding: 0 2px !important;
+  font-size: 0.68rem !important;
+  font-weight: 600 !important;
+  color: var(--summer-fg-muted) !important;
+  font-family: var(--summer-font-sans) !important;
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: -0.01em !important;
+  min-width: 32px !important;
+  justify-content: flex-end !important;
+}
+
+/* Filter pills (top of dropdown) */
+.docmd-search-filters,
+.summer-search-filters,
+#docmd-global-search-filters {
+  display: flex !important;
+  gap: 6px !important;
+  padding: 2px 10px 8px !important;
+  border-bottom: 1px solid var(--summer-border-soft) !important;
+  flex-wrap: wrap !important;
+}
+.docmd-search-filter-pill,
+.search-filter-pill,
+.search-filter-tag {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  height: 24px !important;
+  padding: 0 10px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--summer-border) !important;
+  background: var(--summer-surface-2) !important;
+  /* Override plugin's inline HSL colour styles */
+  color: var(--summer-fg-soft) !important;
+  font-size: 0.72rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all var(--summer-fast) var(--summer-ease) !important;
+  font-family: var(--summer-font-sans) !important;
+  letter-spacing: 0.01em !important;
+}
+.docmd-search-filter-pill svg,
+.search-filter-pill svg,
+.search-filter-tag svg {
+  width: 10px !important;
+  height: 10px !important;
+  color: currentColor !important;
+}
+.docmd-search-filter-pill:hover,
+.search-filter-pill:hover,
+.search-filter-tag:hover {
+  border-color: var(--summer-border-strong) !important;
+  color: var(--summer-fg) !important;
+  background: var(--summer-surface) !important;
+}
+.docmd-search-filter-pill.active,
+.search-filter-pill.active,
+.search-filter-tag.active {
+  background: var(--summer-accent) !important;
+  border-color: var(--summer-accent) !important;
+  color: #fff !important;
+}
+
+/* "No results" state */
+.docmd-search-empty,
+.search-no-results {
+  padding: 24px 16px !important;
+  text-align: center !important;
+  color: var(--summer-fg-muted) !important;
+  font-size: 0.875rem !important;
+}
+
+/* Loading state */
+.summer-search-loading {
+  padding: 16px;
+  color: var(--summer-fg-muted);
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 
@@ -2381,104 +2474,6 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   display: block;
 }
 
-
-/* ────────────────────────────────────────────────────────────────────────
-   20. INLINE HEADER SEARCH (GITBOOK-STYLE DROPDOWN)
-   ──────────────────────────────────────────────────────────────────────── */
-
-.summer-search-container {
-  position: relative;
-  width: 100%;
-  max-width: 380px;
-}
-.summer-search-input {
-  width: 100%;
-  padding: 8px 12px 8px 36px;
-  font-size: 0.875rem;
-  font-family: var(--summer-font-sans);
-  color: var(--summer-fg);
-  background: var(--summer-surface-2);
-  border: 1px solid var(--summer-border-strong);
-  border-radius: var(--summer-radius);
-  outline: none;
-  transition: all var(--summer-fast) var(--summer-ease);
-}
-.summer-search-input:focus {
-  background: var(--summer-bg);
-  border-color: var(--summer-accent);
-  box-shadow: var(--summer-ring-soft);
-}
-.summer-search-container .summer-search__icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--summer-fg-muted);
-  pointer-events: none;
-}
-.summer-search-dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: 500px;
-  background: var(--summer-bg);
-  border: 1px solid var(--summer-border-strong);
-  border-radius: var(--summer-radius-lg);
-  box-shadow: var(--summer-shadow-xl);
-  z-index: 1000;
-  overflow: hidden;
-  max-height: 480px;
-  display: flex;
-  flex-direction: column;
-}
-@media (max-width: 768px) {
-  .summer-search-dropdown {
-    width: calc(100vw - 32px);
-    left: 0;
-    transform: none;
-  }
-}
-.summer-search-results-wrapper {
-  overflow-y: auto;
-  max-height: 380px;
-  padding: 8px;
-}
-.summer-search-dropdown-footer {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 16px;
-  background: var(--summer-surface-sunken);
-  border-top: 1px solid var(--summer-border-soft);
-  font-size: 0.75rem;
-  color: var(--summer-fg-muted);
-}
-.summer-search-dropdown-footer kbd {
-  background: var(--summer-surface-2);
-  border: 1px solid var(--summer-border-strong);
-  border-radius: 3px;
-  padding: 1px 4px;
-  font-size: 0.7rem;
-}
-
-/* Ensure inside the inline dropdown, search result overrides still apply */
-.summer-search-results-wrapper .docmd-search-results {
-  padding: 0 !important;
-  margin: 0 !important;
-}
-.summer-search-results-wrapper .search-result-item {
-  border-radius: var(--summer-radius) !important;
-  border-left-width: 3px !important;
-  margin-bottom: 4px !important;
-  padding: 0.85rem 1.25rem !important;
-  transition: all var(--summer-fast) var(--summer-ease) !important;
-}
-.summer-search-results-wrapper .search-result-item.selected,
-.summer-search-results-wrapper .search-result-item:focus,
-.summer-search-results-wrapper .search-result-item:hover {
-  background-color: var(--summer-surface-2) !important;
-  border-left-color: var(--summer-accent) !important;
-}
 
 /* =========================================================================
    18. LANGUAGE SWITCHER DROPDOWN (GITBOOK-STYLE)
@@ -2638,4 +2633,10 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
 
 img.lightbox {
   cursor: zoom-in;
+}
+
+.search-initial {
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--summer-accent);
 }
