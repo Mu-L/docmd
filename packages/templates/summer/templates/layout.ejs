@@ -83,17 +83,27 @@
     if (_hasBanner) _bodyClasses.push('has-banner');
   %>
 </head>
-<body class="<%= _bodyClasses.join(' ') %>">
+<body class="<%= _bodyClasses.join(' ') %>"
+  <%# data-* attributes that docmd-main.js reads to wire SPA + features.
+   *   - spa-enabled:     gate the docmd-main.js SPA router
+   *   - copy-code-enabled: gate the per-pre copy button injection
+   *   - default-collapsed: matches the sidebar partial's first-paint
+   *                       state for the sidebar groups (summer ignores
+   *                       this and renders all groups open by default). %>
+  data-spa-enabled="<%= (config.layout?.spa !== false).toString() %>"
+  data-copy-code-enabled="<%= (config.copyCode === true).toString() %>"
+  data-default-collapsed="<%= sidebarConfig?.defaultCollapsed === true %>">
   <a href="#main-content" class="skip-link"><%= typeof t === 'function' ? t('skipToContent') : 'Skip to content' %></a>
 
   <%# ─────────────────────────────────────────────────────────────
-      Optional banner
+      Optional banner (data-docmd-banner is what docmd-main.js's
+      initBanner() listens for so close-state is sessionStorage-persisted)
       ───────────────────────────────────────────────────────────── %>
   <% if (_hasBanner) { %>
-    <div class="summer-banner" role="region" aria-label="Site announcement">
+    <div class="summer-banner" data-docmd-banner role="region" aria-label="Site announcement">
       <div class="summer-banner__inner">
         <span><%- typeof config.layout.banner === 'string' ? config.layout.banner : '' %></span>
-        <button class="summer-banner__close" type="button" data-summer-banner-close aria-label="Dismiss banner">
+        <button class="summer-banner__close sidebar-menu-button" type="button" data-docmd-banner-dismiss aria-label="Dismiss banner">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
@@ -105,9 +115,14 @@
       ───────────────────────────────────────────────────────────── %>
   <header class="summer-topbar" role="banner">
     <div class="summer-topbar__inner">
-      <%# LEFT — Logo + mobile sidebar toggle %>
+      <%# LEFT — Logo + mobile sidebar toggle
+       * The button carries both data-summer-sidebar-toggle (for
+       *   any custom hooks) and the docmd-main.js .sidebar-menu-button
+       *   class so the standard mobile-drawer behaviour in
+       *   docmd-main.js (closes on outside click + Escape) just works.
+       ───────────────────────────────────────────────────────────── %>
       <div class="summer-topbar__left">
-        <button class="summer-iconbtn summer-topbar__mobile" type="button" data-summer-sidebar-toggle aria-label="Toggle navigation menu">
+        <button class="summer-iconbtn summer-topbar__mobile sidebar-menu-button" type="button" data-summer-sidebar-toggle aria-label="Toggle navigation menu">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
         </button>
         <% if (logo && (logo.light || logo.dark)) { %>
@@ -142,7 +157,7 @@
       <div class="summer-topbar__right">
         <% const _om = locals.optionsMenu; %>
         <% if (!_om || _om.components?.themeSwitch !== false) { %>
-          <button class="summer-iconbtn" type="button" data-summer-theme-toggle aria-label="Toggle theme">
+          <button class="summer-iconbtn theme-toggle-button" type="button" data-summer-theme-toggle aria-label="Toggle theme">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>
           </button>
         <% } %>

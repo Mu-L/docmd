@@ -716,22 +716,29 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
 .summer-sidebar nav ul { list-style: none; padding: 0; margin: 0; }
 .summer-sidebar nav > ul { display: flex; flex-direction: column; gap: 2px; }
 
-/* 1. Top-level Group Headers (Uppercase, GitBook-style) */
+/* 1. Top-level Group Headers (Uppercase, GitBook-style)
+   Note: nav-group is also applied to non-collapsible groups (where
+   navigation.ejs partial renders a plain section header). The
+   `collapsible` class is only present on the interactive groups, so
+   cursor/hover/click affordances must be scoped to .collapsible —
+   otherwise "collapsible: false" sections still look clickable. */
 .summer-sidebar nav > ul > li.nav-group > .nav-label,
 .summer-sidebar nav > ul > li.nav-group > a {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  margin-top: 20px;
-  margin-bottom: 4px;
+  padding: 8px 14px;
   color: var(--summer-fg-muted);
   font-size: 0.6875rem; /* 11px */
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  cursor: pointer;
   user-select: none;
+}
+/* Cursor + click affordance only for actual collapsible groups */
+.summer-sidebar nav > ul > li.nav-group.collapsible > .nav-label,
+.summer-sidebar nav > ul > li.nav-group.collapsible > a {
+  cursor: pointer;
 }
 .summer-sidebar nav > ul > li.nav-group:first-child > .nav-label,
 .summer-sidebar nav > ul > li.nav-group:first-child > a {
@@ -745,12 +752,15 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   flex-shrink: 0;
   transition: color var(--summer-fast) var(--summer-ease);
 }
-.summer-sidebar nav > ul > li.nav-group > .nav-label:hover,
-.summer-sidebar nav > ul > li.nav-group > a:hover {
+/* Hover affordance only on collapsible groups — non-collapsible
+   sections (collapsible: false in nav JSON) shouldn't react on hover. */
+.summer-sidebar nav > ul > li.nav-group.collapsible > .nav-label:hover,
+.summer-sidebar nav > ul > li.nav-group.collapsible > a:hover {
   color: var(--summer-fg);
+  background: none;
 }
-.summer-sidebar nav > ul > li.nav-group > .nav-label:hover svg,
-.summer-sidebar nav > ul > li.nav-group > a:hover svg:not(.nav-external-icon):not(.collapse-icon) {
+.summer-sidebar nav > ul > li.nav-group.collapsible > .nav-label:hover svg,
+.summer-sidebar nav > ul > li.nav-group.collapsible > a:hover svg:not(.nav-external-icon):not(.collapse-icon) {
   color: var(--summer-accent);
 }
 
@@ -762,8 +772,8 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 12px;
-  margin: 1px 8px;
+  padding: 6px 8px;
+  margin: 1px 6px;
   color: var(--summer-fg-soft);
   font-size: 0.875rem; /* 14px */
   font-weight: 450;
@@ -814,7 +824,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   color: var(--summer-accent);
   font-weight: 500;
   border-left: none; /* no border on the item itself */
-  padding-left: 12px; /* standard padding */
+   /* standard padding */
 }
 
 .summer-sidebar nav .submenu li > a.active::before,
@@ -903,9 +913,9 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
 .summer-sidebar__bottom {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 0 8px;
-  margin-bottom: 16px;
+  gap: 6px;
+  padding: 0 10px;
+  margin-bottom: 14px;
 }
 .summer-sidebar__bottom {
   margin-top: 24px;
@@ -930,13 +940,13 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   width: 100%;
   align-items: center;
   gap: 8px;
-  height: 34px;
+  height: 32px;
   padding: 0 12px;
-  background-color: var(--summer-surface-1);
+  background-color: var(--summer-surface);
   border: 1px solid var(--summer-border-soft);
-  border-radius: var(--summer-radius-sm);
+  border-radius: var(--summer-radius-lg);
   color: var(--summer-fg-soft);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
   transition: all var(--summer-fast) var(--summer-ease);
@@ -1501,8 +1511,8 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
 /* TOC scroll-to-top button */
 .summer-totop {
   position: fixed;
-  right: 28px;
-  bottom: 28px;
+  right: 30px;
+  bottom: 50px;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -1552,7 +1562,6 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   border-color: var(--summer-accent);
   background: var(--summer-accent-soft);
   color: var(--summer-fg);
-  transform: translateY(-1px);
   box-shadow: var(--summer-shadow-sm);
 }
 .summer-pagenav__link--next { justify-content: flex-end; text-align: right; }
@@ -1893,7 +1902,7 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
 
 /* Complete footer (multi-column) */
 .summer-footer.summer-footer--complete {
-  padding: 48px 0 32px;
+  padding: 48px 0 20px;
 }
 .summer-footer__top {
   max-width: var(--summer-page-max);
@@ -1902,7 +1911,6 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   display: grid;
   grid-template-columns: 1.5fr 1fr 1fr 1fr;
   gap: 32px;
-  border-bottom: 1px solid var(--summer-border-soft);
 }
 @media (max-width: 900px) {
   .summer-footer__top { grid-template-columns: 1fr 1fr; }
@@ -1981,7 +1989,6 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   }
   .summer-main {padding: 20px 32px 60px;--summer-gutter: 32px;}
   .summer-toc {padding-right: 20px;padding-left: 20px;}
-  .summer-sidebar {}
   .summer-topbar__inner {padding: 0 20px;gap: 16px;}
   .summer-subnav__inner { padding: 0 20px; }
   .summer-footer__inner, .summer-footer__top, .summer-banner__inner { padding-left: 20px; padding-right: 20px; }
@@ -2140,7 +2147,7 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
 .summer-content img {
   max-width: 100%;
   height: auto;
-  border-radius: var(--summer-radius-sm);
+  border-radius: var(--summer-radius-lg);
 }
 .summer-content img.with-border {
   border: 1px solid var(--summer-border);
@@ -2190,7 +2197,6 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
 .summer-pagefooter__time.has-commits { cursor: pointer; }
 .summer-pagefooter__time.has-commits:hover,
 .summer-pagefooter__time.has-commits:focus {
-  background: var(--summer-surface-2);
   color: var(--summer-fg);
 }
 .summer-git-popover {
@@ -2202,7 +2208,7 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   max-width: 380px;
   background: var(--summer-bg);
   border: 1px solid var(--summer-border);
-  border-radius: var(--summer-radius-md);
+  border-radius: var(--summer-radius-lg);
   box-shadow: var(--summer-shadow-lg);
   padding: 10px 12px 8px;
   z-index: var(--summer-z-dropdown);
