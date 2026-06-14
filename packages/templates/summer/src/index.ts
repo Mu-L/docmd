@@ -51,6 +51,8 @@ export const plugin: PluginDescriptor = {
 const templates: TemplateHook[] = [
   // Full layout override — biggest change vs default.
   { type: 'layout',  templatePath: pathOf('../templates/layout.ejs') },
+  // Standalone Summer-styled 404 page (uses summer.css, halo gradient, glass card).
+  { type: '404',     templatePath: pathOf('../templates/404.ejs') },
   // Re-style the menubar so it sits below the logo (not above).
   { type: 'menubar', templatePath: pathOf('../templates/partials/menubar.ejs') },
   // Tighter, more modern footer.

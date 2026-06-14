@@ -38,6 +38,23 @@ function getPackageManager(cwd) {
 }
 
 /**
+ * Resolves the project's config file path. Prefers docmd.config.json
+ * (the project standard), falls back to docmd.config.js for legacy
+ * projects, and defaults to docmd.config.json when no config exists yet.
+ */
+function resolveConfigPath(cwd) {
+  const jsonPath = path.join(cwd, 'docmd.config.json');
+  const jsPath = path.join(cwd, 'docmd.config.js');
+  if (fs.existsSync(jsonPath)) return jsonPath;
+  if (fs.existsSync(jsPath)) return jsPath;
+  return jsonPath;
+}
+
+function detectConfigFormat(configPath) {
+  return configPath.endsWith('.json') ? 'json' : 'js';
+}
+
+/**
  * Resolves plugin metadata from the registry, or builds a fallback object.
  */
 function resolvePluginMeta(name) {
@@ -137,6 +154,114 @@ function removePluginFromConfig(configPath, meta) {
   return true;
 }
 
+/**
+ * Sets `theme.template` in the config. Replaces any existing template value.
+ * Returns true if a change was made. Handles both JSON and JS config formats.
+ * Templates do NOT stack — re-running with a different template overwrites.
+ */
+function injectTemplateToConfig(configPath, meta) {
+  const format = detectConfigFormat(configPath);
+  const templateName = meta.templateName || meta.configKey;
+
+  let content = '';
+  if (fs.existsSync(configPath)) {
+    content = fs.readFileSync(configPath, 'utf8');
+  } else {
+    content = format === 'json'
+      ? '{\n  "theme": {}\n}\n'
+      : 'module.exports = {\n  theme: {}\n};\n';
+  }
+
+  if (format === 'json') {
+    let config;
+    try { config = JSON.parse(content); }
+    catch (err) {
+      TUI.warn(`Could not parse ${configPath} as JSON. Skipping template injection.`);
+      return false;
+    }
+    config.theme = config.theme || {};
+    if (config.theme.template === templateName) return false;
+    config.theme.template = templateName;
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf8');
+    return true;
+  }
+
+  // JS config (regex-based, matching the existing plugin injector)
+  const escaped = templateName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if (new RegExp(`template\\s*:\\s*['"\`]${escaped}['"\`]`).test(content)) return false;
+
+  const themeRegex = /theme\s*:\s*\{([\s\S]*?)\}/;
+  const themeMatch = content.match(themeRegex);
+
+  if (themeMatch) {
+    const inner = themeMatch[1];
+    let newInner;
+    if (/template\s*:/.test(inner)) {
+      // Replace existing `template: "..."` value
+      newInner = inner.replace(/template\s*:\s*['"`][^'"`]*['"`]/, `template: "${templateName}"`);
+    } else {
+      const trimmed = inner.trim();
+      if (trimmed === '') {
+        newInner = `\n    template: "${templateName}"\n  `;
+      } else {
+        // Strip trailing whitespace + optional comma, then add comma + template
+        const stripped = inner.replace(/[\s,]+$/, '');
+        newInner = `${stripped},\n    template: "${templateName}"\n  `;
+      }
+    }
+    content = content.replace(themeMatch[0], `theme: {${newInner}}`);
+  } else {
+    // No `theme: { ... }` yet — create one in module.exports
+    const moduleExportsRegex = /module\.exports\s*=\s*(?:defineConfig\()?\{([\s\S]*?)\}(?:\))?;?/g;
+    let matchE, lastMatch;
+    while ((matchE = moduleExportsRegex.exec(content)) !== null) lastMatch = matchE;
+    if (lastMatch) {
+      const closingBraceIndex = lastMatch.index + lastMatch[0].lastIndexOf('}');
+      const prefixRaw = content.substring(0, closingBraceIndex);
+      const suffix = content.substring(closingBraceIndex);
+      // Strip trailing whitespace from prefix so the separator lands cleanly after the last value
+      const prefix = prefixRaw.replace(/\s+$/, '');
+      const lastChar = prefix.slice(-1);
+      const separator = (lastChar === ',' || lastChar === '{') ? '\n  ' : ',\n  ';
+      const insert = `${separator}theme: {\n    template: "${templateName}"\n  }\n`;
+      content = prefix + insert + suffix;
+    } else {
+      TUI.warn(`Could not automatically inject template into ${configPath}. Please set theme.template = "${templateName}" manually.`);
+      return false;
+    }
+  }
+
+  fs.writeFileSync(configPath, content, 'utf8');
+  return true;
+}
+
+/**
+ * Clears `theme.template` from the config (reverts to default).
+ * Returns true if a change was made.
+ */
+function removeTemplateFromConfig(configPath) {
+  if (!fs.existsSync(configPath)) return false;
+  const format = detectConfigFormat(configPath);
+  const content = fs.readFileSync(configPath, 'utf8');
+
+  if (format === 'json') {
+    let config;
+    try { config = JSON.parse(content); }
+    catch { return false; }
+    if (!config.theme || !('template' in config.theme)) return false;
+    delete config.theme.template;
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf8');
+    return true;
+  }
+
+  // JS config
+  if (!/template\s*:/.test(content)) return false;
+  const newContent = content.replace(/\s*template\s*:\s*['"`][^'"`]*['"`]\s*,?\s*/, '');
+  if (content === newContent) return false;
+  fs.writeFileSync(configPath, newContent, 'utf8');
+  return true;
+}
+
 
 import { TUI } from '@docmd/api';
 
@@ -152,8 +277,9 @@ async function installPlugin(pluginInput: string, opts: { verbose?: boolean } = 
     return;
   }
   const packageName = meta.package;
+  const isTemplate = meta.kind === 'template';
 
-  TUI.section('Plugin Installation');
+  TUI.section(isTemplate ? 'Template Installation' : 'Plugin Installation');
   TUI.step(`Installing ${packageName} via ${pkgManager}`, 'WAIT');
 
   let cmdExe = '';
@@ -173,18 +299,24 @@ async function installPlugin(pluginInput: string, opts: { verbose?: boolean } = 
     
     TUI.step(packageName, 'DONE');
     
-    const configPath = path.join(cwd, 'docmd.config.js');
+    const configPath = resolveConfigPath(cwd);
     TUI.divider('Configuration');
-    TUI.step(`Activating ${meta.configKey}`, 'WAIT', TUI.blue);
 
-    const injected = injectPluginToConfig(configPath, meta);
-    if (injected) {
-      TUI.step('Activation completed', 'DONE', TUI.blue);
+    let injected;
+    if (isTemplate) {
+      TUI.step(`Setting theme.template to "${meta.configKey}"`, 'WAIT', TUI.blue);
+      injected = injectTemplateToConfig(configPath, meta);
     } else {
-      TUI.step('Plugin already configured', 'SKIP', TUI.blue);
+      TUI.step(`Activating ${meta.configKey}`, 'WAIT', TUI.blue);
+      injected = injectPluginToConfig(configPath, meta);
+    }
+    if (injected) {
+      TUI.step(isTemplate ? 'Template activated' : 'Activation completed', 'DONE', TUI.blue);
+    } else {
+      TUI.step(isTemplate ? 'Template already configured' : 'Plugin already configured', 'SKIP', TUI.blue);
     }
     TUI.footer();
-    TUI.success('Plugin successfully installed and activated.');
+    TUI.success(isTemplate ? 'Template successfully installed and activated.' : 'Plugin successfully installed and activated.');
 
   } catch (err: any) {
     TUI.step(packageName, 'FAIL');
@@ -205,8 +337,9 @@ async function removePlugin(pluginInput: string, opts: { verbose?: boolean } = {
     return;
   }
   const packageName = meta.package;
+  const isTemplate = meta.kind === 'template';
 
-  TUI.section('Plugin Removal');
+  TUI.section(isTemplate ? 'Template Removal' : 'Plugin Removal');
   TUI.step(`Uninstalling ${packageName} via ${pkgManager}`, 'WAIT');
 
   let cmdExe = '';
@@ -222,18 +355,24 @@ async function removePlugin(pluginInput: string, opts: { verbose?: boolean } = {
     
     TUI.step(packageName, 'DONE');
     
-    const configPath = path.join(cwd, 'docmd.config.js');
+    const configPath = resolveConfigPath(cwd);
     TUI.divider('Configuration');
-    TUI.step(`Removing ${meta.configKey}`, 'WAIT', TUI.blue);
 
-    const removed = removePluginFromConfig(configPath, meta);
+    let removed;
+    if (isTemplate) {
+      TUI.step('Clearing theme.template', 'WAIT', TUI.blue);
+      removed = removeTemplateFromConfig(configPath);
+    } else {
+      TUI.step(`Removing ${meta.configKey}`, 'WAIT', TUI.blue);
+      removed = removePluginFromConfig(configPath, meta);
+    }
     if (removed) {
       TUI.step('Cleanup completed', 'DONE', TUI.blue);
     } else {
       TUI.step('No config entry found', 'SKIP', TUI.blue);
     }
     TUI.footer();
-    TUI.success('Plugin successfully uninstalled.');
+    TUI.success(isTemplate ? 'Template successfully uninstalled.' : 'Plugin successfully uninstalled.');
 
   } catch (err: any) {
     TUI.step(packageName, 'FAIL');
