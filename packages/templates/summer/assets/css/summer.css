@@ -567,7 +567,11 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   /* No border — clean like GitBook */
   margin-left: calc(-1 * var(--summer-gutter, 0px));
   margin-right: calc(-1 * var(--summer-gutter, 0px));
-  padding: 5px 10px;
+  /* Top padding here (instead of on .summer-main) is the breathing room
+   * between the topbar and the breadcrumb / copy row. This keeps the
+   * pageheader's natural Y aligned with its sticky Y, so the sidebar /
+   * TOC don't overlap the pageheader at scroll=0. */
+  padding: 20px 10px 5px;
 }
 .summer-pageheader__inner {
   max-width: var(--summer-content-max);
@@ -576,7 +580,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 40px;
+  min-height: 25px;
 }
 .summer-pageheader__meta {
   flex: 1;
@@ -1252,7 +1256,12 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
 
 .summer-main {
   min-width: 0;
-  padding: var(--summer-main-padding-top) 48px 64px;
+  /* No top padding — the breathing room between topbar and the
+   * pageheader's content lives on the pageheader itself
+   * (padding: 20px 10px 5px) so the pageheader's natural Y lines up
+   * with its sticky Y. The sidebar / TOC stick to the pageheader's
+   * bottom and never overlap the pageheader. */
+  padding: 0 48px 64px;
   --summer-gutter: 48px;
   display: flex;
   flex-direction: column;
@@ -1827,6 +1836,21 @@ html[data-theme="dark"] .copy-code-button.summer-cb__copy:hover {
   color: var(--summer-fg);
   overflow-x: auto;
 }
+
+/* When the parser wraps a codeblock in .docmd-code-block-wrapper, the
+   inner .code-wrapper (added by docmd-main.js for its own copy button)
+   has its own border/background — which would render as a "window
+   inside a window". Strip that styling so the inner wrapper is
+   transparent and the outer wrapper is the only visual box. */
+.docmd-code-block-wrapper > .code-wrapper {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
 .code-wrapper > pre code,
 .docmd-code-block-wrapper > .code-wrapper > pre code { color: inherit !important; }
 
@@ -2102,9 +2126,8 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   :root {
     --summer-sidebar-width: 256px;
     --summer-toc-width: 220px;
-    --summer-main-padding-top: 20px;
   }
-  .summer-main {padding: 20px 32px 60px;--summer-gutter: 32px;}
+  .summer-main {padding: 0 32px 60px;--summer-gutter: 32px;}
   .summer-toc {padding-right: 20px;padding-left: 20px;}
   .summer-topbar__inner {padding: 0 20px;gap: 16px;}
   .summer-subnav__inner { padding: 0 20px; }
@@ -2155,7 +2178,7 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   .summer-sidebar-close { display: inline-flex; }
 
   .summer-pageheader { position: static; }
-  .summer-main { padding: 16px 20px 40px; --summer-gutter: 20px; }
+  .summer-main { padding: 0 20px 40px; --summer-gutter: 20px; }
   .summer-content { font-size: 1rem; }
   .summer-content h1 { font-size: 1.75rem; }
   .summer-content h2 { font-size: 1.45rem; }

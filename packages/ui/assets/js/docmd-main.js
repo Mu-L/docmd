@@ -295,7 +295,14 @@
     // Copy Code Button
     const copyBtn = e.target.closest('.copy-code-button');
     if (copyBtn) {
-      const code = copyBtn.closest('.code-wrapper')?.querySelector('code');
+      // Look for the associated <code> in the immediate .code-wrapper,
+      // or in the nearest codeblock-shaped wrapper. Templates like
+      // `summer` re-home the copy button into a title bar that lives
+      // outside .code-wrapper (e.g. inside .docmd-code-block-wrapper
+      // for ```lang "title"``` blocks) — fall back to that parent
+      // wrapper's <pre><code> in that case.
+      const code = copyBtn.closest('.code-wrapper')?.querySelector('code')
+        || copyBtn.closest('.docmd-code-block-wrapper, .summer-cb, .summer-codeblock')?.querySelector('pre code');
       if (code) {
         navigator.clipboard.writeText(code.innerText).then(() => {
           copyBtn.classList.add('copied');
