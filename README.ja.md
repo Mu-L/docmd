@@ -81,7 +81,7 @@ npm install -g @docmd/core
 または Docker で実行：
 
 ```bash
-docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.6
 ```
 
 ```bash

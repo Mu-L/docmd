@@ -81,7 +81,7 @@ npm install -g @docmd/core
 Oder über Docker ausführen:
 
 ```bash
-docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.6
 ```
 
 ```bash

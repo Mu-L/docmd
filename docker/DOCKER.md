@@ -8,14 +8,14 @@ Official Docker image for docmd - the minimalist, zero-config documentation gene
 
 ```bash
 # Pull from GitHub Container Registry (GHCR)
-docker pull ghcr.io/docmd-io/docmd:latest
+docker pull ghcr.io/docmd-io/docmd:0.8.6
 ```
 
 ### Run Demo Site
 
 ```bash
 # Start with built-in demo site
-docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.6
 
 # Visit http://localhost:3000
 ```
@@ -25,30 +25,32 @@ docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest
 ```bash
 # Create and initialize a new project
 mkdir my-docs && cd my-docs
-docker run -v $(pwd):/workspace ghcr.io/docmd-io/docmd:latest init
+docker run -v $(pwd):/workspace ghcr.io/docmd-io/docmd:0.8.6 init
 
 # Start dev server
-docker run -v $(pwd):/workspace -p 3000:3000 ghcr.io/docmd-io/docmd:latest dev
+docker run -v $(pwd):/workspace -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.6 dev
 ```
 
 ### Use Existing Docs
 
 ```bash
 # Mount your docs and start dev server
-docker run -v $(pwd)/docs:/docs -p 3000:3000 ghcr.io/docmd-io/docmd:latest
+docker run -v $(pwd)/docs:/docs -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.6
 
 # Build static site
-docker run -v $(pwd)/docs:/docs -v $(pwd)/site:/site ghcr.io/docmd-io/docmd:latest build
+docker run -v $(pwd)/docs:/docs -v $(pwd)/site:/site ghcr.io/docmd-io/docmd:0.8.6 build
 ```
 
 ## Available Tags
 
 | Tag | Description |
 |-----|-------------|
-| `latest` | Most recent stable release |
-| `edge` | Latest build from main branch |
-| `0.8.6` | Specific version release |
-| `sha-abc123` | Specific commit SHA |
+| `0.8.6` | Pinned stable release (**recommended for reproducibility**) |
+| `edge` | Latest build from the `main` branch — bleeding edge, may be unstable |
+| `latest` | Floating alias for the most recent stable release |
+| `sha-<commit>` | Specific commit SHA for fully reproducible builds |
+
+> **Why pin a version?** The `:latest` tag is convenient for trying things out, but for production and CI pipelines you should always pin a specific version (e.g. `:0.8.7`). That way your builds are reproducible and won't break when a new release ships. Check the [package versions page](https://github.com/orgs/docmd-io/packages/container/docmd/versions) for the full list.
 
 ## Multi-Platform Support
 
@@ -68,7 +70,7 @@ version: '3.8'
 
 services:
   docmd:
-    image: ghcr.io/docmd-io/docmd:latest
+    image: ghcr.io/docmd-io/docmd:0.8.6
     ports:
       - "3000:3000"
     volumes:
@@ -97,7 +99,7 @@ jobs:
           docker run --rm \
             -v ${{ github.workspace }}/docs:/docs \
             -v ${{ github.workspace }}/site:/site \
-            ghcr.io/docmd-io/docmd:latest \
+            ghcr.io/docmd-io/docmd:0.8.6 \
             build
       
       - name: Deploy to GitHub Pages
@@ -126,7 +128,7 @@ spec:
     spec:
       containers:
       - name: docmd
-        image: ghcr.io/docmd-io/docmd:latest
+        image: ghcr.io/docmd-io/docmd:0.8.6
         ports:
         - containerPort: 3000
         volumeMounts:
@@ -186,21 +188,21 @@ docker inspect --format='{{.State.Health.Status}}' <container-id>
 chmod -R 755 ./docs
 
 # Or run with specific user
-docker run --user $(id -u):$(id -g) -v $(pwd)/docs:/docs ghcr.io/docmd-io/docmd:latest
+docker run --user $(id -u):$(id -g) -v $(pwd)/docs:/docs ghcr.io/docmd-io/docmd:0.8.6
 ```
 
 ### Network Issues
 
 ```bash
 # Ensure you're binding to 0.0.0.0
-docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest dev --host 0.0.0.0
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.6 dev --host 0.0.0.0
 ```
 
 ### Memory Issues
 
 ```bash
 # For large documentation sites
-docker run --memory=2g -v $(pwd)/docs:/docs ghcr.io/docmd-io/docmd:latest build
+docker run --memory=2g -v $(pwd)/docs:/docs ghcr.io/docmd-io/docmd:0.8.6 build
 ```
 
 ## License

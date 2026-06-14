@@ -25,6 +25,10 @@ name: Build and Push Docker Image
 on:
   release:
     types: [published]
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       push_image:
@@ -36,6 +40,11 @@ on:
         description: 'Version tag (e.g., 0.8.6)'
         required: false
         type: string
+      tag_latest:
+        description: 'Also tag this build as :latest (use only for stable releases)'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -89,13 +98,15 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}
           tags: |
-            # For releases: use the release tag
+            # For releases and tag pushes: use the tag (e.g. 0.8.6, v0.8.6)
             type=ref,event=tag
-            # For manual dispatch: use provided version or default
+            # Stable release events also receive the floating 'latest' tag
+            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+            # For main branch pushes: use 'edge' (NOT 'latest' — only stable releases get 'latest')
+            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+            # For manual dispatch: use provided version (and optional 'latest')
             type=raw,value=${{ inputs.version }},enable=${{ github.event_name == 'workflow_dispatch' && inputs.version != '' }}
-            # For main branch: use 'latest' and 'edge'
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
-            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'workflow_dispatch' && inputs.tag_latest }}
             # Add commit SHA for traceability
             type=sha,prefix=
           labels: |
