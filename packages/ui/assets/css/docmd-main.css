@@ -73,8 +73,8 @@
     /* Sizing */
     --ui-element-size: 32px;
     --sidebar-width: 260px;
-    --menubar-h: 52px;
-    --header-h: 54px;
+    --menubar-h: 44px;
+    --header-h: 44px;
 
     /* Scrollbar */
     --scrollbar-thumb: #e4e4e7;
@@ -511,8 +511,8 @@ img {
 }
 
 .heading-anchor svg {
-    width: 1.1em;
-    height: 1.1em;
+    width: 0.85em;
+    height: 0.85em;
 }
 
 .docmd-heading:hover .heading-anchor,
@@ -552,7 +552,7 @@ img {
 
 .page-header {
     justify-content: space-between;
-    padding: var(--space-3);
+    padding: var(--space-2) var(--space-3);
     background-color: var(--header-bg);
     border-bottom: 1px solid var(--header-border);
     position: sticky;
@@ -704,8 +704,8 @@ img {
 }
 
 :root {
-    --menubar-h: 52px;
-    --header-h: 54px;
+    --menubar-h: 44px;
+    --header-h: 44px;
 
     --fixed-top-offset: 0px;
     --header-top-offset: 0px;
@@ -1343,6 +1343,8 @@ blockquote.docmd-embed {
     box-sizing: border-box;
     flex-grow: 1;
     position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
 :root[data-theme=dark] .content-area::before {
@@ -1967,7 +1969,7 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
 .page-navigation {
     display: flex;
     justify-content: space-between;
-    margin-top: 3rem;
+    margin-top: auto;
     padding-top: 1.5rem
 }
 
@@ -2042,13 +2044,16 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
     display: flex;
     gap: 2rem;
     width: 100%;
-    align-items: flex-start
+    align-items: flex-start;
+    flex: 1 0 auto
 }
 
 .main-content {
     flex: 1 1 0;
     width: 100%;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .toc-container {
