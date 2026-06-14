@@ -696,15 +696,15 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
 
 .summer-sidebar {
   position: sticky;
-  /* Sidebar sticks to the bottom of the pageheader band. The 5-band
-   * sum (topbar + subnav + banner + main top padding + pageheader)
-   * reacts to the menubar / banner / pageheader enabled-state CSS
-   * variables, so this auto-adjusts per config and per breakpoint.
-   * First sidebar item visually aligns with the first main-content
-   * item (no top padding inside the sidebar — see padding below). */
-  top: calc(var(--summer-topbar-height) + var(--summer-subnav-height) + var(--summer-banner-height) + var(--summer-main-padding-top) + var(--summer-pageheader-height));
+  /* Sidebar sticks to the bottom of the pageheader band. The 4-band
+   * sum (topbar + subnav + banner + pageheader) reacts to the
+   * menubar / banner / pageheader enabled-state CSS variables, so
+   * this auto-adjusts per config and per breakpoint. First sidebar
+   * item visually aligns with the first main-content item (no top
+   * padding inside the sidebar — see padding below). */
+  top: calc(var(--summer-topbar-height) + var(--summer-subnav-height) + var(--summer-banner-height) + var(--summer-pageheader-height));
   align-self: start;
-  max-height: calc(100vh - var(--summer-topbar-height) - var(--summer-subnav-height) - var(--summer-banner-height) - var(--summer-main-padding-top) - var(--summer-pageheader-height));
+  max-height: calc(100vh - var(--summer-topbar-height) - var(--summer-subnav-height) - var(--summer-banner-height) - var(--summer-pageheader-height));
   overflow-y: auto;
   padding: 0 5px 60px;
   border-right: none;
@@ -1410,11 +1410,11 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   /* Matches the sidebar's sticky offset so the TOC and sidebar share the
    * same scroll-anchor line (they sit on the same Y as the main content's
    * pageheader bottom and adjust together with the menubar / banner /
-   * header / main padding). The 5-band sum is the same formula as
-   * .summer-sidebar — keep them in sync. */
-  top: calc(var(--summer-topbar-height) + var(--summer-subnav-height) + var(--summer-banner-height) + var(--summer-main-padding-top) + var(--summer-pageheader-height));
+   * header). The 4-band sum is the same formula as .summer-sidebar —
+   * keep them in sync. */
+  top: calc(var(--summer-topbar-height) + var(--summer-subnav-height) + var(--summer-banner-height) + var(--summer-pageheader-height));
   align-self: start;
-  max-height: calc(100vh - var(--summer-topbar-height) - var(--summer-subnav-height) - var(--summer-banner-height) - var(--summer-main-padding-top) - var(--summer-pageheader-height));
+  max-height: calc(100vh - var(--summer-topbar-height) - var(--summer-subnav-height) - var(--summer-banner-height) - var(--summer-pageheader-height));
   overflow-y: auto;
   padding: 0 32px 60px 24px;
   font-size: 0.8125rem;
@@ -1733,31 +1733,42 @@ html[data-theme="dark"] .docmd-code-block-wrapper > .docmd-code-block-header {
   flex-shrink: 0;
   color: var(--summer-fg-muted);
 }
+/* Filename (only present when the source had a title, e.g.
+   ```js "file.js"```). Kept subtle so the lang pill remains the
+   primary visual element. */
 .summer-cb__filename {
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-weight: 400;
+  font-size: var(--summer-text-xs);
+  color: var(--summer-fg-soft);
+  letter-spacing: -0.005em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .docmd-code-block-title {
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-weight: 400;
+  font-size: var(--summer-text-xs);
+  color: var(--summer-fg-soft);
+  letter-spacing: -0.005em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Lang pill — always present, the de-facto label of the codeblock.
+   Shows the language (e.g. "BASH") or "CODEBLOCK" if no language
+   was specified. */
 .summer-cb__lang {
   display: inline-flex;
-  padding: 1px 6px;
+  padding: 1px 7px;
   border-radius: 4px;
   background: var(--summer-surface-3);
-  color: var(--summer-fg-muted);
+  color: var(--summer-fg-soft);
   font-size: 0.66rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   flex-shrink: 0;
+  line-height: 1.5;
 }
 
 /* Copy button — lives inside the title bar, NOT floating */

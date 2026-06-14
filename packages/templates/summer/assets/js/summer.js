@@ -495,12 +495,19 @@
   // appends a <button class="copy-code-button">. The parser also wraps
   // ```lang "title"``` in <div class="docmd-code-block-wrapper"> with a
   // header that holds the title. We turn the bottom-floating copy button
-  // into a thin title bar at the top of the codeblock, with the title on
-  // the left (if set in markdown) and the copy button on the right.
+  // into a thin title bar at the top of the codeblock.
+  //
+  // Left side:
+  //   - icon (always)
+  //   - filename (only when the source had a title, e.g. ```js "file.js"```)
+  //   - lang pill (always — shows the language, or "codeblock" if none)
+  // Right side:
+  //   - copy button
   function summerCodeblocks() {
     // 1. Codeblocks WITH a parser-rendered title wrapper.
-    //    Move the copy button from the inner .code-wrapper into the
-    //    existing .docmd-code-block-header, right-aligned.
+    //    The header already exists with a <span class="docmd-code-block-title">.
+    //    We add a lang pill next to it (or replace the header content
+    //    with our own titlebar) and re-home the copy button.
     $$('.docmd-code-block-wrapper').forEach(function (wrap) {
       if (wrap.dataset.summerCbWired === '1') return;
       wrap.dataset.summerCbWired = '1';
@@ -508,27 +515,56 @@
       var header = wrap.querySelector('.docmd-code-block-header');
       var inner  = wrap.querySelector('.code-wrapper');
       var copyBtn = inner && inner.querySelector('.copy-code-button');
-      if (!header || !copyBtn) return;
+      if (!header) return;
 
-      // Promote header to the title-bar layout.
-      header.classList.add('summer-cb__titlebar');
-      // Place the copy button on the right
-      copyBtn.classList.add('summer-cb__copy');
-      // Pull "Copy" label into a span so we can style it
-      var labelSpan = document.createElement('span');
-      labelSpan.className = 'summer-cb__copy-label';
-      // If button currently has just an SVG child, add a label; otherwise
-      // leave its existing children (summer.js earlier versions may have
-      // already added text).
-      if (!copyBtn.querySelector('.summer-cb__copy-label')) {
-        labelSpan.textContent = 'Copy';
-        copyBtn.appendChild(labelSpan);
+      // Read language from the <code class="language-xxx">
+      var lang = '';
+      var pre = inner ? inner.querySelector('pre') : null;
+      var code = pre ? pre.querySelector('code') : null;
+      if (code) {
+        var m = code.className.match(/language-([\w-]+)/);
+        if (m) lang = m[1];
       }
-      header.appendChild(copyBtn);
+
+      // Clear header and rebuild as our titlebar.
+      // docmd-code-block-title already holds the filename (if set).
+      var titleEl = header.querySelector('.docmd-code-block-title');
+      var filename = titleEl ? titleEl.textContent : '';
+
+      // Strip everything in the header and rebuild
+      while (header.firstChild) header.removeChild(header.firstChild);
+      header.classList.add('summer-cb__titlebar');
+
+      // LEFT: icon + filename (if any) + lang pill
+      var left = document.createElement('div');
+      left.className = 'summer-cb__left';
+      left.appendChild(makeFileIcon());
+      if (filename) {
+        var fname = document.createElement('span');
+        fname.className = 'summer-cb__filename';
+        fname.textContent = filename;
+        left.appendChild(fname);
+      }
+      var pill = document.createElement('span');
+      pill.className = 'summer-cb__lang';
+      pill.textContent = lang || 'codeblock';
+      left.appendChild(pill);
+      header.appendChild(left);
+
+      // RIGHT: copy button (re-home from inner wrapper)
+      if (copyBtn) {
+        copyBtn.classList.add('summer-cb__copy');
+        if (!copyBtn.querySelector('.summer-cb__copy-label')) {
+          var lbl = document.createElement('span');
+          lbl.className = 'summer-cb__copy-label';
+          lbl.textContent = 'Copy';
+          copyBtn.appendChild(lbl);
+        }
+        header.appendChild(copyBtn);
+      }
     });
 
-    // 2. Codeblocks WITHOUT a parser title — wrap them in our own
-    //    .summer-cb title-bar structure.
+    // 2. Codeblocks WITHOUT a parser title — build our own titlebar.
     $$('.code-wrapper').forEach(function (wrap) {
       if (wrap.dataset.summerCbWired === '1') return;
       // Skip ones already inside a parser wrapper (handled above).
@@ -538,7 +574,7 @@
       }
       wrap.dataset.summerCbWired = '1';
 
-      var pre    = wrap.querySelector('pre');
+      var pre = wrap.querySelector('pre');
       var copyBtn = wrap.querySelector('.copy-code-button');
       if (!pre) return;
 
@@ -554,36 +590,19 @@
       var header = document.createElement('div');
       header.className = 'summer-cb__titlebar';
 
-      // LEFT: file-icon + filename (always shows something, defaulting
-      // to "snippet" so the bar feels intentional).
+      // LEFT: icon + lang pill (filename omitted — no source title).
       var left = document.createElement('div');
       left.className = 'summer-cb__left';
-      var icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      icon.setAttribute('viewBox', '0 0 24 24');
-      icon.setAttribute('fill', 'none');
-      icon.setAttribute('stroke', 'currentColor');
-      icon.setAttribute('stroke-width', '2');
-      icon.setAttribute('stroke-linecap', 'round');
-      icon.setAttribute('stroke-linejoin', 'round');
-      icon.innerHTML = '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>';
-      left.appendChild(icon);
-      var fname = document.createElement('span');
-      fname.className = 'summer-cb__filename';
-      fname.textContent = lang || 'snippet';
-      left.appendChild(fname);
-      if (lang) {
-        var pill = document.createElement('span');
-        pill.className = 'summer-cb__lang';
-        pill.textContent = lang;
-        left.appendChild(pill);
-      }
+      left.appendChild(makeFileIcon());
+      var pill = document.createElement('span');
+      pill.className = 'summer-cb__lang';
+      pill.textContent = lang || 'codeblock';
+      left.appendChild(pill);
       header.appendChild(left);
 
-      // RIGHT: copy button (reuse the one docmd-main.js made, just lift
-      // it out of the wrapper's bottom and re-class it).
+      // RIGHT: copy button (re-home from wrapper bottom)
       if (copyBtn) {
         copyBtn.classList.add('summer-cb__copy');
-        // Re-parent into the header
         wrap.removeChild(copyBtn);
         if (!copyBtn.querySelector('.summer-cb__copy-label')) {
           var lbl = document.createElement('span');
@@ -596,10 +615,21 @@
 
       // Insert header at the top of the wrapper
       wrap.insertBefore(header, wrap.firstChild);
-
-      // Make the wrapper itself the styling hook
       wrap.classList.add('summer-cb');
     });
+  }
+
+  // Build a small file-icon SVG (shared by both codeblock paths above).
+  function makeFileIcon() {
+    var icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.setAttribute('fill', 'none');
+    icon.setAttribute('stroke', 'currentColor');
+    icon.setAttribute('stroke-width', '2');
+    icon.setAttribute('stroke-linecap', 'round');
+    icon.setAttribute('stroke-linejoin', 'round');
+    icon.innerHTML = '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>';
+    return icon;
   }
 
   // -------- Init --------------------------------------------------------

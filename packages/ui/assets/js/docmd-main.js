@@ -758,7 +758,16 @@
           '.page-footer-actions',
           '.docmd-language-switcher',
           '.docmd-version-dropdown',
-          '.docmd-project-switcher'
+          '.docmd-project-switcher',
+          // Summer template selectors (no-op in classic — they only
+          // exist when the active template is `summer`).
+          '.summer-content',
+          '.summer-toc',
+          '.summer-pageheader',
+          '.summer-pagenav',
+          '.summer-pagefooter',
+          '#docmd-raw-markdown',
+          '.summer-sidebar nav'
         ];
 
         selectorsToSwap.forEach(selector => {

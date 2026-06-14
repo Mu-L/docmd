@@ -600,7 +600,6 @@
     <script src="<%= relativePathToRoot %>assets/js/docmd-i18n-manifest.js?v=<%= buildHash %>"></script>
   <% } %>
   <script src="<%= relativePathToRoot %>assets/js/docmd-main.js?v=<%= buildHash %>"></script>
-  <script src="<%= relativePathToRoot %>assets/js/summer.js?v=<%= buildHash %>"></script>
 
   <%- pluginBodyScriptsHtml || '' %>
   <% (customJsFiles || []).forEach(jsFile => { if (jsFile && jsFile.trim() !== '') { %>
