@@ -1382,6 +1382,7 @@ pre {
     overflow: hidden;
     box-shadow: var(--shadow-sm);
     background-color: var(--code-bg);
+    position: relative;
 }
 
 .docmd-code-block-wrapper pre {

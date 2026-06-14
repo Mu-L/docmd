@@ -26,5 +26,18 @@
   "unavailable": "なし",
   "fallbackMessage": "このページは {active} ではまだ利用できません。デフォルトの言語 ({default}) で表示しています。",
   "copyMarkdown": "Markdownをコピー",
-  "copyContext": "コンテキストをコピー"
+  "copyContext": "コンテキストをコピー",
+  "close": "閉じる",
+  "cookieAccept": "同意",
+  "cookieConsent": "Cookieの同意",
+  "cookieDecline": "拒否",
+  "cookieMessage": "このサイトは、より良い体験を提供するためにCookieを使用しています。",
+  "cookiePolicy": "プライバシーポリシー",
+  "goBack": "戻る",
+  "lastUpdated": "最終更新",
+  "pageNotFoundMsg": "お探しのページは存在しないか、移動されました。",
+  "readMore": "続きを読む",
+  "recentCommits": "最近のコミット",
+  "searchPlaceholder": "ドキュメントを検索...",
+  "selectProject": "プロジェクトを選択"
 }

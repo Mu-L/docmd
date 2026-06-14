@@ -26,5 +26,18 @@
   "unavailable": "N/D",
   "fallbackMessage": "Esta página aún no está disponible en {active}. Mostrando el idioma predeterminado ({default}).",
   "copyMarkdown": "Copiar Markdown",
-  "copyContext": "Copiar Contexto"
+  "copyContext": "Copiar Contexto",
+  "close": "Cerrar",
+  "cookieAccept": "Aceptar",
+  "cookieConsent": "Consentimiento de cookies",
+  "cookieDecline": "Rechazar",
+  "cookieMessage": "Este sitio utiliza cookies para garantizar la mejor experiencia.",
+  "cookiePolicy": "Política de privacidad",
+  "goBack": "Volver",
+  "lastUpdated": "Última actualización",
+  "pageNotFoundMsg": "La página que buscas no existe o se ha movido.",
+  "readMore": "Leer más",
+  "recentCommits": "Commits recientes",
+  "searchPlaceholder": "Buscar documentación...",
+  "selectProject": "Seleccionar proyecto"
 }

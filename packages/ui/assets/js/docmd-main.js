@@ -477,18 +477,28 @@
     if (document.body.dataset.copyCodeEnabled !== 'true') return;
 
     document.querySelectorAll('pre').forEach(preElement => {
-      if (preElement.closest('.code-wrapper')) return;
-      const wrapper = document.createElement('div');
-      wrapper.className = 'code-wrapper';
-      wrapper.style.position = 'relative';
-      preElement.parentNode.insertBefore(wrapper, preElement);
-      wrapper.appendChild(preElement);
+      // If the parser already wrapped this codeblock in
+      // .docmd-code-block-wrapper (which is now `position: relative`),
+      // anchor the button there — no need to add an extra wrapper.
+      const outerWrapper = preElement.closest('.docmd-code-block-wrapper');
+      const anchor = outerWrapper || preElement.parentNode;
+      if (anchor.querySelector(':scope > .copy-code-button')) return;
+
+      let host = anchor;
+      if (!outerWrapper) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'code-wrapper';
+        wrapper.style.position = 'relative';
+        preElement.parentNode.insertBefore(wrapper, preElement);
+        wrapper.appendChild(preElement);
+        host = wrapper;
+      }
 
       const copyButton = document.createElement('button');
       copyButton.className = 'copy-code-button';
       copyButton.appendChild(createCopySvg());
       copyButton.title = "Copy code";
-      wrapper.appendChild(copyButton);
+      host.appendChild(copyButton);
     });
   }
 
