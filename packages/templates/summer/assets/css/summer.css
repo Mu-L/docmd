@@ -1371,12 +1371,14 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   position: relative;
 }
 .summer-content .heading-anchor {
+  position: absolute;
+  left: -1.25em;
+  font-size: 1.5rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1em;
-  height: 1em;
-  margin-left: 0.4em;
+  width: .8em;
+  height: -webkit-fill-available;
   opacity: 0;
   color: var(--summer-fg-faint);
   vertical-align: middle;
