@@ -1,7 +1,7 @@
 {
   "name": "@docmd/template-summer",
   "version": "0.8.7",
-  "description": "Summer template for docmd 0.8.7+",
+  "description": "Summer template for docmd. A bright, hopeful, summer-feel layout with a top search bar and halo accents.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -27,7 +27,7 @@
   "docmd": {
     "kind": "template",
     "displayName": "Summer",
-    "tagline": "A bright, hopeful, summer-feel layout with a top search bar.",
+    "tagline": "A bright, hopeful, summer-feel layout with a top search bar and halo accents.",
     "preview": "assets/css/summer.css"
   },
   "keywords": [

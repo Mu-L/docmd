@@ -1,8 +1,8 @@
 /* =========================================================================
    @docmd/template-summer  —  summer.css
    A complete, self-contained documentation design system inspired by
-   modern docs platforms (GitBook, Linear, Notion). Warm, bright, and
-   modern — designed to feel like its own product, not a recolor.
+   modern docs. Warm, bright, and modern — 
+   designed to feel like its own product, not a recolor.
 
    This stylesheet is intentionally independent of docmd-main.css. The
    layout in templates/layout.ejs does NOT load the base stylesheet, so
@@ -24,77 +24,77 @@
    ──────────────────────────────────────────────────────────────────────── */
 
 :root {
-    --summer-sidebar-width: 288px;
-    --summer-toc-width: 240px;
-    --summer-content-max: 896px;
-    --summer-page-max: 1728px;
-    --summer-topbar-height: 50px;
-    --summer-subnav-height: 44px;
-    --summer-radius-xs: 4px;
-    --summer-radius-sm: 6px;
-    --summer-radius: 20px;
-    --summer-radius-lg: 12px;
-    --summer-radius-xl: 18px;
-    --summer-font-sans: "Inter", "InterVariable", ui-sans-serif, -apple-system,
-BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    --summer-font-mono: "JetBrains Mono", "SF Mono", ui-monospace, SFMono-Regular,
-Menlo, Monaco, "Cascadia Code", "Liberation Mono", monospace;
-    --summer-text-xs: 0.6875rem;
-    --summer-text-sm: 0.8125rem;
-    --summer-text-base: 0.9375rem;
-    --summer-text-md: 1.0625rem;
-    --summer-text-lg: 1.25rem;
-    --summer-text-xl: 1.5rem;
-    --summer-text-2xl: 1.875rem;
-    --summer-text-3xl: 2.25rem;
-    --summer-ease: cubic-bezier(0.32, 0.72, 0, 1);
-    --summer-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-    --summer-fast: 120ms;
-    --summer-med: 220ms;
-    --summer-slow: 360ms;
-    --summer-z-base: 1;
-    --summer-z-raised: 10;
-    --summer-z-sticky: 30;
-    --summer-z-dropdown: 50;
-    --summer-z-overlay: 100;
-    --summer-z-modal: 200;
-    --summer-bg: #ffffff;
-    --summer-bg-subtle: #fafafa;
-    --summer-surface: #ffffff;
-    --summer-surface-2: #fcfcfc;
-    --summer-surface-3: #f1f1ef;
-    --summer-surface-sunken: #f5f5f4;
-    --summer-border: #e5e5e5;
-    --summer-border-soft: #f0f0f0;
-    --summer-border-strong: #cdcdcd;
-    --summer-fg: #1d1d1d;
-    --summer-fg-soft: #4a4a4a;
-    --summer-fg-muted: #6e6e6e;
-    --summer-fg-faint: #a3a3a3;
-    --summer-accent: #fe551b;
-    --summer-accent-hover: #e64500;
-    --summer-accent-soft: #fff3ed;
-    --summer-accent-faint: #ffe4d4;
-    --summer-amber: #f59e0b;
-    --summer-amber-soft: #fff7e6;
-    --summer-sun: #fbbf24;
-    --summer-rose: #e11d48;
-    --summer-sky: #0284c7;
-    --summer-sky-soft: #e0f2fe;
-    --summer-green: #16a34a;
-    --summer-green-soft: #dcfce7;
-    --summer-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-    --summer-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-    --summer-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
-    --summer-shadow-lg: 0 12px 32px -8px rgba(0, 0, 0, 0.12), 0 4px 8px -4px rgba(0, 0, 0, 0.06);
-    --summer-shadow-xl: 0 24px 48px -12px rgba(0, 0, 0, 0.18);
-    --summer-ring: 0 0 0 3px rgba(254, 85, 27, 0.20);
-    --summer-ring-soft: 0 0 0 3px rgba(254, 85, 27, 0.10);
-    --summer-header-divider: 0 1px 0 0 rgba(29, 29, 29, 0.08);
-    --summer-grid-template: var(--summer-sidebar-width) 1fr var(--summer-toc-width);
-    --summer-pageheader-height: 50px;
-    --summer-banner-height: 0px;
-    --summer-main-padding-top: 32px;
+  --summer-sidebar-width: 288px;
+  --summer-toc-width: 240px;
+  --summer-content-max: 896px;
+  --summer-page-max: 1728px;
+  --summer-topbar-height: 50px;
+  --summer-subnav-height: 44px;
+  --summer-radius-xs: 4px;
+  --summer-radius-sm: 6px;
+  --summer-radius: 20px;
+  --summer-radius-lg: 12px;
+  --summer-radius-xl: 18px;
+  --summer-font-sans: "Inter", "InterVariable", ui-sans-serif, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --summer-font-mono: "JetBrains Mono", "SF Mono", ui-monospace, SFMono-Regular,
+    Menlo, Monaco, "Cascadia Code", "Liberation Mono", monospace;
+  --summer-text-xs: 0.6875rem;
+  --summer-text-sm: 0.8125rem;
+  --summer-text-base: 0.9375rem;
+  --summer-text-md: 1.0625rem;
+  --summer-text-lg: 1.25rem;
+  --summer-text-xl: 1.5rem;
+  --summer-text-2xl: 1.875rem;
+  --summer-text-3xl: 2.25rem;
+  --summer-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --summer-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --summer-fast: 120ms;
+  --summer-med: 220ms;
+  --summer-slow: 360ms;
+  --summer-z-base: 1;
+  --summer-z-raised: 10;
+  --summer-z-sticky: 30;
+  --summer-z-dropdown: 50;
+  --summer-z-overlay: 100;
+  --summer-z-modal: 200;
+  --summer-bg: #ffffff;
+  --summer-bg-subtle: #fafafa;
+  --summer-surface: #ffffff;
+  --summer-surface-2: #fcfcfc;
+  --summer-surface-3: #f1f1ef;
+  --summer-surface-sunken: #f5f5f4;
+  --summer-border: #e5e5e5;
+  --summer-border-soft: #f0f0f0;
+  --summer-border-strong: #cdcdcd;
+  --summer-fg: #1d1d1d;
+  --summer-fg-soft: #4a4a4a;
+  --summer-fg-muted: #6e6e6e;
+  --summer-fg-faint: #a3a3a3;
+  --summer-accent: #fe551b;
+  --summer-accent-hover: #e64500;
+  --summer-accent-soft: #fff3ed;
+  --summer-accent-faint: #ffe4d4;
+  --summer-amber: #f59e0b;
+  --summer-amber-soft: #fff7e6;
+  --summer-sun: #fbbf24;
+  --summer-rose: #e11d48;
+  --summer-sky: #0284c7;
+  --summer-sky-soft: #e0f2fe;
+  --summer-green: #16a34a;
+  --summer-green-soft: #dcfce7;
+  --summer-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --summer-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --summer-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --summer-shadow-lg: 0 12px 32px -8px rgba(0, 0, 0, 0.12), 0 4px 8px -4px rgba(0, 0, 0, 0.06);
+  --summer-shadow-xl: 0 24px 48px -12px rgba(0, 0, 0, 0.18);
+  --summer-ring: 0 0 0 3px rgba(254, 85, 27, 0.20);
+  --summer-ring-soft: 0 0 0 3px rgba(254, 85, 27, 0.10);
+  --summer-header-divider: 0 1px 0 0 rgba(29, 29, 29, 0.08);
+  --summer-grid-template: var(--summer-sidebar-width) 1fr var(--summer-toc-width);
+  --summer-pageheader-height: 50px;
+  --summer-banner-height: 0px;
+  --summer-main-padding-top: 32px;
 
 }
 
@@ -102,45 +102,58 @@ Menlo, Monaco, "Cascadia Code", "Liberation Mono", monospace;
    When the menubar / page header / banner is absent, the corresponding
    --summer-*-height collapses to 0 so sticky elements (sidebar, TOC,
    pageheader) sit flush against the topbar instead of leaving a gap. */
-.summer-template:not(.has-menubar) { --summer-subnav-height: 0px; }
-.summer-template.no-header          { --summer-pageheader-height: 0px; }
-.summer-template.has-banner         { --summer-banner-height: 42px; }
-.summer-template:not(.has-banner)   { --summer-banner-height: 0px; }
-.summer-template:not(.has-banner) .summer-topbar { top: 0; }
+.summer-template:not(.has-menubar) {
+  --summer-subnav-height: 0px;
+}
 
-/* DARK palette — GitBook-inspired dark mode. */
+.summer-template.no-header {
+  --summer-pageheader-height: 0px;
+}
+
+.summer-template.has-banner {
+  --summer-banner-height: 42px;
+}
+
+.summer-template:not(.has-banner) {
+  --summer-banner-height: 0px;
+}
+
+.summer-template:not(.has-banner) .summer-topbar {
+  top: 0;
+}
+
 html[data-theme="dark"] {
-  --summer-bg:            #131110;
-  --summer-bg-subtle:     #1a1815;
-  --summer-surface:       #1d1b17;
-  --summer-surface-2:     #25221c;
-  --summer-surface-3:     #2c2820;
-  --summer-surface-sunken:#100e0b;
-  --summer-border:        #2e2a23;
-  --summer-border-soft:   #25221c;
+  --summer-bg: #131110;
+  --summer-bg-subtle: #1a1815;
+  --summer-surface: #1d1b17;
+  --summer-surface-2: #25221c;
+  --summer-surface-3: #2c2820;
+  --summer-surface-sunken: #100e0b;
+  --summer-border: #2e2a23;
+  --summer-border-soft: #25221c;
   --summer-border-strong: #3d382e;
 
-  --summer-fg:            #f5f0e6;
-  --summer-fg-soft:       #c5bfb0;
-  --summer-fg-muted:      #8a8473;
-  --summer-fg-faint:      #5a5448;
+  --summer-fg: #f5f0e6;
+  --summer-fg-soft: #c5bfb0;
+  --summer-fg-muted: #8a8473;
+  --summer-fg-faint: #5a5448;
 
-  --summer-accent:        #ff8a5c;
-  --summer-accent-hover:  #ffa47d;
-  --summer-accent-soft:   #2a1810;
-  --summer-accent-faint:  #3a1f10;
+  --summer-accent: #ff8a5c;
+  --summer-accent-hover: #ffa47d;
+  --summer-accent-soft: #2a1810;
+  --summer-accent-faint: #3a1f10;
 
-  --summer-amber:         #fbbf24;
-  --summer-amber-soft:    #2a1f08;
-  --summer-sun:           #fde047;
-  --summer-sky:           #38bdf8;
-  --summer-sky-soft:      #082f3f;
-  --summer-green:         #4ade80;
-  --summer-green-soft:    #052e1a;
+  --summer-amber: #fbbf24;
+  --summer-amber-soft: #2a1f08;
+  --summer-sun: #fde047;
+  --summer-sky: #38bdf8;
+  --summer-sky-soft: #082f3f;
+  --summer-green: #4ade80;
+  --summer-green-soft: #052e1a;
 
   --summer-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
   --summer-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
-  --summer-shadow:    0 4px 12px -2px rgba(0, 0, 0, 0.45), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --summer-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.45), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
   --summer-shadow-lg: 0 12px 32px -8px rgba(0, 0, 0, 0.55), 0 4px 8px -4px rgba(0, 0, 0, 0.4);
   --summer-shadow-xl: 0 24px 48px -12px rgba(0, 0, 0, 0.6);
 
@@ -155,10 +168,21 @@ html[data-theme="dark"] {
    2. RESET + BASE TYPOGRAPHY
    ──────────────────────────────────────────────────────────────────────── */
 
-*, *::before, *::after { box-sizing: border-box; }
-* { margin: 0; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
-html, body { margin: 0; padding: 0; }
+* {
+  margin: 0;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
 
 html {
   /* Anti-FOUC: hidden until theme-init sets the data-theme attribute. */
@@ -168,11 +192,20 @@ html {
   text-size-adjust: 100%;
   tab-size: 4;
 }
-html.summer-ready, html[data-theme] { visibility: visible; }
+
+html.summer-ready,
+html[data-theme] {
+  visibility: visible;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  *, *::before, *::after {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -195,16 +228,50 @@ body.summer-template {
   flex-direction: column;
 }
 
-img, svg, video, canvas { display: block; max-width: 100%; height: auto; }
-input, button, textarea, select { font: inherit; color: inherit; }
-button { background: none; border: none; cursor: pointer; padding: 0; }
-a { color: inherit; text-decoration: none; transition: color var(--summer-fast) var(--summer-ease); }
-a:hover { color: var(--summer-fg); }
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
 
-::selection { background: var(--summer-accent); color: #fff; }
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color var(--summer-fast) var(--summer-ease);
+}
+
+a:hover {
+  color: var(--summer-fg);
+}
+
+::selection {
+  background: var(--summer-accent);
+  color: #fff;
+}
 
 /* Focus visibility — keyboard only */
-:focus { outline: none; }
+:focus {
+  outline: none;
+}
+
 :focus-visible {
   outline: none;
   box-shadow: var(--summer-ring);
@@ -212,16 +279,27 @@ a:hover { color: var(--summer-fg); }
 }
 
 /* Scrollbars (subtle, themed) */
-.summer-template *::-webkit-scrollbar { width: 10px; height: 10px; }
-.summer-template *::-webkit-scrollbar-track { background: transparent; }
+.summer-template *::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.summer-template *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 .summer-template *::-webkit-scrollbar-thumb {
-    background: var(--summer-border);
-    border-radius: 6px;
-    border: 2px solid transparent;
-    background-clip: padding-box;
+  background: var(--summer-border);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 
 }
-.summer-template *::-webkit-scrollbar-thumb:hover { background: var(--summer-border-strong); background-clip: padding-box; }
+
+.summer-template *::-webkit-scrollbar-thumb:hover {
+  background: var(--summer-border-strong);
+  background-clip: padding-box;
+}
 
 /* Skip link (a11y) */
 .summer-template .skip-link {
@@ -238,7 +316,10 @@ a:hover { color: var(--summer-fg); }
   box-shadow: var(--summer-shadow);
   transition: top var(--summer-med) var(--summer-ease);
 }
-.summer-template .skip-link:focus { top: 12px; }
+
+.summer-template .skip-link:focus {
+  top: 12px;
+}
 
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -278,12 +359,27 @@ a:hover { color: var(--summer-fg); }
   text-decoration: none;
   white-space: nowrap;
   transition: opacity var(--summer-fast) var(--summer-ease);
+  height: var(--summer-topbar-height);
 }
-.summer-logo:hover { opacity: 0.7; color: var(--summer-fg); }
-.summer-logo img { max-height: 24px; max-width: 140px; object-fit: contain; }
-.summer-logo--text { font-family: var(--summer-font-sans); }
+
+.summer-logo:hover {
+  opacity: 0.7;
+  color: var(--summer-fg);
+}
+
+.summer-logo img {
+  max-height: 36px;
+  max-width: 132px;
+  object-fit: contain;
+}
+
+.summer-logo--text {
+  font-family: var(--summer-font-sans);
+}
+
 .summer-logo__icon {
-  width: 24px; height: 24px;
+  width: 24px;
+  height: 24px;
   border-radius: 6px;
   background: var(--summer-fg);
   display: inline-flex;
@@ -294,10 +390,15 @@ a:hover { color: var(--summer-fg); }
   font-size: 13px;
   letter-spacing: -0.02em;
 }
-html:not([data-theme="dark"]) .summer-logo__dark  { display: none; }
-html[data-theme="dark"]    .summer-logo__light { display: none; }
 
-/* Center: search (GitBook-style pill) */
+html:not([data-theme="dark"]) .summer-logo__dark {
+  display: none;
+}
+
+html[data-theme="dark"] .summer-logo__light {
+  display: none;
+}
+
 .summer-topbar__center {
   display: flex;
   align-items: center;
@@ -315,26 +416,30 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   padding: 0 10px 0 14px;
   background: var(--summer-surface);
   border: 1px solid var(--summer-border);
-  border-radius: 999px;            /* pill — GitBook exact */
+  border-radius: 999px;
   color: var(--summer-fg-muted);
   font-size: var(--summer-text-sm);
   font-weight: 400;
   cursor: pointer;
   text-align: left;
   transition: border-color var(--summer-fast) var(--summer-ease),
-              background var(--summer-fast) var(--summer-ease),
-              box-shadow var(--summer-fast) var(--summer-ease);
+    background var(--summer-fast) var(--summer-ease),
+    box-shadow var(--summer-fast) var(--summer-ease);
 }
-.summer-search:hover, .summer-search:focus-visible {
+
+.summer-search:hover,
+.summer-search:focus-visible {
   border-color: var(--summer-border-strong);
   background: var(--summer-bg);
   color: var(--summer-fg);
   box-shadow: var(--summer-shadow-sm);
 }
+
 .summer-search__icon {
   flex-shrink: 0;
   color: var(--summer-fg-muted);
 }
+
 .summer-search__placeholder {
   flex: 1;
   font-weight: 400;
@@ -342,6 +447,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .summer-search__kbd {
   display: inline-flex;
   gap: 2px;
@@ -350,6 +456,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   line-height: 1;
   color: var(--summer-fg-muted);
 }
+
 .summer-search__kbd kbd {
   display: inline-flex;
   align-items: center;
@@ -375,12 +482,14 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   color: var(--summer-fg-muted);
   position: relative;
 }
-.summer-topbar__right > .summer-options-menu__item {
+
+.summer-topbar__right>.summer-options-menu__item {
   position: relative;
   max-height: 36px;
   overflow: visible;
 }
-.summer-topbar__right .summer-options-menu__item > * {
+
+.summer-topbar__right .summer-options-menu__item>* {
   max-height: 36px;
   overflow: visible;
 }
@@ -396,18 +505,27 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   background: transparent;
   border: 1px solid transparent;
   transition: background var(--summer-fast) var(--summer-ease),
-              color var(--summer-fast) var(--summer-ease),
-              border-color var(--summer-fast) var(--summer-ease);
+    color var(--summer-fast) var(--summer-ease),
+    border-color var(--summer-fast) var(--summer-ease);
   position: relative;
 }
+
 .summer-iconbtn:hover {
   background: var(--summer-surface-2);
   color: var(--summer-fg);
 }
-.summer-iconbtn svg { width: 16px; height: 16px; }
+
+.summer-iconbtn svg {
+  width: 16px;
+  height: 16px;
+}
 
 /* Mobile-only top-bar elements */
-.summer-topbar__mobile { display: none; align-items: center; gap: 6px; }
+.summer-topbar__mobile {
+  display: none;
+  align-items: center;
+  gap: 6px;
+}
 
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -423,12 +541,15 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   -webkit-backdrop-filter: blur(2px);
   /* No border — single hairline only at the very top of the page */
 }
+
 .summer-template.has-menubar .summer-topbar {
   box-shadow: none;
 }
+
 .summer-template.has-menubar .summer-subnav {
   box-shadow: var(--summer-header-divider);
 }
+
 .summer-subnav__inner {
   max-width: var(--summer-page-max);
   margin: 0 auto;
@@ -440,7 +561,10 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   overflow-x: auto;
   scrollbar-width: none;
 }
-.summer-subnav__inner::-webkit-scrollbar { display: none; }
+
+.summer-subnav__inner::-webkit-scrollbar {
+  display: none;
+}
 
 .summer-subnav__tab {
   position: relative;
@@ -458,22 +582,36 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   flex-shrink: 0;
   letter-spacing: -0.005em;
   transition: background var(--summer-fast) var(--summer-ease),
-              color var(--summer-fast) var(--summer-ease);
+    color var(--summer-fast) var(--summer-ease);
 }
+
 .summer-subnav__tab:hover {
   background: var(--summer-surface-2);
   color: var(--summer-fg);
 }
+
 .summer-subnav__tab.active,
 .summer-subnav__tab[aria-current="page"] {
   color: var(--summer-accent);
   font-weight: 500;
 }
-.summer-subnav__tab svg { width: 15px; height: 15px; flex-shrink: 0; }
-.summer-subnav__tab-chevron { opacity: 0.6; margin-left: 1px; }
+
+.summer-subnav__tab svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.summer-subnav__tab-chevron {
+  opacity: 0.6;
+  margin-left: 1px;
+}
 
 /* Dropdown menu (menubar dropdowns) */
-.summer-subnav__dropdown { position: relative; }
+.summer-subnav__dropdown {
+  position: relative;
+}
+
 .summer-subnav__menu {
   position: absolute;
   top: calc(100% + 8px);
@@ -488,18 +626,20 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   visibility: hidden;
   transform: translateY(-4px);
   transition: opacity var(--summer-fast) var(--summer-ease),
-              transform var(--summer-fast) var(--summer-ease),
-              visibility 0s linear var(--summer-fast);
+    transform var(--summer-fast) var(--summer-ease),
+    visibility 0s linear var(--summer-fast);
   z-index: var(--summer-z-overlay);
 }
+
 .summer-subnav__dropdown[data-open="true"] .summer-subnav__menu {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
   transition: opacity var(--summer-fast) var(--summer-ease),
-              transform var(--summer-fast) var(--summer-ease),
-              visibility 0s;
+    transform var(--summer-fast) var(--summer-ease),
+    visibility 0s;
 }
+
 .summer-subnav__menuitem {
   display: flex;
   align-items: center;
@@ -512,12 +652,22 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   font-weight: 500;
   transition: background var(--summer-fast) var(--summer-ease), color var(--summer-fast) var(--summer-ease);
 }
+
 .summer-subnav__menuitem:hover {
   background: var(--summer-surface-2);
   color: var(--summer-fg);
 }
-.summer-subnav__menuitem-icon { display: inline-flex; color: var(--summer-fg-muted); }
-.summer-subnav__menuitem-icon svg { width: 15px; height: 15px; }
+
+.summer-subnav__menuitem-icon {
+  display: inline-flex;
+  color: var(--summer-fg-muted);
+}
+
+.summer-subnav__menuitem-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
 .summer-subnav__menuitem-desc {
   display: block;
   font-size: var(--summer-text-xs);
@@ -526,9 +676,16 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   margin-top: 1px;
 }
 
-.summer-subnav__spacer { flex: 1; min-width: 8px; }
+.summer-subnav__spacer {
+  flex: 1;
+  min-width: 8px;
+}
 
-.summer-subnav__right { display: inline-flex; align-items: center; gap: 4px; }
+.summer-subnav__right {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -542,15 +699,11 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   background: color-mix(in srgb, var(--summer-bg) 88%, transparent);
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
-  /* No border — clean like GitBook */
   margin-left: calc(-1 * var(--summer-gutter, 0px));
   margin-right: calc(-1 * var(--summer-gutter, 0px));
-  /* Top padding here (instead of on .summer-main) is the breathing room
-   * between the topbar and the breadcrumb / copy row. This keeps the
-   * pageheader's natural Y aligned with its sticky Y, so the sidebar /
-   * TOC don't overlap the pageheader at scroll=0. */
   padding: 20px 10px 5px;
 }
+
 .summer-pageheader__inner {
   max-width: var(--summer-content-max);
   margin: 0 auto;
@@ -560,6 +713,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   gap: 16px;
   min-height: 25px;
 }
+
 .summer-pageheader__meta {
   flex: 1;
   min-width: 0;
@@ -579,6 +733,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
 .summer-breadcrumbs__list {
   display: inline-flex;
   align-items: center;
@@ -587,18 +742,25 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   margin: 0;
   padding: 0;
 }
-.summer-breadcrumbs__item { display: inline-flex; align-items: center; gap: 4px; }
-.summer-breadcrumbs__item + .summer-breadcrumbs__item::before {
+
+.summer-breadcrumbs__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.summer-breadcrumbs__item+.summer-breadcrumbs__item::before {
   content: "";
   display: inline-block;
   width: 12px;
   height: 12px;
   background: currentColor;
   -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='9 18 15 12 9 6'/></svg>") no-repeat center / contain;
-          mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='9 18 15 12 9 6'/></svg>") no-repeat center / contain;
+  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='9 18 15 12 9 6'/></svg>") no-repeat center / contain;
   opacity: 0.5;
   margin-right: 4px;
 }
+
 .summer-breadcrumbs__link {
   color: var(--summer-fg-muted);
   text-decoration: none;
@@ -606,16 +768,23 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   border-radius: 4px;
   transition: color var(--summer-fast) var(--summer-ease);
 }
-.summer-breadcrumbs__link:hover { color: var(--summer-fg); }
-.summer-breadcrumbs__current { color: var(--summer-fg); font-weight: 500; }
 
-/* Copy buttons — proper full-width clickable buttons (GitBook-style) */
+.summer-breadcrumbs__link:hover {
+  color: var(--summer-fg);
+}
+
+.summer-breadcrumbs__current {
+  color: var(--summer-fg);
+  font-weight: 500;
+}
+
 .summer-copy-widgets {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
 }
+
 .summer-copy-btn {
   display: inline-flex;
   align-items: center;
@@ -636,19 +805,32 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   -webkit-user-select: none;
   transition: all var(--summer-fast) var(--summer-ease);
 }
+
 .summer-copy-btn:hover {
   background: var(--summer-surface-2);
   border-color: var(--summer-border-strong);
   color: var(--summer-fg);
 }
-.summer-copy-btn:active { transform: scale(0.97); }
+
+.summer-copy-btn:active {
+  transform: scale(0.97);
+}
+
 .summer-copy-btn.is-copied {
   background: var(--summer-green-soft);
   border-color: var(--summer-green);
   color: var(--summer-green);
 }
-.summer-copy-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
-.summer-copy-btn--icon-only { padding: 0 8px; }
+
+.summer-copy-btn svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+.summer-copy-btn--icon-only {
+  padding: 0 8px;
+}
 
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -667,9 +849,17 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   width: 100%;
 }
 
-.summer-template.no-toc .summer-layout { grid-template-columns: var(--summer-sidebar-width) 1fr; }
-.summer-template.no-sidebar .summer-layout { grid-template-columns: 1fr var(--summer-toc-width); }
-.summer-template.no-sidebar.no-toc .summer-layout { grid-template-columns: 1fr; }
+.summer-template.no-toc .summer-layout {
+  grid-template-columns: var(--summer-sidebar-width) 1fr;
+}
+
+.summer-template.no-sidebar .summer-layout {
+  grid-template-columns: 1fr var(--summer-toc-width);
+}
+
+.summer-template.no-sidebar.no-toc .summer-layout {
+  grid-template-columns: 1fr;
+}
 
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -687,136 +877,152 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   background: var(--summer-bg);
 }
 
-.summer-sidebar::-webkit-scrollbar { width: 6px; }
-.summer-sidebar::-webkit-scrollbar-track { background: transparent; }
+.summer-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.summer-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 .summer-sidebar::-webkit-scrollbar-thumb {
   background: transparent;
   border-radius: 3px;
 }
+
 .summer-sidebar:hover::-webkit-scrollbar-thumb {
   background: var(--summer-border-soft);
 }
 
-.summer-sidebar nav ul { list-style: none; padding: 0; margin: 0; }
-.summer-sidebar nav > ul { display: flex; flex-direction: column; gap: 2px; }
+.summer-sidebar nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
 
-/* 1. Top-level Group Headers (Uppercase, GitBook-style)
-   Note: nav-group is also applied to non-collapsible groups (where
-   navigation.ejs partial renders a plain section header). The
-   `collapsible` class is only present on the interactive groups, so
-   cursor/hover/click affordances must be scoped to .collapsible —
-   otherwise "collapsible: false" sections still look clickable. */
-.summer-sidebar nav > ul > li.nav-group > .nav-label,
-.summer-sidebar nav > ul > li.nav-group > a {
+.summer-sidebar nav>ul {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summer-sidebar nav>ul>li.nav-group>.nav-label,
+.summer-sidebar nav>ul>li.nav-group>a {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
   color: var(--summer-fg-muted);
-  font-size: 0.6875rem; /* 11px */
+  font-size: 0.6875rem;
+  /* 11px */
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   user-select: none;
 }
-/* Cursor + click affordance only for actual collapsible groups */
-.summer-sidebar nav > ul > li.nav-group.collapsible > .nav-label,
-.summer-sidebar nav > ul > li.nav-group.collapsible > a {
+
+.summer-sidebar nav>ul>li.nav-group.collapsible>.nav-label,
+.summer-sidebar nav>ul>li.nav-group.collapsible>a {
   cursor: pointer;
 }
-.summer-sidebar nav > ul > li.nav-group:first-child > .nav-label,
-.summer-sidebar nav > ul > li.nav-group:first-child > a {
+
+.summer-sidebar nav>ul>li.nav-group:first-child>.nav-label,
+.summer-sidebar nav>ul>li.nav-group:first-child>a {
   margin-top: 0;
 }
 
-.summer-sidebar nav > ul > li.nav-group > .nav-label svg,
-.summer-sidebar nav > ul > li.nav-group > a svg:not(.nav-external-icon):not(.collapse-icon) {
-  width: 14px; height: 14px;
+.summer-sidebar nav>ul>li.nav-group>.nav-label svg,
+.summer-sidebar nav>ul>li.nav-group>a svg:not(.nav-external-icon):not(.collapse-icon) {
+  width: 14px;
+  height: 14px;
   color: var(--summer-fg-muted);
   flex-shrink: 0;
   transition: color var(--summer-fast) var(--summer-ease);
 }
-/* Hover affordance only on collapsible groups — non-collapsible
-   sections (collapsible: false in nav JSON) shouldn't react on hover. */
-.summer-sidebar nav > ul > li.nav-group.collapsible > .nav-label:hover,
-.summer-sidebar nav > ul > li.nav-group.collapsible > a:hover,
-.summer-sidebar nav > ul > li.nav-group > .nav-label:hover{
+
+.summer-sidebar nav>ul>li.nav-group.collapsible>.nav-label:hover,
+.summer-sidebar nav>ul>li.nav-group.collapsible>a:hover,
+.summer-sidebar nav>ul>li.nav-group>.nav-label:hover {
   color: var(--summer-fg);
   background: none;
 }
-.summer-sidebar nav > ul > li.nav-group.collapsible > .nav-label:hover svg,
-.summer-sidebar nav > ul > li.nav-group.collapsible > a:hover svg:not(.nav-external-icon):not(.collapse-icon) {
+
+.summer-sidebar nav>ul>li.nav-group.collapsible>.nav-label:hover svg,
+.summer-sidebar nav>ul>li.nav-group.collapsible>a:hover svg:not(.nav-external-icon):not(.collapse-icon) {
   color: var(--summer-accent);
 }
 
-/* 2. Regular sidebar items (both leaves and collapsible submenu links) */
-.summer-sidebar nav li > a:not(.nav-group),
-.summer-sidebar nav li:not(.nav-group) > .nav-label,
-.summer-sidebar nav .submenu li > a,
-.summer-sidebar nav .submenu li > .nav-label {
+.summer-sidebar nav li>a:not(.nav-group),
+.summer-sidebar nav li:not(.nav-group)>.nav-label,
+.summer-sidebar nav .submenu li>a,
+.summer-sidebar nav .submenu li>.nav-label {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
   margin: 1px 6px;
   color: var(--summer-fg-soft);
-  font-size: 0.875rem; /* 14px */
+  font-size: 0.875rem;
+  /* 14px */
   font-weight: 450;
   text-decoration: none;
   border-radius: var(--summer-radius-sm);
   line-height: 1.4;
   position: relative;
   transition: background var(--summer-fast) var(--summer-ease),
-              color var(--summer-fast) var(--summer-ease);
+    color var(--summer-fast) var(--summer-ease);
 }
 
-.summer-sidebar nav li > a:not(.nav-group) svg:not(.nav-external-icon):not(.collapse-icon),
-.summer-sidebar nav li:not(.nav-group) > .nav-label svg:not(.nav-external-icon):not(.collapse-icon),
-.summer-sidebar nav .submenu li > a svg:not(.nav-external-icon):not(.collapse-icon),
-.summer-sidebar nav .submenu li > .nav-label svg:not(.nav-external-icon):not(.collapse-icon) {
-  width: 14px; height: 14px;
+.summer-sidebar nav li>a:not(.nav-group) svg:not(.nav-external-icon):not(.collapse-icon),
+.summer-sidebar nav li:not(.nav-group)>.nav-label svg:not(.nav-external-icon):not(.collapse-icon),
+.summer-sidebar nav .submenu li>a svg:not(.nav-external-icon):not(.collapse-icon),
+.summer-sidebar nav .submenu li>.nav-label svg:not(.nav-external-icon):not(.collapse-icon) {
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
   color: var(--summer-fg-faint);
   transition: color var(--summer-fast) var(--summer-ease);
 }
 
-.summer-sidebar nav li > a:hover,
-.summer-sidebar nav li > .nav-label:hover {
+.summer-sidebar nav li>a:hover,
+.summer-sidebar nav li>.nav-label:hover {
   background: var(--summer-surface-2);
   color: var(--summer-fg);
 }
-.summer-sidebar nav li > a:hover svg:not(.nav-external-icon):not(.collapse-icon),
-.summer-sidebar nav li > .nav-label:hover svg:not(.nav-external-icon):not(.collapse-icon) {
+
+.summer-sidebar nav li>a:hover svg:not(.nav-external-icon):not(.collapse-icon),
+.summer-sidebar nav li>.nav-label:hover svg:not(.nav-external-icon):not(.collapse-icon) {
   color: var(--summer-fg-soft);
 }
 
-/* 3. Active state styling - thin left border, color highlights */
-/* Top-level active items (display border-left on the element itself) */
-.summer-sidebar nav > ul > li > a.active,
-.summer-sidebar nav > ul > li > .nav-label.active {
+.summer-sidebar nav>ul>li>a.active,
+.summer-sidebar nav>ul>li>.nav-label.active {
   background: transparent;
   color: var(--summer-accent);
   font-weight: 500;
   border-left: 2px solid var(--summer-accent);
   border-radius: 0;
-  padding-left: 10px; /* text aligns perfectly (10px + 2px border = 12px padding) */
+  padding-left: 10px;
+  /* text aligns perfectly (10px + 2px border = 12px padding) */
 }
 
 /* Nested active items (overlay accent bar on the parent submenu's border-left thread) */
-.summer-sidebar nav .submenu li > a.active,
-.summer-sidebar nav .submenu li > .nav-label.active {
+.summer-sidebar nav .submenu li>a.active,
+.summer-sidebar nav .submenu li>.nav-label.active {
   background: transparent;
   color: var(--summer-accent);
   font-weight: 500;
-  border-left: none; /* no border on the item itself */
-   /* standard padding */
+  border-left: none;
+  /* no border on the item itself */
+  /* standard padding */
 }
 
-.summer-sidebar nav .submenu li > a.active::before,
-.summer-sidebar nav .submenu li > .nav-label.active::before {
+.summer-sidebar nav .submenu li>a.active::before,
+.summer-sidebar nav .submenu li>.nav-label.active::before {
   content: "";
   position: absolute;
-  left: -13px; /* align exactly with the parent's border-left */
+  left: -13px;
+  /* align exactly with the parent's border-left */
   top: 0;
   bottom: 0;
   width: 2px;
@@ -824,13 +1030,13 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   display: block;
 }
 
-.summer-sidebar nav li > a.active:hover,
-.summer-sidebar nav li > .nav-label.active:hover {
+.summer-sidebar nav li>a.active:hover,
+.summer-sidebar nav li>.nav-label.active:hover {
   background: var(--summer-surface-2);
 }
 
-.summer-sidebar nav li > a.active svg:not(.nav-external-icon):not(.collapse-icon),
-.summer-sidebar nav li > .nav-label.active svg:not(.nav-external-icon):not(.collapse-icon) {
+.summer-sidebar nav li>a.active svg:not(.nav-external-icon):not(.collapse-icon),
+.summer-sidebar nav li>.nav-label.active svg:not(.nav-external-icon):not(.collapse-icon) {
   color: var(--summer-accent);
 }
 
@@ -845,23 +1051,26 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   padding: 4px;
   border-radius: 4px;
   transition: transform var(--summer-med) var(--summer-ease),
-              color var(--summer-fast) var(--summer-ease);
+    color var(--summer-fast) var(--summer-ease);
 }
+
 .summer-sidebar nav .collapse-icon-wrapper:hover {
   color: var(--summer-fg-soft);
 }
+
 .summer-sidebar nav .collapse-icon {
   width: 10px;
   height: 10px;
-  transform: rotate(90deg); /* Expanded is pointing down (90deg) */
+  transform: rotate(90deg);
+  /* Expanded is pointing down (90deg) */
   transition: transform var(--summer-med) var(--summer-ease);
 }
 
 /* Collapsed chevron points right (0deg) */
-.summer-sidebar nav li[aria-expanded="false"] > a .collapse-icon,
-.summer-sidebar nav li[aria-expanded="false"] > .nav-label .collapse-icon,
-.summer-sidebar nav li:not(.expanded) > a .collapse-icon,
-.summer-sidebar nav li:not(.expanded) > .nav-label .collapse-icon {
+.summer-sidebar nav li[aria-expanded="false"]>a .collapse-icon,
+.summer-sidebar nav li[aria-expanded="false"]>.nav-label .collapse-icon,
+.summer-sidebar nav li:not(.expanded)>a .collapse-icon,
+.summer-sidebar nav li:not(.expanded)>.nav-label .collapse-icon {
   transform: rotate(0deg);
 }
 
@@ -889,10 +1098,12 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   margin-left: 20px;
   padding-left: 4px;
 }
-.summer-sidebar nav li[aria-expanded="false"] > .submenu,
-.summer-sidebar nav li:not(.expanded) > .submenu {
+
+.summer-sidebar nav li[aria-expanded="false"]>.submenu,
+.summer-sidebar nav li:not(.expanded)>.submenu {
   max-height: 0;
 }
+
 /* Sidebar widgets & dropdowns (Version Switcher, Language Switcher, Project Switcher) */
 .summer-sidebar__top,
 .summer-sidebar__bottom {
@@ -902,6 +1113,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   padding: 0 10px;
   margin-bottom: 14px;
 }
+
 .summer-sidebar__bottom {
   margin-top: 24px;
   margin-bottom: 0;
@@ -996,6 +1208,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
 .summer-sidebar-widget .docmd-project-switcher.open .project-switcher-menu {
   display: block;
 }
+
 .summer-sidebar-widget .docmd-language-switcher.open .language-switcher-menu {
   display: block;
   opacity: 1;
@@ -1025,7 +1238,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   text-decoration: none;
   border-radius: var(--summer-radius-sm);
   transition: background var(--summer-fast) var(--summer-ease),
-              color var(--summer-fast) var(--summer-ease);
+    color var(--summer-fast) var(--summer-ease);
   cursor: pointer;
 }
 
@@ -1090,8 +1303,8 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   font-weight: 500;
   cursor: pointer;
   transition: background var(--summer-fast) var(--summer-ease),
-              color var(--summer-fast) var(--summer-ease),
-              border-color var(--summer-fast) var(--summer-ease);
+    color var(--summer-fast) var(--summer-ease),
+    border-color var(--summer-fast) var(--summer-ease);
   white-space: nowrap;
 }
 
@@ -1166,7 +1379,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   text-decoration: none;
   border-radius: var(--summer-radius-sm);
   transition: background var(--summer-fast) var(--summer-ease),
-              color var(--summer-fast) var(--summer-ease);
+    color var(--summer-fast) var(--summer-ease);
 }
 
 .summer-topbar__right .version-dropdown-item:hover,
@@ -1203,8 +1416,10 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   margin-left: auto;
 }
 
-.summer-topbar__right .version-dropdown-item > a,
-.summer-topbar__right .version-dropdown-item { color: inherit; }
+.summer-topbar__right .version-dropdown-item>a,
+.summer-topbar__right .version-dropdown-item {
+  color: inherit;
+}
 
 /* Sidebar close (mobile) */
 .summer-sidebar-close {
@@ -1220,7 +1435,11 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   color: var(--summer-fg-soft);
   background: transparent;
 }
-.summer-sidebar-close:hover { background: var(--summer-surface-2); color: var(--summer-fg); }
+
+.summer-sidebar-close:hover {
+  background: var(--summer-surface-2);
+  color: var(--summer-fg);
+}
 
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -1229,34 +1448,28 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
 
 .summer-main {
   min-width: 0;
-  /* No top padding — the breathing room between topbar and the
-   * pageheader's content lives on the pageheader itself
-   * (padding: 20px 10px 5px) so the pageheader's natural Y lines up
-   * with its sticky Y. The sidebar / TOC stick to the pageheader's
-   * bottom and never overlap the pageheader. */
   padding: 0 48px 64px;
   --summer-gutter: 48px;
   display: flex;
   flex-direction: column;
-  /* Fill the available height so .summer-pagenav (margin-top: auto)
-   * can push to the bottom on short pages. */
   flex: 1;
   min-height: 0;
 }
 
 .summer-content {
   max-width: var(--summer-content-max);
-  font-size: var(--summer-text-base);    /* 15px — GitBook body base */
+  font-size: var(--summer-text-base);
   line-height: 1.7;
   color: var(--summer-fg-soft);
   display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  padding: 1em 0;
 }
 
 .summer-content__title {
-  font-size: 2rem;                   /* 32px — GitBook page title */
+  font-size: 2rem;
   font-weight: 700;
   color: var(--summer-fg);
   letter-spacing: -0.03em;
@@ -1264,9 +1477,10 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   margin: 0 0 24px;
 }
 
-.summer-content > * + * { margin-top: 1.1em; }
+.summer-content>*+* {
+  margin-top: 1.1em;
+}
 
-/* Headings — Inter optical sizing, matching GitBook */
 .summer-content h1,
 .summer-content h2,
 .summer-content h3,
@@ -1279,43 +1493,48 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   line-height: 1.3;
   scroll-margin-top: calc(var(--summer-topbar-height) + var(--summer-subnav-height) + var(--summer-banner-height) + var(--summer-pageheader-height) + 24px);
 }
+
 .summer-content h1 {
-  font-size: 1.875rem;         /* 30px — GitBook H1 */
+  font-size: 1.875rem;
   margin-top: 0;
   margin-bottom: 0.5em;
   letter-spacing: -0.03em;
   font-weight: 700;
   line-height: 1.25;
 }
+
 .summer-content h2 {
-  font-size: 1.5rem;           /* 24px — GitBook H2 */
-  margin-top: 2em;
+  font-size: 1.5rem;
   margin-bottom: 0.5em;
   font-weight: 600;
   letter-spacing: -0.025em;
   line-height: 1.3;
 }
+
 .summer-content h3 {
-  font-size: 1.25rem;          /* 20px — GitBook H3 */
-  margin-top: 1.75em;
+  font-size: 1.25rem;
   margin-bottom: 0.4em;
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.35;
 }
+
 .summer-content h4 {
-  font-size: 1.0625rem;        /* 17px */
+  font-size: 1.0625rem;
+  /* 17px */
   margin-top: 1.5em;
   margin-bottom: 0.35em;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
+
 .summer-content h5 {
   font-size: var(--summer-text-base);
   margin-top: 1.25em;
   margin-bottom: 0.3em;
   font-weight: 600;
 }
+
 .summer-content h6 {
   font-size: var(--summer-text-sm);
   margin-top: 1em;
@@ -1328,11 +1547,19 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
 
 /* Paragraph + inline — Refined premium sizing */
 .summer-content p {
-    line-height: inherit;
+  line-height: inherit;
 
 }
-.summer-content strong { color: var(--summer-fg); font-weight: 600; }
-.summer-content em { font-style: italic; }
+
+.summer-content strong {
+  color: var(--summer-fg);
+  font-weight: 600;
+}
+
+.summer-content em {
+  font-style: italic;
+}
+
 .summer-content a {
   color: var(--summer-fg);
   text-decoration: underline;
@@ -1341,6 +1568,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   text-underline-offset: 3px;
   transition: text-decoration-color var(--summer-fast) var(--summer-ease), color var(--summer-fast) var(--summer-ease);
 }
+
 .summer-content a:hover {
   color: var(--summer-accent);
   text-decoration-color: var(--summer-accent);
@@ -1352,10 +1580,27 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   padding-left: 1.4em;
   margin: 0 0 1em;
 }
-.summer-content li { margin: 0.4em 0; line-height: 1.55; }
-.summer-content ul li::marker { color: var(--summer-fg-muted); }
-.summer-content ol li::marker { color: var(--summer-fg-soft); font-weight: 600; }
-.summer-content ul ul, .summer-content ol ol, .summer-content ul ol, .summer-content ol ul { margin: 0.4em 0; }
+
+.summer-content li {
+  margin: 0.4em 0;
+  line-height: 1.55;
+}
+
+.summer-content ul li::marker {
+  color: var(--summer-fg-muted);
+}
+
+.summer-content ol li::marker {
+  color: var(--summer-fg-soft);
+  font-weight: 600;
+}
+
+.summer-content ul ul,
+.summer-content ol ol,
+.summer-content ul ol,
+.summer-content ol ul {
+  margin: 0.4em 0;
+}
 
 /* Horizontal rule */
 .summer-content hr {
@@ -1367,9 +1612,13 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
 
 /* Heading anchors (clickable # links) */
 .summer-content .docmd-heading,
-.summer-content h1, .summer-content h2, .summer-content h3, .summer-content h4 {
+.summer-content h1,
+.summer-content h2,
+.summer-content h3,
+.summer-content h4 {
   position: relative;
 }
+
 .summer-content .heading-anchor {
   position: absolute;
   left: -1.25em;
@@ -1384,13 +1633,23 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   vertical-align: middle;
   transition: opacity var(--summer-fast) var(--summer-ease), color var(--summer-fast) var(--summer-ease);
 }
+
 .summer-content h1:hover .heading-anchor,
 .summer-content h2:hover .heading-anchor,
 .summer-content h3:hover .heading-anchor,
 .summer-content h4:hover .heading-anchor,
-.summer-content .heading-anchor:focus { opacity: 1; }
-.summer-content .heading-anchor:hover { color: var(--summer-accent); }
-.summer-content .heading-anchor svg { width: 100%; height: 100%; }
+.summer-content .heading-anchor:focus {
+  opacity: 1;
+}
+
+.summer-content .heading-anchor:hover {
+  color: var(--summer-accent);
+}
+
+.summer-content .heading-anchor svg {
+  width: 100%;
+  height: 100%;
+}
 
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -1399,11 +1658,6 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
 
 .summer-toc {
   position: sticky;
-  /* Matches the sidebar's sticky offset so the TOC and sidebar share the
-   * same scroll-anchor line (they sit on the same Y as the main content's
-   * pageheader bottom and adjust together with the menubar / banner /
-   * header). The 4-band sum is the same formula as .summer-sidebar —
-   * keep them in sync. */
   top: calc(var(--summer-topbar-height) + var(--summer-subnav-height) + var(--summer-banner-height) + var(--summer-pageheader-height));
   align-self: start;
   max-height: calc(100vh - var(--summer-topbar-height) - var(--summer-subnav-height) - var(--summer-banner-height) - var(--summer-pageheader-height));
@@ -1411,8 +1665,15 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   padding: 0 32px 60px 24px;
   font-size: 0.8125rem;
 }
-.summer-toc::-webkit-scrollbar { width: 6px; }
-.summer-toc::-webkit-scrollbar-track { background: transparent; }
+
+.summer-toc::-webkit-scrollbar {
+  width: 6px;
+}
+
+.summer-toc::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 .summer-toc::-webkit-scrollbar-thumb {
   background: var(--summer-border);
   border-radius: 3px;
@@ -1428,6 +1689,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   font-weight: 500;
   color: var(--summer-fg-muted);
 }
+
 .summer-toc__title svg {
   color: var(--summer-fg-muted);
   flex-shrink: 0;
@@ -1462,6 +1724,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   left: 0;
   color: var(--summer-border);
 }
+
 .summer-toc__track-full path {
   stroke: currentColor;
   stroke-width: 1;
@@ -1476,6 +1739,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   color: var(--summer-accent);
   transition: clip-path 160ms cubic-bezier(0.32, 0.72, 0, 1);
 }
+
 .summer-toc__track-active path {
   stroke: currentColor;
   stroke-width: 1.5;
@@ -1500,17 +1764,32 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   position: relative;
   z-index: 1;
 }
-.summer-toc__link:hover { color: var(--summer-fg); }
+
+.summer-toc__link:hover {
+  color: var(--summer-fg);
+}
+
 .summer-toc__link.active {
   color: var(--summer-accent);
   font-weight: 500;
 }
 
 /* Indentation by level — padding-left is overridden by JS inline style */
-.summer-toc__item--level-1 .summer-toc__link { padding-left: 20px; }
-.summer-toc__item--level-2 .summer-toc__link { padding-left: 30px; }
-.summer-toc__item--level-3 .summer-toc__link { padding-left: 40px; }
-.summer-toc__item--level-4 .summer-toc__link { padding-left: 50px; }
+.summer-toc__item--level-1 .summer-toc__link {
+  padding-left: 20px;
+}
+
+.summer-toc__item--level-2 .summer-toc__link {
+  padding-left: 30px;
+}
+
+.summer-toc__item--level-3 .summer-toc__link {
+  padding-left: 40px;
+}
+
+.summer-toc__item--level-4 .summer-toc__link {
+  padding-left: 50px;
+}
 
 /* TOC scroll-to-top button */
 .summer-totop {
@@ -1532,9 +1811,21 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   transition: opacity var(--summer-med) var(--summer-ease), transform var(--summer-med) var(--summer-ease);
   z-index: var(--summer-z-overlay);
 }
-.summer-totop.is-visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
-.summer-totop:hover { background: var(--summer-accent-hover); }
-.summer-totop svg { width: 18px; height: 18px; }
+
+.summer-totop.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.summer-totop:hover {
+  background: var(--summer-accent-hover);
+}
+
+.summer-totop svg {
+  width: 18px;
+  height: 18px;
+}
 
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -1556,6 +1847,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   padding-top: 24px;
   border-top: 1px solid var(--summer-border-soft);
 }
+
 .summer-pagenav__link {
   display: flex;
   align-items: center;
@@ -1573,36 +1865,52 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   width: fit-content;
   max-width: 100%;
 }
+
 .summer-pagenav__link:hover {
   border-color: var(--summer-accent);
   background: var(--summer-accent-soft);
   color: var(--summer-fg);
   box-shadow: var(--summer-shadow-sm);
 }
+
 .summer-pagenav__link--next {
   justify-content: flex-end;
   text-align: right;
   justify-self: end;
 }
-.summer-pagenav__link--prev { justify-self: start; }
+
+.summer-pagenav__link--prev {
+  justify-self: start;
+}
+
 .summer-pagenav__link--disabled {
   opacity: 0.4;
   pointer-events: none;
   background: transparent;
 }
+
 .summer-pagenav__icon {
   flex-shrink: 0;
-  width: 18px; height: 18px;
+  width: 18px;
+  height: 18px;
   color: var(--summer-accent);
   transition: transform var(--summer-fast) var(--summer-ease);
 }
-.summer-pagenav__link--prev:hover .summer-pagenav__icon { transform: translateX(-3px); }
-.summer-pagenav__link--next:hover .summer-pagenav__icon { transform: translateX(3px); }
+
+.summer-pagenav__link--prev:hover .summer-pagenav__icon {
+  transform: translateX(-3px);
+}
+
+.summer-pagenav__link--next:hover .summer-pagenav__icon {
+  transform: translateX(3px);
+}
+
 .summer-pagenav__label {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
+
 .summer-pagenav__small {
   font-size: var(--summer-text-xs);
   color: var(--summer-fg-muted);
@@ -1610,6 +1918,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   letter-spacing: 0.06em;
   font-weight: 500;
 }
+
 .summer-pagenav__title {
   font-size: var(--summer-text-sm);
   font-weight: 600;
@@ -1633,6 +1942,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   font-size: var(--summer-text-sm);
   color: var(--summer-fg-muted);
 }
+
 .summer-pagefooter a {
   display: inline-flex;
   align-items: center;
@@ -1642,10 +1952,27 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   font-weight: 500;
   transition: color var(--summer-fast) var(--summer-ease);
 }
-.summer-pagefooter a:hover { color: var(--summer-accent); }
-.summer-pagefooter a svg { width: 14px; height: 14px; }
-.summer-pagefooter__time { display: inline-flex; align-items: center; gap: 6px; }
-.summer-pagefooter__time svg { width: 14px; height: 14px; color: var(--summer-fg-faint); }
+
+.summer-pagefooter a:hover {
+  color: var(--summer-accent);
+}
+
+.summer-pagefooter a svg {
+  width: 14px;
+  height: 14px;
+}
+
+.summer-pagefooter__time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.summer-pagefooter__time svg {
+  width: 14px;
+  height: 14px;
+  color: var(--summer-fg-faint);
+}
 
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -1653,7 +1980,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
    ──────────────────────────────────────────────────────────────────────── */
 
 /* Inline code */
-.summer-content :not(pre) > code {
+.summer-content :not(pre)>code {
   display: inline-block;
   padding: 1px 6px;
   background: var(--summer-surface-3);
@@ -1666,7 +1993,8 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   white-space: nowrap;
   line-height: 1.4;
 }
-html[data-theme="dark"] .summer-content :not(pre) > code {
+
+html[data-theme="dark"] .summer-content :not(pre)>code {
   color: #f5c089;
   background: rgba(255, 138, 92, 0.10);
   border-color: rgba(255, 138, 92, 0.20);
@@ -1690,15 +2018,16 @@ html[data-theme="dark"] .summer-content :not(pre) > code {
 
 .code-wrapper,
 .docmd-code-block-wrapper {
-    position: relative;
-    margin: 1.4em 0;
-    background: var(--summer-surface-2);
-    border: 1px solid var(--summer-border);
-    border-radius: var(--summer-radius);
-    overflow: hidden;
-    box-shadow: var(--summer-shadow-xs);
+  position: relative;
+  margin: 1.4em 0;
+  background: var(--summer-surface-2);
+  border: 1px solid var(--summer-border);
+  border-radius: var(--summer-radius);
+  overflow: hidden;
+  box-shadow: var(--summer-shadow-xs);
 
 }
+
 html[data-theme="dark"] .code-wrapper,
 html[data-theme="dark"] .docmd-code-block-wrapper {
   background: #100e0b;
@@ -1707,7 +2036,7 @@ html[data-theme="dark"] .docmd-code-block-wrapper {
 /* Title bar (thin row above the code) */
 .summer-cb__titlebar,
 .docmd-code-block-header.summer-cb__titlebar,
-.docmd-code-block-wrapper > .docmd-code-block-header {
+.docmd-code-block-wrapper>.docmd-code-block-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1720,9 +2049,10 @@ html[data-theme="dark"] .docmd-code-block-wrapper {
   color: var(--summer-fg-muted);
   font-family: var(--summer-font-mono);
 }
+
 html[data-theme="dark"] .summer-cb__titlebar,
 html[data-theme="dark"] .docmd-code-block-header.summer-cb__titlebar,
-html[data-theme="dark"] .docmd-code-block-wrapper > .docmd-code-block-header {
+html[data-theme="dark"] .docmd-code-block-wrapper>.docmd-code-block-header {
   border-bottom-color: rgba(255, 255, 255, 0.06);
   background: rgba(255, 255, 255, 0.025);
   color: #c8bfae;
@@ -1736,12 +2066,14 @@ html[data-theme="dark"] .docmd-code-block-wrapper > .docmd-code-block-header {
   min-width: 0;
   overflow: hidden;
 }
-.summer-cb__left > svg {
+
+.summer-cb__left>svg {
   width: 13px;
   height: 13px;
   flex-shrink: 0;
   color: var(--summer-fg-muted);
 }
+
 /* Filename (only present when the source had a title, e.g.
    ```js "file.js"```). Kept subtle so the lang pill remains the
    primary visual element. */
@@ -1754,6 +2086,7 @@ html[data-theme="dark"] .docmd-code-block-wrapper > .docmd-code-block-header {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .docmd-code-block-title {
   font-weight: 400;
   font-size: var(--summer-text-xs);
@@ -1763,6 +2096,7 @@ html[data-theme="dark"] .docmd-code-block-wrapper > .docmd-code-block-header {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 /* Lang pill — always present, the de-facto label of the codeblock.
    Shows the language (e.g. "BASH") or "CODEBLOCK" if no language
    was specified. */
@@ -1783,38 +2117,44 @@ html[data-theme="dark"] .docmd-code-block-wrapper > .docmd-code-block-header {
 /* Copy button — lives inside the title bar, NOT floating */
 .summer-cb__copy,
 .copy-code-button.summer-cb__copy {
-    position: static;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 3px 8px;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: var(--summer-radius-sm);
-    color: var(--summer-fg-muted);
-    font-size: var(--summer-text-xs);
-    font-weight: 500;
-    font-family: var(--summer-font-sans);
-    cursor: pointer;
-    opacity: 1;
-    transition: all var(--summer-fast) var(--summer-ease);
-    flex-shrink: 0;
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--summer-radius-sm);
+  color: var(--summer-fg-muted);
+  font-size: var(--summer-text-xs);
+  font-weight: 500;
+  font-family: var(--summer-font-sans);
+  cursor: pointer;
+  opacity: 1;
+  transition: all var(--summer-fast) var(--summer-ease);
+  flex-shrink: 0;
 
 }
+
 .summer-cb__copy:hover,
 .copy-code-button.summer-cb__copy:hover {
   background: var(--summer-surface);
   border-color: var(--summer-border);
   color: var(--summer-fg);
 }
+
 html[data-theme="dark"] .summer-cb__copy,
-html[data-theme="dark"] .copy-code-button.summer-cb__copy { color: #8a8170; }
+html[data-theme="dark"] .copy-code-button.summer-cb__copy {
+  color: #8a8170;
+}
+
 html[data-theme="dark"] .summer-cb__copy:hover,
 html[data-theme="dark"] .copy-code-button.summer-cb__copy:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.08);
   color: #f5efe0;
 }
+
 .summer-cb__copy.copied,
 .copy-code-button.summer-cb__copy.copied {
   background: var(--summer-green-soft);
@@ -1823,18 +2163,18 @@ html[data-theme="dark"] .copy-code-button.summer-cb__copy:hover {
 }
 
 /* Pre — sit below the title bar with no top padding bump */
-.code-wrapper > pre,
-.docmd-code-block-wrapper > .code-wrapper > pre {
-    margin: 0 !important;
-    padding: 16px 18px !important;
-    background: transparent !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    font-family: var(--summer-font-mono) !important;
-    font-size: 0.84rem !important;
-    line-height: 1.65 !important;
-    color: var(--summer-fg);
-    overflow-x: auto;
+.code-wrapper>pre,
+.docmd-code-block-wrapper>.code-wrapper>pre {
+  margin: 0 !important;
+  padding: 16px 18px !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  font-family: var(--summer-font-mono) !important;
+  font-size: 0.84rem !important;
+  line-height: 1.65 !important;
+  color: var(--summer-fg);
+  overflow-x: auto;
 
 }
 
@@ -1843,7 +2183,7 @@ html[data-theme="dark"] .copy-code-button.summer-cb__copy:hover {
    has its own border/background — which would render as a "window
    inside a window". Strip that styling so the inner wrapper is
    transparent and the outer wrapper is the only visual box. */
-.docmd-code-block-wrapper > .code-wrapper {
+.docmd-code-block-wrapper>.code-wrapper {
   background: transparent !important;
   border: 0 !important;
   border-radius: 0 !important;
@@ -1852,11 +2192,14 @@ html[data-theme="dark"] .copy-code-button.summer-cb__copy:hover {
   padding: 0 !important;
   overflow: visible !important;
 }
-.code-wrapper > pre code,
-.docmd-code-block-wrapper > .code-wrapper > pre code { color: inherit !important; }
+
+.code-wrapper>pre code,
+.docmd-code-block-wrapper>.code-wrapper>pre code {
+  color: inherit !important;
+}
 
 /* Bare <pre> with no wrapper at all (no copy button injected) */
-.summer-content > pre:not([class*="code-"]) {
+.summer-content>pre:not([class*="code-"]) {
   margin: 1.4em 0;
   padding: 16px 18px;
   background: var(--summer-surface-2);
@@ -1869,7 +2212,8 @@ html[data-theme="dark"] .copy-code-button.summer-cb__copy:hover {
   overflow-x: auto;
   box-shadow: var(--summer-shadow-sm);
 }
-html[data-theme="dark"] .summer-content > pre:not([class*="code-"]) {
+
+html[data-theme="dark"] .summer-content>pre:not([class*="code-"]) {
   background: #0f0d0a;
   color: #e7dfcf;
 }
@@ -1885,11 +2229,14 @@ html[data-theme="dark"] .summer-content > pre:not([class*="code-"]) {
   border-radius: var(--summer-radius);
   overflow: hidden;
 }
-.summer-content th, .summer-content td {
+
+.summer-content th,
+.summer-content td {
   padding: 10px 14px;
   text-align: left;
   border-bottom: 1px solid var(--summer-border-soft);
 }
+
 .summer-content th {
   background: var(--summer-surface-2);
   font-weight: 600;
@@ -1898,8 +2245,14 @@ html[data-theme="dark"] .summer-content > pre:not([class*="code-"]) {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-.summer-content tr:last-child td { border-bottom: 0; }
-.summer-content tr:hover td { background: var(--summer-surface-2); }
+
+.summer-content tr:last-child td {
+  border-bottom: 0;
+}
+
+.summer-content tr:hover td {
+  background: var(--summer-surface-2);
+}
 
 /* Blockquote / callouts */
 .summer-content blockquote {
@@ -1911,11 +2264,19 @@ html[data-theme="dark"] .summer-content > pre:not([class*="code-"]) {
   color: var(--summer-fg);
   font-style: normal;
 }
-.summer-content blockquote > :first-child { margin-top: 0; }
-.summer-content blockquote > :last-child { margin-bottom: 0; }
-.summer-content blockquote p { margin: 0.5em 0; }
 
-/* GitBook-style callouts (left-bordered, light-tint) */
+.summer-content blockquote> :first-child {
+  margin-top: 0;
+}
+
+.summer-content blockquote> :last-child {
+  margin-bottom: 0;
+}
+
+.summer-content blockquote p {
+  margin: 0.5em 0;
+}
+
 .summer-content .callout,
 .summer-content details[class*="callout"],
 .summer-content .markdown-alert {
@@ -1925,12 +2286,39 @@ html[data-theme="dark"] .summer-content > pre:not([class*="code-"]) {
   border: 1px solid var(--summer-border-soft);
   border-left-width: 4px;
 }
-.summer-content .callout-note,    .summer-content .markdown-alert-note    { background: var(--summer-sky-soft);   border-color: color-mix(in srgb, var(--summer-sky) 20%, var(--summer-border-soft)); border-left-color: var(--summer-sky); }
-.summer-content .callout-tip,     .summer-content .markdown-alert-tip     { background: var(--summer-green-soft); border-color: color-mix(in srgb, var(--summer-green) 20%, var(--summer-border-soft)); border-left-color: var(--summer-green); }
-.summer-content .callout-warn,    .summer-content .markdown-alert-warning { background: var(--summer-amber-soft); border-color: color-mix(in srgb, var(--summer-amber) 25%, var(--summer-border-soft)); border-left-color: var(--summer-amber); }
-.summer-content .callout-danger,  .summer-content .markdown-alert-caution { background: rgba(244, 63, 94, 0.06); border-color: color-mix(in srgb, var(--summer-rose) 20%, var(--summer-border-soft)); border-left-color: var(--summer-rose); }
+
+.summer-content .callout-note,
+.summer-content .markdown-alert-note {
+  background: var(--summer-sky-soft);
+  border-color: color-mix(in srgb, var(--summer-sky) 20%, var(--summer-border-soft));
+  border-left-color: var(--summer-sky);
+}
+
+.summer-content .callout-tip,
+.summer-content .markdown-alert-tip {
+  background: var(--summer-green-soft);
+  border-color: color-mix(in srgb, var(--summer-green) 20%, var(--summer-border-soft));
+  border-left-color: var(--summer-green);
+}
+
+.summer-content .callout-warn,
+.summer-content .markdown-alert-warning {
+  background: var(--summer-amber-soft);
+  border-color: color-mix(in srgb, var(--summer-amber) 25%, var(--summer-border-soft));
+  border-left-color: var(--summer-amber);
+}
+
+.summer-content .callout-danger,
+.summer-content .markdown-alert-caution {
+  background: rgba(244, 63, 94, 0.06);
+  border-color: color-mix(in srgb, var(--summer-rose) 20%, var(--summer-border-soft));
+  border-left-color: var(--summer-rose);
+}
+
 html[data-theme="dark"] .summer-content .callout-danger,
-html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2a0e10; }
+html[data-theme="dark"] .summer-content .markdown-alert-caution {
+  background: #2a0e10;
+}
 
 /* Images */
 .summer-content img {
@@ -1940,7 +2328,11 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   margin: 1em 0;
   box-shadow: var(--summer-shadow-sm);
 }
-.summer-content figure { margin: 1.4em 0; }
+
+.summer-content figure {
+  margin: 1.4em 0;
+}
+
 .summer-content figcaption {
   text-align: center;
   color: var(--summer-fg-muted);
@@ -1976,11 +2368,12 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
 
 .summer-footer {
   margin-top: auto;
-  padding: 28px 0 28px;
+  padding: 24px 0;
   border-top: 1px solid var(--summer-border-soft);
   background: var(--summer-bg-subtle);
   flex-shrink: 0;
 }
+
 .summer-footer__inner {
   max-width: var(--summer-page-max);
   margin: 0 auto;
@@ -1993,20 +2386,57 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   font-size: var(--summer-text-sm);
   color: var(--summer-fg-muted);
 }
-.summer-footer__user { max-width: 100%; }
-.summer-footer__branding { display: inline-flex; align-items: center; gap: 5px; color: var(--summer-fg-muted); }
-.summer-footer__branding a { color: var(--summer-fg-soft); font-weight: 600; text-decoration: none; }
-.summer-footer__branding a:hover { color: var(--summer-accent); }
-.summer-footer__branding svg { width: 16px; height: 16px; color: var(--summer-accent); }
-.summer-footer__sep { margin: 0 4px; opacity: 0.4; }
-.summer-footer__sponsor { display: inline-flex; align-items: center; gap: 4px; }
-.summer-footer__sponsor svg { width: 14px; height: 14px; color: var(--summer-accent); }
+
+.summer-footer__user {
+  max-width: 100%;
+}
+
+.summer-footer__branding {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--summer-fg-muted);
+}
+
+.summer-footer__branding a {
+  color: var(--summer-fg-soft);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.summer-footer__branding a:hover {
+  color: var(--summer-accent);
+}
+
+.summer-footer__branding svg {
+  width: 16px;
+  height: 16px;
+  color: var(--summer-accent);
+}
+
+.summer-footer__sep {
+  margin: 0 4px;
+  opacity: 0.4;
+}
+
+.summer-footer__sponsor {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.summer-footer__sponsor svg {
+  width: 14px;
+  height: 14px;
+  color: var(--summer-accent);
+}
 
 /* Complete footer (multi-column) */
 .summer-footer.summer-footer--complete {
   padding: 56px 0 24px;
   border-top: 1px solid var(--summer-border-soft);
 }
+
 .summer-footer__top {
   max-width: var(--summer-page-max);
   margin: 0 auto;
@@ -2016,22 +2446,41 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   gap: 40px;
   align-items: start;
 }
+
 @media (max-width: 900px) {
-  .summer-footer__top { grid-template-columns: 1fr 1fr; gap: 32px; }
+  .summer-footer__top {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
 }
+
 @media (max-width: 540px) {
-  .summer-footer__top { grid-template-columns: 1fr; gap: 28px; }
+  .summer-footer__top {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
 }
 
 /* Brand column */
-.summer-footer__brand { display: flex; flex-direction: column; gap: 14px; max-width: 320px; }
+.summer-footer__brand {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 320px;
+}
+
 .summer-footer__brand-logo {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 2px;
 }
-.summer-footer__brand-logo img { max-height: 28px; width: auto; }
+
+.summer-footer__brand-logo img {
+  max-height: 28px;
+  width: auto;
+}
+
 .summer-footer__desc {
   color: var(--summer-fg-muted);
   font-size: var(--summer-text-sm);
@@ -2040,7 +2489,12 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
 }
 
 /* Link columns */
-.summer-footer__col { display: flex; flex-direction: column; gap: 10px; }
+.summer-footer__col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .summer-footer__col-title {
   font-size: var(--summer-text-xs);
   font-weight: 700;
@@ -2049,8 +2503,20 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   color: var(--summer-fg);
   margin: 0 0 4px;
 }
-.summer-footer__col ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 7px; }
-.summer-footer__col li { margin: 0; }
+
+.summer-footer__col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.summer-footer__col li {
+  margin: 0;
+}
+
 .summer-footer__col a {
   display: inline-flex;
   align-items: center;
@@ -2060,7 +2526,11 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   text-decoration: none;
   transition: color var(--summer-fast) var(--summer-ease);
 }
-.summer-footer__col a:hover { color: var(--summer-accent); }
+
+.summer-footer__col a:hover {
+  color: var(--summer-accent);
+}
+
 .summer-footer__col a[target="_blank"]::after {
   content: "↗";
   font-size: 0.75em;
@@ -2068,6 +2538,7 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   margin-left: -1px;
   transition: opacity var(--summer-fast) var(--summer-ease), margin-left var(--summer-fast) var(--summer-ease);
 }
+
 .summer-footer__col a[target="_blank"]:hover::after {
   opacity: 0.7;
   margin-left: 1px;
@@ -2093,6 +2564,7 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   color: var(--summer-fg);
   font-size: var(--summer-text-sm);
 }
+
 .summer-banner__inner {
   max-width: var(--summer-page-max);
   margin: 0 auto;
@@ -2102,7 +2574,12 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   gap: 12px;
   justify-content: center;
 }
-.summer-banner a { color: var(--summer-accent); font-weight: 600; }
+
+.summer-banner a {
+  color: var(--summer-accent);
+  font-weight: 600;
+}
+
 .summer-banner__close {
   position: absolute;
   right: 12px;
@@ -2116,7 +2593,11 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   color: var(--summer-fg-soft);
   border-radius: 4px;
 }
-.summer-banner__close:hover { background: var(--summer-surface); color: var(--summer-fg); }
+
+.summer-banner__close:hover {
+  background: var(--summer-surface);
+  color: var(--summer-fg);
+}
 
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -2128,38 +2609,84 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
     --summer-sidebar-width: 256px;
     --summer-toc-width: 220px;
   }
-  .summer-main {padding: 0 32px 60px;--summer-gutter: 32px;}
-  .summer-toc {padding-right: 20px;padding-left: 20px;}
-  .summer-topbar__inner {padding: 0 20px;gap: 16px;}
-  .summer-subnav__inner { padding: 0 20px; }
-  .summer-footer__inner, .summer-footer__top, .summer-banner__inner { padding-left: 20px; padding-right: 20px; }
+
+  .summer-main {
+    padding: 24px;
+    --summer-gutter: 32px;
+  }
+
+  .summer-toc {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .summer-topbar__inner {
+    padding: 0 20px;
+    gap: 16px;
+  }
+
+  .summer-subnav__inner {
+    padding: 0 20px;
+  }
+
+  .summer-footer__inner,
+  .summer-footer__top,
+  .summer-banner__inner {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
 }
 
 @media (max-width: 1100px) {
+
   /* Hide TOC on medium screens; keep sidebar */
-  :root { --summer-grid-template: var(--summer-sidebar-width) 1fr; }
-  .summer-toc { display: none; }
+  :root {
+    --summer-grid-template: var(--summer-sidebar-width) 1fr;
+  }
+
+  .summer-toc {
+    display: none;
+  }
 }
 
 @media (max-width: 900px) {
-  .summer-topbar { position: static; }
+  .summer-topbar {
+    position: static;
+  }
+
   .summer-topbar__inner {
     grid-template-columns: 1fr auto;
     padding: 0 16px;
     gap: 12px;
   }
-  .summer-topbar__center { display: none; }
-  .summer-topbar__mobile { display: inline-flex; }
 
-  .summer-subnav { position: static; }
-  .summer-subnav__inner { padding: 0 16px; }
+  .summer-topbar__center {
+    display: none;
+  }
 
-  :root { --summer-grid-template: 1fr; }
+  .summer-topbar__mobile {
+    display: inline-flex;
+  }
+
+  .summer-subnav {
+    position: static;
+  }
+
+  .summer-subnav__inner {
+    padding: 0 16px;
+  }
+
+  :root {
+    --summer-grid-template: 1fr;
+  }
+
   .summer-sidebar {
     position: fixed;
-    top: 0; left: 0;
+    top: 0;
+    left: 0;
     z-index: var(--summer-z-overlay);
-    width: 84vw; max-width: 320px;
+    width: 84vw;
+    max-width: 320px;
     height: 100vh;
     border-right: 1px solid var(--summer-border);
     background: var(--summer-bg);
@@ -2168,26 +2695,62 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
     box-shadow: var(--summer-shadow-xl);
     padding-top: 48px;
   }
-  body.summer-sidebar-open .summer-sidebar { transform: translateX(0); }
+
+  body.summer-sidebar-open .summer-sidebar {
+    transform: translateX(0);
+  }
+
   body.summer-sidebar-open::after {
     content: "";
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.5);
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
     z-index: calc(var(--summer-z-overlay) - 1);
     backdrop-filter: blur(2px);
   }
-  .summer-sidebar-close { display: inline-flex; }
 
-  .summer-pageheader { position: static; }
-  .summer-main { padding: 0 20px 40px; --summer-gutter: 20px; }
-  .summer-content { font-size: 1rem; }
-  .summer-content h1 { font-size: 1.75rem; }
-  .summer-content h2 { font-size: 1.45rem; }
-  .summer-content h3 { font-size: 1.25rem; }
+  .summer-sidebar-close {
+    display: inline-flex;
+  }
 
-  .summer-pagenav { grid-template-columns: minmax(0, 1fr); }
-  .summer-pagenav__link--next { text-align: left; justify-content: flex-start; }
-  .summer-pagenav__link--next .summer-pagenav__icon { order: -1; }
+  .summer-pageheader {
+    position: static;
+  }
+
+  .summer-main {
+    padding: 0 20px 40px;
+    --summer-gutter: 20px;
+  }
+
+  .summer-content {
+    font-size: 1rem;
+  }
+
+  .summer-content h1 {
+    font-size: 1.75rem;
+  }
+
+  .summer-content h2 {
+    font-size: 1.45rem;
+  }
+
+  .summer-content h3 {
+    font-size: 1.25rem;
+  }
+
+  .summer-pagenav {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .summer-pagenav__link--next {
+    text-align: left;
+    justify-content: flex-start;
+  }
+
+  .summer-pagenav__link--next .summer-pagenav__icon {
+    order: -1;
+  }
+
   .summer-pagenav.no-prev .summer-pagenav__link--next,
   .summer-pagenav.no-next .summer-pagenav__link--prev {
     grid-column: auto;
@@ -2195,10 +2758,14 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
     max-width: none;
   }
 
-  .summer-totop { right: 16px; bottom: 16px; }
+  .summer-totop {
+    right: 16px;
+    bottom: 16px;
+  }
 }
 
 @media (max-width: 600px) {
+
   /* Start shedding secondary icons — theme switch stays as the most useful one */
   .summer-topbar__right .summer-iconbtn[aria-label="GitHub"],
   .summer-topbar__right .summer-iconbtn[aria-label="Sponsor"],
@@ -2208,10 +2775,26 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
 }
 
 @media (max-width: 480px) {
-  .summer-topbar__inner { padding: 0 12px; }
-  .summer-topbar__logo { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .summer-logo--text span:last-child { display: none; }
-  .summer-logo--text .summer-logo__icon { width: 26px; height: 26px; font-size: 0.9rem; }
+  .summer-topbar__inner {
+    padding: 0 12px;
+  }
+
+  .summer-topbar__logo {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .summer-logo--text span:last-child {
+    display: none;
+  }
+
+  .summer-logo--text .summer-logo__icon {
+    width: 26px;
+    height: 26px;
+    font-size: 0.9rem;
+  }
 }
 
 
@@ -2220,9 +2803,17 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
    ──────────────────────────────────────────────────────────────────────── */
 
 /* Hide elements when sidebar/toc is disabled */
-.summer-template.no-sidebar .summer-sidebar { display: none; }
-.summer-template.no-toc .summer-toc { display: none; }
-.summer-template.no-header .summer-pageheader { display: none; }
+.summer-template.no-sidebar .summer-sidebar {
+  display: none;
+}
+
+.summer-template.no-toc .summer-toc {
+  display: none;
+}
+
+.summer-template.no-header .summer-pageheader {
+  display: none;
+}
 
 /* Prev/next: when one is missing, push the survivor to its column edge.
  * `margin-left: auto` doesn't push in grid (only flex), so we use
@@ -2233,14 +2824,13 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   justify-self: end;
   max-width: 380px;
 }
+
 .summer-pagenav.no-next .summer-pagenav__link--prev {
   grid-column: 1;
   justify-self: start;
   max-width: 380px;
 }
 
-/* ── Markdown content additions ─────────────────────────────────────
-   Styles for elements not covered by the default GitBook reset. */
 .summer-content a.btn,
 .summer-content .docmd-btn,
 .summer-content .btn {
@@ -2257,9 +2847,10 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   text-decoration: none;
   line-height: 1.4;
   transition: background var(--summer-fast) var(--summer-ease),
-              border-color var(--summer-fast) var(--summer-ease),
-              color var(--summer-fast) var(--summer-ease);
+    border-color var(--summer-fast) var(--summer-ease),
+    color var(--summer-fast) var(--summer-ease);
 }
+
 .summer-content a.btn:hover,
 .summer-content .docmd-btn:hover,
 .summer-content .btn:hover {
@@ -2267,6 +2858,7 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   border-color: var(--summer-border-strong);
   color: var(--summer-fg);
 }
+
 .summer-content a.btn--primary,
 .summer-content .docmd-btn--primary,
 .summer-content .btn--primary,
@@ -2276,6 +2868,7 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   border-color: var(--summer-accent);
   color: #fff;
 }
+
 .summer-content a.btn--primary:hover,
 .summer-content .docmd-btn--primary:hover,
 .summer-content .btn--primary:hover {
@@ -2288,6 +2881,7 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   height: auto;
   border-radius: var(--summer-radius-lg);
 }
+
 .summer-content img.with-border {
   border: 1px solid var(--summer-border);
   box-shadow: var(--summer-shadow-sm);
@@ -2295,36 +2889,42 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
 
 .summer-content .docmd-card,
 .summer-content .docmd-container.card {
-    background: var(--summer-surface);
-    border: 1px solid var(--summer-border-soft);
-    border-radius: var(--summer-radius);
-    padding: 20px;
-    margin: 1rem 0;
-    transition: border-color var(--summer-fast) var(--summer-ease),
-background var(--summer-fast) var(--summer-ease);
+  background: var(--summer-surface);
+  border: 1px solid var(--summer-border-soft);
+  border-radius: var(--summer-radius);
+  padding: 20px;
+  margin: 1rem 0;
+  transition: border-color var(--summer-fast) var(--summer-ease),
+    background var(--summer-fast) var(--summer-ease);
 
 }
+
 .summer-content .docmd-card:hover,
 .summer-content .docmd-container.card:hover {
   border-color: var(--summer-border);
 }
+
 .summer-content .docmd-card .card-title,
 .summer-content .docmd-container.card .card-title {
-    font-weight: 600;
-    font-size: 1rem;
-    color: var(--summer-fg);
-    margin-bottom: 6px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--summer-fg);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 
 }
 
-.summer-content ul, .summer-content ol {
+.summer-content ul,
+.summer-content ol {
   margin: 0.75em 0;
   padding-left: 1.4em;
 }
-.summer-content li { margin: 0.3em 0; }
+
+.summer-content li {
+  margin: 0.3em 0;
+}
 
 /* ── Git last-updated popover ─────────────────────────────────────── */
 .summer-pagefooter__time {
@@ -2333,13 +2933,18 @@ background var(--summer-fast) var(--summer-ease);
   outline: none;
   border-radius: var(--summer-radius-sm);
   transition: background var(--summer-fast) var(--summer-ease),
-              color var(--summer-fast) var(--summer-ease);
+    color var(--summer-fast) var(--summer-ease);
 }
-.summer-pagefooter__time.has-commits { cursor: pointer; }
+
+.summer-pagefooter__time.has-commits {
+  cursor: pointer;
+}
+
 .summer-pagefooter__time.has-commits:hover,
 .summer-pagefooter__time.has-commits:focus {
   color: var(--summer-fg);
 }
+
 .summer-git-popover {
   position: absolute;
   bottom: calc(100% + 8px);
@@ -2357,9 +2962,10 @@ background var(--summer-fast) var(--summer-ease);
   visibility: hidden;
   pointer-events: none;
   transition: opacity var(--summer-fast) var(--summer-ease),
-              transform var(--summer-fast) var(--summer-ease),
-              visibility 0s linear var(--summer-fast);
+    transform var(--summer-fast) var(--summer-ease),
+    visibility 0s linear var(--summer-fast);
 }
+
 .summer-pagefooter__time.has-commits:hover .summer-git-popover,
 .summer-pagefooter__time.has-commits:focus .summer-git-popover,
 .summer-pagefooter__time.has-commits.open .summer-git-popover {
@@ -2368,9 +2974,10 @@ background var(--summer-fast) var(--summer-ease);
   pointer-events: auto;
   transform: translateX(-50%) translateY(0);
   transition: opacity var(--summer-fast) var(--summer-ease),
-              transform var(--summer-fast) var(--summer-ease),
-              visibility 0s;
+    transform var(--summer-fast) var(--summer-ease),
+    visibility 0s;
 }
+
 .summer-git-popover__title {
   font-size: 0.7rem;
   font-weight: 700;
@@ -2381,6 +2988,7 @@ background var(--summer-fast) var(--summer-ease);
   padding-bottom: 6px;
   border-bottom: 1px solid var(--summer-border-soft);
 }
+
 .summer-git-popover__list {
   list-style: none;
   padding: 0;
@@ -2391,12 +2999,14 @@ background var(--summer-fast) var(--summer-ease);
   max-height: 240px;
   overflow-y: auto;
 }
+
 .summer-git-popover__item {
   display: flex;
   gap: 8px;
   align-items: flex-start;
   font-size: 0.78rem;
 }
+
 .summer-git-popover__avatar {
   width: 24px;
   height: 24px;
@@ -2411,8 +3021,18 @@ background var(--summer-fast) var(--summer-ease);
   overflow: hidden;
   flex-shrink: 0;
 }
-.summer-git-popover__avatar img { width: 100%; height: 100%; object-fit: cover; }
-.summer-git-popover__details { min-width: 0; flex: 1; }
+
+.summer-git-popover__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.summer-git-popover__details {
+  min-width: 0;
+  flex: 1;
+}
+
 .summer-git-popover__msg {
   color: var(--summer-fg);
   line-height: 1.35;
@@ -2420,6 +3040,7 @@ background var(--summer-fast) var(--summer-ease);
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .summer-git-popover__meta {
   display: flex;
   gap: 8px;
@@ -2427,18 +3048,49 @@ background var(--summer-fast) var(--summer-ease);
   color: var(--summer-fg-muted);
   margin-top: 1px;
 }
-.summer-git-popover__author { font-weight: 500; }
+
+.summer-git-popover__author {
+  font-weight: 500;
+}
 
 /* Print styles */
 @media print {
-  .summer-topbar, .summer-subnav, .summer-sidebar, .summer-toc,
-  .summer-pagenav, .summer-pagefooter, .summer-footer,
-  .summer-banner, .summer-copy-widgets, .summer-totop,
-  .summer-cb__copy, .copy-code-button { display: none !important; }
-  .summer-main { padding: 0; max-width: 100%; }
-  .summer-content { color: #000; max-width: 100%; }
-  .summer-content pre, .summer-content table { page-break-inside: avoid; }
-  .summer-content h1, .summer-content h2, .summer-content h3 { page-break-after: avoid; }
+
+  .summer-topbar,
+  .summer-subnav,
+  .summer-sidebar,
+  .summer-toc,
+  .summer-pagenav,
+  .summer-pagefooter,
+  .summer-footer,
+  .summer-banner,
+  .summer-copy-widgets,
+  .summer-totop,
+  .summer-cb__copy,
+  .copy-code-button {
+    display: none !important;
+  }
+
+  .summer-main {
+    padding: 0;
+    max-width: 100%;
+  }
+
+  .summer-content {
+    color: #000;
+    max-width: 100%;
+  }
+
+  .summer-content pre,
+  .summer-content table {
+    page-break-inside: avoid;
+  }
+
+  .summer-content h1,
+  .summer-content h2,
+  .summer-content h3 {
+    page-break-after: avoid;
+  }
 }
 
 
@@ -2463,17 +3115,23 @@ background var(--summer-fast) var(--summer-ease);
   border: 1px solid var(--summer-accent);
   cursor: pointer;
   transition: filter var(--summer-fast) var(--summer-ease),
-              transform var(--summer-fast) var(--summer-ease);
+    transform var(--summer-fast) var(--summer-ease);
   vertical-align: middle;
   line-height: 1.4;
 }
+
 .summer-content a.docmd-button:hover,
 .summer-content .docmd-button:hover {
   filter: brightness(1.08);
   transform: translateY(-1px);
   color: #fff;
 }
-.summer-content .docmd-button .button-icon { width: 1em; height: 1em; flex-shrink: 0; }
+
+.summer-content .docmd-button .button-icon {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+}
 
 .summer-content .docmd-tag {
   display: inline-flex;
@@ -2490,8 +3148,15 @@ background var(--summer-fast) var(--summer-ease);
   vertical-align: middle;
   transition: filter var(--summer-fast) var(--summer-ease);
 }
-.summer-content a.docmd-tag-link .docmd-tag:hover { filter: brightness(1.08); }
-.summer-content .docmd-tag .tag-icon { display: inline-block; margin-right: 4px; }
+
+.summer-content a.docmd-tag-link .docmd-tag:hover {
+  filter: brightness(1.08);
+}
+
+.summer-content .docmd-tag .tag-icon {
+  display: inline-block;
+  margin-right: 4px;
+}
 
 .summer-content .docmd-embed {
   display: block;
@@ -2499,20 +3164,24 @@ background var(--summer-fast) var(--summer-ease);
   border-radius: var(--summer-radius-md);
   max-width: 100%;
 }
+
 .summer-content iframe.docmd-embed {
   width: 100%;
   aspect-ratio: 16 / 9;
   border: none !important;
 }
+
 .summer-content iframe.docmd-embed[data-short="true"] {
   aspect-ratio: 9 / 16;
   max-width: 400px;
 }
+
 .summer-content blockquote.docmd-embed {
   border-left: 3px solid var(--summer-border-strong);
   padding: 8px 14px;
   background: var(--summer-surface);
 }
+
 .summer-content .docmd-embed-fallback {
   margin: 1.5rem 0;
   display: flex;
@@ -2525,6 +3194,7 @@ background var(--summer-fast) var(--summer-ease);
   overflow: hidden;
   background: var(--summer-bg);
 }
+
 .summer-content .docmd-tabs-nav {
   display: flex;
   background: var(--summer-surface);
@@ -2532,7 +3202,11 @@ background var(--summer-fast) var(--summer-ease);
   overflow-x: auto;
   scrollbar-width: none;
 }
-.summer-content .docmd-tabs-nav::-webkit-scrollbar { display: none; }
+
+.summer-content .docmd-tabs-nav::-webkit-scrollbar {
+  display: none;
+}
+
 .summer-content .docmd-tabs-nav-item {
   padding: 10px 16px;
   cursor: pointer;
@@ -2545,33 +3219,50 @@ background var(--summer-fast) var(--summer-ease);
   gap: 6px;
   font-size: 0.85rem;
   transition: color var(--summer-fast) var(--summer-ease),
-              border-color var(--summer-fast) var(--summer-ease);
+    border-color var(--summer-fast) var(--summer-ease);
 }
-.summer-content .docmd-tabs-nav-item:hover { color: var(--summer-fg); }
+
+.summer-content .docmd-tabs-nav-item:hover {
+  color: var(--summer-fg);
+}
+
 .summer-content .docmd-tabs-nav-item.active {
   color: var(--summer-accent);
   border-bottom-color: var(--summer-accent);
   background: var(--summer-bg);
 }
-.summer-content .docmd-tabs-content { padding: 1.25rem 1.25rem 0.5rem; }
-.summer-content .docmd-tab-pane { display: none; }
-.summer-content .docmd-tab-pane.active { display: block; }
+
+.summer-content .docmd-tabs-content {
+  padding: 1.25rem 1.25rem 0.5rem;
+}
+
+.summer-content .docmd-tab-pane {
+  display: none;
+}
+
+.summer-content .docmd-tab-pane.active {
+  display: block;
+}
 
 .summer-content .docmd-container.grids {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 16px;
-    margin: 1.5rem 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 1.5rem 0;
 
 }
+
 .summer-content .docmd-container.grid-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    transition: border-color var(--summer-fast) var(--summer-ease);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: border-color var(--summer-fast) var(--summer-ease);
 
 }
-.summer-content .docmd-container.grid-item:hover { border-color: var(--summer-border); }
+
+.summer-content .docmd-container.grid-item:hover {
+  border-color: var(--summer-border);
+}
 
 .summer-content .docmd-hero {
   position: relative;
@@ -2582,6 +3273,7 @@ background var(--summer-fast) var(--summer-ease);
   flex-direction: column;
   border-radius: var(--summer-radius-md);
 }
+
 .summer-content .docmd-hero.hero-glow::before {
   content: '';
   position: absolute;
@@ -2596,8 +3288,16 @@ background var(--summer-fast) var(--summer-ease);
   z-index: -1;
   pointer-events: none;
 }
-.summer-content .docmd-hero.hero-banner { text-align: center; align-items: center; }
-.summer-content .docmd-hero.hero-banner > * { max-width: 760px; }
+
+.summer-content .docmd-hero.hero-banner {
+  text-align: center;
+  align-items: center;
+}
+
+.summer-content .docmd-hero.hero-banner>* {
+  max-width: 760px;
+}
+
 .summer-content .docmd-hero.hero-split {
   display: flex;
   flex-direction: row;
@@ -2605,9 +3305,21 @@ background var(--summer-fast) var(--summer-ease);
   gap: 2rem;
   text-align: left;
 }
-.summer-content .docmd-hero.hero-split > * { flex: 1 1 0; min-width: 0; }
-.summer-content .docmd-hero h1 { font-size: 2.25rem; margin: 0 0 0.5rem; }
-.summer-content .docmd-hero p { margin: 0.3em 0; color: var(--summer-fg-soft); }
+
+.summer-content .docmd-hero.hero-split>* {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.summer-content .docmd-hero h1 {
+  font-size: 2.25rem;
+  margin: 0 0 0.5rem;
+}
+
+.summer-content .docmd-hero p {
+  margin: 0.3em 0;
+  color: var(--summer-fg-soft);
+}
 
 .summer-content .docmd-container.changelog-timeline {
   position: relative;
@@ -2616,6 +3328,7 @@ background var(--summer-fast) var(--summer-ease);
   border: none;
   box-shadow: none;
 }
+
 .summer-content .docmd-container.changelog-timeline::before {
   content: "";
   position: absolute;
@@ -2627,12 +3340,14 @@ background var(--summer-fast) var(--summer-ease);
   pointer-events: none;
   z-index: 0;
 }
+
 .summer-content .changelog-entry {
   position: relative;
   padding-left: 22px;
   margin-bottom: 1.25rem;
   display: block;
 }
+
 .summer-content .changelog-entry::after {
   content: "";
   position: absolute;
@@ -2645,14 +3360,16 @@ background var(--summer-fast) var(--summer-ease);
   border-radius: 50%;
   z-index: 2;
   transition: transform var(--summer-fast) var(--summer-ease),
-              border-color var(--summer-fast) var(--summer-ease),
-              background var(--summer-fast) var(--summer-ease);
+    border-color var(--summer-fast) var(--summer-ease),
+    background var(--summer-fast) var(--summer-ease);
 }
+
 .summer-content .changelog-entry:hover::after {
   transform: scale(1.3);
   border-color: var(--summer-accent);
   background: var(--summer-accent);
 }
+
 .summer-content .changelog-date {
   display: inline-block;
   background: var(--summer-accent-soft);
@@ -2665,18 +3382,54 @@ background var(--summer-fast) var(--summer-ease);
   letter-spacing: 0.04em;
   margin-bottom: 4px;
 }
-.summer-content .changelog-body { padding-bottom: 0.4rem; }
-.summer-content .changelog-body > :first-child { margin-top: 0; }
 
-.summer-content img.align-left { float: left; margin: 0.2rem 1.25rem 0.5rem 0; max-width: 50%; }
-.summer-content img.align-right { float: right; margin: 0.2rem 0 0.5rem 1.25rem; max-width: 50%; }
-.summer-content img.align-center { display: block; margin-left: auto; margin-right: auto; }
-.summer-content img.size-small { max-width: 300px; }
-.summer-content img.size-medium { max-width: 500px; }
-.summer-content img.size-large { max-width: 800px; }
-.summer-content img.with-shadow { box-shadow: var(--summer-shadow); }
+.summer-content .changelog-body {
+  padding-bottom: 0.4rem;
+}
 
-.summer-content .docmd-container figure { margin: 1.5rem 0; text-align: center; }
+.summer-content .changelog-body> :first-child {
+  margin-top: 0;
+}
+
+.summer-content img.align-left {
+  float: left;
+  margin: 0.2rem 1.25rem 0.5rem 0;
+  max-width: 50%;
+}
+
+.summer-content img.align-right {
+  float: right;
+  margin: 0.2rem 0 0.5rem 1.25rem;
+  max-width: 50%;
+}
+
+.summer-content img.align-center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.summer-content img.size-small {
+  max-width: 300px;
+}
+
+.summer-content img.size-medium {
+  max-width: 500px;
+}
+
+.summer-content img.size-large {
+  max-width: 800px;
+}
+
+.summer-content img.with-shadow {
+  box-shadow: var(--summer-shadow);
+}
+
+.summer-content .docmd-container figure {
+  margin: 1.5rem 0;
+  text-align: center;
+}
+
 .summer-content .docmd-container figcaption {
   font-size: 0.85rem;
   color: var(--summer-fg-muted);
@@ -2696,6 +3449,7 @@ background var(--summer-fast) var(--summer-ease);
   margin-left: 0 !important;
   position: relative;
 }
+
 .step-item {
   counter-increment: step-counter;
   position: relative;
@@ -2704,6 +3458,7 @@ background var(--summer-fast) var(--summer-ease);
   margin-bottom: 2rem;
   list-style: none !important;
 }
+
 .step-item::before {
   content: counter(step-counter);
   position: absolute;
@@ -2724,10 +3479,12 @@ background var(--summer-fast) var(--summer-ease);
   box-shadow: var(--summer-shadow-xs);
   transition: all var(--summer-fast) var(--summer-ease);
 }
+
 .step-item:hover::before {
   border-color: var(--summer-accent);
   color: var(--summer-accent);
 }
+
 .step-item::after {
   content: "";
   position: absolute;
@@ -2738,6 +3495,7 @@ background var(--summer-fast) var(--summer-ease);
   background: var(--summer-border-soft);
   z-index: 0;
 }
+
 .step-item:last-child::after {
   display: none;
 }
@@ -2748,6 +3506,7 @@ background var(--summer-fast) var(--summer-ease);
   padding-left: 32px;
   margin: 2.5rem 0;
 }
+
 .changelog-timeline::before {
   content: "";
   position: absolute;
@@ -2757,10 +3516,12 @@ background var(--summer-fast) var(--summer-ease);
   width: 2px;
   background: var(--summer-border-soft);
 }
+
 .changelog-entry {
   position: relative;
   margin-bottom: 2.5rem;
 }
+
 .changelog-entry::before {
   content: "";
   position: absolute;
@@ -2774,12 +3535,15 @@ background var(--summer-fast) var(--summer-ease);
   z-index: 1;
   transition: transform var(--summer-fast) var(--summer-ease);
 }
+
 .changelog-entry:hover::before {
   transform: scale(1.25);
 }
+
 .changelog-meta {
   margin-bottom: 0.5rem;
 }
+
 .changelog-date {
   font-size: 0.85rem;
   font-weight: 700;
@@ -2787,11 +3551,13 @@ background var(--summer-fast) var(--summer-ease);
   letter-spacing: 0.06em;
   color: var(--summer-accent);
 }
+
 .changelog-body {
   font-size: 1rem;
   color: var(--summer-fg-soft);
 }
-.changelog-body > :first-child {
+
+.changelog-body> :first-child {
   margin-top: 0;
 }
 
@@ -2804,6 +3570,7 @@ background var(--summer-fast) var(--summer-ease);
   background: var(--summer-bg);
   box-shadow: var(--summer-shadow-xs);
 }
+
 .docmd-tabs-nav {
   display: flex;
   background: var(--summer-surface-subtle, var(--summer-bg-subtle));
@@ -2811,9 +3578,11 @@ background var(--summer-fast) var(--summer-ease);
   overflow-x: auto;
   scrollbar-width: none;
 }
+
 .docmd-tabs-nav::-webkit-scrollbar {
   display: none;
 }
+
 .docmd-tabs-nav-item {
   display: flex;
   align-items: center;
@@ -2827,45 +3596,53 @@ background var(--summer-fast) var(--summer-ease);
   transition: all var(--summer-fast) var(--summer-ease);
   user-select: none;
 }
+
 .docmd-tabs-nav-item:hover {
   color: var(--summer-fg);
   background: rgba(0, 0, 0, 0.02);
 }
+
 html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   background: rgba(255, 255, 255, 0.02);
 }
+
 .docmd-tabs-nav-item.active {
   color: var(--summer-accent);
   border-bottom-color: var(--summer-accent);
   background: var(--summer-bg);
   font-weight: 600;
 }
+
 .docmd-tabs-content {
   padding: 20px;
 }
+
 .docmd-tab-pane {
   display: none;
 }
+
 .docmd-tab-pane.active {
   display: block;
 }
 
 /* Cards Container */
 .docmd-container.card {
-    margin: 1.5rem 0;
-    border: 1px solid var(--summer-border-soft);
-    border-radius: var(--summer-radius-lg);
-    padding: 24px;
-    background: var(--summer-bg);
-    box-shadow: var(--summer-shadow-xs);
-    transition: all var(--summer-med) var(--summer-ease);
+  margin: 1.5rem 0;
+  border: 1px solid var(--summer-border-soft);
+  border-radius: var(--summer-radius-lg);
+  padding: 24px;
+  background: var(--summer-bg);
+  box-shadow: var(--summer-shadow-xs);
+  transition: all var(--summer-med) var(--summer-ease);
 
 }
+
 .docmd-container.card:hover {
   transform: translateY(-2px);
   border-color: var(--summer-accent-hover, var(--summer-accent));
   box-shadow: var(--summer-shadow);
 }
+
 .docmd-container.card .card-title {
   display: flex;
   align-items: center;
@@ -2875,16 +3652,18 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   color: var(--summer-fg);
   margin-bottom: 12px;
 }
+
 .docmd-container.card .card-title svg {
   width: 20px;
   height: 20px;
   color: var(--summer-accent);
   flex-shrink: 0;
 }
+
 .docmd-container.card .card-content {
-    font-size: 0.95rem;
-    color: var(--summer-fg-soft);
-    line-height: 1.6;
+  font-size: 0.95rem;
+  color: var(--summer-fg-soft);
+  line-height: 1.6;
 
 }
 
@@ -2898,9 +3677,11 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   box-shadow: var(--summer-shadow-xs);
   transition: border-color var(--summer-fast) var(--summer-ease);
 }
+
 .docmd-container.collapsible:hover {
   border-color: var(--summer-accent);
 }
+
 .collapsible-summary {
   display: flex;
   align-items: center;
@@ -2913,33 +3694,40 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   background: var(--summer-surface-2);
   list-style: none !important;
 }
+
 .collapsible-summary::-webkit-details-marker {
   display: none !important;
 }
+
 .collapsible-title {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 0.95rem;
 }
+
 .collapsible-title svg {
   width: 16px;
   height: 16px;
   color: var(--summer-accent);
   flex-shrink: 0;
 }
+
 .collapsible-arrow {
   display: inline-flex;
   color: var(--summer-fg-muted);
   transition: transform var(--summer-med) var(--summer-ease);
 }
+
 .collapsible-arrow svg {
   width: 16px;
   height: 16px;
 }
+
 .docmd-container.collapsible[open] .collapsible-arrow {
   transform: rotate(180deg);
 }
+
 .collapsible-content {
   padding: 18px;
   border-top: 1px solid var(--summer-border-soft);
@@ -2964,6 +3752,7 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   visibility: hidden !important;
   opacity: 0 !important;
 }
+
 /* When legitimately open (fallback), restore */
 .docmd-search-modal[style*="flex"] {
   position: fixed !important;
@@ -2972,16 +3761,16 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   pointer-events: auto !important;
   visibility: visible !important;
   opacity: 1 !important;
-  background: rgba(0,0,0,0.4) !important;
+  background: rgba(0, 0, 0, 0.4) !important;
   backdrop-filter: blur(4px) !important;
 }
 
-/* ── Inline search dropdown (GitBook-style) ── */
 .summer-search-container {
   position: relative;
   width: 100%;
   max-width: 380px;
 }
+
 .summer-search-input {
   width: 100%;
   padding: 5px 10px 5px 30px;
@@ -2994,11 +3783,13 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   outline: none;
   transition: all var(--summer-fast) var(--summer-ease);
 }
+
 .summer-search-input:focus {
   background: var(--summer-bg);
   border-color: var(--summer-border-strong);
   box-shadow: var(--summer-shadow-sm);
 }
+
 .summer-search-container .summer-search__icon {
   position: absolute;
   left: 10px;
@@ -3025,8 +3816,13 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   display: flex;
   flex-direction: column;
 }
+
 @media (max-width: 768px) {
-  .summer-search-dropdown { width: calc(100vw - 24px); left: 0; transform: none; }
+  .summer-search-dropdown {
+    width: calc(100vw - 24px);
+    left: 0;
+    transform: none;
+  }
 }
 
 .summer-search-results-wrapper {
@@ -3035,6 +3831,7 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   padding: 6px;
   scrollbar-width: thin;
 }
+
 .summer-search-dropdown-footer {
   display: flex;
   justify-content: space-between;
@@ -3046,6 +3843,7 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   color: var(--summer-fg-muted);
   gap: 12px;
 }
+
 .summer-search-dropdown-footer kbd {
   display: inline-flex;
   align-items: center;
@@ -3059,8 +3857,6 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   color: var(--summer-fg-soft);
 }
 
-/* ── Search results: GitBook style ── */
-/* Strip all plugin defaults first */
 .summer-search-results-wrapper .docmd-search-results {
   padding: 0 !important;
   margin: 0 !important;
@@ -3083,6 +3879,7 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   cursor: pointer !important;
   transition: background var(--summer-fast) var(--summer-ease) !important;
 }
+
 .summer-search-results-wrapper .search-result-item:hover,
 .summer-search-results-wrapper .search-result-item.selected,
 .search-result-item:hover,
@@ -3101,6 +3898,7 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   font-family: var(--summer-font-sans) !important;
   line-height: 1.4 !important;
 }
+
 .search-result-item.selected .search-result-title,
 .search-result-item:hover .search-result-title {
   color: var(--summer-accent) !important;
@@ -3116,6 +3914,7 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   text-overflow: ellipsis !important;
   padding-left: 0 !important;
 }
+
 .search-result-preview mark {
   background: var(--summer-accent-soft) !important;
   color: var(--summer-accent) !important;
@@ -3162,6 +3961,7 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   letter-spacing: 0.01em !important;
   transition: background var(--summer-fast) var(--summer-ease), color var(--summer-fast) var(--summer-ease);
 }
+
 .search-result-item:hover .search-result-version,
 .search-result-item.selected .search-result-version {
   background: var(--summer-bg) !important;
@@ -3176,12 +3976,14 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   padding: 0 2px !important;
   font-size: 0.68rem !important;
   font-weight: 600 !important;
-  color: var(--summer-fg-muted) !important;
+  color: var(--summer-fg-soft);
   font-family: var(--summer-font-sans) !important;
   font-variant-numeric: tabular-nums !important;
   letter-spacing: -0.01em !important;
   min-width: 32px !important;
   justify-content: flex-end !important;
+  background-color: var(--summer-accent-faint);
+  border-radius: var(--summer-radius-lg);
 }
 
 /* Filter pills (top of dropdown) */
@@ -3194,6 +3996,7 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   border-bottom: 1px solid var(--summer-border-soft) !important;
   flex-wrap: wrap !important;
 }
+
 .docmd-search-filter-pill,
 .search-filter-pill,
 .search-filter-tag {
@@ -3214,6 +4017,7 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   font-family: var(--summer-font-sans) !important;
   letter-spacing: 0.01em !important;
 }
+
 .docmd-search-filter-pill svg,
 .search-filter-pill svg,
 .search-filter-tag svg {
@@ -3221,6 +4025,7 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   height: 10px !important;
   color: currentColor !important;
 }
+
 .docmd-search-filter-pill:hover,
 .search-filter-pill:hover,
 .search-filter-tag:hover {
@@ -3228,6 +4033,7 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   color: var(--summer-fg) !important;
   background: var(--summer-surface) !important;
 }
+
 .docmd-search-filter-pill.active,
 .search-filter-pill.active,
 .search-filter-tag.active {
@@ -3270,10 +4076,6 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   display: block;
 }
 
-
-/* =========================================================================
-   18. LANGUAGE SWITCHER DROPDOWN (GITBOOK-STYLE)
-   ========================================================================= */
 .docmd-language-switcher {
   position: relative;
   display: inline-block;
@@ -3315,8 +4117,8 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   visibility: hidden;
   transform: translateY(10px);
   transition: opacity var(--summer-med) var(--summer-ease),
-              transform var(--summer-med) var(--summer-ease),
-              visibility var(--summer-med) var(--summer-ease);
+    transform var(--summer-med) var(--summer-ease),
+    visibility var(--summer-med) var(--summer-ease);
   z-index: var(--summer-z-overlay);
 }
 
@@ -3371,9 +4173,6 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   border-radius: 4px;
 }
 
-/* ────────────────────────────────────────────────────────────────────────
-   19. IMAGE LIGHTBOX (docmd-lightbox)
-   ──────────────────────────────────────────────────────────────────────── */
 .docmd-lightbox {
   display: none;
   position: fixed;
@@ -3432,7 +4231,7 @@ img.lightbox {
 }
 
 .search-initial {
-    padding: 1.5rem;
-    text-align: center;
-    color: var(--summer-accent);
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--summer-accent);
 }

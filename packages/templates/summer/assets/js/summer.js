@@ -8,16 +8,6 @@
    switchers, code-block copy, page copy, banner, cookie consent and
    search-trigger event delegation):
 
-   - Inline topbar search dropdown that re-homes docmd-search.js's
-     full-screen modal into the topbar, forwarding keyboard nav
-     (↑↓ Enter Esc) to the hidden plugin input
-   - TOC scroll-spy with a custom SVG path track (the GitBook-style
-     "folding line" that follows the active heading's indent level)
-   - TOC smooth-scroll (offset for the sticky topbar + subnav + pageheader)
-   - Scroll-to-top button (revealed on scroll)
-   - Git "last-updated" popover (relative dates + recent commits)
-   - Relative date rendering for any [data-timestamp] element
-
    Everything is idempotent — per-page wires re-run after every
    docmd:page-mounted event (fired by docmd-main.js on SPA nav).
    ========================================================================= */
