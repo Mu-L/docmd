@@ -43,8 +43,10 @@ export function normalizeConfig(userConfig: any) {
     config.src = config.src || config.srcDir || config.source || 'docs';
     config.out = process.env.DOCMD_PROJECT_OUT || config.out || config.outDir || config.outputDir || 'site';
     config.base = process.env.DOCMD_PROJECT_PREFIX || config.base || '/';
-    // Page navigation (prev/next links) is on by default — opt out with `false`.
+    // Top-level QoL defaults — opt out by setting `false`.
     if (config.pageNavigation === undefined) config.pageNavigation = true;
+    if (config.copyCode === undefined) config.copyCode = true;
+    if (config.autoTitleFromH1 === undefined) config.autoTitleFromH1 = true;
 
     // Failsafe: Keep legacy keys attached for older plugins (SEO, Sitemap) to prevent breakage during transition.
     config.siteTitle = config.title;
@@ -66,6 +68,7 @@ export function normalizeConfig(userConfig: any) {
 
     config.layout = {
         spa: true,
+        breadcrumbs: true,
         ...userLayout
     };
 
@@ -87,6 +90,7 @@ export function normalizeConfig(userConfig: any) {
     // Legacy Mapping: Footer
     const legacyFooter = config.footer;
     config.footer = {
+        copyright: `© ${new Date().getFullYear()}`,
         style: 'minimal',
         content: typeof legacyFooter === 'string' ? legacyFooter : null,
         branding: true,
@@ -179,7 +183,7 @@ export function normalizeConfig(userConfig: any) {
     // --- 4. Theme & Branding ---
     config.theme = {
         name: 'default',
-        appearance: 'system',
+        appearance: 'light',
         customCss: [],
         codeHighlight: true,
         ...(config.theme || {})
