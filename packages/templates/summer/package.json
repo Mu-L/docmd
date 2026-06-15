@@ -32,11 +32,23 @@
   },
   "keywords": [
     "docmd",
+    "documentation",
     "docmd-template",
     "template",
     "summer",
-    "documentation",
-    "theme"
+    "theme",
+    "markdown",
+    "minimalist",
+    "zero-config",
+    "site-generator",
+    "static-site-generator",
+    "typescript",
+    "javascript",
+    "nodejs",
+    "browser",
+    "website",
+    "generator",
+    "docs"
   ],
   "engines": {
     "node": ">=18"
@@ -47,15 +59,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/docmd-io/docmd",
-    "directory": "packages/templates/summer"
+    "url": "git+https://github.com/docmd-io/docmd.git"
   },
   "bugs": {
     "url": "https://github.com/docmd-io/docmd/issues"
   },
   "homepage": "https://docmd.io",
-  "funding": {
-    "github": "https://github.com/sponsors/mgks"
-  },
+  "funding": "https://github.com/sponsors/mgks",
   "license": "MIT"
 }
