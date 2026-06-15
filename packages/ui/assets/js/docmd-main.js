@@ -477,9 +477,6 @@
     if (document.body.dataset.copyCodeEnabled !== 'true') return;
 
     document.querySelectorAll('pre').forEach(preElement => {
-      // If the parser already wrapped this codeblock in
-      // .docmd-code-block-wrapper (which is now `position: relative`),
-      // anchor the button there — no need to add an extra wrapper.
       const outerWrapper = preElement.closest('.docmd-code-block-wrapper');
       const anchor = outerWrapper || preElement.parentNode;
       if (anchor.querySelector(':scope > .copy-code-button')) return;
