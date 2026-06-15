@@ -26,7 +26,7 @@
  *     ]
  *   }
  *
- * Each project folder has its own docmd.config.js with its own
+ * Each project folder has its own docmd.config.json with its own
  * title, versions, i18n, plugins, navigation, etc.
  *
  * Output merges into a single site/ directory:
