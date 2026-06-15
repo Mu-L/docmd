@@ -19,40 +19,29 @@
 }
 
 :root {
-    /* Colors - Light */
     --bg-color: #ffffff;
-    --text-color: #27272a;
+    --text-color: #1f1f20;
     --text-muted: #6b6b75;
     --text-heading: #09090b;
     --link-color: #068ad5;
     --link-color-hover: #0b76b3;
     --border-color: #e4e4e7;
-
-    /* UI Structure */
     --border-color-codeblock: #0a0a0a17;
     --border-color-hover: #dedee0;
     --header-bg: rgba(255, 255, 255, 0.8);
     --header-border: #e4e4e7;
     --sidebar-bg: #fafafa;
     --sidebar-text: #3f3f46;
-    --sidebar-link-active-bg: #0c8ad51a;
+    --sidebar-link-active-bg: #55bbf91c;
     --sidebar-link-active-text: #18181b;
-
-    /* Code Colors */
     --code-bg: #fafafa;
     --code-text: #27272a;
-
-    /* Accents */
     --sponsor-red: #f43f5e;
     --sponsor-red-hover: #e11d48;
-
-    /* Typography */
     --font-family-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     --font-family-mono: "JetBrains Mono", SFMono-Regular, Consolas, Menlo, monospace;
     --font-size-base: 16px;
     --line-height-relaxed: 1.625;
-
-    /* Border Radius & Shadows */
     --radius-sm: 4px;
     --radius-md: 6px;
     --radius-lg: 8px;
@@ -60,8 +49,6 @@
     --shadow-sm: 0 2px 5px -3px #00000026;
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-
-    /* Spacing Scale */
     --space-1: 0.25rem;
     --space-2: 0.5rem;
     --space-3: 0.75rem;
@@ -69,36 +56,27 @@
     --space-6: 1.5rem;
     --space-8: 2rem;
     --space-12: 3rem;
-
-    /* Sizing */
     --ui-element-size: 32px;
     --sidebar-width: 260px;
     --menubar-h: 44px;
     --header-h: 44px;
-
-    /* Scrollbar */
     --scrollbar-thumb: #e4e4e7;
     --scrollbar-thumb-hover: #a1a1aa;
-
-    /* Content Area */
     --content-area-bg: transparent;
     --content-area-radius: 0;
     --content-area-shadow: none;
     --content-area-border: none;
-
-    /* Sidebar Groups */
     --sidebar-group-bg: #3352660d;
     --sidebar-group-border: transparent;
     color-scheme: light;
-
     --image-shadow: 0 0 15px -5px rgba(102, 102, 102, 0.3);
     --image-border-radius: 6px;
     --image-border-color: #ededed;
-    /* Halo / glow tokens — drive background halos, hover glows, focus rings */
     --glow-color: rgba(6, 138, 213, 0.10);
     --glow-color-strong: rgba(6, 138, 213, 0.18);
     --halo-soft: 0 0 0 4px rgba(6, 138, 213, 0.10);
     --halo-soft-strong: 0 0 0 4px rgba(6, 138, 213, 0.18);
+
 }
 
 :root[data-theme=dark] {
@@ -140,6 +118,7 @@
 ::-webkit-scrollbar-thumb {
     background-color: var(--scrollbar-thumb);
     border-radius: 10px;
+
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -331,12 +310,13 @@ a:any-link {
     border-radius: var(--radius-md);
     font-size: 0.875rem;
     line-height: 1.4;
+    font-weight: 500;
+
 }
 
 .sidebar nav li.nav-group {
     border-radius: 6px;
-    background-color: var(--sidebar-group-bg);
-    border: 1px solid var(--sidebar-group-border);
+
 }
 
 .sidebar nav li.collapsible {
@@ -351,6 +331,7 @@ a:any-link {
     color: var(--link-color);
     font-weight: 600;
     background-color: var(--sidebar-link-active-bg);
+
 }
 
 /* Modern "node on thread" active indicator.
@@ -361,7 +342,7 @@ a:any-link {
 .sidebar nav li>a.active::before {
     content: "";
     position: absolute;
-    left: 0;
+    left: -10px;
     top: 50%;
     transform: translateY(-50%);
     width: 3px;
@@ -369,6 +350,7 @@ a:any-link {
     min-height: 14px;
     background-color: var(--link-color);
     border-radius: 2px;
+
 }
 
 .sidebar nav li.active-parent>a {
@@ -383,14 +365,14 @@ a:any-link {
     left: 0;
     top: 5px;
     bottom: 5px;
-    width: 3px;
-    background-color: var(--border-color);
+    /* width: 3px; */
     opacity: 1;
+
 }
 
 .sidebar nav li .nav-label {
-    color: var(--text-color);
     font-weight: 600;
+
 }
 
 .sidebar nav .submenu {
@@ -435,12 +417,14 @@ span.collapse-icon-wrapper .collapse-icon {
 .sidebar nav li a.active,
 .sidebar nav li a:hover,
 .theme-toggle-button:hover {
-    background-color: var(--sidebar-link-active-bg);
+    color: var(--text-color);
+
 }
 
 .sidebar nav li a.active {
     font-weight: 600;
     color: var(--link-color)
+
 }
 
 .copy-code-button:hover,
@@ -994,6 +978,7 @@ body.has-menubar-header .docmd-menubar {
     cursor: pointer;
     transition: all 0.2s ease;
     box-sizing: border-box;
+
 }
 
 .docmd-options-menu .theme-toggle-button,
@@ -1016,13 +1001,13 @@ body.has-menubar-header .docmd-menubar {
     width: auto;
     padding: 0 0.75rem;
     gap: 0.5rem;
-    background-color: var(--sidebar-bg);
+
 }
 
 .docmd-options-menu button:hover:not(.sponsor-link-button) {
-    background-color: var(--sidebar-link-active-bg);
     color: var(--text-heading);
     border-color: var(--border-color-hover);
+
 }
 
 .docmd-search-trigger .search-label {
@@ -1527,7 +1512,8 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 }
 
 .sidebar-nav li.collapsible>.nav-label:hover {
-    background-color: var(--sidebar-link-active-bg);
+    color: var(--text-color);
+
 }
 
 .sidebar-nav .lucide-icon {
