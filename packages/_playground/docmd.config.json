@@ -7,12 +7,12 @@
   "minify": true,
   "copyCode": true,
   "theme": {
-    "name": "summer",
+    "name": "default",
     "appearance": "light",
     "codeHighlight": true,
     "customCss": []
   },
-
+  "pageNavigation": true,
   "layout": {
     "spa": true,
     "menubar": {
