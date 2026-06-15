@@ -7,7 +7,7 @@
   "minify": true,
   "copyCode": true,
   "theme": {
-    "name": "default",
+    "name": "summer",
     "appearance": "light",
     "codeHighlight": true,
     "customCss": []
