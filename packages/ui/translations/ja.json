@@ -39,5 +39,8 @@
   "readMore": "続きを読む",
   "recentCommits": "最近のコミット",
   "searchPlaceholder": "ドキュメントを検索...",
-  "selectProject": "プロジェクトを選択"
+  "selectProject": "プロジェクトを選択",
+  "poweredBy": "提供",
+  "viewSource": "ソースを表示",
+  "goToTop": "トップへ戻る"
 }

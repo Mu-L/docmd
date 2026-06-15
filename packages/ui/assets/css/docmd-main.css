@@ -1593,12 +1593,13 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 }
 
 .card .card-title {
-    font-weight: 700;
-    font-size: 1.125rem;
-    margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-6)) var(--space-4);
-    padding: var(--space-3) var(--space-6);
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-6)) var(--space-3);
+    padding: var(--space-2) var(--space-4);
     background-color: var(--sidebar-bg);
     border-bottom: 1px solid var(--border-color);
+    letter-spacing: 0.005em;
 }
 
 .docmd-container.steps {

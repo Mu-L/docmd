@@ -39,5 +39,8 @@
   "readMore": "阅读更多",
   "recentCommits": "最近提交",
   "searchPlaceholder": "搜索文档...",
-  "selectProject": "选择项目"
+  "selectProject": "选择项目",
+  "poweredBy": "由...驱动",
+  "viewSource": "查看源代码",
+  "goToTop": "回到顶部"
 }

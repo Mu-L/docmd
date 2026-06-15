@@ -39,5 +39,8 @@
   "readMore": "और पढ़ें",
   "recentCommits": "हाल के कमिट",
   "searchPlaceholder": "दस्तावेज़ खोजें...",
-  "selectProject": "प्रोजेक्ट चुनें"
+  "selectProject": "प्रोजेक्ट चुनें",
+  "poweredBy": "द्वारा संचालित",
+  "viewSource": "स्रोत देखें",
+  "goToTop": "शीर्ष पर जाएँ"
 }
