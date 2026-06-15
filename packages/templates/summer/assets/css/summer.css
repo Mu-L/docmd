@@ -1516,7 +1516,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
 .summer-totop {
   position: fixed;
   right: 30px;
-  bottom: 50px;
+  bottom: 60px;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -1568,12 +1568,6 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   text-decoration: none;
   transition: all var(--summer-fast) var(--summer-ease);
   min-height: 64px;
-  /* Sizing contract:
-   *   max = 50% of the section (capped by the grid cell)
-   *   min = wrap content (shrink to whatever the icon + label needs)
-   *   overflow = title text gets ellipsis instead of pushing outside
-   * min-width: 0 + overflow: hidden let the title's text-overflow fire;
-   * width: fit-content shrinks to content when text is short. */
   min-width: 0;
   overflow: hidden;
   width: fit-content;
@@ -1585,7 +1579,12 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   color: var(--summer-fg);
   box-shadow: var(--summer-shadow-sm);
 }
-.summer-pagenav__link--next { justify-content: flex-end; text-align: right; }
+.summer-pagenav__link--next {
+  justify-content: flex-end;
+  text-align: right;
+  justify-self: end;
+}
+.summer-pagenav__link--prev { justify-self: start; }
 .summer-pagenav__link--disabled {
   opacity: 0.4;
   pointer-events: none;
@@ -2189,8 +2188,6 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   .summer-pagenav { grid-template-columns: minmax(0, 1fr); }
   .summer-pagenav__link--next { text-align: left; justify-content: flex-start; }
   .summer-pagenav__link--next .summer-pagenav__icon { order: -1; }
-  /* Reset no-prev / no-next single-column edge-pushing — at 1fr the
-   * grid-column 1/2 placement would leave a phantom empty cell. */
   .summer-pagenav.no-prev .summer-pagenav__link--next,
   .summer-pagenav.no-next .summer-pagenav__link--prev {
     grid-column: auto;

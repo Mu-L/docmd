@@ -1986,7 +1986,6 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
 :focus-visible {
     outline: 2px solid var(--link-color);
     outline-offset: 2px;
-    box-shadow: var(--halo-soft);
     border-radius: 4px;
     transition: box-shadow 0.15s ease;
 }
@@ -2041,7 +2040,9 @@ button,
     padding: .75rem;
     border-radius: 6px;
     transition: background-color .2s;
-    width: 48%;
+    min-width: 0;
+    overflow: hidden;
+    width: fit-content;
     max-width: 48%
 }
 
@@ -2081,6 +2082,21 @@ button,
     font-size: .8rem;
     opacity: .8;
     margin-bottom: .25rem
+}
+
+.next-page > span,
+.prev-page > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap
+}
+
+.next-page > span > strong,
+.prev-page > span > strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap
 }
 
 .next-page strong,
