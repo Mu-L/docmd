@@ -51,6 +51,11 @@ import * as ui from '@docmd/ui';
 
 
 
+/* ── Core package version (for <meta name="generator">) ──────── */
+const _pkgUrl = new URL('../../package.json', import.meta.url);
+const _pkg = JSON.parse(nativeFs.readFileSync(_pkgUrl, 'utf8')) as { version: string };
+const CORE_VERSION: string = _pkg.version;
+
 /* ── Constants ────────────────────────────────────────────────── */
 
 /** Number of pages to process concurrently in each batch. */
@@ -97,13 +102,15 @@ interface RenderPagesOptions {
   buildHash: string;
   options: any;
   outputPrefix?: string;
+  /** docmd core version (e.g. "0.8.7"). Used for the <meta name="generator"> tag. */
+  coreVersion?: string;
   /** Progress callback: (current, total) called after each batch completes. */
   onProgress?: (current: number, total: number) => void;
   /** Optional: only render specific files (relative to srcDir). Used for incremental dev rebuilds. */
   targetFiles?: string[];
 }
 
-export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, hooks, buildHash, options, outputPrefix = '', onProgress, targetFiles }: RenderPagesOptions) {
+export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, hooks, buildHash, options, outputPrefix = '', coreVersion, onProgress, targetFiles }: RenderPagesOptions) {
   // Reset git root cache (cwd may have changed between workspace builds)
   _cachedGitRoot = null;
 
@@ -672,6 +679,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
         headings: page.headings,
         config,
         buildHash,
+        coreVersion: coreVersion || CORE_VERSION,
         siteTitle: config.title,
         pageTitle: page.frontmatter.title,
         description: page.frontmatter.description || '',

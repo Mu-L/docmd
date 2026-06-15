@@ -37,7 +37,6 @@
     --code-bg: #fafafa;
     --code-text: #27272a;
     --sponsor-red: #f43f5e;
-    --sponsor-red-hover: #e11d48;
     --font-family-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     --font-family-mono: "JetBrains Mono", SFMono-Regular, Consolas, Menlo, monospace;
     --font-size-base: 16px;
@@ -62,10 +61,6 @@
     --header-h: 44px;
     --scrollbar-thumb: #e4e4e7;
     --scrollbar-thumb-hover: #a1a1aa;
-    --content-area-bg: transparent;
-    --content-area-radius: 0;
-    --content-area-shadow: none;
-    --content-area-border: none;
     --sidebar-group-bg: #3352660d;
     --sidebar-group-border: transparent;
     color-scheme: light;
@@ -75,7 +70,6 @@
     --glow-color: rgba(6, 138, 213, 0.10);
     --glow-color-strong: rgba(6, 138, 213, 0.18);
     --halo-soft: 0 0 0 4px rgba(6, 138, 213, 0.10);
-    --halo-soft-strong: 0 0 0 4px rgba(6, 138, 213, 0.18);
 
 }
 
@@ -96,13 +90,11 @@
     --code-bg: #16161a;
     --code-text: #e4e4e7;
     --sponsor-red: #e11d48;
-    --sponsor-red-hover: #be123c;
     --scrollbar-thumb: #27272a;
     --scrollbar-thumb-hover: #52525b;
     --glow-color: rgba(56, 189, 248, 0.18);
     --glow-color-strong: rgba(56, 189, 248, 0.28);
     --halo-soft: 0 0 0 4px rgba(56, 189, 248, 0.18);
-    --halo-soft-strong: 0 0 0 4px rgba(56, 189, 248, 0.28);
     color-scheme: dark;
 }
 
@@ -1565,9 +1557,17 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 }
 
 .callout {
-    border: 1px solid transparent;
-    background-color: var(--code-bg);
+    /* Variant class sets --callout-color; default (no variant) keeps the
+       neutral code-bg fallback so the rule still works as a plain box. */
+    border: 1px solid color-mix(in srgb, var(--callout-color, transparent) 100%, transparent);
+    background-color: color-mix(in srgb, var(--callout-color, var(--code-bg)) 8%, transparent);
 }
+
+.callout-info    { --callout-color: #3498db; }
+.callout-warning { --callout-color: #f39c12; }
+.callout-success,
+.callout-tip     { --callout-color: #2ecc71; }
+.callout-danger  { --callout-color: #e74c3c; }
 
 .callout-title {
     font-weight: 700;
@@ -1575,27 +1575,6 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
     display: flex;
     align-items: center;
     gap: var(--space-2);
-}
-
-.callout-info {
-    border: 1px solid #3498db;
-    background-color: rgba(52, 152, 219, 0.08);
-}
-
-.callout-warning {
-    border: 1px solid #f39c12;
-    background-color: rgba(243, 156, 18, 0.08);
-}
-
-.callout-success,
-.callout-tip {
-    border: 1px solid #2ecc7178;
-    background-color: rgba(46, 204, 113, 0.08);
-}
-
-.callout-danger {
-    border: 1px solid #e74c3c;
-    background-color: rgba(231, 76, 60, 0.08);
 }
 
 .card {
@@ -2192,12 +2171,6 @@ button,
 
 .toc-level-4 {
     padding-left: 3rem
-}
-
-:root[data-theme="dark"] .toc-link.active {
-    /* Uses --link-color (now brighter #38bdf8 in dark) via color-mix in the
-       base .toc-link.active rule. Left as a hook for future dark-specific
-       tweaks. */
 }
 
 .toc-title {
@@ -2923,18 +2896,6 @@ hr {
     justify-content: flex-end;
     gap: 1rem;
     font-size: .875rem
-}
-
-@keyframes heartbeat {
-
-    0%,
-    100% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.15);
-    }
 }
 
 @media (max-width: 1024px) {

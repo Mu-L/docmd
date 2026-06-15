@@ -10,7 +10,7 @@
 <html lang="<%= (locals.activeLocale && locals.activeLocale.id) ? locals.activeLocale.id : 'en' %>"<%= (locals.activeLocale && locals.activeLocale.dir && locals.activeLocale.dir !== 'ltr') ? ' dir="' + locals.activeLocale.dir + '"' : '' %>>
   <head>
     <meta charset="UTF-8">
-    <meta name="generator" content="docmd v0.5.x">
+    <meta name="generator" content="docmd v<%= coreVersion %>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <%- themeInitScript %>
     <style>

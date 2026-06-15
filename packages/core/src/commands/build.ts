@@ -14,6 +14,7 @@
 
 import path from 'path';
 import { fileURLToPath } from 'url';
+import nativeFs from 'fs';
 import { fsUtils as fs, WorkerPool } from '@docmd/utils';
 import { loadConfig } from '../utils/config-loader.js';
 import { TUI, loadPlugins } from '@docmd/api';
@@ -21,6 +22,11 @@ import { TUI, loadPlugins } from '@docmd/api';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { prepareAssets, prepareTemplateAssets } from '../engine/assets.js';
 import { buildLocales, generateLocaleRedirect, preCountPages } from '../engine/i18n.js';
+
+// Core package version — threaded through to renderPages for the
+// <meta name="generator"> tag so it stays in sync with @docmd/core.
+const _pkgUrl = new URL('../../package.json', import.meta.url);
+const pkg = JSON.parse(nativeFs.readFileSync(_pkgUrl, 'utf8')) as { version: string };
 
 export async function buildSite(configPath: string, opts: any = {}) {
 
@@ -135,7 +141,8 @@ export async function buildSite(configPath: string, opts: any = {}) {
       options: { ...options, _buildId } as any,
       CWD,
       onProgress: options.onProgress,
-      targetFiles: options.targetFiles
+      targetFiles: options.targetFiles,
+      coreVersion: pkg.version
     });
 
     // --- i18n ROOT REDIRECT ---
