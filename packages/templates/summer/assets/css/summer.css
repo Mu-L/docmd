@@ -1543,7 +1543,9 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
 
 .summer-pagenav {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* minmax(0, 1fr) (not 1fr) so long titles can ellipsis instead of
+   * forcing the cell to grow past 50% of the section. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
   /* margin-top: auto pushes the page-nav to the bottom of .summer-content
    * on short pages, mirroring .page-navigation in the default template.
@@ -1566,6 +1568,16 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   text-decoration: none;
   transition: all var(--summer-fast) var(--summer-ease);
   min-height: 64px;
+  /* Sizing contract:
+   *   max = 50% of the section (capped by the grid cell)
+   *   min = wrap content (shrink to whatever the icon + label needs)
+   *   overflow = title text gets ellipsis instead of pushing outside
+   * min-width: 0 + overflow: hidden let the title's text-overflow fire;
+   * width: fit-content shrinks to content when text is short. */
+  min-width: 0;
+  overflow: hidden;
+  width: fit-content;
+  max-width: 100%;
 }
 .summer-pagenav__link:hover {
   border-color: var(--summer-accent);
@@ -2174,7 +2186,7 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution { background: #2
   .summer-content h2 { font-size: 1.45rem; }
   .summer-content h3 { font-size: 1.25rem; }
 
-  .summer-pagenav { grid-template-columns: 1fr; }
+  .summer-pagenav { grid-template-columns: minmax(0, 1fr); }
   .summer-pagenav__link--next { text-align: left; justify-content: flex-start; }
   .summer-pagenav__link--next .summer-pagenav__icon { order: -1; }
   /* Reset no-prev / no-next single-column edge-pushing — at 1fr the
