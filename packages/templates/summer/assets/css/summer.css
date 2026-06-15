@@ -305,10 +305,59 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   min-width: 0;
 }
 
+.summer-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 480px;
+  height: 36px;
+  padding: 0 10px 0 14px;
+  background: var(--summer-surface);
+  border: 1px solid var(--summer-border);
+  border-radius: 999px;            /* pill — GitBook exact */
+  color: var(--summer-fg-muted);
+  font-size: var(--summer-text-sm);
+  font-weight: 400;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--summer-fast) var(--summer-ease),
+              background var(--summer-fast) var(--summer-ease),
+              box-shadow var(--summer-fast) var(--summer-ease);
+}
+.summer-search:hover, .summer-search:focus-visible {
+  border-color: var(--summer-border-strong);
+  background: var(--summer-bg);
+  color: var(--summer-fg);
+  box-shadow: var(--summer-shadow-sm);
+}
 .summer-search__icon {
   flex-shrink: 0;
   color: var(--summer-fg-muted);
 }
+.summer-search__placeholder {
+  flex: 1;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.summer-search__kbd {
+  display: inline-flex;
+  gap: 2px;
+  flex-shrink: 0;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--summer-fg-muted);
+}
+.summer-search__kbd kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--summer-border);
   border-radius: 4px;
   background: var(--summer-bg);
   font-family: var(--summer-font-sans);
@@ -599,6 +648,7 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   color: var(--summer-green);
 }
 .summer-copy-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+.summer-copy-btn--icon-only { padding: 0 8px; }
 
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -1188,6 +1238,10 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   --summer-gutter: 48px;
   display: flex;
   flex-direction: column;
+  /* Fill the available height so .summer-pagenav (margin-top: auto)
+   * can push to the bottom on short pages. */
+  flex: 1;
+  min-height: 0;
 }
 
 .summer-content {
@@ -1195,6 +1249,10 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   font-size: var(--summer-text-base);    /* 15px — GitBook body base */
   line-height: 1.7;
   color: var(--summer-fg-soft);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .summer-content__title {
@@ -1448,7 +1506,12 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   font-weight: 500;
 }
 
-/* Indentation is set inline by the JS renderer (summer.js wireTocSvgTrack) */
+/* Indentation by level — padding-left is overridden by JS inline style */
+.summer-toc__item--level-1 .summer-toc__link { padding-left: 20px; }
+.summer-toc__item--level-2 .summer-toc__link { padding-left: 30px; }
+.summer-toc__item--level-3 .summer-toc__link { padding-left: 40px; }
+.summer-toc__item--level-4 .summer-toc__link { padding-left: 50px; }
+
 /* TOC scroll-to-top button */
 .summer-totop {
   position: fixed;
@@ -1482,7 +1545,12 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  margin-top: 56px;
+  /* margin-top: auto pushes the page-nav to the bottom of .summer-content
+   * on short pages, mirroring .page-navigation in the default template.
+   * The 56px / 24px original values are kept as a fallback when the
+   * container is taller than the content (i.e. margin-top has nothing
+   * to push against). */
+  margin-top: auto;
   padding-top: 24px;
   border-top: 1px solid var(--summer-border-soft);
 }
@@ -1506,6 +1574,11 @@ html[data-theme="dark"]    .summer-logo__light { display: none; }
   box-shadow: var(--summer-shadow-sm);
 }
 .summer-pagenav__link--next { justify-content: flex-end; text-align: right; }
+.summer-pagenav__link--disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  background: transparent;
+}
 .summer-pagenav__icon {
   flex-shrink: 0;
   width: 18px; height: 18px;
@@ -1737,7 +1810,6 @@ html[data-theme="dark"] .copy-code-button.summer-cb__copy:hover {
   border-color: var(--summer-green);
   color: var(--summer-green);
 }
-.summer-cb__copy svg {}
 
 /* Pre — sit below the title bar with no top padding bump */
 .code-wrapper > pre,
@@ -3105,6 +3177,7 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
 
 /* Filter pills (top of dropdown) */
 .docmd-search-filters,
+.summer-search-filters,
 #docmd-global-search-filters {
   display: flex !important;
   gap: 6px !important;
@@ -3113,6 +3186,7 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   flex-wrap: wrap !important;
 }
 .docmd-search-filter-pill,
+.search-filter-pill,
 .search-filter-tag {
   display: inline-flex !important;
   align-items: center !important;
@@ -3132,18 +3206,21 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   letter-spacing: 0.01em !important;
 }
 .docmd-search-filter-pill svg,
+.search-filter-pill svg,
 .search-filter-tag svg {
   width: 10px !important;
   height: 10px !important;
   color: currentColor !important;
 }
 .docmd-search-filter-pill:hover,
+.search-filter-pill:hover,
 .search-filter-tag:hover {
   border-color: var(--summer-border-strong) !important;
   color: var(--summer-fg) !important;
   background: var(--summer-surface) !important;
 }
 .docmd-search-filter-pill.active,
+.search-filter-pill.active,
 .search-filter-tag.active {
   background: var(--summer-accent) !important;
   border-color: var(--summer-accent) !important;
@@ -3158,6 +3235,32 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
   color: var(--summer-fg-muted) !important;
   font-size: 0.875rem !important;
 }
+
+/* Loading state */
+.summer-search-loading {
+  padding: 16px;
+  color: var(--summer-fg-muted);
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+
+/* ────────────────────────────────────────────────────────────────────────
+   19. PAGE HEADER TITLE (ABOVE BREADCRUMBS)
+   ──────────────────────────────────────────────────────────────────────── */
+
+.summer-pageheader__title {
+  font-size: var(--summer-text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--summer-fg-muted);
+  margin-bottom: 4px;
+  display: block;
+}
+
 
 /* =========================================================================
    18. LANGUAGE SWITCHER DROPDOWN (GITBOOK-STYLE)
