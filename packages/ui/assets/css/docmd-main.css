@@ -21,8 +21,8 @@
 :root {
     /* Colors - Light */
     --bg-color: #ffffff;
-    --text-color: #3f3f46;
-    --text-muted: #71717a;
+    --text-color: #27272a;
+    --text-muted: #6b6b75;
     --text-heading: #09090b;
     --link-color: #068ad5;
     --link-color-hover: #0b76b3;
@@ -34,7 +34,7 @@
     --header-bg: rgba(255, 255, 255, 0.8);
     --header-border: #e4e4e7;
     --sidebar-bg: #fafafa;
-    --sidebar-text: #52525b;
+    --sidebar-text: #3f3f46;
     --sidebar-link-active-bg: #0c8ad51a;
     --sidebar-link-active-text: #18181b;
 
@@ -94,30 +94,37 @@
     --image-shadow: 0 0 15px -5px rgba(102, 102, 102, 0.3);
     --image-border-radius: 6px;
     --image-border-color: #ededed;
-    --glow-color: rgba(99, 102, 241, 0.07);
+    /* Halo / glow tokens — drive background halos, hover glows, focus rings */
+    --glow-color: rgba(6, 138, 213, 0.10);
+    --glow-color-strong: rgba(6, 138, 213, 0.18);
+    --halo-soft: 0 0 0 4px rgba(6, 138, 213, 0.10);
+    --halo-soft-strong: 0 0 0 4px rgba(6, 138, 213, 0.18);
 }
 
 :root[data-theme=dark] {
-    --bg-color: #111111;
-    --text-color: #cacaca;
-    --text-muted: #71717a;
+    --bg-color: #0d0d0f;
+    --text-color: #d4d4d8;
+    --text-muted: #94949e;
     --text-heading: #fafafa;
-    --link-color: #068ad5;
+    --link-color: #38bdf8;
     --border-color: #27272a;
     --border-color-codeblock: #fafafa17;
-    --header-bg: rgb(26 26 26 / 68%);
+    --header-bg: rgb(20 20 22 / 68%);
     --header-border: #27272a;
-    --sidebar-bg: #161616;
-    --sidebar-text: #d1d1d1;
-    --sidebar-link-active-bg: #18181b;
+    --sidebar-bg: #111113;
+    --sidebar-text: #d4d4d8;
+    --sidebar-link-active-bg: #1e1e22;
     --sidebar-link-active-text: #ffffff;
-    --code-bg: #1b1b1d;
+    --code-bg: #16161a;
     --code-text: #e4e4e7;
     --sponsor-red: #e11d48;
     --sponsor-red-hover: #be123c;
     --scrollbar-thumb: #27272a;
     --scrollbar-thumb-hover: #52525b;
-    --glow-color: rgba(99, 102, 241, 0.22);
+    --glow-color: rgba(56, 189, 248, 0.18);
+    --glow-color-strong: rgba(56, 189, 248, 0.28);
+    --halo-soft: 0 0 0 4px rgba(56, 189, 248, 0.18);
+    --halo-soft-strong: 0 0 0 4px rgba(56, 189, 248, 0.28);
     color-scheme: dark;
 }
 
@@ -336,10 +343,32 @@ a:any-link {
     cursor: pointer;
 }
 
+.sidebar nav li>a {
+    position: relative;
+}
+
 .sidebar nav li>a.active {
     color: var(--link-color);
     font-weight: 600;
     background-color: var(--sidebar-link-active-bg);
+}
+
+/* Modern "node on thread" active indicator.
+   A small pill that sits at the link's left edge, centered vertically,
+   overlapping the .submenu thread border used by .active-parent.
+   The result reads as the active link's own marker on the existing
+   rail, not a thick bar grafted onto the item. */
+.sidebar nav li>a.active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 55%;
+    min-height: 14px;
+    background-color: var(--link-color);
+    border-radius: 2px;
 }
 
 .sidebar nav li.active-parent>a {
@@ -1584,12 +1613,16 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 }
 
 .card {
-    transition: all 0.2s ease;
+    transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.18s ease;
+    will-change: transform;
 }
 
 .card:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+    box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.12), var(--halo-soft);
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--link-color) 25%, var(--border-color));
 }
 
 .card .card-title {
@@ -1710,7 +1743,45 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 
 .docmd-container.steps-reset ol.steps-list>li.step-item:hover::before {
     border-color: var(--link-color);
-    box-shadow: 0 0 0 4px rgba(6, 138, 213, 0.15);
+    box-shadow: 0 0 0 4px var(--glow-color);
+}
+
+/* Step permalink — hidden by default, revealed on step hover */
+.docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink {
+    position: absolute;
+    top: 0.25rem;
+    right: -0.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    opacity: 0;
+    text-decoration: none !important;
+    border-radius: 4px;
+    transition: opacity 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+    z-index: 2;
+}
+
+.docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink svg {
+    width: 0.85em;
+    height: 0.85em;
+}
+
+.docmd-container.steps-reset ol.steps-list>li.step-item:hover .step-permalink,
+.docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink:focus-visible {
+    opacity: 1;
+}
+
+.docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink:hover,
+.docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink:focus-visible {
+    color: var(--link-color);
+    background-color: var(--sidebar-bg);
+}
+
+.docmd-container.steps-reset ol.steps-list>li.step-item {
+    scroll-margin-top: calc(var(--header-h, 44px) + var(--menubar-h, 44px) + var(--space-6));
 }
 
 .docmd-container.steps-reset .docmd-container.steps-reset ol.steps-list,
@@ -1945,11 +2016,15 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
 
 :focus-visible {
     outline: 2px solid var(--link-color);
-    outline-offset: 2px
+    outline-offset: 2px;
+    box-shadow: var(--halo-soft);
+    border-radius: 4px;
+    transition: box-shadow 0.15s ease;
 }
 
 :focus:not(:focus-visible) {
     outline: none !important;
+    box-shadow: none !important;
 }
 
 .sidebar nav li a:focus-visible {
@@ -1961,6 +2036,21 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
 .theme-toggle-button:focus-visible {
     border-color: var(--link-color);
     box-shadow: 0 0 0 2px var(--link-color)
+}
+
+/* Smooth out transitions on common interactive elements */
+a,
+button,
+.toc-link,
+.sidebar nav li a,
+.copy-code-button,
+.docmd-tabs-nav-item,
+.theme-toggle-button,
+.docmd-button,
+.docmd-tag {
+    transition: color 0.15s ease, background-color 0.15s ease,
+                border-color 0.15s ease, transform 0.15s ease,
+                box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
 .page-footer,
@@ -2085,7 +2175,7 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
 
 .toc-link {
     display: block;
-    padding: .25rem 1rem;
+    padding: .3rem 1rem;
     font-size: .85rem;
     font-weight: 500;
     text-decoration: none;
@@ -2093,18 +2183,21 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
     margin-left: 1em;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis
+    text-overflow: ellipsis;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .toc-link:hover {
-    color: var(--text-primary);
-    background-color: var(--bg-surface)
+    color: var(--text-heading);
+    background-color: var(--sidebar-bg);
 }
 
 .toc-link.active {
-    color: var(--primary);
-    border-left-color: var(--primary);
-    background-color: var(--primary-light)
+    color: var(--link-color);
+    border-left-color: var(--link-color);
+    background-color: color-mix(in srgb, var(--link-color) 8%, transparent);
+    font-weight: 600;
 }
 
 .toc-level-3 {
@@ -2116,7 +2209,9 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
 }
 
 :root[data-theme="dark"] .toc-link.active {
-    background-color: rgba(59, 130, 246, 0.1)
+    /* Uses --link-color (now brighter #38bdf8 in dark) via color-mix in the
+       base .toc-link.active rule. Left as a hook for future dark-specific
+       tweaks. */
 }
 
 .toc-title {
@@ -2368,15 +2463,21 @@ img.lightbox {
     border-radius: 6px;
     background-color: var(--link-color);
     font-weight: 500;
-    transition: background-color .2s, transform .2s;
+    transition: background-color .15s ease, transform .15s ease, box-shadow .15s ease, filter .15s ease;
     border: medium;
     cursor: pointer
 }
 
 .docmd-button:hover {
     text-decoration: none;
-    filter: brightness(110%);
+    filter: brightness(1.05);
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px -2px var(--glow-color-strong);
+}
+
+.docmd-button:active {
+    transform: translateY(0);
+    box-shadow: none;
 }
 
 .docmd-button .button-icon {
@@ -2444,7 +2545,7 @@ a.docmd-tag-link .docmd-tag:hover {
     border-radius: 6px;
     cursor: pointer;
     opacity: 0;
-    transition: opacity .2s ease-in-out, background-color .2s;
+    transition: opacity .15s ease-in-out, background-color .15s ease, color .15s ease;
     color: var(--sidebar-text);
     display: flex;
     align-items: center;
