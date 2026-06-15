@@ -183,7 +183,7 @@ export function normalizeConfig(userConfig: any) {
     // --- 4. Theme & Branding ---
     config.theme = {
         name: 'default',
-        appearance: 'light',
+        appearance: 'system',
         customCss: [],
         codeHighlight: true,
         ...(config.theme || {})
