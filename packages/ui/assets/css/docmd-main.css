@@ -946,6 +946,10 @@ body.has-menubar-header .docmd-menubar {
     max-height: calc(100vh - var(--sticky-top-offset) - 4rem);
     overflow-y: auto;
     scrollbar-width: thin;
+    /* Don't stretch to match the full .content-layout height — the TOC
+     * is sticky and sizes itself; .main-content needs to fill the height
+     * so .page-navigation (margin-top: auto) can push to the bottom. */
+    align-self: flex-start
 }
 
 .docmd-options-menu {
@@ -2101,8 +2105,13 @@ button,
     display: flex;
     gap: 2rem;
     width: 100%;
-    align-items: flex-start;
-    flex: 1 0 auto
+    /* align-items: stretch (default) so .main-content fills the full
+     * available height — lets .page-navigation (margin-top: auto) push
+     * all the way to the bottom of .content-area on short pages, matching
+     * the behavior of .page-footer-actions below. */
+    align-items: stretch;
+    flex: 1 0 auto;
+    min-height: 0
 }
 
 .main-content {
