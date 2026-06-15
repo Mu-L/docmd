@@ -39,5 +39,8 @@
   "readMore": "Read more",
   "recentCommits": "Recent commits",
   "searchPlaceholder": "Search documentation...",
-  "selectProject": "Select project"
+  "selectProject": "Select project",
+  "poweredBy": "Powered by",
+  "viewSource": "View source",
+  "goToTop": "Go to top"
 }

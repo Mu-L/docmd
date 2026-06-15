@@ -39,5 +39,8 @@
   "readMore": "Mehr lesen",
   "recentCommits": "Letzte Commits",
   "searchPlaceholder": "Dokumentation durchsuchen...",
-  "selectProject": "Projekt auswählen"
+  "selectProject": "Projekt auswählen",
+  "poweredBy": "Bereitgestellt von",
+  "viewSource": "Quelltext anzeigen",
+  "goToTop": "Nach oben"
 }
