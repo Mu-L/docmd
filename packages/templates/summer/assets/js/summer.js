@@ -498,18 +498,24 @@
     //    The header already exists with a <span class="docmd-code-block-title">.
     //    We add a lang pill next to it (or replace the header content
     //    with our own titlebar) and re-home the copy button.
+    //
+    //    Copy button location depends on how docmd-main.js wires it:
+    //    - Parser title + no .code-wrapper sibling → button is appended
+    //      directly into .docmd-code-block-wrapper
+    //    - Parser title + .code-wrapper → button is inside .code-wrapper
+    //    We handle both.
     $$('.docmd-code-block-wrapper').forEach(function (wrap) {
       if (wrap.dataset.summerCbWired === '1') return;
       wrap.dataset.summerCbWired = '1';
 
       var header = wrap.querySelector('.docmd-code-block-header');
-      var inner  = wrap.querySelector('.code-wrapper');
-      var copyBtn = inner && inner.querySelector('.copy-code-button');
       if (!header) return;
+      var inner = wrap.querySelector('.code-wrapper');
+      var copyBtn = wrap.querySelector('.copy-code-button');
 
       // Read language from the <code class="language-xxx">
       var lang = '';
-      var pre = inner ? inner.querySelector('pre') : null;
+      var pre = inner ? inner.querySelector('pre') : wrap.querySelector('pre');
       var code = pre ? pre.querySelector('code') : null;
       if (code) {
         var m = code.className.match(/language-([\w-]+)/);

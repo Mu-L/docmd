@@ -2114,10 +2114,10 @@ html[data-theme="dark"] .docmd-code-block-wrapper>.docmd-code-block-header {
   line-height: 1.5;
 }
 
-/* Copy button — lives inside the title bar, NOT floating */
+/* Copy button — lives inside the title bar as a flex child, NOT floating.
+ * summer.js re-homes the button from the wrapper into the titlebar header. */
 .summer-cb__copy,
 .copy-code-button.summer-cb__copy {
-  position: static;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -2133,7 +2133,6 @@ html[data-theme="dark"] .docmd-code-block-wrapper>.docmd-code-block-header {
   opacity: 1;
   transition: all var(--summer-fast) var(--summer-ease);
   flex-shrink: 0;
-
 }
 
 .summer-cb__copy:hover,
@@ -3323,7 +3322,8 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution {
 
 .summer-content .docmd-container.changelog-timeline {
   position: relative;
-  margin-top: 1.5rem;
+  padding-left: 1rem;
+  margin: 1.5rem 0;
   background: transparent;
   border: none;
   box-shadow: none;
@@ -3334,7 +3334,7 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution {
   position: absolute;
   top: 0.5rem;
   bottom: 1.5rem;
-  left: 0;
+  left: 32px;
   width: 2px;
   background: linear-gradient(to bottom, transparent 0%, var(--summer-border) 3%, var(--summer-border) 90%, transparent 100%);
   pointer-events: none;
@@ -3500,45 +3500,50 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution {
   display: none;
 }
 
-/* Changelog Container */
-.changelog-timeline {
-  position: relative;
-  padding-left: 32px;
-  margin: 2.5rem 0;
+.docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink {
+  position: absolute;
+  top: 0.25rem;
+  right: -0.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--summer-fg-muted);
+  opacity: 0;
+  text-decoration: none !important;
+  border-radius: 4px;
+  transition: opacity var(--summer-fast) var(--summer-ease), color var(--summer-fast) var(--summer-ease), background-color var(--summer-fast) var(--summer-ease);
+  z-index: 2;
 }
 
-.changelog-timeline::before {
-  content: "";
-  position: absolute;
-  left: 7px;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  background: var(--summer-border-soft);
+.docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink svg {
+  width: 0.85em;
+  height: 0.85em;
 }
+
+.docmd-container.steps-reset ol.steps-list>li.step-item:hover .step-permalink,
+.docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink:focus-visible {
+  opacity: 1;
+}
+
+.docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink:hover,
+.docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink:focus-visible {
+  color: var(--summer-accent);
+  background-color: var(--summer-surface-2);
+}
+
+.docmd-container.steps-reset ol.steps-list>li.step-item {
+  scroll-margin-top: calc(var(--summer-topbar-height) + var(--summer-subnav-height) + var(--summer-banner-height) + var(--summer-pageheader-height) + 24px);
+}
+
+/* Changelog Container */
 
 .changelog-entry {
   position: relative;
   margin-bottom: 2.5rem;
 }
 
-.changelog-entry::before {
-  content: "";
-  position: absolute;
-  left: -30px;
-  top: 6px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--summer-bg);
-  border: 3px solid var(--summer-accent);
-  z-index: 1;
-  transition: transform var(--summer-fast) var(--summer-ease);
-}
-
-.changelog-entry:hover::before {
-  transform: scale(1.25);
-}
 
 .changelog-meta {
   margin-bottom: 0.5rem;

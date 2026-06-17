@@ -13,8 +13,10 @@ docker pull ghcr.io/docmd-io/docmd:0.8.6
 
 ### Run Demo Site
 
+The image ships with a demo template in `/template`. When you run the container with no volume mount, the entrypoint copies `/template` into `/docs` on first start, so the demo site comes up immediately.
+
 ```bash
-# Start with built-in demo site
+# Start with built-in demo site — works out of the box
 docker run -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.6
 
 # Visit http://localhost:3000
@@ -32,6 +34,8 @@ docker run -v $(pwd):/workspace -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.6 dev
 ```
 
 ### Use Existing Docs
+
+Mounting your own docs into `/docs` always wins — the entrypoint only seeds the demo template when `/docs` is completely empty, so your content is never overwritten.
 
 ```bash
 # Mount your docs and start dev server

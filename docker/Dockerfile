@@ -112,6 +112,15 @@ RUN mkdir -p /template && \
     cd /template && \
     echo 'y' | docmd init || true
 
+# Install entrypoint + healthcheck scripts (see docker/docker-entrypoint.sh
+# and docker/docker-healthcheck.sh). The entrypoint seeds /docs from
+# /template when /docs is empty, so `docker run` with no volume mount
+# still works out of the box. The healthcheck probes a port range because
+# `docmd dev` may auto-increment past 3000 if the port is already taken.
+COPY docker/docker-entrypoint.sh /usr/local/bin/docmd-entrypoint.sh
+COPY docker/docker-healthcheck.sh /usr/local/bin/docmd-healthcheck.sh
+RUN chmod +x /usr/local/bin/docmd-entrypoint.sh /usr/local/bin/docmd-healthcheck.sh
+
 # Set environment variables
 ENV NODE_ENV=production
 ENV DOCMD_CONTAINER=true
@@ -122,12 +131,13 @@ USER docmd
 # Set working directory to docs (where user content will be mounted)
 WORKDIR /docs
 
-# Expose default port
+# Expose default port (dev server may pick a higher one if 3000 is in use)
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD curl -f http://localhost:3000/ || exit 1
+# Health check — probes 3000-3005 to follow the dev server's actual port
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD ["/usr/local/bin/docmd-healthcheck.sh"]
 
-# Default command — exec form (preferred, no shell wrapping, signals pass through)
-ENTRYPOINT ["docmd"]
+# Default command — entrypoint seeds /docs if empty, then execs the
+# supplied command (or the default `dev --host 0.0.0.0`).
+ENTRYPOINT ["/usr/local/bin/docmd-entrypoint.sh"]
 CMD ["dev", "--host", "0.0.0.0"]
