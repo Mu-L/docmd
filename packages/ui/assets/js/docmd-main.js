@@ -711,6 +711,44 @@
           }
         });
 
+        // Sync Body Plugin Scripts (added 2026-06-17).
+        // Conditional asset loading (e.g. Mermaid's init-mermaid.js, gated
+        // on `pageHtmlMatches: 'class="mermaid"'`) emits the plugin's
+        // <script src="..."> tag only on pages that actually need it.
+        // That tag lives in <body> AFTER </main>, so on SPA navigation the
+        // navigateTo() content swap (which only replaces .main-content and
+        // a fixed selector list) leaves the new tag sitting in the parsed
+        // `doc` but never adds it to the live document. Without this sync,
+        // navigating from a non-mermaid page to a mermaid page leaves the
+        // .mermaid divs unrendered (no listener, no IIFE, no init).
+        // Mirrors the head asset sync above: for every script[src] tag in
+        // the new HTML's body that isn't already in the live document, we
+        // build a fresh <script> element with the resolved absolute URL
+        // and append it so the browser fetches and executes it. We use
+        // createElement (not cloneNode) because some browsers treat a
+        // cloneNode'd script tag as already-executed and skip it.
+        // The plugin's own IIFE handles the race: when document.readyState
+        // is past "loading" it calls its setup function directly to render
+        // the just-swapped-in elements. The docmd:page-mounted listener
+        // registered by the IIFE covers subsequent navigations.
+        Array.from(doc.querySelectorAll('body > script[src]')).forEach(newScript => {
+          const src = newScript.getAttribute('src');
+          if (!src) return;
+          const newSrc = new URL(src, data.finalUrl).href;
+          const alreadyPresent = Array.from(document.body.querySelectorAll('script[src]')).some(s => {
+            const oldSrc = s.getAttribute('src');
+            return oldSrc && new URL(oldSrc, window.location.href).href === newSrc;
+          });
+          if (alreadyPresent) return;
+          const fresh = document.createElement('script');
+          for (const attr of Array.from(newScript.attributes)) {
+            if (attr.name === 'src') continue;
+            fresh.setAttribute(attr.name, attr.value);
+          }
+          fresh.src = newSrc;
+          document.body.appendChild(fresh);
+        });
+
         // Sync Root Attributes (Theme, Classes)
         document.documentElement.className = doc.documentElement.className;
         document.body.className = doc.body.className;
