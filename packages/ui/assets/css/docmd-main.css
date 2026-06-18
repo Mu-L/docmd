@@ -3826,7 +3826,7 @@ ul.contains-task-list>li::marker {
   from { opacity: 0; transform: translateY(1rem); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.active {}
+
 .sidebar nav li a:hover {
     background-color: var(--sidebar-link-active-bg);
 
