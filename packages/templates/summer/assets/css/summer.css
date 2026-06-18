@@ -2161,8 +2161,13 @@ html[data-theme="dark"] .copy-code-button.summer-cb__copy:hover {
   color: var(--summer-green);
 }
 
-/* Pre — sit below the title bar with no top padding bump */
+/* Pre — sit below the title bar with no top padding bump.
+   Matches all three shapes summer.js sees:
+   - .code-wrapper > pre                (plain codeblock, copy button injected later)
+   - .docmd-code-block-wrapper > .code-wrapper > pre  (titled codeblock, copy button injected)
+   - .docmd-code-block-wrapper > pre   (titled codeblock with no inner .code-wrapper — e.g. when the copy button is appended directly to the wrapper) */
 .code-wrapper>pre,
+.docmd-code-block-wrapper>pre,
 .docmd-code-block-wrapper>.code-wrapper>pre {
   margin: 0 !important;
   padding: 16px 18px !important;
@@ -2174,7 +2179,6 @@ html[data-theme="dark"] .copy-code-button.summer-cb__copy:hover {
   line-height: 1.65 !important;
   color: var(--summer-fg);
   overflow-x: auto;
-
 }
 
 /* When the parser wraps a codeblock in .docmd-code-block-wrapper, the
@@ -2193,6 +2197,7 @@ html[data-theme="dark"] .copy-code-button.summer-cb__copy:hover {
 }
 
 .code-wrapper>pre code,
+.docmd-code-block-wrapper>pre code,
 .docmd-code-block-wrapper>.code-wrapper>pre code {
   color: inherit !important;
 }
