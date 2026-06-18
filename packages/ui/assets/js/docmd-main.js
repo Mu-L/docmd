@@ -38,16 +38,16 @@
   // 1. EVENT DELEGATION
   document.addEventListener('click', (e) => {
     // Collapsible Navigation
-    const navLabel = e.target.closest('.nav-label, .collapse-icon-wrapper');
-    if (navLabel) {
-      const item = navLabel.closest('li.collapsible');
+    const navTrigger = e.target.closest('.nav-group, .collapse-icon-wrapper');
+    if (navTrigger) {
+      const item = navTrigger.closest('li.collapsible');
       if (item) {
         e.preventDefault();
         const isExpanded = item.classList.contains('expanded');
         item.classList.toggle('expanded', !isExpanded);
         item.setAttribute('aria-expanded', !isExpanded);
       }
-      if (navLabel.classList.contains('collapse-icon-wrapper')) return;
+      if (navTrigger.classList.contains('collapse-icon-wrapper')) return;
     }
 
     // Toggles
@@ -620,6 +620,11 @@
 
       const link = e.target.closest('.sidebar-nav a, .page-navigation a, .page-footer a, .main-content a');
       if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+
+      // Skip SPA for collapsible group labels — clicking them toggles the
+      // group open/closed instead of navigating. (The toggle handler above
+      // already expanded/collapsed the group via .nav-group.)
+      if (link.classList.contains('nav-group') && link.closest('li.collapsible')) return;
 
       const url = new URL(link.href);
       if (url.origin !== location.origin) return;
