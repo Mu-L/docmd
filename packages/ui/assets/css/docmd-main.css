@@ -241,7 +241,7 @@ a {
 
 a:hover {
     color: var(--link-color-hover);
-    text-decoration: underline;
+
 }
 
 a:any-link {
@@ -1375,7 +1375,7 @@ pre {
     padding: var(--space-4);
     overflow-x: auto;
     position: relative;
-    margin: var(--space-6) 0;
+    margin: var(--space-2) 0;
     background-color: var(--code-bg);
     border: 1px solid var(--border-color-codeblock);
     border-radius: var(--radius-xl);
@@ -1383,6 +1383,7 @@ pre {
     white-space: pre;
     line-height: 1.5;
     font-size: .85em;
+
 }
 
 .docmd-code-block-wrapper {
@@ -1561,16 +1562,18 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 }
 
 .callout {
-    /* Variant class sets --callout-color; default (no variant) keeps the
-       neutral code-bg fallback so the rule still works as a plain box. */
-    border: 1px solid color-mix(in srgb, var(--callout-color, transparent) 100%, transparent);
+    border: .25px solid color-mix(in srgb, var(--callout-color, transparent) 100%, transparent);
     background-color: color-mix(in srgb, var(--callout-color, var(--code-bg)) 8%, transparent);
+
 }
 
 .callout-info    { --callout-color: #3498db; }
 .callout-warning { --callout-color: #f39c12; }
 .callout-success,
-.callout-tip     { --callout-color: #2ecc71; }
+.callout-tip     {
+    --callout-color: #2ecc71;
+
+}
 .callout-danger  { --callout-color: #e74c3c; }
 
 .callout-title {
@@ -2021,9 +2024,9 @@ button,
                 box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
-.page-footer,
-.page-navigation {
+.page-footer {
     border-top: 1px solid var(--border-color)
+
 }
 
 .page-navigation {
@@ -2042,8 +2045,9 @@ button,
     transition: background-color .2s;
     min-width: 0;
     overflow: hidden;
-    width: fit-content;
-    max-width: 48%
+    max-width: 48%;
+    text-overflow: ellipsis;
+
 }
 
 .next-page:hover,
@@ -2303,7 +2307,7 @@ img.with-shadow {
 }
 
 .docmd-tabs-nav-item {
-    padding: .75rem 1.25rem;
+    padding: .6rem 1.25rem;
     cursor: pointer;
     border-bottom-width: 3px;
     border-bottom-style: solid;
@@ -2314,7 +2318,8 @@ img.with-shadow {
     white-space: nowrap;
     display: flex;
     align-items: center;
-    gap: 8px
+    gap: 8px;
+
 }
 
 .tab-icon {
@@ -2331,7 +2336,8 @@ img.with-shadow {
 }
 
 .docmd-tabs-content {
-    padding: 1.5rem
+    padding: var(--space-6);
+
 }
 
 .tabs-container {
@@ -3819,4 +3825,9 @@ ul.contains-task-list>li::marker {
 @keyframes docmd-cookie-banner-in-corner {
   from { opacity: 0; transform: translateY(1rem); }
   to   { opacity: 1; transform: translateY(0); }
+}
+.active {}
+.sidebar nav li a:hover {
+    background-color: var(--sidebar-link-active-bg);
+
 }
