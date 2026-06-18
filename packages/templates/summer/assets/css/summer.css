@@ -2161,22 +2161,17 @@ html[data-theme="dark"] .copy-code-button.summer-cb__copy:hover {
   color: var(--summer-green);
 }
 
-/* Pre — sit below the title bar with no top padding bump.
-   Matches all three shapes summer.js sees:
-   - .code-wrapper > pre                (plain codeblock, copy button injected later)
-   - .docmd-code-block-wrapper > .code-wrapper > pre  (titled codeblock, copy button injected)
-   - .docmd-code-block-wrapper > pre   (titled codeblock with no inner .code-wrapper — e.g. when the copy button is appended directly to the wrapper) */
 .code-wrapper>pre,
 .docmd-code-block-wrapper>pre,
 .docmd-code-block-wrapper>.code-wrapper>pre {
-  margin: 0 !important;
-  padding: 16px 18px !important;
-  background: transparent !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  font-family: var(--summer-font-mono) !important;
-  font-size: 0.84rem !important;
-  line-height: 1.65 !important;
+  margin: 0;
+  padding: 16px 18px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  font-family: var(--summer-font-mono);
+  font-size: 0.84rem;
+  line-height: 1.65;
   color: var(--summer-fg);
   overflow-x: auto;
 }
@@ -2187,19 +2182,19 @@ html[data-theme="dark"] .copy-code-button.summer-cb__copy:hover {
    inside a window". Strip that styling so the inner wrapper is
    transparent and the outer wrapper is the only visual box. */
 .docmd-code-block-wrapper>.code-wrapper {
-  background: transparent !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: visible !important;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
 }
 
 .code-wrapper>pre code,
 .docmd-code-block-wrapper>pre code,
 .docmd-code-block-wrapper>.code-wrapper>pre code {
-  color: inherit !important;
+  color: inherit;
 }
 
 /* Bare <pre> with no wrapper at all (no copy button injected) */
