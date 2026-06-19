@@ -17,6 +17,9 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "@docmd/parser": "workspace:*",
     "@docmd/tui": "workspace:*"

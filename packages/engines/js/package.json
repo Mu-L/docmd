@@ -17,6 +17,9 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "keywords": [
     "docmd",
     "engine",
@@ -43,6 +46,6 @@
   "funding": "https://github.com/sponsors/mgks",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^25.9.3"
+    "@types/node": "^20"
   }
 }

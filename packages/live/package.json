@@ -20,6 +20,9 @@
     "public",
     "src"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "@docmd/parser": "workspace:*",
     "@docmd/plugin-math": "workspace:*",

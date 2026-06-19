@@ -5,6 +5,9 @@
   "bin": {
     "docmd": "bin/docmd.js"
   },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "@docmd/core": "workspace:*"
   },

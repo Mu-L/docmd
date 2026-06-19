@@ -13,6 +13,9 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "devDependencies": {
     "@docmd/api": "workspace:*",
     "esbuild": "^0.28.1",

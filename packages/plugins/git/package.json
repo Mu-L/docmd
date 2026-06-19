@@ -18,6 +18,9 @@
     "dist",
     "i18n"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "peerDependencies": {
     "@docmd/api": "workspace:*"
   },

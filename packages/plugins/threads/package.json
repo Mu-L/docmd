@@ -15,6 +15,9 @@
     "dist",
     "i18n"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "build": "tsc && node build.js",
     "build:client": "node build.js",

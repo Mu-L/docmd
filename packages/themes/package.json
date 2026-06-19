@@ -15,6 +15,9 @@
     "dist",
     "src"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "keywords": [
     "docmd",
     "themes",

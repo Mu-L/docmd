@@ -20,6 +20,9 @@
     "scripts",
     "bin"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "keywords": [
     "docmd",
     "engine",
