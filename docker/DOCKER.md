@@ -4,11 +4,14 @@ Official Docker image for docmd - the minimalist, zero-config documentation gene
 
 ## Quick Start
 
+> The examples below use `:latest` so you can copy-paste and run them immediately.
+> **For production, CI, and any reproducible build, pin a specific version** (see [Available Tags](#available-tags)).
+
 ### Pull the Image
 
 ```bash
 # Pull from GitHub Container Registry (GHCR)
-docker pull ghcr.io/docmd-io/docmd:0.8.6
+docker pull ghcr.io/docmd-io/docmd:latest
 ```
 
 ### Run Demo Site
@@ -17,7 +20,7 @@ The image ships with a demo template in `/template`. When you run the container 
 
 ```bash
 # Start with built-in demo site — works out of the box
-docker run -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.6
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest
 
 # Visit http://localhost:3000
 ```
@@ -27,10 +30,10 @@ docker run -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.6
 ```bash
 # Create and initialize a new project
 mkdir my-docs && cd my-docs
-docker run -v $(pwd):/workspace ghcr.io/docmd-io/docmd:0.8.6 init
+docker run -v $(pwd):/workspace ghcr.io/docmd-io/docmd:latest init
 
 # Start dev server
-docker run -v $(pwd):/workspace -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.6 dev
+docker run -v $(pwd):/workspace -p 3000:3000 ghcr.io/docmd-io/docmd:latest dev
 ```
 
 ### Use Existing Docs
@@ -39,22 +42,22 @@ Mounting your own docs into `/docs` always wins — the entrypoint only seeds th
 
 ```bash
 # Mount your docs and start dev server
-docker run -v $(pwd)/docs:/docs -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.6
+docker run -v $(pwd)/docs:/docs -p 3000:3000 ghcr.io/docmd-io/docmd:latest
 
 # Build static site
-docker run -v $(pwd)/docs:/docs -v $(pwd)/site:/site ghcr.io/docmd-io/docmd:0.8.6 build
+docker run -v $(pwd)/docs:/docs -v $(pwd)/site:/site ghcr.io/docmd-io/docmd:latest build
 ```
 
 ## Available Tags
 
-| Tag | Description |
-|-----|-------------|
-| `0.8.6` | Pinned stable release (**recommended for reproducibility**) |
-| `edge` | Latest build from the `main` branch — bleeding edge, may be unstable |
-| `latest` | Floating alias for the most recent stable release |
-| `sha-<commit>` | Specific commit SHA for fully reproducible builds |
+The image is published with two tags per release:
 
-> **Why pin a version?** The `:latest` tag is convenient for trying things out, but for production and CI pipelines you should always pin a specific version (e.g. `:0.8.7`). That way your builds are reproducible and won't break when a new release ships. Check the [package versions page](https://github.com/orgs/docmd-io/packages/container/docmd/versions) for the full list.
+| Tag | Description | When to use |
+|-----|-------------|-------------|
+| `latest` | Floating alias for the most recent stable release | Quick start, local exploration, throwaway CI |
+| `<version>` (e.g. `0.8.6`) | Pinned stable release | Production, CI/CD, anything that must be reproducible |
+
+> **Always pin a specific version in production.** The `:latest` tag is convenient for trying things out, but for any pipeline whose output must be reproducible (or whose contracts you don't want silently changing) use a pinned version like `:0.8.6`. Check the [package versions page](https://github.com/orgs/docmd-io/packages/container/docmd/versions) for the full list.
 
 ## Multi-Platform Support
 
@@ -70,8 +73,8 @@ Docker automatically pulls the correct image for your platform.
 ### Docker Compose
 
 ```yaml
-version: '3.8'
-
+# Pinned to a specific version for reproducible deploys.
+# Replace with the version you want — see the GitHub releases page.
 services:
   docmd:
     image: ghcr.io/docmd-io/docmd:0.8.6
@@ -99,6 +102,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Build documentation
+        # Pinned version — your CI output is reproducible across runs.
         run: |
           docker run --rm \
             -v ${{ github.workspace }}/docs:/docs \
@@ -116,6 +120,7 @@ jobs:
 ### Kubernetes Deployment
 
 ```yaml
+# Pinned to a specific version. Update this when you upgrade.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

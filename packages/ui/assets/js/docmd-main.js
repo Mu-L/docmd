@@ -22,6 +22,14 @@
 
 (function () {
 
+  // Idempotency guard. Some servers (e.g. `serve` with SPA fallback) can
+  // request this same script twice — once at the page-relative URL, once
+  // at the site root — and both copies execute. Without this guard, every
+  // click handler (toggle, SPA nav, copy code, etc.) would bind twice and
+  // every nav action would fire two times, silently breaking the sidebar.
+  if (window.__docmdMainLoaded) return;
+  window.__docmdMainLoaded = true;
+
   function findTargetElement(hash) {
     if (!hash) return null;
     const cleanHash = hash.substring(1);
@@ -38,16 +46,25 @@
   // 1. EVENT DELEGATION
   document.addEventListener('click', (e) => {
     // Collapsible Navigation
+    // - Chevron (.collapse-icon-wrapper) click: always toggle, preventDefault.
+    // - Dummy <span class="nav-group"> section divider: toggle, preventDefault.
+    // - Real <a class="nav-group"> label click: navigate via SPA. The new
+    //   page's sidebar auto-expands the active group, so parents that are
+    //   pages themselves (e.g. "Syntax" with children) open as pages,
+    //   not as collapsed sections.
     const navTrigger = e.target.closest('.nav-group, .collapse-icon-wrapper');
     if (navTrigger) {
       const item = navTrigger.closest('li.collapsible');
-      if (item) {
+      const isChevron = navTrigger.classList.contains('collapse-icon-wrapper');
+      const isDummySpan = navTrigger.tagName !== 'A';
+      if ((isChevron || isDummySpan) && item) {
         e.preventDefault();
         const isExpanded = item.classList.contains('expanded');
         item.classList.toggle('expanded', !isExpanded);
         item.setAttribute('aria-expanded', !isExpanded);
+        if (isChevron) return;
       }
-      if (navTrigger.classList.contains('collapse-icon-wrapper')) return;
+      // Real <a class="nav-group">: fall through to the SPA handler.
     }
 
     // Toggles
@@ -621,10 +638,9 @@
       const link = e.target.closest('.sidebar-nav a, .page-navigation a, .page-footer a, .main-content a');
       if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
 
-      // Skip SPA for collapsible group labels — clicking them toggles the
-      // group open/closed instead of navigating. (The toggle handler above
-      // already expanded/collapsed the group via .nav-group.)
-      if (link.classList.contains('nav-group') && link.closest('li.collapsible')) return;
+      // Real <a class="nav-group"> links navigate normally via SPA. The
+      // toggle handler above only prevents default for dummy <span>s and
+      // chevron clicks, so this branch is safe to fall through.
 
       const url = new URL(link.href);
       if (url.origin !== location.origin) return;

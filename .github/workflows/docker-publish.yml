@@ -97,18 +97,25 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}
+          # Two and only two tags are ever produced for any single image:
+          #   - The version, e.g. 0.8.6 (v-prefix stripped)
+          #   - The floating `:latest` alias
+          # `:latest` is only ever applied to released versions. A branch
+          # build or unreleased commit can never be pulled as `:latest`.
+          # flavor=latest=false disables the action's auto-latest so the
+          # only source of `:latest` is the explicit rule below.
+          flavor: |
+            latest=false
           tags: |
-            # For releases and tag pushes: use the tag (e.g. 0.8.6, v0.8.6)
+            # Version: ref on tag push and release events (strips 'v' prefix)
             type=ref,event=tag
-            # Stable release events also receive the floating 'latest' tag
+            # Version: ref on release events
+            type=ref,event=release
+            # :latest — only on release events
             type=raw,value=latest,enable=${{ github.event_name == 'release' }}
-            # For main branch pushes: use 'edge' (NOT 'latest' — only stable releases get 'latest')
-            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
-            # For manual dispatch: use provided version (and optional 'latest')
+            # Manual dispatch: use provided version + optional :latest
             type=raw,value=${{ inputs.version }},enable=${{ github.event_name == 'workflow_dispatch' && inputs.version != '' }}
             type=raw,value=latest,enable=${{ github.event_name == 'workflow_dispatch' && inputs.tag_latest }}
-            # Add commit SHA for traceability
-            type=sha,prefix=
           labels: |
             org.opencontainers.image.title=docmd
             org.opencontainers.image.description=The minimalist, zero-config documentation generator
