@@ -108,9 +108,23 @@ RUN mkdir -p /docs /site && chown -R docmd:docmd /docs /site
 
 # Seed the default template by running docmd init non-interactively.
 # This ensures the image ships exactly what a real `docmd init` produces.
+#
+# Build does NOT fail on init failure: the image still publishes (so users
+# who mount their own /docs are unaffected), but the demo experience is
+# degraded and a clear warning is printed. Full stderr from `docmd init`
+# is in the build log above this block for diagnosis.
 RUN mkdir -p /template && \
     cd /template && \
-    echo 'y' | docmd init || true
+    if echo 'y' | docmd init; then \
+      if [ ! -f /template/docmd.config.json ]; then \
+        printf '\n[docmd-docker] WARNING: docmd init exited 0 but /template/docmd.config.json is missing.\n' >&2; \
+        printf '[docmd-docker] Demo seeding will not work. Mount your own /docs.\n' >&2; \
+      fi; \
+    else \
+      printf '\n[docmd-docker] WARNING: docmd init failed during image build.\n' >&2; \
+      printf '[docmd-docker] The `docker run` demo experience will not work. Mount your own /docs.\n' >&2; \
+      printf '[docmd-docker] Full error from docmd init is in the build log above this block.\n' >&2; \
+    fi
 
 # Install entrypoint + healthcheck scripts (see docker/docker-entrypoint.sh
 # and docker/docker-healthcheck.sh). The entrypoint seeds /docs from
