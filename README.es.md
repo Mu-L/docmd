@@ -6,229 +6,204 @@
 
 <div align="center">
 
-  <!-- PROJECT TITLE -->
-  <h3>
-    <a href="https://docmd.io">
-      <img src="https://github.com/docmd-io/docmd/blob/main/packages/ui/assets/images/docmd-logo-dark.png?raw=true" alt="docmd logo" width="210" />
-    </a>
-  </h3>
-  
-  <!-- ONE LINE SUMMARY -->
-  <p>
-    <b>Crea documentación lista para producción a partir de Markdown en segundos.</b>
-    <br/>
-    Motor de documentación AI-First y Zero-Config para desarrolladores y agentes LLM.
-  </p>
-  
-  <!-- BADGES -->
+  <a href="https://docmd.io">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://github.com/docmd-io/docmd/blob/main/packages/ui/assets/images/docmd-logo-dark.png?raw=true" />
+      <source media="(prefers-color-scheme: light)" srcset="https://github.com/docmd-io/docmd/blob/main/packages/ui/assets/images/docmd-logo-dark.png?raw=true" />
+      <img src="https://github.com/docmd-io/docmd/blob/main/packages/ui/assets/images/docmd-logo-dark.png?raw=true" alt="docmd" width="210" />
+    </picture>
+  </a>
+
+  <br/>
+
+  <p><b>Documentación lista para producción desde Markdown, en segundos.</b><br/>Zero config. AI-nativo. Construido para desarrolladores.</p>
+
   <p>
     <a href="https://www.npmjs.com/package/@docmd/core"><img src="https://img.shields.io/npm/v/@docmd/core.svg?style=flat-square&color=CB3837" alt="npm version"></a>
-    <a href="https://www.npmjs.com/package/@docmd/core?activeTab=versions"><img src="https://img.shields.io/npm/dm/@docmd/core.svg?style=flat-square&color=38bd24" alt="downloads"></a>
-    <a href="https://github.com/docmd-io/docmd"><img src="https://img.shields.io/github/stars/docmd-io/docmd?style=flat-square&logo=github" alt="stars"></a>
-    <a href="https://github.com/docmd-io/docmd/blob/main/LICENSE"><img src="https://img.shields.io/github/license/docmd-io/docmd.svg?style=flat-square&color=A31F34" alt="license"></a>
+    <a href="https://www.npmjs.com/package/@docmd/core?activeTab=versions"><img src="https://img.shields.io/npm/dm/@docmd/core.svg?style=flat-square&color=38bd24" alt="descargas mensuales"></a>
+    <a href="https://github.com/docmd-io/docmd"><img src="https://img.shields.io/github/stars/docmd-io/docmd?style=flat-square&logo=github" alt="estrellas de GitHub"></a>
+    <a href="https://github.com/docmd-io/docmd/blob/main/LICENSE"><img src="https://img.shields.io/github/license/docmd-io/docmd.svg?style=flat-square&color=A31F34" alt="licencia"></a>
   </p>
 
-  <!-- MENU -->
-  <p>
-    <h4>
-      <a href="https://docmd.io">Sitio web</a> • 
-      <a href="https://docs.docmd.io">Documentación</a> • 
-      <a href="https://live.docmd.io">Editor en vivo</a> •
-      <a href="https://github.com/docmd-io/docmd-skills">Agent Skills</a> •
-      <a href="https://github.com/docmd-io/docmd/issues">Reportar error</a>
-    </h4>
-  </p>
+  <h4>
+    <a href="https://docmd.io">Sitio web</a> &nbsp;·&nbsp;
+    <a href="https://docs.docmd.io">Documentación</a> &nbsp;·&nbsp;
+    <a href="https://live.docmd.io">Editor en vivo</a> &nbsp;·&nbsp;
+    <a href="https://github.com/docmd-io/docmd-skills">Agent Skills</a> &nbsp;·&nbsp;
+    <a href="https://github.com/docmd-io/docmd/issues">Reportar un bug</a>
+  </h4>
 
-  <!-- PREVIEW -->
-  <p>
-    <br/>
-    <a href="https://docs.docmd.io">
-      <img width="800" alt="docmd preview" src="https://raw.githubusercontent.com/docmd-io/docmd/refs/heads/main/assets/docmd-cover.webp" />
-    </a>
-    <br/>
-    <sup><i>Vista previa del tema `default` de docmd en modo claro y oscuro</i></sup>
-  </p>
+  <br/>
+
+  <a href="https://docs.docmd.io">
+    <img width="820" alt="docmd tema por defecto — vista previa en modo claro y oscuro" src="https://raw.githubusercontent.com/docmd-io/docmd/refs/heads/main/assets/docmd-cover.webp" />
+  </a>
+
+  <br/><br/>
 
 </div>
 
-## Inicio Rápido
+## Inicio rápido
 
-**Ejecuta docmd instantáneamente en cualquier carpeta con archivos Markdown:**
+Ejecuta docmd en cualquier carpeta con archivos Markdown — sin instalación:
 
 ```bash
 npx @docmd/core dev
 ```
-Inicia en: `http://localhost:3000`
 
-**Eso es todo.**
+<details>
+  <summary><b>Abre en <code>http://localhost:3000</code></b></summary><br>
 
-- La navegación se genera automáticamente
-- Las páginas se renderizan instantáneamente
-- Tus documentos están listos para producción por defecto
+```bash
+    _                 _
+  _| |___ ___ _____ _| |
+ | . | . |  _|     | . |
+ |___|___|___|_|_|_|___|
 
-Construye tu sitio:
+ v1.x.x
+
+┌─ Build
+│  Engine          JS
+│  Source          docs/
+│  Output          site/
+│  Versions        2 (06, 05)
+│  Locales         7 (en, hi, zh, es, de, ja, fr)
+└──────────────────────────────────────────────────────────
+┌─ Data Indexing
+│  [ DONE ] Syncing git metadata
+│  [ DONE ] Building semantic search index (multi-version)
+└──────────────────────────────────────────────────────────
+┌─ Publishing
+│  [ DONE ] Generated robots.txt
+│  [ DONE ] Generated .nojekyll (disables Jekyll on GitHub Pages)
+│  [ DONE ] Generated sitemap
+│  [ DONE ] Generating LLMs context files
+└──────────────────────────────────────────────────────────
+
+⬢ Initial build completed in 1.2s.
+
+┌─ Watching
+│  Source          ./docs
+│  Config          ./docmd.config.json
+│  Assets          ./assets
+└──────────────────────────────────────────────────────────
+┌─ Development Server Running
+│  Local Access    http://127.0.0.1:3000
+│  Network Access  http://192.168.1.6:3000
+│  Serving from    ./site
+└──────────────────────────────────────────────────────────
+```
+</details>
+
+<p align="center">
+  <img alt="vista previa del servidor de desarrollo docmd" width="820" src="https://docmd.io/assets/images/dev-preview.gif">
+</p>
+
+La navegación se genera a partir de la estructura de archivos. Sin archivo de configuración, sin frontmatter obligatorio, sin framework que aprender.
+
+**Cuando estés listo para publicar:**
 
 ```bash
 npx @docmd/core build
 ```
 
-### Instalar para uso regular
+Esto produce un sitio estático altamente optimizado (SPA) listo para desplegar en Vercel, Cloudflare Pages, Netlify, GitHub Pages o cualquier host estático.
+
+**Requisitos:** Node.js 18+
+
+<details>
+  <summary><b>O instala globalmente / vía Docker</b></summary><br/>
 
 ```bash
+# Instalar globalmente vía npm
 npm install -g @docmd/core
+
+# O vía pnpm
+pnpm add -g @docmd/core
+
+# Ejecutarlo
+docmd dev    # iniciar el servidor de desarrollo
+docmd build  # construir para desplegar
 ```
 
-O ejecutar mediante Docker:
+O ejecuta vía Docker:
 
 ```bash
-docker run -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.6
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest
 ```
+
+</details>
+
+## ¿Por qué docmd?
+
+| Característica | docmd | Docusaurus | MkDocs | VitePress | Mintlify |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Configuración requerida** | **Ninguna** | `docusaurus.config.js` | `mkdocs.yml` | `config.mts` | `docs.json` |
+| **Payload JS** | **~18 kb** | ~250 kb | ~40 kb | ~50 kb | ~120 kb |
+| **Navegación** | **SPA instantánea** | React SPA | Recarga completa | Vue SPA | SPA alojada |
+| **Versionado** | **Nativo** | Nativo (complejo) | Plugin mike | Manual | Nativo |
+| **i18n** | **Nativo** | Nativo (complejo) | Basado en plugin | Nativo | Nativo |
+| **Multi-proyecto** | **Nativo** | Plugin | Plugin | - | - |
+| **Búsqueda** | **Integrada** | Algolia (nube) | Integrada | MiniSearch | Nube |
+| **Contexto IA (`llms.txt`)** | **Integrado** | - | - | - | Integrado |
+| **Servidor MCP** | **Integrado** | - | - | - | Integrado |
+| **Agent Skills** | **Integrado** | - | - | - | - |
+| **Imagen Docker** | **Oficial** | - | Oficial | - | - |
+| **Autoalojado** | **Sí** | Sí | Sí | Sí | - |
+| **Coste** | **Gratis (OSS)** | Gratis (OSS) | Gratis (OSS) | Gratis (OSS) | Freemium |
+
+## Funcionalidades
+
+### Zero config, inicio instantáneo
+Apunta docmd a cualquier carpeta de Markdown y se ejecuta. La navegación se genera automáticamente a partir de la estructura de archivos. Puedes escribir tu primer doc y tenerlo en vivo en menos de un minuto — sin boilerplate, sin pipeline de build que configurar, sin decisiones que tomar por adelantado.
+
+### Diminuto por defecto, rápido en todas partes
+El payload de JavaScript por defecto es ~18 kb. Las páginas navegan como una SPA instantánea. La salida es HTML estático — optimizado para SEO, con sitemap, URLs canónicas y metadatos Open Graph incluidos. Búsqueda offline de texto completo integrada, sin servicio en la nube necesario.
+
+### AI-nativo
+docmd está construido para la forma en que la documentación se lee y se usa hoy:
+- **Servidor MCP** — `docmd mcp` expone tu documentación a agentes de IA sobre stdio, permitiéndoles buscar, leer y validar contenido directamente.
+- **Contexto (`llms.txt` / `llms-full.txt`)** — contexto completo de documentación generado en tiempo de build, listo para cualquier LLM.
+- **Agent Skills** — conjuntos de instrucciones modulares para LLMs y agentes de IDE ([docmd-skills](https://github.com/docmd-io/docmd-skills)).
+- **Copiar como Markdown / Copiar contexto** — botones de un clic en el navegador, optimizados para pegar en chats de IA.
+
+### Construido para escalar
+- Internacionalización con builds multi-idioma
+- Versionado para múltiples releases de documentación
+- Workspaces para monorepos y setups multi-proyecto
+- Sistema de plugins para extender el comportamiento del núcleo
+- Soporte completo de temas, plantillas integradas, CSS/JS personalizado, modo claro/oscuro
+
+## CLI
 
 ```bash
-docmd dev     # iniciar servidor de desarrollo
-docmd build   # construir para despliegue
-docmd migrate # migrar desde otras herramientas (como Docusaurus, VitePress, MkDocs, etc.)
-docmd deploy  # generar configs de docker, nginx o caddy
+docmd dev            # servidor de desarrollo local
+docmd build          # construir para desplegar
+docmd live           # Editor en vivo basado en navegador
+docmd migrate        # importar desde Docusaurus, VitePress, MkDocs o Starlight
+docmd deploy         # generar configuración para Docker, NGINX, Caddy, Vercel, Netlify
+docmd validate       # comprobar todos los enlaces internos
+docmd mcp            # ejecutar como servidor MCP sobre stdio
+docmd add <name>     # instalar un plugin o plantilla
 ```
 
-## Características
+## Plugins
 
-Diseñado para empezar al instante y escalar sin fricciones.
+La funcionalidad principal está impulsada por un sistema de plugins robusto. Lo esencial viene incluido por defecto, mientras que los plugins opcionales pueden añadirse según necesidades específicas.
 
-### Instantáneo por defecto
-
-* Navegación automática desde tus archivos
-* Configuración cero requerida
-* Funciona directamente con Markdown
-
-### Salida lista para producción
-
-* Generación de HTML estático
-* Optimizado para SEO (sitemap, canonical, redirecciones)
-* Carga de JavaScript mínima
-
-### Capacidades integradas
-
-* Internacionalización (i18n)
-* Versiones
-* Búsqueda fuera de línea
-* Soporte PWA
-* Analítica
-* Contexto para AI (`llms.txt`)
-
-### Integración AI-First
-
-* **Servidor MCP** Nativo (`docmd mcp`) — Los agentes AI buscan, leen y validan documentos a través de stdio
-* Conjunto de habilidades de agente ([docmd-skills](https://github.com/docmd-io/docmd-skills)) — habilidades modulares para LLMs y agentes de IDE
-* `llms.txt` / `llms-full.txt` — contexto de documentación completo generado en tiempo de compilación
-* Widgets de Copiar Markdown / Copiar Contexto — botones del navegador optimizados para chat AI
-
-### Extensible cuando sea necesario
-
-* Soporte para plugins
-* Configuración y navegación personalizada
-* Temas personalizados
-* API programática
-
-Mira el [roadmap](https://github.com/orgs/docmd-io/discussions/2) completo.
-
-## Estructura del Proyecto
-
-Mantiene tu proyecto simple.
-
-```bash
-my-docs/
-├── docs/
-├── assets/
-├── docmd.config.json (opcional)
-└── package.json
-```
-
-## Editor en Vivo
-
-Un editor basado en navegador para escribir y previsualizar documentos al instante. Sin configuración.
-
-**Pruébalo: [live.docmd.io](https://live.docmd.io)**
-
-## Configuración (opcional)
-
-No se requiere configuración para empezar.
-
-Añade un archivo de configuración (`docmd.config.json` en la raíz del proyecto) solo cuando necesites más control.
-
-```js
-const { defineConfig } = require('@docmd/core');
-
-module.exports = defineConfig({
-  title: 'Mi Proyecto',
-  url: 'https://docs.miproyecto.com',
-});
-```
-
-### Opciones comunes
-
-```js
-module.exports = defineConfig({
-  // Versiones
-  versions: {
-    current: 'v2',
-    all: [
-      { id: 'v2', dir: 'docs' },
-      { id: 'v1', dir: 'docs-v1' }
-    ]
-  },
-
-  // Internacionalización
-  i18n: {
-    default: 'en',
-    locales: [
-      { id: 'en', label: 'English' },
-      { id: 'zh', label: '中文' },
-    ]
-  }
-});
-```
-
-*Soporte integrado para: Inglés, Hindi, Chino, Español, Alemán, Japonés y Francés. Puedes añadir y soportar fácilmente cualquier otro idioma.*
-
-Otros ajustes comunes incluyen `src`, `out`, navegación, plugins y temas.
-
-### Uso programático
-
-Uso en scripts o flujos de CI:
-
-```js
-const { build, buildLive } = require('@docmd/core');
-
-await build('./docmd.config.json', { isDev: false });
-await buildLive();
-```
-
-### ¿Necesitas más?
-
-Configuración completa, plugins y uso avanzado: **[docs.docmd.io](https://docs.docmd.io)**
-
-## Ecosistema de Plugins
-
-La funcionalidad principal se incluye por defecto.
-
-Todo funciona de inmediato.
-
-Los plugins solo son necesarios cuando quieres extender la funcionalidad.
-
-| Plugin      | Incluido | Descripción                                           |
-| :---------- | :------- | :---------------------------------------------------- |
-| `search`    | ✓        | Búsqueda de texto completo con coincidencia aproximada |
-| `seo`       | ✓        | Etiquetas SEO y metadatos de Open Graph               |
-| `sitemap`   | ✓        | Genera `sitemap.xml`                                  |
-| `git`       | ✓        | Registrador de historial de commits de Git            |
-| `analytics` | ✓        | Integración de análisis ligera                        |
-| `llms`      | ✓        | Generación de contexto para IA (`llms.txt`)           |
-| `mermaid`   | ✓        | Diagramas de Mermaid en Markdown                      |
-| `openapi`   | ✓        | Renderizador de OpenAPI 3.x en tiempo de construcción |
-| `pwa`       | Optional | Soporte de PWA para navegación sin conexión           |
-| `threads`   | Optional | Hilos de discusión en línea *(por @svallory)*         |
-| `math`      | Optional | Renderizado de matemáticas KaTeX/LaTeX                |
+| Plugin | Estado | Descripción |
+| :--- | :---: | :--- |
+| `search` | ✅ Núcleo | Búsqueda offline de texto completo con coincidencia difusa |
+| `seo` | ✅ Núcleo | Etiquetas SEO y metadatos Open Graph |
+| `sitemap` | ✅ Núcleo | Genera `sitemap.xml` |
+| `git` | ✅ Núcleo | Historial de commits de Git y fechas de última actualización |
+| `analytics` | ✅ Núcleo | Integración ligera de analytics |
+| `llms` | ✅ Núcleo | Generación de contexto IA (`llms.txt` / `llms-full.txt`) |
+| `mermaid` | ✅ Núcleo | Soporte de diagramas Mermaid |
+| `openapi` | ✅ Núcleo | Renderizador de especificación OpenAPI 3.x en tiempo de build |
+| `pwa` | ➕ Opcional | Progressive Web App — navegación offline |
+| `threads` | ➕ Opcional | Hilos de discusión inline *(por @svallory)* |
+| `math` | ➕ Opcional | Renderizado matemático KaTeX / LaTeX |
 
 Instalar plugins opcionales:
 
@@ -236,41 +211,70 @@ Instalar plugins opcionales:
 docmd add <plugin-name>
 ```
 
-## ¿Por qué docmd?
+Crea el tuyo: [Guía de desarrollo de plugins](https://docs.docmd.io/development/building-plugins/)
 
-| Característica   | docmd                     | Docusaurus           | MkDocs Material | VitePress        | Mintlify         |
-| :--------------- | :------------------------ | :------------------- | :-------------- | :--------------- | :--------------- |
-| **Lenguaje**     | **Node.js**               | React.js             | Python          | Vue              | SaaS             |
-| **Config. req.** | **Ninguna**               | `docusaurus.config.js` | `mkdocs.yml`  | `config.mts`     | `mint.json`      |
-| **Multi-proyecto**| **Nativo**                | Plugin               | Plugin          | No               | No               |
-| **Carga inicial**| **~18kb**                 | ~250kb               | ~40kb           | ~50kb            | ~120kb           |
-| **Navegación**   | **SPA Instantánea**       | React SPA            | Recarga total   | Vue SPA          | SPA Alojada      |
-| **Versiones**    | **Integrada**             | Nativa (compleja)    | mike plugin     | Manual           | Nativa           |
-| **i18n**         | **Integrada**             | Nativa (compleja)    | Basada en plugins| Manual           | Nativa           |
-| **Búsqueda**     | **Integrada (offline)**   | Algolia (nube)       | Integrada       | MiniSearch        | Nube             |
-| **Contexto AI**  | **Integrada (`llms.txt`)**| Manual               | Ninguno         | Ninguno          | Propietario      |
-| **Servidor MCP** | **Integrada**             | Ninguno              | Ninguno         | Ninguno          | Integrado        |
-| **Agent Skills**  | **Integrada**             | Ninguno              | Ninguno         | Ninguno          | Integrado        |
-| **Imagen Docker** | **Oficial**               | Ninguno              | Oficial         | Ninguno          | N/A              |
-| **PWA**          | **Plugin Oficial**        | Plugin comunidad     | Ninguno         | Ninguno          | Alojado          |
-| **Autohospedado**| **Sí**                    | Sí                   | Sí              | Sí               | No               |
-| **Costo**        | **Gratis (OSS)**          | Gratis (OSS)         | Gratis (OSS)    | Gratis (OSS)     | Freemium         |
+## Configuración
 
-Empieza simple. Escala sin fricción.
+No se requiere configuración para comenzar. Añade un `docmd.config.json` (o `.ts` / `.js`) en la raíz de tu proyecto solo cuando necesites más control:
 
-## Filosofía
+```json
+{
+  "title": "Mi Proyecto",
+  "url": "https://docs.miproyecto.com",
+  "src": "./docs",
+  "out": "./dist"
+}
+```
 
-Las herramientas de documentación deberían desaparecer.
+Se admiten archivos de configuración TypeScript y JavaScript para valores dinámicos.
 
-Concéntrate en escribir, no en la configuración.
+Referencia completa: [Resumen de configuración](https://docs.docmd.io/configuration/overview)
 
-Sin sobrecarga de configuración. Sin complejidad de frameworks. Solo documentación.
+## Estructura del proyecto
 
-## Comunidad y Soporte
+```text
+my-docs/
+├── docs/                ← Tus archivos markdown
+├── assets/              ← Imágenes y archivos estáticos
+├── docmd.config.json    ← Configuración opcional
+└── package.json
+```
 
-* Las contribuciones son bienvenidas. Ver [CONTRIBUTING.md](.github/CONTRIBUTING.md)
-* Si te resulta útil, considera [patrocinar](https://github.com/sponsors/mgks) o dar una estrella al repositorio ⭐
+## Editor en vivo
+
+Un editor basado en navegador para escribir y previsualizar documentación — sin configuración local.
+
+<p>
+  <img alt="vista previa del editor en vivo docmd" width="820" src="https://docs.docmd.io/assets/previews/live-editor-preview.webp">
+</p>
+
+**Pruébalo en [live.docmd.io](https://live.docmd.io)**
+
+## API programática
+
+Usa docmd en scripts de Node.js, pipelines de CI o pasos de build personalizados. (Soporta tanto CommonJS como ESM.)
+
+```javascript
+import { build } from '@docmd/core';
+
+await build('./docmd.config.json', { isDev: false });
+```
+
+Referencia completa: [Node API](https://docs.docmd.io/development/node-api-reference/)
+
+## Comunidad
+
+- **Bugs y problemas** → [GitHub Issues](https://github.com/docmd-io/docmd/issues)
+- **Preguntas e ideas** → [Discussions](https://github.com/orgs/docmd-io/discussions)
+- **Contribuir** → [CONTRIBUTING.md](.github/CONTRIBUTING.md)
+- **Roadmap** → [GitHub Discussions](https://github.com/orgs/docmd-io/discussions/2)
+
+## Soporte
+
+- Dar a conocer docmd es la forma más directa de apoyar su desarrollo. [Compártelo en X](https://twitter.com/intent/tweet?url=https://github.com/docmd-io/docmd&text=docmd%20-%20Documentación%20lista%20para%20producción%20desde%20Markdown%20en%20segundos.) con amigos o dale una estrella.
+- Si docmd te ahorra tiempo, un [sponsorship en GitHub](https://github.com/sponsors/mgks) ayuda mucho.
+- ¿Ideas o bugs? Abre un issue o PR, siéntete libre de contribuir con tus propios plugins.
 
 ## Licencia
 
-Licencia MIT. Ver `LICENSE` para más detalles.
+MIT — consulta [`LICENSE`](./LICENSE) para más detalles.
