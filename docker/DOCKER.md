@@ -55,9 +55,9 @@ The image is published with two tags per release:
 | Tag | Description | When to use |
 |-----|-------------|-------------|
 | `latest` | Floating alias for the most recent stable release | Quick start, local exploration, throwaway CI |
-| `<version>` (e.g. `0.8.6`) | Pinned stable release | Production, CI/CD, anything that must be reproducible |
+| `<X.Y.Z>` | Pinned stable release (substitute the version you want) | Production, CI/CD, anything that must be reproducible |
 
-> **Always pin a specific version in production.** The `:latest` tag is convenient for trying things out, but for any pipeline whose output must be reproducible (or whose contracts you don't want silently changing) use a pinned version like `:0.8.6`. Check the [package versions page](https://github.com/orgs/docmd-io/packages/container/docmd/versions) for the full list.
+> **Always pin a specific version in production.** The `:latest` tag is convenient for trying things out, but for any pipeline whose output must be reproducible (or whose contracts you don't want silently changing) use a pinned tag like `:<X.Y.Z>` against the version you want. Check the [package versions page](https://github.com/orgs/docmd-io/packages/container/docmd/versions) for the full list.
 
 ## Multi-Platform Support
 
@@ -74,10 +74,10 @@ Docker automatically pulls the correct image for your platform.
 
 ```yaml
 # Pinned to a specific version for reproducible deploys.
-# Replace with the version you want — see the GitHub releases page.
+# Replace `<X.Y.Z>` with the version you want — see the GitHub releases page.
 services:
   docmd:
-    image: ghcr.io/docmd-io/docmd:0.8.6
+    image: ghcr.io/docmd-io/docmd:<X.Y.Z>
     ports:
       - "3000:3000"
     volumes:
@@ -103,11 +103,12 @@ jobs:
       
       - name: Build documentation
         # Pinned version — your CI output is reproducible across runs.
+        # Replace `<X.Y.Z>` with the version you want.
         run: |
           docker run --rm \
             -v ${{ github.workspace }}/docs:/docs \
             -v ${{ github.workspace }}/site:/site \
-            ghcr.io/docmd-io/docmd:0.8.6 \
+            ghcr.io/docmd-io/docmd:<X.Y.Z> \
             build
       
       - name: Deploy to GitHub Pages
@@ -120,7 +121,7 @@ jobs:
 ### Kubernetes Deployment
 
 ```yaml
-# Pinned to a specific version. Update this when you upgrade.
+# Pinned to a specific version. Replace `<X.Y.Z>` and update when you upgrade.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -137,7 +138,7 @@ spec:
     spec:
       containers:
       - name: docmd
-        image: ghcr.io/docmd-io/docmd:0.8.6
+        image: ghcr.io/docmd-io/docmd:<X.Y.Z>
         ports:
         - containerPort: 3000
         volumeMounts:
@@ -197,21 +198,21 @@ docker inspect --format='{{.State.Health.Status}}' <container-id>
 chmod -R 755 ./docs
 
 # Or run with specific user
-docker run --user $(id -u):$(id -g) -v $(pwd)/docs:/docs ghcr.io/docmd-io/docmd:0.8.6
+docker run --user $(id -u):$(id -g) -v $(pwd)/docs:/docs ghcr.io/docmd-io/docmd:<X.Y.Z>
 ```
 
 ### Network Issues
 
 ```bash
 # Ensure you're binding to 0.0.0.0
-docker run -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.6 dev --host 0.0.0.0
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:<X.Y.Z> dev --host 0.0.0.0
 ```
 
 ### Memory Issues
 
 ```bash
 # For large documentation sites
-docker run --memory=2g -v $(pwd)/docs:/docs ghcr.io/docmd-io/docmd:0.8.6 build
+docker run --memory=2g -v $(pwd)/docs:/docs ghcr.io/docmd-io/docmd:<X.Y.Z> build
 ```
 
 ## License

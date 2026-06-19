@@ -37,7 +37,7 @@ on:
         default: true
         type: boolean
       version:
-        description: 'Version tag (e.g., 0.8.6)'
+        description: 'Version tag (e.g., X.Y.Z)'
         required: false
         type: string
       tag_latest:
@@ -98,7 +98,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}
           # Two and only two tags are ever produced for any single image:
-          #   - The version, e.g. 0.8.6 (v-prefix stripped)
+          #   - The version (e.g. X.Y.Z, v-prefix stripped)
           #   - The floating `:latest` alias
           # `:latest` is only ever applied to released versions. A branch
           # build or unreleased commit can never be pulled as `:latest`.
