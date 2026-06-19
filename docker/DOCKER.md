@@ -5,7 +5,7 @@ Official Docker image for docmd - the minimalist, zero-config documentation gene
 ## Quick Start
 
 > The examples below use `:latest` so you can copy-paste and run them immediately.
-> **For production, CI, and any reproducible build, pin a specific version** (see [Available Tags](#available-tags)).
+> **For production, CI, and any reproducible build**, replace `:latest` with the specific version you want — see [Available Tags](#available-tags).
 
 ### Pull the Image
 
@@ -57,7 +57,7 @@ The image is published with two tags per release:
 | `latest` | Floating alias for the most recent stable release | Quick start, local exploration, throwaway CI |
 | `<X.Y.Z>` | Pinned stable release (substitute the version you want) | Production, CI/CD, anything that must be reproducible |
 
-> **Always pin a specific version in production.** The `:latest` tag is convenient for trying things out, but for any pipeline whose output must be reproducible (or whose contracts you don't want silently changing) use a pinned tag like `:<X.Y.Z>` against the version you want. Check the [package versions page](https://github.com/orgs/docmd-io/packages/container/docmd/versions) for the full list.
+> **Pin a specific version in production.** The examples below use `:latest` so you can copy-paste and run them immediately. For any pipeline whose output must be reproducible (or whose contracts you don't want silently changing), replace `:latest` with the specific version you want (e.g. `0.8.7`). Check the [package versions page](https://github.com/orgs/docmd-io/packages/container/docmd/versions) for the full list.
 
 ## Multi-Platform Support
 
@@ -73,11 +73,11 @@ Docker automatically pulls the correct image for your platform.
 ### Docker Compose
 
 ```yaml
-# Pinned to a specific version for reproducible deploys.
-# Replace `<X.Y.Z>` with the version you want — see the GitHub releases page.
+# Replace `:latest` with a specific version (e.g. `0.8.7`) for reproducible
+# production builds. See the GitHub releases page for available versions.
 services:
   docmd:
-    image: ghcr.io/docmd-io/docmd:<X.Y.Z>
+    image: ghcr.io/docmd-io/docmd:latest
     ports:
       - "3000:3000"
     volumes:
@@ -102,13 +102,12 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Build documentation
-        # Pinned version — your CI output is reproducible across runs.
-        # Replace `<X.Y.Z>` with the version you want.
+        # Pin to a specific version (replace `:latest`) for reproducible CI runs.
         run: |
           docker run --rm \
             -v ${{ github.workspace }}/docs:/docs \
             -v ${{ github.workspace }}/site:/site \
-            ghcr.io/docmd-io/docmd:<X.Y.Z> \
+            ghcr.io/docmd-io/docmd:latest \
             build
       
       - name: Deploy to GitHub Pages
@@ -121,7 +120,8 @@ jobs:
 ### Kubernetes Deployment
 
 ```yaml
-# Pinned to a specific version. Replace `<X.Y.Z>` and update when you upgrade.
+# Replace `:latest` with a specific version (e.g. `0.8.7`) for reproducible
+# production deploys. Update the tag when you upgrade.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -138,7 +138,7 @@ spec:
     spec:
       containers:
       - name: docmd
-        image: ghcr.io/docmd-io/docmd:<X.Y.Z>
+        image: ghcr.io/docmd-io/docmd:latest
         ports:
         - containerPort: 3000
         volumeMounts:
@@ -198,21 +198,21 @@ docker inspect --format='{{.State.Health.Status}}' <container-id>
 chmod -R 755 ./docs
 
 # Or run with specific user
-docker run --user $(id -u):$(id -g) -v $(pwd)/docs:/docs ghcr.io/docmd-io/docmd:<X.Y.Z>
+docker run --user $(id -u):$(id -g) -v $(pwd)/docs:/docs ghcr.io/docmd-io/docmd:latest
 ```
 
 ### Network Issues
 
 ```bash
 # Ensure you're binding to 0.0.0.0
-docker run -p 3000:3000 ghcr.io/docmd-io/docmd:<X.Y.Z> dev --host 0.0.0.0
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest dev --host 0.0.0.0
 ```
 
 ### Memory Issues
 
 ```bash
 # For large documentation sites
-docker run --memory=2g -v $(pwd)/docs:/docs ghcr.io/docmd-io/docmd:<X.Y.Z> build
+docker run --memory=2g -v $(pwd)/docs:/docs ghcr.io/docmd-io/docmd:latest build
 ```
 
 ## License
