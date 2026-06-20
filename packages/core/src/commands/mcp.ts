@@ -18,6 +18,9 @@ import path from 'path';
 import { buildSite } from './build.js';
 import { loadConfig } from '../utils/config-loader.js';
 
+const pkgUrl = new URL('../../package.json', import.meta.url);
+const { version } = JSON.parse(fs.readFileSync(pkgUrl, 'utf-8'));
+
 // Helpers to find and search markdown files
 function findMarkdownFiles(dir: string): string[] {
   const results: string[] = [];
@@ -138,7 +141,7 @@ export async function runMcpServer() {
           },
           serverInfo: {
             name: "docmd-mcp-server",
-            version: "0.8.6"
+            version
           }
         });
         return;

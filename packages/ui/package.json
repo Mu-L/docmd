@@ -23,6 +23,9 @@
     "@docmd/api": "workspace:*",
     "@docmd/tui": "workspace:*"
   },
+  "devDependencies": {
+    "@types/node": "^24.13.2"
+  },
   "keywords": [
     "docmd",
     "ui",

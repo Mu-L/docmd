@@ -18,6 +18,9 @@
   "engines": {
     "node": ">=18"
   },
+  "devDependencies": {
+    "@types/node": "^24.13.2"
+  },
   "keywords": [
     "docmd",
     "themes",

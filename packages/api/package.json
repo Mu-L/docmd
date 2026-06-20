@@ -24,6 +24,9 @@
     "@docmd/parser": "workspace:*",
     "@docmd/tui": "workspace:*"
   },
+  "devDependencies": {
+    "@types/node": "^24.13.2"
+  },
   "optionalDependencies": {
     "@docmd/engine-js": "workspace:*",
     "@docmd/engine-rust": "workspace:*"

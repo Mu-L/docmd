@@ -1,7 +1,7 @@
 {
   "name": "@docmd/deployer",
   "version": "0.8.7",
-  "description": "Deployment configuration generator for docmd — Docker, Nginx, Caddy, GitHub Pages, Vercel, and Netlify.",
+  "description": "Deployment configuration generator for docmd - Docker, Nginx, Caddy, GitHub Pages, Vercel, and Netlify.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,6 +16,9 @@
   },
   "dependencies": {
     "@docmd/api": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2"
   },
   "keywords": [
     "docmd",

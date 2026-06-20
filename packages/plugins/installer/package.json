@@ -18,6 +18,9 @@
   "dependencies": {
     "@docmd/api": "workspace:*"
   },
+  "devDependencies": {
+    "@types/node": "^24.13.2"
+  },
   "keywords": [
     "docmd",
     "plugin",
