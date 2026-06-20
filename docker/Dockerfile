@@ -31,7 +31,7 @@
 # -----------------------------------------------------------------------------
 # Stage 1: Build stage - compiles TypeScript and prepares the application
 # -----------------------------------------------------------------------------
-FROM node:24-alpine AS builder
+FROM node:20-alpine AS builder
 
 # Install build dependencies for native modules
 RUN apk add --no-cache \
@@ -41,8 +41,10 @@ RUN apk add --no-cache \
     git \
     curl
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
+# Install pnpm — version is pinned via the root package.json `packageManager` field.
+# `corepack prepare` with no version reads that field, so a single bump of
+# `packageManager` moves both the lockfile and the Docker build forward.
+RUN corepack enable && corepack prepare --activate
 
 WORKDIR /app
 
@@ -69,7 +71,7 @@ RUN pnpm -r pack --pack-destination /tarballs
 # -----------------------------------------------------------------------------
 # Stage 2: Production stage - minimal image with only runtime dependencies
 # -----------------------------------------------------------------------------
-FROM node:24-alpine AS production
+FROM node:20-alpine AS production
 
 # Install runtime dependencies
 RUN apk add --no-cache \
@@ -77,8 +79,9 @@ RUN apk add --no-cache \
     curl \
     bash
 
-# Install pnpm globally
-RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
+# Install pnpm globally — version is pinned via the root package.json
+# `packageManager` field. `corepack prepare` with no version reads that field.
+RUN corepack enable && corepack prepare --activate
 
 # Configure pnpm global directories
 ENV PNPM_HOME="/usr/local/share/pnpm"
