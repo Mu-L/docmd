@@ -44,8 +44,5 @@
   },
   "homepage": "https://docmd.io",
   "funding": "https://github.com/sponsors/mgks",
-  "license": "MIT",
-  "devDependencies": {
-    "@types/node": "^20"
-  }
+  "license": "MIT"
 }
