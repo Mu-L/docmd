@@ -22,7 +22,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { fixSvgNamespaces } from './svg-utils.js';
+import { fixSvgNamespaces } from '../src/svg-utils.js';
 
 // Minimal SVG that mermaid.render() produces for a typical C4Context diagram.
 // Critical detail: has xlink:href (from person icon <image> elements) but
