@@ -41,9 +41,7 @@
     "onlyBuiltDependencies": [
       "esbuild"
     ],
-    "overrides": {
-      "mermaid>uuid": ">=14.0.0"
-    },
+    "overrides": {},
     "peerDependencyRules": {
       "ignoreMissing": [
         "docmd-search"
