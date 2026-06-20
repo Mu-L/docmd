@@ -20,6 +20,7 @@
   ],
   "devDependencies": {
     "@docmd/api": "workspace:*",
+    "@types/node": "^24.13.2",
     "esbuild": "^0.28.1",
     "typescript": "^5.9.3"
   },
