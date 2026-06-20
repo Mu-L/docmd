@@ -4,3 +4,6 @@ packages:
   - 'packages/plugins/*'
   - 'packages/templates/*'
   - 'packages/engines/*'
+
+public-hoist-pattern:
+  - '@types/*'
