@@ -9,9 +9,19 @@
  *
  * mermaid.run() (live editor) does include xmlns:xlink, so it works fine.
  * Only mermaid.render() (static site via init-mermaid.js) is affected.
+ *
+ * Run with: `pnpm test` (uses tsx + node:test — no vitest, no happy-dom).
+ *
+ * NOTE: The 3 DOMParser/`document` tests that were here under the
+ * "DOMParser integration" describe block were dropped when we moved off
+ * happy-dom. Their own comment already acknowledged: "happy-dom is lenient
+ * and parses it anyway, so we cannot replicate that specific Chrome failure
+ * here. The string-level tests above are the authoritative verification that
+ * the fix adds the declaration that Chrome requires."
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
 import { fixSvgNamespaces } from './svg-utils.js';
 
 // Minimal SVG that mermaid.render() produces for a typical C4Context diagram.
@@ -55,23 +65,23 @@ describe('fixSvgNamespaces', () => {
     it('adds xmlns:xlink when SVG uses xlink:href without declaration', () => {
       const fixed = fixSvgNamespaces(C4_SVG_WITHOUT_XMLNS);
 
-      expect(fixed).toContain('xmlns:xlink="http://www.w3.org/1999/xlink"');
+      assert.ok(fixed.includes('xmlns:xlink="http://www.w3.org/1999/xlink"'));
     });
 
     it('places xmlns:xlink inside the <svg> opening tag', () => {
       const fixed = fixSvgNamespaces(C4_SVG_WITHOUT_XMLNS);
 
       // Must be on <svg>, not somewhere else
-      expect(fixed).toMatch(/<svg[^>]+xmlns:xlink="http:\/\/www\.w3\.org\/1999\/xlink"/);
+      assert.match(fixed, /<svg[^>]+xmlns:xlink="http:\/\/www\.w3\.org\/1999\/xlink"/);
     });
 
     it('preserves all existing SVG content unchanged', () => {
       const fixed = fixSvgNamespaces(C4_SVG_WITHOUT_XMLNS);
 
-      expect(fixed).toContain('xlink:href="data:image/png;base64,iVBORw0KGgo="');
-      expect(fixed).toContain('xmlns="http://www.w3.org/2000/svg"');
-      expect(fixed).toContain('viewBox="0 0 650 400"');
-      expect(fixed).toContain('<text x="110" y="90" fill="white">Customer</text>');
+      assert.ok(fixed.includes('xlink:href="data:image/png;base64,iVBORw0KGgo="'));
+      assert.ok(fixed.includes('xmlns="http://www.w3.org/2000/svg"'));
+      assert.ok(fixed.includes('viewBox="0 0 650 400"'));
+      assert.ok(fixed.includes('<text x="110" y="90" fill="white">Customer</text>'));
     });
   });
 
@@ -79,14 +89,14 @@ describe('fixSvgNamespaces', () => {
     it('returns SVG unchanged when xmlns:xlink is already declared', () => {
       const fixed = fixSvgNamespaces(C4_SVG_WITH_XMLNS);
 
-      expect(fixed).toBe(C4_SVG_WITH_XMLNS);
+      assert.equal(fixed, C4_SVG_WITH_XMLNS);
     });
 
     it('does not duplicate xmlns:xlink when called twice', () => {
       const fixed = fixSvgNamespaces(fixSvgNamespaces(C4_SVG_WITHOUT_XMLNS));
 
       const count = (fixed.match(/xmlns:xlink/g) ?? []).length;
-      expect(count).toBe(1);
+      assert.equal(count, 1);
     });
   });
 
@@ -94,50 +104,14 @@ describe('fixSvgNamespaces', () => {
     it('returns flowchart SVG unchanged when no xlink: is used', () => {
       const fixed = fixSvgNamespaces(FLOWCHART_SVG_NO_XLINK);
 
-      expect(fixed).toBe(FLOWCHART_SVG_NO_XLINK);
-      expect(fixed).not.toContain('xmlns:xlink');
+      assert.equal(fixed, FLOWCHART_SVG_NO_XLINK);
+      assert.ok(!fixed.includes('xmlns:xlink'));
     });
 
     it('adds xmlns:xlink for flowchart with clickable links (also uses xlink:href)', () => {
       const fixed = fixSvgNamespaces(FLOWCHART_SVG_WITH_LINK);
 
-      expect(fixed).toContain('xmlns:xlink="http://www.w3.org/1999/xlink"');
-    });
-  });
-
-  describe('DOMParser integration — the actual failure mode', () => {
-    // NOTE: Chrome's DOMParser (strict XML) returns <parsererror> when xlink:
-    // prefix is undeclared. happy-dom is lenient and parses it anyway, so we
-    // cannot replicate that specific Chrome failure here.
-    // The string-level tests above are the authoritative verification that the
-    // fix adds the declaration that Chrome requires.
-
-    it('DOMParser returns <svg> root for fixed C4Context SVG', () => {
-      const parser = new DOMParser();
-      const fixed = fixSvgNamespaces(C4_SVG_WITHOUT_XMLNS);
-      const doc = parser.parseFromString(fixed, 'image/svg+xml');
-
-      expect(doc.documentElement.tagName.toLowerCase()).toBe('svg');
-    });
-
-    it('fixed SVG has xmlns:xlink — satisfies the strict XML namespace requirement', () => {
-      const fixed = fixSvgNamespaces(C4_SVG_WITHOUT_XMLNS);
-
-      // This is the declaration that Chrome's XML parser requires.
-      // Its presence is what prevents the <parsererror> in production.
-      expect(fixed).toContain('xmlns:xlink="http://www.w3.org/1999/xlink"');
-    });
-
-    it('querySelector finds <svg> after fix — no more null svgEl', () => {
-      const parser = new DOMParser();
-      const fixed = fixSvgNamespaces(C4_SVG_WITHOUT_XMLNS);
-      const doc = parser.parseFromString(fixed, 'image/svg+xml');
-
-      const wrapper = document.createElement('div');
-      wrapper.appendChild(doc.documentElement);
-
-      // This was null before the fix (causing white page in initView())
-      expect(wrapper.querySelector('svg')).not.toBeNull();
+      assert.ok(fixed.includes('xmlns:xlink="http://www.w3.org/1999/xlink"'));
     });
   });
 });
