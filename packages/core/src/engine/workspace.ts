@@ -39,7 +39,7 @@
  */
 
 import path from 'path';
-import { fsUtils as fs } from '@docmd/utils';
+import { fsUtils as fs, FileSignatureTracker } from '@docmd/utils';
 import nativeFs from 'fs';
 import { TUI } from '@docmd/tui';
 import { loadConfig } from '../utils/config-loader.js';
@@ -519,10 +519,19 @@ export async function devWorkspace(
 
   let isRebuilding = false;
   let rebuildTimeout: any = null;
-  let lastRebuildAt = 0;
-  // Absorbs phantom fs.watch events macOS emits after a rebuild writes output files.
-  // The absolute-path exclusion is the primary guard; this is a short backup window.
-  const REBUILD_QUIET_MS = 500;
+  let lastContentRebuildAt = 0;
+  let lastConfigRebuildAt = 0;
+  // Quiet windows after a rebuild to absorb phantom fs.watch events macOS
+  // emits for newly-written nearby files. The primary defence is the
+  // content-signature check (FileSignatureTracker) below; these are
+  // secondary cushions.
+  //   - 1000ms after a content rebuild
+  //   - 2500ms after a full workspace config rebuild (cascades everywhere)
+  const CONTENT_QUIET_MS = 1000;
+  const CONFIG_QUIET_MS = 2500;
+  // Tracks each watched file's mtime+size signature so phantom fs.watch
+  // events that don't actually mutate the file are silently ignored.
+  const signatureTracker = new FileSignatureTracker();
 
   const workspace = workspaceConfig.workspace!;
   for (const project of workspace.projects) {
@@ -534,7 +543,8 @@ export async function devWorkspace(
       if (!filename) return;
 
       // Post-rebuild quiet period
-      if (Date.now() - lastRebuildAt < REBUILD_QUIET_MS) return;
+      if (Date.now() - lastContentRebuildAt < CONTENT_QUIET_MS) return;
+      if (Date.now() - lastConfigRebuildAt < CONFIG_QUIET_MS) return;
 
       if (filename.includes('.git') || filename.includes('node_modules') ||
           filename.includes('.DS_Store') || filename.startsWith('.') ||
@@ -544,6 +554,10 @@ export async function devWorkspace(
       const resolvedOut = path.resolve(CWD, workspaceConfig.out || 'site');
       const filePath = path.resolve(projectSrcDir, filename);
       if (filePath.startsWith(resolvedOut + path.sep) || filePath === resolvedOut) return;
+
+      // Content-signature gate: ignore phantom events that don't actually
+      // mutate the file (Spotlight reindex, iCloud sync, etc.).
+      if (!signatureTracker.hasChanged(filePath)) return;
 
       if (rebuildTimeout) clearTimeout(rebuildTimeout);
       rebuildTimeout = setTimeout(async () => {
@@ -563,11 +577,16 @@ export async function devWorkspace(
 
         try {
           const fullChangedPath = path.resolve(projectSrcDir, filename);
-          await buildWorkspaceProject(project, workspaceConfig, { 
+          await buildWorkspaceProject(project, workspaceConfig, {
             isDev: true,
             targetFiles: isConfigUpdate ? undefined : [fullChangedPath]
           });
-          lastRebuildAt = Date.now();
+          if (isConfigUpdate) {
+            lastConfigRebuildAt = Date.now();
+            signatureTracker.reset();
+          } else {
+            lastContentRebuildAt = Date.now();
+          }
           broadcastReload();
           TUI.step(`Rebuilt [${label}] ${isConfigUpdate ? 'with new config' : displayPath} in ${rebuildElapsed()}`, 'DONE', TUI.blue, true);
         } catch (err: any) {
@@ -582,7 +601,24 @@ export async function devWorkspace(
 
   if (workspaceConfig._resolvedPath && nativeFs.existsSync(workspaceConfig._resolvedPath)) {
     let rootConfigDebounce: any = null;
-    nativeFs.watch(workspaceConfig._resolvedPath, () => {
+    // Watch the parent directory rather than the file directly — far more
+    // stable on macOS, where direct-file fs.watch fires phantom events from
+    // Spotlight / iCloud / Time Machine.
+    const rootConfigPath = workspaceConfig._resolvedPath;
+    const rootConfigDir = path.dirname(rootConfigPath);
+    const rootConfigBaseName = path.basename(rootConfigPath);
+
+    nativeFs.watch(rootConfigDir, (event, filename) => {
+      if (!filename) return;
+      if (filename !== rootConfigBaseName) return;
+
+      // Post-rebuild quiet period
+      if (Date.now() - lastConfigRebuildAt < CONFIG_QUIET_MS) return;
+
+      // Content-signature gate: ignore phantom events that don't actually
+      // mutate the file.
+      if (!signatureTracker.hasChanged(rootConfigPath)) return;
+
       if (rootConfigDebounce) clearTimeout(rootConfigDebounce);
       rootConfigDebounce = setTimeout(async () => {
         rootConfigDebounce = null;
@@ -594,11 +630,12 @@ export async function devWorkspace(
 
         try {
           const { detectWorkspace } = await import('./workspace.js');
-          const newWorkspaceConfig = await detectWorkspace(path.basename(workspaceConfig._resolvedPath!));
+          const newWorkspaceConfig = await detectWorkspace(rootConfigBaseName);
           if (newWorkspaceConfig) {
             Object.assign(workspaceConfig, newWorkspaceConfig);
             await buildWorkspace(newWorkspaceConfig, { isDev: true, quiet: true });
-            lastRebuildAt = Date.now();
+            lastConfigRebuildAt = Date.now();
+            signatureTracker.reset();
             broadcastReload();
             TUI.step(`Rebuilt entire workspace with new config in ${rebuildElapsed()}`, 'DONE', TUI.blue, true);
           }
@@ -613,7 +650,18 @@ export async function devWorkspace(
   }
 
   if (nativeFs.existsSync(path.resolve(CWD, 'assets'))) {
-    nativeFs.watch(path.resolve(CWD, 'assets'), { recursive: true }, () => {
+    const sharedAssetsDir = path.resolve(CWD, 'assets');
+    nativeFs.watch(sharedAssetsDir, { recursive: true }, (event, filename) => {
+      if (!filename) return;
+      // Post-rebuild quiet period
+      if (Date.now() - lastContentRebuildAt < CONTENT_QUIET_MS) return;
+      if (Date.now() - lastConfigRebuildAt < CONFIG_QUIET_MS) return;
+
+      // Content-signature gate: ignore phantom events that don't actually
+      // mutate the file.
+      const filePath = path.resolve(sharedAssetsDir, filename);
+      if (!signatureTracker.hasChanged(filePath)) return;
+
       if (rebuildTimeout) clearTimeout(rebuildTimeout);
       rebuildTimeout = setTimeout(async () => {
         if (isRebuilding) return;
@@ -624,6 +672,7 @@ export async function devWorkspace(
 
         try {
           await buildWorkspace(workspaceConfig, { isDev: true, quiet: true });
+          lastContentRebuildAt = Date.now();
           broadcastReload();
           TUI.step(`All projects rebuilt in ${rebuildElapsed()}`, 'DONE', TUI.blue, true);
         } catch (err: any) {

@@ -259,6 +259,42 @@
 
   // -------- Scroll to top button -----------------------------------------
 
+  function wireDrawer() {
+    // Hamburger toggle: the button lives in the topbar and carries
+    // data-summer-sidebar-toggle (it also has .sidebar-menu-button which
+    // the shared docmd-main.js handler picks up for the default
+    // template; here we just mirror the open state on <body>).
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('[data-summer-sidebar-toggle]')) {
+        document.body.classList.toggle('summer-sidebar-open');
+      }
+    });
+
+    // Close button: the X inside the drawer (data-summer-sidebar-close).
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('[data-summer-sidebar-close]')) {
+        document.body.classList.remove('summer-sidebar-open');
+      }
+    });
+
+    // Outside click: the backdrop is a body::after pseudo-element so it
+    // can't be a real click target. Close the drawer for any click that
+    // is outside the sidebar and not on the toggle button.
+    document.addEventListener('click', function (e) {
+      if (!document.body.classList.contains('summer-sidebar-open')) return;
+      if (e.target.closest('.summer-sidebar')) return;
+      if (e.target.closest('[data-summer-sidebar-toggle]')) return;
+      document.body.classList.remove('summer-sidebar-open');
+    });
+
+    // Escape key closes the drawer.
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && document.body.classList.contains('summer-sidebar-open')) {
+        document.body.classList.remove('summer-sidebar-open');
+      }
+    });
+  }
+
   function wireScrollToTop() {
     var btn = $('.summer-totop');
     if (!btn) return;
@@ -641,6 +677,7 @@
     if (document.documentElement.dataset.summerWired !== '1') {
       // First run: bind document-level listeners + topbar/footer wires
       document.documentElement.dataset.summerWired = '1';
+      wireDrawer();
       wireScrollToTop();
       wireHeaderSearch();
     }

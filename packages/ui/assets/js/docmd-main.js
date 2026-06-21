@@ -251,60 +251,30 @@
       var targetLocPrefix = (localeId && localeId !== defaultLocale) ? localeId + '/' : '';
       var targetHref = base + targetLocPrefix + currentPath;
 
-      // Normalize currentPath for manifest lookup: strip trailing slash, default to /
-      var lookupPath = '/' + currentPath.replace(/\/$/, '').replace(/\/index\.html$/, '');
-      if (lookupPath === '/') lookupPath = '/';
-
-      // Use build-time manifest for instant page-existence check (no network requests)
+      // Optional manifest-based UX: if the build-time manifest is loaded AND
+      // it knows about this specific page, redirect to the locale root when
+      // the page isn't translated. This is only an optimisation — the target
+      // page is still the canonical answer and the server will return 404 if
+      // the page genuinely doesn't exist there.
       var manifest = window.DOCMD_LOCALE_PAGES;
-      if (manifest) {
-        var localePages = manifest[localeId];
-        if (localePages && localePages.indexOf(lookupPath) !== -1) {
-          // Page exists in target locale - navigate directly
-          const finalHref = targetHref + window.location.hash;
-          if (typeof window.docmdNavigate === 'function' && document.body.dataset.spaEnabled === 'true' && window.location.protocol !== 'file:') {
-            window.docmdNavigate(finalHref);
-          } else {
-            window.location.href = finalHref;
-          }
-        } else if (localePages && localePages.length > 0) {
-          // Locale exists but this page doesn't - go to locale root
-          const finalHref = base + targetLocPrefix;
-          if (typeof window.docmdNavigate === 'function' && document.body.dataset.spaEnabled === 'true' && window.location.protocol !== 'file:') {
-            window.docmdNavigate(finalHref);
-          } else {
-            window.location.href = finalHref;
-          }
-        } else {
-          // Locale has no pages at all - stay on current page
-          const finalHref = base + currentPath;
-          if (typeof window.docmdNavigate === 'function' && document.body.dataset.spaEnabled === 'true' && window.location.protocol !== 'file:') {
-            window.docmdNavigate(finalHref);
-          } else {
-            window.location.href = finalHref;
-          }
+      if (manifest && manifest[localeId] && Array.isArray(manifest[localeId]) && manifest[localeId].length > 0) {
+        var lookupPath = '/' + currentPath.replace(/\/$/, '').replace(/\/index\.html$/, '');
+        if (lookupPath === '/') lookupPath = '/';
+        if (manifest[localeId].indexOf(lookupPath) === -1) {
+          // Page is not translated — fall back to the locale root. For the
+          // default locale the "locale root" IS the site root, so this
+          // naturally sends the user to the homepage, which is the
+          // expected behaviour when switching to the default.
+          targetHref = base + targetLocPrefix;
         }
-        return;
       }
 
-      // Fallback: no manifest available - use HEAD fetch (legacy/graceful degradation)
-      fetch(targetHref, { method: 'HEAD' })
-        .then(function (response) {
-          const finalHref = response.ok ? (targetHref + window.location.hash) : (base + targetLocPrefix);
-          if (typeof window.docmdNavigate === 'function' && document.body.dataset.spaEnabled === 'true' && window.location.protocol !== 'file:') {
-            window.docmdNavigate(finalHref);
-          } else {
-            window.location.href = finalHref;
-          }
-        })
-        .catch(function () {
-          const finalHref = base + targetLocPrefix;
-          if (typeof window.docmdNavigate === 'function' && document.body.dataset.spaEnabled === 'true' && window.location.protocol !== 'file:') {
-            window.docmdNavigate(finalHref);
-          } else {
-            window.location.href = finalHref;
-          }
-        });
+      const finalHref = targetHref + window.location.hash;
+      if (typeof window.docmdNavigate === 'function' && document.body.dataset.spaEnabled === 'true' && window.location.protocol !== 'file:') {
+        window.docmdNavigate(finalHref);
+      } else {
+        window.location.href = finalHref;
+      }
       return;
     }
 

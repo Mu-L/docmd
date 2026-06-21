@@ -43,8 +43,8 @@
     --line-height-relaxed: 1.625;
     --radius-sm: 4px;
     --radius-md: 6px;
-    --radius-lg: 8px;
-    --radius-xl: 12px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
     --shadow-sm: 0 2px 5px -3px #00000026;
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
@@ -64,13 +64,12 @@
     --sidebar-group-bg: #3352660d;
     --sidebar-group-border: transparent;
     color-scheme: light;
-    --image-shadow: 0 0 15px -5px rgba(102, 102, 102, 0.3);
-    --image-border-radius: 6px;
+    --image-shadow: 0 0 10px -3px rgb(0 0 0 / 13%);
+    --image-border-radius: 12px;
     --image-border-color: #ededed;
     --glow-color: rgba(6, 138, 213, 0.10);
     --glow-color-strong: rgba(6, 138, 213, 0.18);
     --halo-soft: 0 0 0 4px rgba(6, 138, 213, 0.10);
-
 }
 
 :root[data-theme=dark] {
@@ -516,8 +515,8 @@ img {
 }
 
 .heading-anchor svg {
-    width: 0.85em;
-    height: 0.85em;
+    width: 1.25rem;
+    height: 1.25rem;
 }
 
 .docmd-heading:hover .heading-anchor,
@@ -942,7 +941,7 @@ body.has-menubar-header .docmd-menubar {
     top: calc(var(--sticky-top-offset) + 2rem);
     width: 240px;
     flex-shrink: 0;
-    margin: 1rem 0;
+    margin: 1em 0;
     max-height: calc(100vh - var(--sticky-top-offset) - 4rem);
     overflow-y: auto;
     scrollbar-width: thin;
@@ -1346,7 +1345,7 @@ blockquote.docmd-embed {
 }
 
 .content-area {
-    padding: 1rem 2.5rem;
+    padding: 1rem 1em 1em 2.75rem;
     max-width: 1200px;
     margin: 0 auto;
     width: 100%;
@@ -1378,12 +1377,11 @@ pre {
     margin: var(--space-2) 0;
     background-color: var(--code-bg);
     border: 1px solid var(--border-color-codeblock);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-lg);
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     white-space: pre;
     line-height: 1.5;
     font-size: .85em;
-
 }
 
 .docmd-code-block-wrapper {
@@ -1451,7 +1449,7 @@ table {
 th {
     text-align: left;
     font-weight: 600;
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-2) var(--space-4);
     border-bottom: 1px solid var(--border-color);
     background-color: var(--sidebar-bg);
     color: var(--text-heading);
@@ -1552,13 +1550,12 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 
 .docmd-container {
     padding: var(--space-4) var(--space-6);
-    margin-bottom: var(--space-6);
+    margin: var(--space-2) 0;
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-color);
     background-color: var(--bg-color);
     box-shadow: var(--shadow-sm);
     overflow: hidden;
-
 }
 
 .callout {
@@ -1568,7 +1565,7 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 }
 
 .callout-info    { --callout-color: #3498db; }
-.callout-warning { --callout-color: #f39c12; }
+.callout-warning {--callout-color: #f39c12;}
 .callout-success,
 .callout-tip     {
     --callout-color: #2ecc71;
@@ -1592,7 +1589,6 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 }
 
 .card:hover {
-    box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.12), var(--halo-soft);
     transform: translateY(-1px);
     border-color: color-mix(in srgb, var(--link-color) 25%, var(--border-color));
 }
@@ -1605,6 +1601,7 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
     background-color: var(--sidebar-bg);
     border-bottom: 1px solid var(--border-color);
     letter-spacing: 0.005em;
+    min-height: 2.75em;
 }
 
 .docmd-container.steps {
@@ -1718,38 +1715,75 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
     box-shadow: 0 0 0 4px var(--glow-color);
 }
 
-/* Step permalink — hidden by default, revealed on step hover */
-.docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink {
+/* =========================================================================
+   Shared "shareable anchor" permalink
+   -------------------------------------------------------------------------
+   Used by:
+     - .step-permalink      (steps container)
+     - .changelog-permalink (changelog entry date)
+   Common properties (positioning setup, hidden-by-default, reveal
+   transition, SVG sizing, container-hover/focus reveal, own-hover
+   highlight) are declared once in the block below. New permalinks should
+   add their selector to the comma lists and add a small positioning-only
+   override block.
+   ========================================================================= */
+
+/* Base — hidden by default, absolute-positioned, smooth reveal. */
+.docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink,
+.docmd-container.changelog-timeline .changelog-permalink {
     position: absolute;
-    top: 0.25rem;
-    right: -0.5rem;
-    width: 1.5rem;
-    height: 1.5rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-muted);
     opacity: 0;
     text-decoration: none !important;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     transition: opacity 0.15s ease, color 0.15s ease, background-color 0.15s ease;
-    z-index: 2;
 }
 
-.docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink svg {
+.docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink svg,
+.docmd-container.changelog-timeline .changelog-permalink svg {
     width: 0.85em;
     height: 0.85em;
 }
 
+/* Reveal on container hover or keyboard focus on the permalink itself. */
 .docmd-container.steps-reset ol.steps-list>li.step-item:hover .step-permalink,
-.docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink:focus-visible {
+.docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink:focus-visible,
+.docmd-container.changelog-timeline .changelog-entry:hover .changelog-permalink,
+.docmd-container.changelog-timeline .changelog-permalink:focus-visible {
     opacity: 1;
 }
 
+/* Hovering the permalink itself highlights it (link colour + soft bg). */
 .docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink:hover,
-.docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink:focus-visible {
+.docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink:focus-visible,
+.docmd-container.changelog-timeline .changelog-permalink:hover,
+.docmd-container.changelog-timeline .changelog-permalink:focus-visible {
     color: var(--link-color);
     background-color: var(--sidebar-bg);
+}
+
+/* ---------- Per-use-case positioning ---------- */
+
+/* Step: hangs to the right of the step's number circle. */
+.docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink {
+    right: -0.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--text-muted);
+    z-index: 2;
+}
+
+/* Changelog entry date: sits inside the date pill on the right. */
+.docmd-container.changelog-timeline .changelog-permalink {
+    right: 0rem;
+    top: .85em;
+    transform: translateY(-50%);
+    width: 1rem;
+    height: 1rem;
+    color: currentColor;
+    border-radius: var(--radius-sm);
 }
 
 .docmd-container.steps-reset ol.steps-list>li.step-item {
@@ -1863,7 +1897,7 @@ pre.mermaid {
     padding: 0;
     background-color: var(--card-bg, var(--bg-color));
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     overflow: hidden;
     margin-bottom: 1.5rem;
     transition: border-color .2s
@@ -1875,7 +1909,7 @@ pre.mermaid {
 
 .collapsible-summary {
     list-style: none;
-    padding: .75rem 1.25rem;
+    padding: .5rem 1rem;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -1905,7 +1939,7 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
 }
 
 .collapsible-content {
-    padding: 1rem 1.25rem;
+    padding: .5rem 1rem;
     border-top: 1px solid var(--border-color)
 }
 
@@ -1974,6 +2008,7 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.03em;
+    position: relative;
 }
 
 .changelog-body {
@@ -2040,19 +2075,18 @@ button,
 .prev-page {
     align-items: center;
     text-decoration: none;
-    padding: .75rem;
-    border-radius: 6px;
+    padding: .75rem 1em;
+    border-radius: var(--radius-lg);
     transition: background-color .2s;
-    min-width: 0;
+    min-width: 50%;
     overflow: hidden;
     max-width: 48%;
     text-overflow: ellipsis;
-
 }
 
 .next-page:hover,
 .prev-page:hover {
-    background-color: #0000000d;
+    background-color: var(--menubar-link-hover-bg);
     text-decoration: none
 }
 
@@ -2169,12 +2203,12 @@ button,
 
 .toc-link {
     display: block;
-    padding: .3rem 1rem;
+    padding: .3rem .75rem;
     font-size: .85rem;
     font-weight: 500;
     text-decoration: none;
     border-left: 2px solid transparent;
-    margin-left: 1em;
+    margin-left: .25em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2307,7 +2341,7 @@ img.with-shadow {
 }
 
 .docmd-tabs-nav-item {
-    padding: .6rem 1.25rem;
+    padding: .5rem 1.25rem;
     cursor: pointer;
     border-bottom-width: 3px;
     border-bottom-style: solid;
@@ -2319,7 +2353,6 @@ img.with-shadow {
     display: flex;
     align-items: center;
     gap: 8px;
-
 }
 
 .tab-icon {
@@ -2449,13 +2482,14 @@ img.lightbox {
     align-items: center;
     gap: 0.45rem;
     padding: .6rem 1.2rem;
-    margin: .5rem;
-    border-radius: 6px;
+    margin: .5rem .5em .5em 0;
+    border-radius: var(--radius-md);
     background-color: var(--link-color);
     font-weight: 500;
     transition: background-color .15s ease, transform .15s ease, box-shadow .15s ease, filter .15s ease;
     border: medium;
-    cursor: pointer
+    cursor: pointer;
+    width: fit-content;
 }
 
 .docmd-button:hover {
@@ -2480,12 +2514,10 @@ img.lightbox {
 .docmd-tag {
     display: inline-flex;
     align-items: center;
-    padding: 0.15em 0.5em;
-    border-radius: 9999px;
-    font-size: 0.85em;
+    padding: 0 0.5em;
+    border-radius: var(--radius-xl);
+    font-size: .85em;
     font-weight: 500;
-    line-height: 1.2;
-    border: 1px solid var(--docmd-border);
     background-color: var(--docmd-surface);
     color: var(--docmd-text);
     vertical-align: middle;
@@ -2527,8 +2559,8 @@ a.docmd-tag-link .docmd-tag:hover {
 
 .copy-code-button {
     position: absolute;
-    top: .75rem;
-    right: .75rem;
+    top: .85rem;
+    right: .5rem;
     padding: .5rem;
     background-color: transparent;
     border: 0;
@@ -3255,13 +3287,12 @@ code {
 .docmd-container.grids {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: var(--space-6);
+    gap: var(--space-2);
     margin: var(--space-4) 0;
     width: 100%;
     border: 0;
     box-shadow: none;
     padding: 0;
-
 }
 
 .docmd-container.grid-item {
@@ -3274,7 +3305,6 @@ code {
     border: 0;
     box-shadow: none;
     margin-bottom: 0;
-
 }
 
 ul.contains-task-list {
@@ -3829,5 +3859,16 @@ ul.contains-task-list>li::marker {
 
 .sidebar nav li a:hover {
     background-color: var(--sidebar-link-active-bg);
+}
 
+.callout code {
+    background-color: color-mix(in srgb, var(--callout-color, var(--code-bg)) 25%, transparent);
+}
+
+.collapsible-summary .collapsible-arrow {
+    height: 1.25em;
+}
+
+.changelog-body .heading-anchor {
+    display: none;
 }
