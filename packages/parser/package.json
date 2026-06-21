@@ -1,6 +1,6 @@
 {
   "name": "@docmd/parser",
-  "version": "0.8.6",
+  "version": "0.8.7",
   "description": "Pure Markdown parsing engine for docmd.",
   "type": "module",
   "main": "dist/index.js",
@@ -11,6 +11,9 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "@docmd/tui": "workspace:*",
     "embed-lite": "^0.1.4",

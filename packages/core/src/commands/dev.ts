@@ -16,7 +16,7 @@ import http from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import nativeFs from 'node:fs';
 import path from 'path';
-import { fsUtils as fs, WorkerPool } from '@docmd/utils';
+import { fsUtils as fs, WorkerPool, FileSignatureTracker } from '@docmd/utils';
 import { TUI } from '@docmd/api';
 import { buildSite } from './build.js';
 import { loadConfig } from '../utils/config-loader.js';
@@ -128,11 +128,20 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
   let isRebuilding = false;
   let rebuildQueued = false;
   let rebuildTimeout: any = null;
-  let lastRebuildAt = 0;
-  // Brief quiet window after a rebuild to absorb phantom fs.watch events
-  // that macOS emits for newly-written output files. NOT a fake UX delay —
-  // the absolute-path exclusion below is the primary guard; this is backup.
-  const REBUILD_QUIET_MS = 500;
+  let lastContentRebuildAt = 0;
+  let lastConfigRebuildAt = 0;
+  // Quiet windows after a rebuild to absorb phantom fs.watch events that
+  // macOS emits for newly-written nearby files. The primary guard is the
+  // content-signature check (FileSignatureTracker) below — these windows
+  // are just a secondary cushion.
+  //   - 1000ms after a content (markdown / asset) rebuild — quick to recover
+  //   - 2500ms after a full config rebuild — longer because the build
+  //     cascades through every project file
+  const CONTENT_QUIET_MS = 1000;
+  const CONFIG_QUIET_MS = 2500;
+  // Tracks each watched file's mtime+size signature so phantom fs.watch
+  // events that don't actually mutate the file are silently ignored.
+  const signatureTracker = new FileSignatureTracker();
 
   // Resolved output dir for robust exclusion (never retrigger on build output)
   const resolvedOutputDir = path.resolve(CWD, config.out || 'site');
@@ -165,34 +174,43 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
       workerPool = new WorkerPool(workerScript, { config, cwd: CWD });
 
       // Full rebuild
-      await buildSite(configPathOption, { 
-        isDev: true, 
+      await buildSite(configPathOption, {
+        isDev: true,
         preserve: options.preserve,
         quiet: true,
         workerPool
       });
 
-      lastRebuildAt = Date.now();
+      lastConfigRebuildAt = Date.now();
+      // Reset the signature tracker: after a full rebuild the file
+      // mtimes on disk may have shifted, and we want the next user edit
+      // to be detected as a fresh change rather than filtered as a
+      // phantom duplicate.
+      signatureTracker.reset();
       TUI.step(`Config reloaded and rebuilt in ${configElapsed()}`, 'DONE', TUI.blue, true);
 
-      // Re-setup watchers after a brief pause to let fs.watch settle
+      // Re-setup watchers after the longer config quiet window so any
+      // macOS phantom events from the build settle before we start
+      // listening again.
       setTimeout(() => {
         setupContentWatchers();
         setupConfigWatcher();
         configLock = false;
-      }, REBUILD_QUIET_MS);
+      }, CONFIG_QUIET_MS);
 
       broadcastReload();
     } catch (error: any) {
       TUI.step(`Config reload: ${baseName}`, 'FAIL', TUI.blue, true);
       TUI.error('Config reload failed', error.message);
-      
-      // Re-setup watchers to continue listening
+
+      // Re-setup watchers to continue listening. Use the same longer config
+      // quiet window so phantom events fired during the failed reload
+      // settle before we start listening again.
       setTimeout(() => {
         setupContentWatchers();
         setupConfigWatcher();
         configLock = false;
-      }, REBUILD_QUIET_MS);
+      }, CONFIG_QUIET_MS);
     }
   }
 
@@ -221,12 +239,18 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
         if (!filename) return;
 
         // Post-rebuild quiet period: swallow stale fs.watch events
-        if (Date.now() - lastRebuildAt < REBUILD_QUIET_MS) return;
+        if (Date.now() - lastContentRebuildAt < CONTENT_QUIET_MS) return;
+        if (Date.now() - lastConfigRebuildAt < CONFIG_QUIET_MS) return;
 
         const filePath = path.resolve(watchPath, filename);
 
         // Exclude build output dir (absolute path check — reliable across platforms)
         if (filePath.startsWith(resolvedOut + path.sep) || filePath === resolvedOut) return;
+
+        // Content-signature gate: ignore phantom events that don't actually
+        // mutate the file (Spotlight reindex, iCloud sync, Time Machine,
+        // macOS metadata reads, etc.). This is the primary defence.
+        if (!signatureTracker.hasChanged(filePath)) return;
 
         // Common noise exclusions
         if (
@@ -272,7 +296,7 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
                 targetFiles: isAsset ? undefined : [filePath],
                 workerPool
               });
-              lastRebuildAt = Date.now();
+              lastContentRebuildAt = Date.now();
               sp.done(`Rebuilt: ${relativeFilePath} in ${rebuildElapsed()}`, true);
               broadcastReload();
             } catch (error: any) {
@@ -293,7 +317,29 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
   const setupConfigWatcher = () => {
     if (!hasConfigFile) return;
     let cfgDebounce: any = null;
-    const configWatcher = nativeFs.watch(configWatchPath, () => {
+    // Watch the config's parent directory, not the file directly — fs.watch
+    // on a single file is the worst case on macOS and fires phantom events
+    // from Spotlight / iCloud / Time Machine. Watching a directory and
+    // filtering to our basename is dramatically more stable.
+    const watchDir = path.dirname(configWatchPath);
+    const configBaseName = path.basename(configWatchPath);
+
+    const configWatcher = nativeFs.watch(watchDir, (event, filename) => {
+      if (!filename) return;
+      // Only react to our specific config file (filter out sibling writes)
+      if (filename !== configBaseName) return;
+
+      // Post-rebuild quiet period: a config reload closes+reopens
+      // watchers, so any phantom events that fired during the rebuild are
+      // already swallowed. This covers the brief window after reopen.
+      if (Date.now() - lastConfigRebuildAt < CONFIG_QUIET_MS) return;
+
+      // Content-signature gate: ignore phantom events that don't actually
+      // mutate the file. This is the primary defence — without it, a
+      // single Spotlight reindex every few seconds would trigger a full
+      // site rebuild indefinitely.
+      if (!signatureTracker.hasChanged(configWatchPath)) return;
+
       // Debounce: collapse the 3-6 rapid events macOS fires per save into one
       if (cfgDebounce) clearTimeout(cfgDebounce);
       cfgDebounce = setTimeout(() => {

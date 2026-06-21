@@ -1,6 +1,6 @@
 {
   "name": "@docmd/themes",
-  "version": "0.8.6",
+  "version": "0.8.7",
   "description": "Official themes for docmd.",
   "type": "module",
   "main": "dist/index.js",
@@ -15,6 +15,12 @@
     "dist",
     "src"
   ],
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2"
+  },
   "keywords": [
     "docmd",
     "themes",

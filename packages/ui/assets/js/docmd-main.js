@@ -18,9 +18,17 @@
  * --------------------------------------------------------------------
  */
 
-/* global requestAnimationFrame, cancelAnimationFrame, CSS */
+/* global CSS */
 
 (function () {
+
+  // Idempotency guard. Some servers (e.g. `serve` with SPA fallback) can
+  // request this same script twice — once at the page-relative URL, once
+  // at the site root — and both copies execute. Without this guard, every
+  // click handler (toggle, SPA nav, copy code, etc.) would bind twice and
+  // every nav action would fire two times, silently breaking the sidebar.
+  if (window.__docmdMainLoaded) return;
+  window.__docmdMainLoaded = true;
 
   function findTargetElement(hash) {
     if (!hash) return null;
@@ -38,16 +46,25 @@
   // 1. EVENT DELEGATION
   document.addEventListener('click', (e) => {
     // Collapsible Navigation
-    const navLabel = e.target.closest('.nav-label, .collapse-icon-wrapper');
-    if (navLabel) {
-      const item = navLabel.closest('li.collapsible');
-      if (item) {
+    // - Chevron (.collapse-icon-wrapper) click: always toggle, preventDefault.
+    // - Dummy <span class="nav-group"> section divider: toggle, preventDefault.
+    // - Real <a class="nav-group"> label click: navigate via SPA. The new
+    //   page's sidebar auto-expands the active group, so parents that are
+    //   pages themselves (e.g. "Syntax" with children) open as pages,
+    //   not as collapsed sections.
+    const navTrigger = e.target.closest('.nav-group, .collapse-icon-wrapper');
+    if (navTrigger) {
+      const item = navTrigger.closest('li.collapsible');
+      const isChevron = navTrigger.classList.contains('collapse-icon-wrapper');
+      const isDummySpan = navTrigger.tagName !== 'A';
+      if ((isChevron || isDummySpan) && item) {
         e.preventDefault();
         const isExpanded = item.classList.contains('expanded');
         item.classList.toggle('expanded', !isExpanded);
         item.setAttribute('aria-expanded', !isExpanded);
+        if (isChevron) return;
       }
-      if (navLabel.classList.contains('collapse-icon-wrapper')) return;
+      // Real <a class="nav-group">: fall through to the SPA handler.
     }
 
     // Toggles
@@ -116,20 +133,29 @@
           // Smart Switcher: Check if the exact page exists in the target version
           fetch(targetHref, { method: 'HEAD' })
             .then(response => {
-              if (response.ok) {
-                window.location.href = targetHref; // Exact match found
+              const finalHref = response.ok ? targetHref : normTargetRoot;
+              if (typeof window.docmdNavigate === 'function' && document.body.dataset.spaEnabled === 'true' && window.location.protocol !== 'file:') {
+                window.docmdNavigate(finalHref);
               } else {
-                window.location.href = normTargetRoot; // Fallback to version root
+                window.location.href = finalHref;
               }
             })
             .catch(() => {
-              window.location.href = normTargetRoot; // Network error fallback
+              if (typeof window.docmdNavigate === 'function' && document.body.dataset.spaEnabled === 'true' && window.location.protocol !== 'file:') {
+                window.docmdNavigate(normTargetRoot);
+              } else {
+                window.location.href = normTargetRoot;
+              }
             });
           return;
         }
       }
       // If we are outside the root (or targetRoot is missing), just use the href defined in the link
-      window.location.href = versionLink.href;
+      if (typeof window.docmdNavigate === 'function' && document.body.dataset.spaEnabled === 'true' && window.location.protocol !== 'file:') {
+        window.docmdNavigate(versionLink.href);
+      } else {
+        window.location.href = versionLink.href;
+      }
     }
 
     // Close Dropdown if clicked outside
@@ -225,39 +251,30 @@
       var targetLocPrefix = (localeId && localeId !== defaultLocale) ? localeId + '/' : '';
       var targetHref = base + targetLocPrefix + currentPath;
 
-      // Normalize currentPath for manifest lookup: strip trailing slash, default to /
-      var lookupPath = '/' + currentPath.replace(/\/$/, '').replace(/\/index\.html$/, '');
-      if (lookupPath === '/') lookupPath = '/';
-
-      // Use build-time manifest for instant page-existence check (no network requests)
+      // Optional manifest-based UX: if the build-time manifest is loaded AND
+      // it knows about this specific page, redirect to the locale root when
+      // the page isn't translated. This is only an optimisation — the target
+      // page is still the canonical answer and the server will return 404 if
+      // the page genuinely doesn't exist there.
       var manifest = window.DOCMD_LOCALE_PAGES;
-      if (manifest) {
-        var localePages = manifest[localeId];
-        if (localePages && localePages.indexOf(lookupPath) !== -1) {
-          // Page exists in target locale - navigate directly
-          window.location.href = targetHref + window.location.hash;
-        } else if (localePages && localePages.length > 0) {
-          // Locale exists but this page doesn't - go to locale root
-          window.location.href = base + targetLocPrefix;
-        } else {
-          // Locale has no pages at all - stay on current page
-          window.location.href = base + currentPath;
+      if (manifest && manifest[localeId] && Array.isArray(manifest[localeId]) && manifest[localeId].length > 0) {
+        var lookupPath = '/' + currentPath.replace(/\/$/, '').replace(/\/index\.html$/, '');
+        if (lookupPath === '/') lookupPath = '/';
+        if (manifest[localeId].indexOf(lookupPath) === -1) {
+          // Page is not translated — fall back to the locale root. For the
+          // default locale the "locale root" IS the site root, so this
+          // naturally sends the user to the homepage, which is the
+          // expected behaviour when switching to the default.
+          targetHref = base + targetLocPrefix;
         }
-        return;
       }
 
-      // Fallback: no manifest available - use HEAD fetch (legacy/graceful degradation)
-      fetch(targetHref, { method: 'HEAD' })
-        .then(function (response) {
-          if (response.ok) {
-            window.location.href = targetHref + window.location.hash;
-          } else {
-            window.location.href = base + targetLocPrefix;
-          }
-        })
-        .catch(function () {
-          window.location.href = base + targetLocPrefix;
-        });
+      const finalHref = targetHref + window.location.hash;
+      if (typeof window.docmdNavigate === 'function' && document.body.dataset.spaEnabled === 'true' && window.location.protocol !== 'file:') {
+        window.docmdNavigate(finalHref);
+      } else {
+        window.location.href = finalHref;
+      }
       return;
     }
 
@@ -265,7 +282,14 @@
     // Copy Code Button
     const copyBtn = e.target.closest('.copy-code-button');
     if (copyBtn) {
-      const code = copyBtn.closest('.code-wrapper')?.querySelector('code');
+      // Look for the associated <code> in the immediate .code-wrapper,
+      // or in the nearest codeblock-shaped wrapper. Templates like
+      // `summer` re-home the copy button into a title bar that lives
+      // outside .code-wrapper (e.g. inside .docmd-code-block-wrapper
+      // for ```lang "title"``` blocks) — fall back to that parent
+      // wrapper's <pre><code> in that case.
+      const code = copyBtn.closest('.code-wrapper')?.querySelector('code')
+        || copyBtn.closest('.docmd-code-block-wrapper, .summer-cb, .summer-codeblock')?.querySelector('pre code');
       if (code) {
         navigator.clipboard.writeText(code.innerText).then(() => {
           copyBtn.classList.add('copied');
@@ -440,18 +464,25 @@
     if (document.body.dataset.copyCodeEnabled !== 'true') return;
 
     document.querySelectorAll('pre').forEach(preElement => {
-      if (preElement.closest('.code-wrapper')) return;
-      const wrapper = document.createElement('div');
-      wrapper.className = 'code-wrapper';
-      wrapper.style.position = 'relative';
-      preElement.parentNode.insertBefore(wrapper, preElement);
-      wrapper.appendChild(preElement);
+      const outerWrapper = preElement.closest('.docmd-code-block-wrapper');
+      const anchor = outerWrapper || preElement.parentNode;
+      if (anchor.querySelector(':scope > .copy-code-button')) return;
+
+      let host = anchor;
+      if (!outerWrapper) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'code-wrapper';
+        wrapper.style.position = 'relative';
+        preElement.parentNode.insertBefore(wrapper, preElement);
+        wrapper.appendChild(preElement);
+        host = wrapper;
+      }
 
       const copyButton = document.createElement('button');
       copyButton.className = 'copy-code-button';
       copyButton.appendChild(createCopySvg());
       copyButton.title = "Copy code";
-      wrapper.appendChild(copyButton);
+      host.appendChild(copyButton);
     });
   }
 
@@ -577,6 +608,10 @@
       const link = e.target.closest('.sidebar-nav a, .page-navigation a, .page-footer a, .main-content a');
       if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
 
+      // Real <a class="nav-group"> links navigate normally via SPA. The
+      // toggle handler above only prevents default for dummy <span>s and
+      // chevron clicks, so this branch is safe to fall through.
+
       const url = new URL(link.href);
       if (url.origin !== location.origin) return;
 
@@ -667,6 +702,24 @@
           }
         });
 
+        Array.from(doc.querySelectorAll('body > script[src]')).forEach(newScript => {
+          const src = newScript.getAttribute('src');
+          if (!src) return;
+          const newSrc = new URL(src, data.finalUrl).href;
+          const alreadyPresent = Array.from(document.body.querySelectorAll('script[src]')).some(s => {
+            const oldSrc = s.getAttribute('src');
+            return oldSrc && new URL(oldSrc, window.location.href).href === newSrc;
+          });
+          if (alreadyPresent) return;
+          const fresh = document.createElement('script');
+          for (const attr of Array.from(newScript.attributes)) {
+            if (attr.name === 'src') continue;
+            fresh.setAttribute(attr.name, attr.value);
+          }
+          fresh.src = newSrc;
+          document.body.appendChild(fresh);
+        });
+
         // Sync Root Attributes (Theme, Classes)
         document.documentElement.className = doc.documentElement.className;
         document.body.className = doc.body.className;
@@ -725,18 +778,33 @@
           '.page-header .header-title',
           '.page-footer',
           '.footer-complete',
-          '.page-footer-actions'
+          '.page-footer-actions',
+          '.docmd-language-switcher',
+          '.docmd-version-dropdown',
+          '.docmd-project-switcher',
+          // Summer template selectors (no-op in classic — they only
+          // exist when the active template is `summer`).
+          '.summer-content',
+          '.summer-toc',
+          '.summer-pageheader',
+          '.summer-pagenav',
+          '.summer-pagefooter',
+          '#docmd-raw-markdown',
+          '.summer-sidebar nav'
         ];
 
         selectorsToSwap.forEach(selector => {
-          const oldEl = document.querySelector(selector);
-          const newEl = doc.querySelector(selector);
-          if (oldEl && newEl) {
-            oldEl.textContent = '';
-            while (newEl.firstChild) {
-              oldEl.appendChild(newEl.firstChild);
+          const oldEls = document.querySelectorAll(selector);
+          const newEls = doc.querySelectorAll(selector);
+          oldEls.forEach((oldEl, idx) => {
+            const newEl = newEls[idx];
+            if (oldEl && newEl) {
+              oldEl.textContent = '';
+              while (newEl.firstChild) {
+                oldEl.appendChild(newEl.firstChild);
+              }
             }
-          }
+          });
         });
 
         // Scroll after the browser has painted the new content.
@@ -769,6 +837,7 @@
         window.location.assign(url);
       }
     }
+    window.docmdNavigate = navigateTo;
   }
 
   // 4. BOOTSTRAP
@@ -802,6 +871,8 @@
     initializeScrollSpy();
     initializeHeroSliders();
     initializeSPA();
+    initBanner();
+    initCookieConsent();
 
     setTimeout(() => {
       // PWA Unregistration Safety Net:
@@ -833,3 +904,87 @@
     bootstrap();
   }
 })();
+// ---------------------------------------------------------------------------
+// Banner (new in 0.8.7)
+// Per-session dismissable announcement bar. Stored in sessionStorage so a
+// fresh visit re-shows the banner.
+/* global sessionStorage */
+// ---------------------------------------------------------------------------
+function initBanner() {
+  const banner = document.querySelector('[data-docmd-banner]');
+  if (!banner) return;
+  try {
+    if (sessionStorage.getItem('docmd-banner-dismissed') === '1') {
+      banner.remove();
+      return;
+    }
+  } catch (_) { /* sessionStorage blocked — leave visible */ }
+  const closeBtn = banner.querySelector('[data-docmd-banner-dismiss]');
+  if (!closeBtn) return;
+  closeBtn.addEventListener('click', () => {
+    banner.style.transition = 'opacity 0.15s ease, max-height 0.25s ease, padding 0.25s ease, margin 0.25s ease';
+    banner.style.overflow = 'hidden';
+    banner.style.maxHeight = banner.offsetHeight + 'px';
+    // Force reflow before collapsing
+    void banner.offsetHeight;
+    banner.style.opacity = '0';
+    banner.style.maxHeight = '0';
+    banner.style.padding = '0';
+    banner.style.margin = '0';
+    setTimeout(() => {
+      banner.remove();
+      try { sessionStorage.setItem('docmd-banner-dismissed', '1'); } catch (_) { /* ignore */ }
+    }, 260);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Cookie consent (new in 0.8.7)
+// Opt-in. Shows a banner unless a previous choice is stored in
+// localStorage. 'accept' / 'decline' values are persisted.
+// ---------------------------------------------------------------------------
+function initCookieConsent() {
+  const banner = document.querySelector('[data-cookie-consent]');
+  if (!banner) return;
+  const STORAGE_KEY = 'docmd-cookie-consent';
+  const expiryDays = parseInt(banner.getAttribute('data-cookie-expiry') || '180', 10);
+
+  function readChoice() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !parsed.value || !parsed.expires) return null;
+      if (Date.now() > parsed.expires) {
+        localStorage.removeItem(STORAGE_KEY);
+        return null;
+      }
+      return parsed.value;
+    } catch (_) { return null; }
+  }
+
+  function writeChoice(value) {
+    try {
+      const expires = Date.now() + (expiryDays * 24 * 60 * 60 * 1000);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ value, expires, ts: Date.now() }));
+    } catch (_) { /* storage blocked — UI still works for this session */ }
+  }
+
+  if (readChoice()) return; // already chosen
+
+  banner.hidden = false;
+
+  banner.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-cookie-accept], [data-cookie-decline], [data-cookie-dismiss]');
+    if (!t) return;
+    if (t.hasAttribute('data-cookie-accept')) writeChoice('accept');
+    else if (t.hasAttribute('data-cookie-decline')) writeChoice('decline');
+    // dismiss counts as decline-but-silent
+    else if (t.hasAttribute('data-cookie-dismiss')) writeChoice('dismissed');
+    banner.hidden = true;
+    // Fire a CustomEvent so themes/plugins can hook in.
+    try {
+      window.dispatchEvent(new CustomEvent('docmd:cookie-consent', { detail: { value: readChoice() || 'dismissed' } }));
+    } catch (_) { /* ignore */ }
+  });
+}

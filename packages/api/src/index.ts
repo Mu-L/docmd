@@ -2,7 +2,7 @@
  * --------------------------------------------------------------------
  * docmd : the zero-config documentation engine.
  *
- * @package     @docmd/api
+ * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
@@ -13,7 +13,7 @@
  */
 
 // Plugin loader & hook registry
-export { loadPlugins, hooks, resolvePluginName, getPluginErrors } from './hooks.js';
+export { loadPlugins, hooks, resolvePluginName, resolveTemplateName, getPluginErrors } from './hooks.js';
 
 // RPC action/event dispatcher
 export { createActionDispatcher, safePath } from './rpc.js';
@@ -87,4 +87,15 @@ export type {
   FileReadBatchPayload,
   GitLogPayload,
   SearchIndexPayload,
+  // Assets
+  Asset,
+  AssetCondition,
+  AssetKind,
+  AssetPosition,
+  // Template system
+  TemplateSlot,
+  TemplateHook,
+  TemplateAssetHook,
+  TemplateResolutionContext,
+  ResolvedTemplate,
 } from './types.js';

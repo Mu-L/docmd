@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-llms",
-  "version": "0.8.6",
+  "version": "0.8.7",
   "description": "Generate llms.txt context files for AI agents from your docmd site.",
   "type": "module",
   "main": "dist/index.js",
@@ -11,8 +11,12 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "devDependencies": {
-    "@docmd/api": "workspace:*"
+    "@docmd/api": "workspace:*",
+    "@types/node": "^24.13.2"
   },
   "keywords": [
     "docmd",

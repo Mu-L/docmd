@@ -28,7 +28,8 @@ export type Capability =
   | 'translations'
   | 'init'
   | 'build'
-  | 'dev';
+  | 'dev'
+  | 'template';
 
 /**
  * Every plugin should export a `plugin` descriptor.
@@ -159,7 +160,7 @@ export interface PluginModule {
   /** Inject scripts into head and/or body. */
   generateScripts?(config: any, options?: any): { headScriptsHtml?: string; bodyScriptsHtml?: string };
   /** Define external assets (JS/CSS) to inject. */
-  getAssets?(options?: any): any[];
+  getAssets?(options?: any): Asset[];
   /** Run logic before HTML generation, after markdown parsing. */
   onBeforeBuild?(ctx: BeforeBuildContext): Promise<void>;
   /** Run logic after all HTML files are generated. */
@@ -193,6 +194,20 @@ export interface PluginModule {
   onBeforeRender?(page: PageContext): void | Promise<void>;
   /** Access fully assembled page object before write. */
   onPageReady?(page: any): void | Promise<void>;
+
+  // --- Template System (new in 0.8.7) ---
+  /**
+   * Template file overrides. Requires the `template` capability on the
+   * plugin descriptor. The resolver in @docmd/ui merges these with the
+   * default templates shipped with the core, falling back to the default
+   * for any slot the plugin does not provide.
+   */
+  templates?: TemplateHook[];
+  /**
+   * CSS/JS asset bundles shipped with the template. Requires the `template`
+   * capability. Loaded at priority 10 by default so user customCss (15) wins.
+   */
+  templateAssets?: TemplateAssetHook[];
 }
 
 // ---------------------------------------------------------------------------
@@ -258,7 +273,7 @@ export interface PluginHooks {
   injectBody: ((config: any, pageContext: any) => string | Promise<string>)[];
   onBeforeBuild: ((ctx: BeforeBuildContext) => Promise<void>)[];
   onPostBuild: ((ctx: PostBuildContext) => Promise<void>)[];
-  assets: (() => any[])[];
+  assets: (() => Asset[])[];
   translations: ((localeId: string) => Record<string, string>)[];
   actions: Record<string, ActionHandler>;
   events: Record<string, EventHandler>;
@@ -271,6 +286,12 @@ export interface PluginHooks {
   /** Called before template rendering. Receives full PageContext. */
   onBeforeRender: ((page: PageContext) => void | Promise<void>)[];
   onPageReady: ((page: any) => void | Promise<void>)[];
+
+  // Template System (new in 0.8.7)
+  /** Template file overrides registered by template plugins. */
+  templates: TemplateHook[];
+  /** Asset bundles registered by template plugins. */
+  templateAssets: TemplateAssetHook[];
 }
 
 // ---------------------------------------------------------------------------
@@ -440,4 +461,230 @@ export interface SearchIndexPayload {
     locale?: string;
     version?: string;
   }>;
+}
+
+// ---------------------------------------------------------------------------
+// Asset Declaration (typed, used by getAssets + template assets)
+// ---------------------------------------------------------------------------
+
+/** Asset kind. `static` copies the file verbatim; `css`/`js` emit <link>/<script>. */
+export type AssetKind = 'css' | 'js' | 'static';
+
+/** Where an asset is injected in the page. */
+export type AssetPosition = 'head' | 'body' | 'footer';
+
+/**
+ * Asset descriptor returned by `getAssets()` or declared in a template.
+ *
+ * `priority` controls load order. Lower loads first, higher loads last.
+ *   - `0`   base (e.g. docmd-main.css)
+ *   - `5`   theme colour overlay (e.g. theme-sky.css)
+ *   - `10`  template structure
+ *   - `15`  user customCss / customJs (always wins)
+ *   - `20`  other plugins
+ *
+ * Templates MUST NOT use `!important` in CSS so that customCss overrides
+ * remain authoritative.
+ */
+export interface Asset {
+  /** Asset kind. */
+  type: AssetKind;
+  /** Absolute or template-relative path to the source file. */
+  path?: string;
+  /** Public URL/path where the asset will be served from. */
+  url?: string;
+  /** Load order. Lower = earlier. Defaults to 0. */
+  priority?: number;
+  /** Where in the document to inject. Defaults to `head` for css, `body` for js. */
+  position?: AssetPosition;
+  /** Optional content-hash suffix (e.g. for cache busting). */
+  hash?: string;
+  /** Optional inline content (mutually exclusive with `path`). */
+  inline?: string;
+
+  /**
+   * Optional condition for conditional loading. When set, the asset's `<link>`
+   * or `<script>` tag is only emitted on pages where the condition matches.
+   *
+   * Omit this field (or leave `condition` undefined) to keep the legacy
+   * behaviour: include the asset on every page.
+   *
+   * Evaluated per page at build time, so the cost is paid once during the
+   * build, not at runtime. Conditional assets still have their files copied
+   * to the output directory as usual — only the HTML tag is skipped when the
+   * condition fails.
+   *
+   * @example  Only load mermaid on pages that actually have a diagram block
+   * ```ts
+   * {
+   *   src: 'init-mermaid.js',
+   *   dest: 'assets/js/init-mermaid.js',
+   *   type: 'js',
+   *   position: 'body',
+   *   attributes: { type: 'module' },
+   *   condition: { pageHtmlMatches: 'class="mermaid"' }
+   * }
+   * ```
+   */
+  condition?: AssetCondition;
+
+  // --- Legacy aliases (deprecated; kept for backwards compat with 0.8.x) ---
+  /** @deprecated Use `path`. */
+  src?: string;
+  /** @deprecated Use `url`. */
+  dest?: string;
+  /** @deprecated Use `position`. */
+  location?: 'head' | 'body' | 'none';
+  /** @deprecated Use `position`. Legacy maps to `head`/`body`/`none`. */
+  attributes?: Record<string, string | boolean>;
+}
+
+/**
+ * Predicate evaluated against the rendered page to decide whether a
+ * conditional asset should be injected. All keys present in the condition
+ * must match (logical AND). Within a key, multiple values are OR-ed.
+ */
+export interface AssetCondition {
+  /**
+   * The asset is injected only if the page's HTML (post-markdown, pre-template)
+   * contains at least one of the given substrings. Use this to gate JS bundles
+   * that init a specific markup — e.g. `class="mermaid"` for mermaid blocks,
+   * `class="katex"` for KaTeX math, etc.
+   *
+   * Substring (not selector) so the check stays O(n) and dependency-free.
+   * For more advanced matching, combine multiple substrings (OR-ed).
+   */
+  pageHtmlMatches?: string | string[];
+  /**
+   * The asset is injected only if the page's parsed frontmatter has this key
+   * defined (any value, including `false`). Useful when a page opts in via
+   * frontmatter (e.g. `math: true`).
+   */
+  frontmatterHas?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Template System (new in 0.8.7)
+// ---------------------------------------------------------------------------
+
+/**
+ * Logical template slots a template can override.
+ *
+ * These match the file names that ship in `@docmd/ui/templates/`. A template
+ * that provides, say, only `menubar.ejs` will inherit the rest of the layout
+ * from the default templates shipped with `@docmd/ui`.
+ *
+ * Conventions:
+ *   - Files live under `templates/` in the template package.
+ *   - Partials live under `templates/partials/`.
+ *   - File names match the slot name exactly (e.g. `layout.ejs` for `layout`).
+ *
+ * Templates MAY also define custom partials and include them from inside their
+ * own EJS files; only the slots listed here participate in the default
+ * resolution chain.
+ *
+ * Slots currently with default files in `@docmd/ui`:
+ *   layout, 404, toc, navigation, footer, menubar, options-menu,
+ *   project-switcher, version-dropdown, language-switcher, banner,
+ *   cookie-consent.
+ *
+ * `no-style` pages are not a template slot — they always use the default
+ * `templates/no-style.ejs` and are unaffected by the active template.
+ */
+export type TemplateSlot =
+  | 'layout'
+  | '404'
+  | 'toc'
+  | 'navigation'
+  | 'footer'
+  | 'menubar'
+  | 'options-menu'
+  | 'project-switcher'
+  | 'version-dropdown'
+  | 'language-switcher'
+  | 'banner'
+  | 'cookie-consent';
+
+/**
+ * A single template file override registered by a template plugin.
+ *
+ * Templates register one entry per file they ship. The resolver merges
+ * the entries with the default templates from `@docmd/ui`, falling back
+ * to the default for any slot the template does not provide.
+ */
+export interface TemplateHook {
+  /** Logical slot this file overrides. */
+  type: TemplateSlot;
+  /** Absolute path to the `.ejs` file inside the template package. */
+  templatePath: string;
+  /**
+   * Priority within the same slot. Higher wins. Defaults to 0.
+   * Useful if multiple plugins contribute templates for the same slot.
+   */
+  priority?: number;
+  /**
+   * Glob patterns (e.g. `"blog/*"`) of page paths where this template
+   * applies. Omit or pass `[]` to apply to all pages.
+   */
+  pages?: string[];
+  /**
+   * Glob patterns of page paths this template must NOT apply to.
+   * Evaluated before `pages`.
+   */
+  exclude?: string[];
+}
+
+/**
+ * Asset descriptor for a template's own CSS/JS bundle.
+ *
+ * Templates ship a single CSS file (and optionally a single JS file). These
+ * are loaded after the base `docmd-main.css` and before any user `customCss`
+ * so the user can always override a template's styles.
+ */
+export interface TemplateAssetHook {
+  type: 'css' | 'js';
+  /** Absolute path to the file inside the template package. */
+  path: string;
+  /** Load priority. Defaults to 10 for templates. */
+  priority?: number;
+  /** Head or body injection. Defaults are `head` for css, `body` for js. */
+  position?: AssetPosition;
+}
+
+/**
+ * Context passed to the template resolver. The resolver decides which
+ * template file to use for a given slot on a given page.
+ */
+export interface TemplateResolutionContext {
+  /** Slot being resolved. */
+  type: TemplateSlot;
+  /** Absolute path of the page being rendered (post-build path, e.g. `/guide/intro.html`). */
+  pagePath: string;
+  /** Page frontmatter (may contain `template` override). */
+  frontmatter: Record<string, any>;
+  /** Resolved site config. */
+  config: any;
+  /** Locale id for the page, if any. */
+  localeId?: string;
+  /** Version id for the page, if any. */
+  versionId?: string;
+}
+
+/**
+ * Result of resolving a template slot.
+ *
+ * `source === 'default'` means no template plugin claimed the slot and the
+ * core `@docmd/ui` default is being used. `source === 'frontmatter'` /
+ * `'config'` indicates the override path. `source === 'plugin'` indicates
+ * a registered template plugin satisfied the request.
+ */
+export interface ResolvedTemplate {
+  /** Absolute filesystem path to the EJS file to render. */
+  templatePath: string;
+  /** How the resolution arrived at this template. */
+  source: 'default' | 'frontmatter' | 'config' | 'plugin';
+  /** Plugin name, when `source === 'plugin'`. */
+  pluginName?: string;
+  /** Slot that was resolved. */
+  type: TemplateSlot;
 }

@@ -26,5 +26,21 @@
   "unavailable": "N/A",
   "fallbackMessage": "This page is not yet available in {active}. Showing default language ({default}).",
   "copyMarkdown": "Copy Markdown",
-  "copyContext": "Copy Context"
+  "copyContext": "Copy Context",
+  "close": "Close",
+  "cookieAccept": "Accept",
+  "cookieConsent": "Cookie consent",
+  "cookieDecline": "Decline",
+  "cookieMessage": "This site uses cookies to ensure you get the best experience.",
+  "cookiePolicy": "Privacy policy",
+  "goBack": "Go back",
+  "lastUpdated": "Last updated",
+  "pageNotFoundMsg": "The page you’re looking for doesn’t exist or has moved.",
+  "readMore": "Read more",
+  "recentCommits": "Recent commits",
+  "searchPlaceholder": "Search documentation...",
+  "selectProject": "Select project",
+  "poweredBy": "Powered by",
+  "viewSource": "View source",
+  "goToTop": "Go to top"
 }

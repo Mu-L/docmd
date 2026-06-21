@@ -1,0 +1,70 @@
+{
+  "name": "@docmd/template-summer",
+  "version": "0.8.7",
+  "description": "Summer template for docmd. A bright, hopeful, summer-feel layout with a top search bar and halo accents.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc && node scripts/copy-assets.mjs",
+    "clean": "rm -rf dist"
+  },
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "@docmd/api": "workspace:*",
+    "@types/node": "^24.13.2",
+    "esbuild": "^0.28.1",
+    "typescript": "^5.9.3"
+  },
+  "docmd": {
+    "kind": "template",
+    "displayName": "Summer",
+    "tagline": "A bright, hopeful, summer-feel layout with a top search bar and halo accents.",
+    "preview": "assets/css/summer.css"
+  },
+  "keywords": [
+    "docmd",
+    "documentation",
+    "docmd-template",
+    "template",
+    "summer",
+    "theme",
+    "markdown",
+    "minimalist",
+    "zero-config",
+    "site-generator",
+    "static-site-generator",
+    "typescript",
+    "javascript",
+    "nodejs",
+    "browser",
+    "website",
+    "generator",
+    "docs"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "author": {
+    "name": "Ghazi",
+    "url": "https://mgks.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/docmd-io/docmd.git"
+  },
+  "bugs": {
+    "url": "https://github.com/docmd-io/docmd/issues"
+  },
+  "homepage": "https://docmd.io",
+  "funding": "https://github.com/sponsors/mgks",
+  "license": "MIT"
+}

@@ -1,0 +1,53 @@
+<%# ---------------------------------------------------------------
+  # @docmd/template-summer  —  toc.ejs
+  #
+  # Right-rail table of contents. We re-use the heading detection
+  # logic from the default template so the template stays
+  # plug-and-play, then style the result with `.summer-toc__*`
+  # classes that the rest of the stylesheet targets.
+  # ---------------------------------------------------------------
+%>
+
+<%
+function decodeHtmlEntities(html) {
+  return String(html).replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ');
+}
+
+// Skip on the no-style fallback and on pages that opt out via frontmatter.
+const _tocDisabled = (frontmatter && (frontmatter.toc === false || frontmatter.toc === 'false' || frontmatter.toc === 'hidden'));
+if (!_tocDisabled) {
+  let tocHeadings = [];
+  if (typeof headings !== 'undefined' && Array.isArray(headings) && headings.length > 0) {
+    tocHeadings = headings.filter(h => h.level >= 1 && h.level <= 4);
+  } else if (typeof content !== 'undefined' && content) {
+    const headingRegex = /<h([1-4])[^>]*?(?:id="([^"]*)")?[^>]*?>([\s\S]*?)<\/h\1>/g;
+    let match;
+    const contentStr = content.toString();
+    while ((match = headingRegex.exec(contentStr)) !== null) {
+      const level = parseInt(match[1], 10);
+      let id = match[2];
+      const text = decodeHtmlEntities(match[3].replace(/<\/?\w+[^>]*>/g, ''));
+      if (!id) id = text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '').replace(/--+/g, '-').replace(/^-+|-+$/g, '');
+      tocHeadings.push({ id, level, text });
+    }
+  }
+
+  if (tocHeadings.length > 1) {
+    // Build a nested list (preserve heading level)
+    let lastLevel = 0;
+%>
+<aside class="summer-toc__inner">
+  <h2 class="summer-toc__title">On this page</h2>
+  <ul class="summer-toc__list">
+    <% tocHeadings.forEach((heading, idx) => {
+         const indent = Math.max(0, heading.level - 1);
+         const prevHeading = idx > 0 ? tocHeadings[idx - 1] : null;
+         const prevLevel = prevHeading ? prevHeading.level : heading.level;
+    %>
+      <li class="summer-toc__item summer-toc__item--level-<%= heading.level %>" data-prev-level="<%= prevLevel %>" data-level="<%= heading.level %>">
+        <a href="#<%= heading.id %>" class="summer-toc__link" data-toc-level="<%= heading.level %>"><%= decodeHtmlEntities(heading.text.replace(/<[^>]*>?/gm, '')) %></a>
+      </li>
+    <% }) %>
+  </ul>
+</aside>
+<% } } %>

@@ -1,0 +1,78 @@
+<%# ---------------------------------------------------------------
+  # docmd : the zero-config documentation engine.
+  # Site-wide announcement banner.
+  #
+  # Rendered when `config.layout.banner` is set. Sits above the menubar
+  # (or above the sidebar's logo bar when menubar is in-header). The
+  # banner is purely presentational — the inner content is rendered as
+  # raw HTML so authors can include links and inline emphasis.
+  #
+  # Configuration:
+  #   {
+  #     "layout": {
+  #       "banner": {
+  #         "content": "**v0.9 ships Friday** — read the announcement.",
+  #         "type": "info",                    // "info" | "success" | "warning" | "danger"
+  #         "dismissible": true,               // user can close per-session
+  #         "link": { "text": "Read more", "url": "/blog/v0-9" },
+  #         "icon": "megaphone"                // lucide icon name (optional)
+  #       }
+  #     }
+  #   }
+  #
+  # The `dismissible` choice is stored in `sessionStorage` so the banner
+  # reappears on a fresh visit but stays dismissed for the current
+  # browsing session.
+  # ---------------------------------------------------------------
+%>
+<% const banner = (typeof config !== 'undefined' && config.layout && config.layout.banner) || null; %>
+<% if (banner && (banner.content || banner.link)) { %>
+<%
+  const _bType = banner.type || 'info';
+  const _bDismissible = banner.dismissible !== false;
+  const _bIcon = banner.icon || null;
+  const _bLink = banner.link || null;
+  // Lightweight inline-MD: only **bold** and `code` get a pass-through here.
+  // For richer content, set banner.html to a raw HTML string.
+  let _bInner = banner.html || banner.content || '';
+  if (!banner.html) {
+    _bInner = _bInner
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>');
+    // Restore <a> if user provided `link` — leave that to the template.
+  }
+%>
+<div
+  class="docmd-banner docmd-banner--<%= _bType %><%= _bDismissible ? ' is-dismissible' : '' %>"
+  data-docmd-banner
+  role="status"
+  aria-live="polite"
+>
+  <div class="docmd-banner__inner">
+    <% if (_bIcon) { %>
+      <span class="docmd-banner__icon" aria-hidden="true">
+        <%- renderIcon(_bIcon) %>
+      </span>
+    <% } %>
+    <div class="docmd-banner__content">
+      <%# _bInner is already HTML-escaped + bold/code-converted above; rendering
+          raw is intentional so the converted HTML reaches the page. %>
+      <span class="docmd-banner__text"><%- _bInner %></span> <%# audit-ignore %>
+      <% if (_bLink && _bLink.url) { %>
+        <a class="docmd-banner__link" href="<%= relativePathToRoot %><%= _bLink.url.startsWith('/') ? _bLink.url.substring(1) : _bLink.url %>">
+          <%- _bLink.text || (typeof t === 'function' ? t('readMore') : 'Read more') %>
+          <%- renderIcon('arrow-right', { class: 'docmd-banner__link-icon' }) %>
+        </a>
+      <% } %>
+    </div>
+    <% if (_bDismissible) { %>
+      <button type="button" class="docmd-banner__close" data-docmd-banner-dismiss aria-label="<%= typeof t === 'function' ? t('close') : 'Close' %>">
+        <%- renderIcon('x') %>
+      </button>
+    <% } %>
+  </div>
+</div>
+<% } %>

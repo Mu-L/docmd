@@ -26,7 +26,7 @@ import nativeFs from 'node:fs';
 import process from 'node:process';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import type { PluginDescriptor, PluginHooks, PluginModule, Capability } from './types.js';
+import type { PluginDescriptor, PluginHooks, PluginModule, Capability, TemplateHook, TemplateAssetHook } from './types.js';
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -49,6 +49,7 @@ const CAPABILITY_HOOKS: Record<Capability, string[]> = {
   init:         ['onConfigResolved'],
   build:        ['onBeforeParse', 'onAfterParse', 'onBeforeBuild', 'onBeforeRender', 'onPageReady'],
   dev:          ['onDevServerReady'],
+  template:     ['templates', 'templateAssets'],
 };
 
 const KNOWN_CAPABILITIES = new Set(Object.keys(CAPABILITY_HOOKS));
@@ -73,6 +74,8 @@ export const hooks: PluginHooks = {
   onBeforeBuild: [],
   onBeforeRender: [],
   onPageReady: [],
+  templates: [],
+  templateAssets: [],
 };
 
 // ---------------------------------------------------------------------------
@@ -170,6 +173,25 @@ export function resolvePluginName(key: string): string {
   }
   
   return key;
+}
+
+/**
+ * Resolve a template reference (from `config.theme.template` or frontmatter
+ * `template:`) to its full npm package name. Mirrors `resolvePluginName`
+ * but targets the `@docmd/template-*` scope.
+ *
+ * Accepts:
+ *   - `summer`                  → `@docmd/template-summer`
+ *   - `template-summer`         → `@docmd/template-summer`
+ *   - `@docmd/template-summer`  → `@docmd/template-summer` (unchanged)
+ *   - `@scope/template-summer`  → `@scope/template-summer` (unchanged)
+ *   - `./relative/path`        → unchanged
+ */
+export function resolveTemplateName(key: string): string {
+  if (!key) return key;
+  if (key.includes('/') || key.startsWith('.')) return key;
+  if (key.startsWith('template-')) return `@docmd/${key}`;
+  return `@docmd/template-${key}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -282,10 +304,11 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
   // pass its own __dirname so plugins that are core's dependencies can be found
   // even under pnpm's strict node_modules layout.
   const resolvePaths = [
-    process.cwd(), 
-    __dirname, 
-    __monorepoRoot, 
+    process.cwd(),
+    __dirname,
+    __monorepoRoot,
     path.join(__monorepoRoot, 'packages/plugins'),
+    path.join(__monorepoRoot, 'packages/templates'),
     ...(opts?.resolvePaths || [])
   ];
 
@@ -305,6 +328,8 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
   hooks.onBeforeBuild = [];
   hooks.onBeforeRender = [];
   hooks.onPageReady = [];
+  hooks.templates = [];
+  hooks.templateAssets = [];
   pluginErrors.length = 0;
 
   // 2. Initialize Plugin Map (Name -> Options)
@@ -340,6 +365,21 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
     });
   }
 
+  // B'. Auto-include the active template (new in 0.8.7)
+  // If `config.theme.template` is set, make sure the corresponding
+  // `@docmd/template-*` package is in the plugin map. The user does not
+  // need to also list it in `config.plugins`. Explicit user entries win.
+  if (config.theme && config.theme.template) {
+    const tplName = String(config.theme.template).trim();
+    if (tplName) {
+      const resolvedTemplate = resolveTemplateName(tplName);
+      // Only add if not already present (user might have set explicit options).
+      if (!pluginMap.has(resolvedTemplate)) {
+        pluginMap.set(resolvedTemplate, {});
+      }
+    }
+  }
+
   // 3. Load and Register (with auto-install for official plugins)
   for (const [name, options] of pluginMap) {
     if (options === false) continue;
@@ -351,12 +391,20 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
       try {
         let loadedFromMonorepo = false;
 
-        // 1. Monorepo Priority: if it's an official plugin, try local monorepo source first.
-        // This prevents older versions installed in project node_modules from taking
-        // precedence during monorepo development.
+        // 1. Monorepo Priority: if it's an official plugin OR template, try local
+        // monorepo source first. This prevents older versions installed in project
+        // node_modules from taking precedence during monorepo development.
         if (name.startsWith('@docmd/plugin-')) {
           const id = name.replace('@docmd/plugin-', '');
           const localPath = path.resolve(__monorepoRoot, 'packages/plugins', id, 'dist/index.js');
+          if (nativeFs.existsSync(localPath)) {
+            rawModule = await import(pathToFileURL(localPath).href);
+            loadedFromMonorepo = true;
+          }
+        } else if (name.startsWith('@docmd/template-')) {
+          // Templates live under packages/templates/<name>/ in the monorepo.
+          const id = name.replace('@docmd/template-', '');
+          const localPath = path.resolve(__monorepoRoot, 'packages/templates', id, 'dist/index.js');
           if (nativeFs.existsSync(localPath)) {
             rawModule = await import(pathToFileURL(localPath).href);
             loadedFromMonorepo = true;
@@ -369,7 +417,7 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
           rawModule = await import(pathToFileURL(resolvedPath).href);
         }
       } catch (_e: any) {
-        if (name.startsWith('@docmd/plugin-')) {
+        if (name.startsWith('@docmd/plugin-') || name.startsWith('@docmd/template-')) {
           needsAutoInstall = true;
         } else {
           // Fallback for non-package plugins or when resolution fails
@@ -381,8 +429,9 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
         }
       }
 
-      // Auto-install official plugins that are missing
-      if (needsAutoInstall && name.startsWith('@docmd/plugin-')) {
+      // Auto-install official plugins AND templates that are missing
+      const isOfficial = name.startsWith('@docmd/plugin-') || name.startsWith('@docmd/template-');
+      if (needsAutoInstall && isOfficial) {
         const installed = await autoInstallPlugin(name);
         if (installed) {
           // Retry loading after install
@@ -532,6 +581,52 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
       hooks.assets.push(() => safeCall('getAssets', name, fn, options) as any[] || []);
     } else {
       TUI.warn(`Plugin "${shortName}" exports getAssets but didn't declare "assets" capability - skipped`);
+    }
+  }
+
+  // templates (new in 0.8.7)
+  // A plugin can ship a `templates: TemplateHook[]` array listing the EJS
+  // files it overrides. The resolver in @docmd/ui merges these with the
+  // default templates, falling back to the default for any slot the plugin
+  // does not provide. The plugin descriptor MUST declare the `template`
+  // capability for the entries to register.
+  if (Array.isArray((plugin as any).templates)) {
+    if (hasCapabilityForHook(descriptor, 'templates')) {
+      for (const tpl of (plugin as any).templates as TemplateHook[]) {
+        if (!tpl || !tpl.type || !tpl.templatePath) {
+          TUI.warn(`Plugin "${shortName}" provides a malformed templates[] entry (needs { type, templatePath }) - skipped`);
+          continue;
+        }
+        // Attach plugin name for diagnostics & resolution.
+        (tpl as any)._pluginName = descriptor?.name || shortName;
+        hooks.templates.push(tpl);
+      }
+    } else {
+      TUI.warn(`Plugin "${shortName}" exports templates but didn't declare "template" capability - skipped`);
+    }
+  }
+
+  // templateAssets (new in 0.8.7)
+  // CSS/JS bundles shipped by a template. Loaded at priority 10 by default
+  // so user customCss (priority 15) still wins.
+  if (Array.isArray((plugin as any).templateAssets)) {
+    if (hasCapabilityForHook(descriptor, 'templateAssets')) {
+      for (const asset of (plugin as any).templateAssets as TemplateAssetHook[]) {
+        if (!asset || !asset.type || !asset.path) {
+          TUI.warn(`Plugin "${shortName}" provides a malformed templateAssets[] entry (needs { type, path }) - skipped`);
+          continue;
+        }
+        // Normalise: never mutate the caller's object.
+        hooks.templateAssets.push({
+          type: asset.type,
+          path: asset.path,
+          priority: asset.priority !== undefined ? asset.priority : 10,
+          position: asset.position,
+          _pluginName: descriptor?.name || shortName,
+        } as TemplateAssetHook);
+      }
+    } else {
+      TUI.warn(`Plugin "${shortName}" exports templateAssets but didn't declare "template" capability - skipped`);
     }
   }
 
