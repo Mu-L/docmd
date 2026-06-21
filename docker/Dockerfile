@@ -76,7 +76,8 @@ FROM node:20-alpine AS production
 RUN apk add --no-cache \
     git \
     curl \
-    bash
+    bash \
+    su-exec
 
 # Install pnpm directly — avoids corepack version resolution issues in CI.
 # Bump the pinned version here whenever the monorepo's packageManager field changes.
@@ -141,8 +142,10 @@ RUN chmod +x /usr/local/bin/docmd-entrypoint.sh /usr/local/bin/docmd-healthcheck
 ENV NODE_ENV=production
 ENV DOCMD_CONTAINER=true
 
-# Switch to non-root user
-USER docmd
+# Run as root so the entrypoint can inspect /docs ownership and use
+# su-exec to re-exec as the correct uid:gid. The entrypoint never stays
+# as root — it always drops to the detected uid before exec-ing docmd.
+# This is the same pattern used by postgres, redis, and other official images.
 
 # Set working directory to docs (where user content will be mounted)
 WORKDIR /docs
@@ -153,7 +156,7 @@ EXPOSE 3000
 # Health check — probes 3000-3005 to follow the dev server's actual port
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD ["/usr/local/bin/docmd-healthcheck.sh"]
 
-# Default command — entrypoint seeds /docs if empty, then execs the
-# supplied command (or the default `dev --host 0.0.0.0`).
+# Default command — entrypoint detects /docs uid, drops privileges, then
+# seeds /docs if empty and execs the supplied command.
 ENTRYPOINT ["/usr/local/bin/docmd-entrypoint.sh"]
 CMD ["dev", "--host", "0.0.0.0"]

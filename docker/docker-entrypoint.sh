@@ -1,17 +1,49 @@
 #!/bin/sh
 # docmd Docker entrypoint
 #
-# Seeds the demo template into an empty /docs so the image is usable
-# out of the box (the image's default CMD is `docmd dev`, which needs a
-# config and source dir to start). If /docs already has content (e.g.
-# the user mounted a volume with their own docs), it is left untouched.
+# Handles two cases:
+#
+#   1. No volume / empty /docs  → seeds the demo template so `docmd dev`
+#      works out of the box with no arguments.
+#
+#   2. Host-mounted volume      → detects the uid:gid that owns /docs and
+#      re-execs as that identity (via su-exec), so file writes from any
+#      subcommand — including `docmd init` — land with the correct host
+#      ownership without needing `-u $(id -u):$(id -g)` from the caller.
+#
+# This mirrors the pattern used by official images (postgres, redis, etc.).
 set -e
 
-# Only seed if /docs is completely empty. A mounted volume with the
-# user's own markdown files would otherwise be silently overwritten.
-if [ -d /docs ] && [ -z "$(ls -A /docs 2>/dev/null)" ] && [ -d /template ]; then
-  echo "[docmd] /docs is empty — seeding demo template from /template"
-  cp -a /template/. /docs/
+FIRST_ARG="${1:-}"
+
+# ── uid remapping ────────────────────────────────────────────────────────────
+# If we are currently running as root (the entrypoint is exec'd as root so it
+# can inspect /docs ownership), detect the uid:gid of /docs and re-exec as
+# that user. This lets `docmd init` and `docmd dev` write to host-mounted
+# volumes without permission errors regardless of the host user's uid.
+if [ "$(id -u)" = "0" ] && [ -d /docs ]; then
+  DOCS_UID=$(stat -c '%u' /docs 2>/dev/null || echo "1001")
+  DOCS_GID=$(stat -c '%g' /docs 2>/dev/null || echo "1001")
+
+  # If /docs is owned by root (uid 0) on the host, fall back to the docmd
+  # user — writing as root inside the container is a security anti-pattern.
+  if [ "$DOCS_UID" = "0" ]; then
+    DOCS_UID="1001"
+    DOCS_GID="1001"
+  fi
+
+  # Seed demo template before dropping privileges (root can always write).
+  if [ "$FIRST_ARG" != "init" ] && \
+     [ -z "$(ls -A /docs 2>/dev/null)" ] && \
+     [ -d /template ]; then
+    echo "[docmd] /docs is empty — seeding demo template from /template"
+    cp -r /template/. /docs/
+    chown -R "$DOCS_UID:$DOCS_GID" /docs 2>/dev/null || true
+  fi
+
+  # Re-exec as the detected uid:gid so all subsequent writes are correctly owned.
+  exec su-exec "$DOCS_UID:$DOCS_GID" "$0" "$@"
 fi
 
+# ── already the right user (re-exec path lands here) ────────────────────────
 exec docmd "$@"
