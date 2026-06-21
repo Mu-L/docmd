@@ -98,6 +98,7 @@ async function compile(markdown: string, config: any = {}) {
     // 4. Prepare Data
     const pageData = {
         content: result.htmlContent,
+        rawMarkdown: markdown,
         frontmatter: result.frontmatter,
         headings: result.headings,
         config: defaults,
