@@ -132,7 +132,7 @@ Or run via Docker:
 docker run -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.7
 ```
 
-> The image runs as a non-root user (`docmd`, UID 1001). If files written into mounted volumes end up owned by UID 1001 on your host, pass `-u $(id -u):$(id -g)` to keep your own ownership — e.g. `docker run -u $(id -u):$(id -g) -v $(pwd):/workspace -w /workspace ghcr.io/docmd-io/docmd:0.8.7 init`. Pin a specific version for reproducible builds; the `:latest` tag is now published automatically starting with 0.8.7.
+> Non-root (UID 1001) — pass `-u $(id -u):$(id -g)` to keep host ownership. Pin a version for reproducible builds.
 
 </details>
 

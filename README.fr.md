@@ -129,8 +129,10 @@ docmd build  # construire pour le déploiement
 Ou via Docker :
 
 ```bash
-docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.7
 ```
+
+> S'exécute en tant qu'utilisateur non root (UID 1001) — passez `-u $(id -u):$(id -g)` pour conserver la propriété sur l'hôte. Épinglez une version pour des builds reproductibles.
 
 </details>
 

@@ -129,8 +129,10 @@ docmd build  # デプロイ用にビルド
 または Docker 経由：
 
 ```bash
-docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.7
 ```
+
+> 非 root ユーザー (UID 1001) として実行 — ホストのファイル所有権を維持するには `-u $(id -u):$(id -g)` を指定してください。再現可能なビルドのためにバージョンを固定してください。
 
 </details>
 
