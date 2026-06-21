@@ -22,6 +22,39 @@ const require = createRequire(import.meta.url);
 const pluginsRegistry = require('../registry/plugins.json');
 
 /**
+ *
+ * @param err            The thrown error from execFileSync.
+ * @param cmdExe         The package-manager binary that was being spawned.
+ * @param action         Human verb describing what was happening, e.g.
+ *                       "install" or "remove". Used in the suggestion copy.
+ * @param opts.verbose   If true, return the raw `err.message` so power
+ *                       users can still see the full Node error.
+ */
+function formatSpawnError(err: any, cmdExe: string, action: string, opts: { verbose?: boolean } = {}): string {
+  const isMissingBinary = err && err.code === 'ENOENT' &&
+    typeof err.syscall === 'string' && err.syscall.startsWith('spawn');
+
+  if (isMissingBinary) {
+    const binary = err.path || cmdExe;
+    return [
+      `The package manager '${binary}' was not found on your system PATH.`,
+      ``,
+      `To fix it:`,
+      `  1. Install ${binary} (e.g. \`npm install -g ${binary}\`, or use a`,
+      `     Node version manager like nvm / volta / fnm)`,
+      `  2. Verify it's reachable: \`${binary} --version\` should print a version`,
+      `  3. Retry: \`npx @docmd/core ${action} <name>\``,
+      ``,
+      `If you just installed ${binary}, restart your terminal so the updated`,
+      `PATH takes effect.`,
+    ].join('\n');
+  }
+
+  if (opts.verbose && err && err.message) return err.message;
+  return 'Run with --verbose for detailed logs.';
+}
+
+/**
  * Detects the package manager used in the current project by looking for lockfiles upwards.
  * Defaults to 'npm' if no lockfile is found.
  */
@@ -321,7 +354,7 @@ async function installPlugin(pluginInput: string, opts: { verbose?: boolean } = 
   } catch (err: any) {
     TUI.step(packageName, 'FAIL');
     TUI.footer();
-    TUI.error(`Could not install ${packageName}`, opts.verbose ? err.message : 'Run with --verbose for detailed logs.');
+    TUI.error(`Could not install ${packageName}`, formatSpawnError(err, cmdExe, 'add', opts));
   }
 }
 
@@ -377,7 +410,7 @@ async function removePlugin(pluginInput: string, opts: { verbose?: boolean } = {
   } catch (err: any) {
     TUI.step(packageName, 'FAIL');
     TUI.footer();
-    TUI.error(`Could not remove ${packageName}`, err.message);
+    TUI.error(`Could not remove ${packageName}`, formatSpawnError(err, cmdExe, 'remove', opts));
   }
 }
 

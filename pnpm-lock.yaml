@@ -1431,8 +1431,8 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
-  nanoid@5.1.14:
-    resolution: {integrity: sha512-5c8l8kVzqpnDPaicbEop/fV0Q1w16FmbWtVhMqugTozAwYdlIQojWH5a/M7UfziFmGdQRrUdV+EPzc9Xng3VAQ==}
+  nanoid@5.1.15:
+    resolution: {integrity: sha512-kBg3RpGtIe+RpTbyXwoI6pk5yD7KUiI3sygUqgeBMRst42KmhB4RZC7eiO9Wa1HIpaCCtpE2DJ6OI4Wi5ebwFw==}
     engines: {node: ^18 || >=20}
     hasBin: true
 
@@ -1672,7 +1672,7 @@ snapshots:
       composed-offset-position: 0.0.6(@floating-ui/utils@0.2.11)
       lit: 3.3.3
       marked: 11.2.0
-      nanoid: 5.1.14
+      nanoid: 5.1.15
     transitivePeerDependencies:
       - '@floating-ui/utils'
       - '@types/node'
@@ -2552,7 +2552,7 @@ snapshots:
 
   ms@2.1.3: {}
 
-  nanoid@5.1.14: {}
+  nanoid@5.1.15: {}
 
   natural-compare@1.4.0: {}
 
