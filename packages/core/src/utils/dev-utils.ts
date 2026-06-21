@@ -208,9 +208,15 @@ export async function findAvailablePort(startPort: number): Promise<number> {
 }
 
 /**
- * Open a URL in the user's default browser.
+ * Open a URL in the user's default browser. Best-effort: failures are
+ * swallowed so the dev server is never taken down by a missing `xdg-open`
+ * (e.g. inside the official Docker image, where the binary is not
+ * installed). The call is also skipped entirely when running inside a
+ * container — the official image sets DOCMD_CONTAINER=true for this.
  */
 export function openBrowser(url: string): void {
+  if (process.env.DOCMD_CONTAINER === 'true') return;
+
   let command = 'xdg-open';
   let args = [url];
 
@@ -221,6 +227,11 @@ export function openBrowser(url: string): void {
     args = ['/c', 'start', '""', url];
   }
 
-  const child = spawn(command, args, { stdio: 'ignore', detached: true });
-  child.unref();
+  try {
+    const child = spawn(command, args, { stdio: 'ignore', detached: true });
+    child.on('error', () => { /* missing browser binary — ignore */ });
+    child.unref();
+  } catch {
+    /* never let a browser-launch failure crash the dev server */
+  }
 }

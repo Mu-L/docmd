@@ -153,7 +153,7 @@ async function buildZeroConfig(cwd: string, isDev = false, quiet = false, option
   if (!srcDir) {
     TUI.error('Configuration Error', 'No documentation directory or files found.');
     TUI.info(`Zero-Config expects one of: ${candidates.join(', ')} or markdown files in the project root.`);
-    TUI.info('Create one of these folders, place markdown files in the root, or provide a docmd.config.js file.');
+    TUI.info('Create one of these folders, place markdown files in the root, or provide a docmd.config.json file.');
 
     const err: any = new Error('No candidate documentation directory or files found.');
     err.silent = true;
@@ -354,7 +354,7 @@ export async function loadConfig(configPath: string, options: any = {}) {
       );
 
       if (isLegacy) {
-        TUI.error('Legacy Configuration Detected', 'Your docmd.config.js uses an outdated structure.');
+        TUI.error('Legacy Configuration Detected', 'Your docmd.config uses an outdated structure.');
         TUI.info(`Run ${TUI.cyan('docmd migrate')} to automatically upgrade your configuration.`);
       }
 

@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-math",
-  "version": "0.8.6",
+  "version": "0.8.7",
   "description": "Mathematics (KaTeX/LaTeX) plugin for docmd.",
   "type": "module",
   "main": "dist/index.js",
@@ -11,6 +11,9 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "katex": "^0.17.0",
     "markdown-it-texmath": "^1.0.0"

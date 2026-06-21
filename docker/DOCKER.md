@@ -4,6 +4,9 @@ Official Docker image for docmd - the minimalist, zero-config documentation gene
 
 ## Quick Start
 
+> The examples below use `:latest` so you can copy-paste and run them immediately.
+> **For production, CI, and any reproducible build**, replace `:latest` with the specific version you want — see [Available Tags](#available-tags).
+
 ### Pull the Image
 
 ```bash
@@ -13,8 +16,10 @@ docker pull ghcr.io/docmd-io/docmd:latest
 
 ### Run Demo Site
 
+The image ships with a demo template in `/template`. When you run the container with no volume mount, the entrypoint copies `/template` into `/docs` on first start, so the demo site comes up immediately.
+
 ```bash
-# Start with built-in demo site
+# Start with built-in demo site — works out of the box
 docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest
 
 # Visit http://localhost:3000
@@ -33,6 +38,8 @@ docker run -v $(pwd):/workspace -p 3000:3000 ghcr.io/docmd-io/docmd:latest dev
 
 ### Use Existing Docs
 
+Mounting your own docs into `/docs` always wins — the entrypoint only seeds the demo template when `/docs` is completely empty, so your content is never overwritten.
+
 ```bash
 # Mount your docs and start dev server
 docker run -v $(pwd)/docs:/docs -p 3000:3000 ghcr.io/docmd-io/docmd:latest
@@ -43,12 +50,14 @@ docker run -v $(pwd)/docs:/docs -v $(pwd)/site:/site ghcr.io/docmd-io/docmd:late
 
 ## Available Tags
 
-| Tag | Description |
-|-----|-------------|
-| `latest` | Most recent stable release |
-| `edge` | Latest build from main branch |
-| `0.8.6` | Specific version release |
-| `sha-abc123` | Specific commit SHA |
+The image is published with two tags per release:
+
+| Tag | Description | When to use |
+|-----|-------------|-------------|
+| `latest` | Floating alias for the most recent stable release | Quick start, local exploration, throwaway CI |
+| `<X.Y.Z>` | Pinned stable release (substitute the version you want) | Production, CI/CD, anything that must be reproducible |
+
+> **Pin a specific version in production.** The examples below use `:latest` so you can copy-paste and run them immediately. For any pipeline whose output must be reproducible (or whose contracts you don't want silently changing), replace `:latest` with the specific version you want (e.g. `0.8.7`). Check the [package versions page](https://github.com/orgs/docmd-io/packages/container/docmd/versions) for the full list.
 
 ## Multi-Platform Support
 
@@ -64,8 +73,8 @@ Docker automatically pulls the correct image for your platform.
 ### Docker Compose
 
 ```yaml
-version: '3.8'
-
+# Replace `:latest` with a specific version (e.g. `0.8.7`) for reproducible
+# production builds. See the GitHub releases page for available versions.
 services:
   docmd:
     image: ghcr.io/docmd-io/docmd:latest
@@ -93,6 +102,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Build documentation
+        # Pin to a specific version (replace `:latest`) for reproducible CI runs.
         run: |
           docker run --rm \
             -v ${{ github.workspace }}/docs:/docs \
@@ -110,6 +120,8 @@ jobs:
 ### Kubernetes Deployment
 
 ```yaml
+# Replace `:latest` with a specific version (e.g. `0.8.7`) for reproducible
+# production deploys. Update the tag when you upgrade.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

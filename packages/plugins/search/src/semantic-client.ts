@@ -159,11 +159,17 @@ export function performSemanticSearch(query: string, ctx: SemanticSearchContext)
             urlPath = urlPath.replace(/^[a-z]{2,3}\//, '');
         }
 
-        // Add anchor link if heading exists
+        // Add anchor link if heading exists. The slugify regex must be
+        // Unicode-aware: docmd's parser generates slugs from any
+        // \p{L}\p{N} character (Chinese, Japanese, Korean, Cyrillic,
+        // Arabic, etc.), so the search-side has to match the same
+        // character class or anchors for non-English content would
+        // collapse to '#' and the search result would jump to the page
+        // top instead of the heading.
         let anchor = '';
         if (chunk.heading) {
             anchor = '#' + chunk.heading.toLowerCase()
-                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/[^\p{L}\p{N}\s-]/gu, '')
                 .replace(/\s+/g, '-')
                 .replace(/-+/g, '-')
                 .replace(/^-|-$/g, '');

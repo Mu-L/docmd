@@ -26,5 +26,21 @@
   "unavailable": "N/A",
   "fallbackMessage": "यह पृष्ठ अभी {active} में उपलब्ध नहीं है। डिफ़ॉल्ट भाषा ({default}) दिखा रहा है।",
   "copyMarkdown": "मार्कडाउन कॉपी करें",
-  "copyContext": "संदर्भ कॉपी करें"
+  "copyContext": "संदर्भ कॉपी करें",
+  "close": "बंद करें",
+  "cookieAccept": "स्वीकार करें",
+  "cookieConsent": "कुकी सहमति",
+  "cookieDecline": "अस्वीकार करें",
+  "cookieMessage": "यह साइट आपको बेहतर अनुभव देने के लिए कुकीज़ का उपयोग करती है।",
+  "cookiePolicy": "गोपनीयता नीति",
+  "goBack": "वापस जाएँ",
+  "lastUpdated": "अंतिम अद्यतन",
+  "pageNotFoundMsg": "आप जो पृष्ठ ढूंढ रहे हैं वह मौजूद नहीं है या स्थानांतरित हो गया है।",
+  "readMore": "और पढ़ें",
+  "recentCommits": "हाल के कमिट",
+  "searchPlaceholder": "दस्तावेज़ खोजें...",
+  "selectProject": "प्रोजेक्ट चुनें",
+  "poweredBy": "द्वारा संचालित",
+  "viewSource": "स्रोत देखें",
+  "goToTop": "शीर्ष पर जाएँ"
 }

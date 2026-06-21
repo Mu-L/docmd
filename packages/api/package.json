@@ -1,6 +1,6 @@
 {
   "name": "@docmd/api",
-  "version": "0.8.6",
+  "version": "0.8.7",
   "description": "Plugin API surface for docmd.",
   "type": "module",
   "main": "dist/index.js",
@@ -17,9 +17,15 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "@docmd/parser": "workspace:*",
     "@docmd/tui": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2"
   },
   "optionalDependencies": {
     "@docmd/engine-js": "workspace:*",

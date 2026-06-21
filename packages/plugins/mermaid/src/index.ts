@@ -21,7 +21,7 @@ const __dirname = path.dirname(__filename);
 
 export const plugin: PluginDescriptor = {
   name: 'mermaid',
-  version: '0.8.6',
+  version: '0.8.7',
   capabilities: ['markdown', 'assets']
 };
 
@@ -44,7 +44,12 @@ export function getAssets() {
       dest: 'assets/js/init-mermaid.js',
       type: 'js',
       location: 'body',
-      attributes: { type: 'module' }
+      attributes: { type: 'module' },
+      // Conditional loading (new in 0.8.7): only inject the init script on
+      // pages whose rendered HTML actually contains a mermaid diagram block.
+      // This avoids the ~500 KB mermaid library CDN fetch on every other
+      // page of the site.
+      condition: { pageHtmlMatches: 'class="mermaid"' }
     }
   ];
 }
