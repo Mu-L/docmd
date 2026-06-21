@@ -134,7 +134,10 @@ async function autoInstallDocmdSearch(tui: any, quiet: boolean): Promise<boolean
       installCmd = `bun add ${versionedPackage} ${peerDeps.join(' ')}`; 
       break;
     default: 
-      installCmd = `npm install ${versionedPackage} ${peerDeps.join(' ')}`; 
+      // --foreground-scripts ensures postinstall scripts (e.g. onnxruntime-node
+      // binary download) run even in CI environments where npm's allow-scripts
+      // security feature would otherwise block them.
+      installCmd = `npm install --foreground-scripts ${versionedPackage} ${peerDeps.join(' ')}`; 
       break;
   }
 
@@ -165,27 +168,68 @@ async function autoInstallDocmdSearch(tui: any, quiet: boolean): Promise<boolean
 }
 
 /**
+ * Check whether the peer dependencies required for embedding are resolvable.
+ * Returns the first missing package name, or null if all present.
+ */
+function findMissingPeerDep(resolvePaths: string[]): string | null {
+  for (const pkg of ['@huggingface/transformers', 'onnxruntime-node']) {
+    try {
+      require.resolve(pkg, { paths: resolvePaths });
+    } catch {
+      return pkg;
+    }
+  }
+  return null;
+}
+
+/**
  * Ensure docmd-search is installed when semantic: true is requested.
  * If missing, attempts to auto-install the latest version.
+ *
+ * Returns:
+ *   { ready: true,  freshInstall: false } — already installed, proceed normally
+ *   { ready: true,  freshInstall: true  } — just installed; caller must re-exec
+ *                                           indexing in a child process because
+ *                                           Node's module cache won't see the
+ *                                           new packages in the current process.
+ *   { ready: false, freshInstall: false } — install failed, fall back to keyword
  */
-async function ensureDocmdSearch(tui: any, quiet: boolean): Promise<boolean> {
-  // Already installed?
-  if (resolveDocmdSearch()) return true;
+async function ensureDocmdSearch(tui: any, quiet: boolean): Promise<{ ready: boolean; freshInstall: boolean }> {
+  const resolvePaths = [process.cwd(), path.join(process.cwd(), 'node_modules')];
 
-  // Attempt auto-install
+  // Already installed — verify peers too.
+  if (resolveDocmdSearch()) {
+    const missingPeer = findMissingPeerDep(resolvePaths);
+    if (missingPeer) {
+      const msg =
+        `Semantic search peer dependency missing: ${missingPeer}\n` +
+        '  Add it to your project:\n' +
+        '    npm install @huggingface/transformers onnxruntime-node\n' +
+        '  Or disable semantic search: plugins: { search: { semantic: false } }';
+      if (!quiet && tui) tui.warn(`  ${msg}`);
+      else console.warn(`[plugin-search] ${msg}`);
+      return { ready: false, freshInstall: false };
+    }
+    return { ready: true, freshInstall: false };
+  }
+
+  // Attempt auto-install (installs docmd-search + peers together).
   const installed = await autoInstallDocmdSearch(tui, quiet);
-  if (!installed) return false;
+  if (!installed) return { ready: false, freshInstall: false };
 
-  // Verify installation succeeded
+  // Verify docmd-search resolved after install.
   const resolved = resolveDocmdSearch();
   if (!resolved) {
     if (!quiet && tui) {
       tui.warn('  docmd-search was installed but could not be resolved. Please restart the build.');
     }
-    return false;
+    return { ready: false, freshInstall: false };
   }
 
-  return true;
+  // Signal to the caller that a fresh install just happened. The current Node
+  // process has a stale module resolution cache and cannot import the newly
+  // installed packages — the caller must spawn a child process for indexing.
+  return { ready: true, freshInstall: true };
 }
 
 /**
@@ -284,10 +328,29 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
       }
     }
 
-    const ready = await ensureDocmdSearch(tui, !showTui);
+    const { ready, freshInstall } = await ensureDocmdSearch(tui, !showTui);
     if (!ready) {
       // Graceful fallback: build keyword index instead
       if (showTui) tui.warn('  Falling back to keyword search (docmd-search not installed)');
+    } else if (freshInstall) {
+      // docmd-search was just installed in this process. Node's module cache
+      // won't see it, so spawn a child docmd build to do the indexing instead
+      // of trying to import() it here. The child inherits the updated
+      // node_modules and starts with a clean require cache.
+      if (showTui) tui.step('Re-running semantic indexing in subprocess (first install)...', 'WAIT');
+      try {
+        const { execSync } = await import('node:child_process');
+        const cwd = process.cwd();
+        // Detect the docmd binary from the same node_modules that just got updated
+        const docmdBin = path.join(cwd, 'node_modules', '.bin', 'docmd');
+        const cmd = nativeFs.existsSync(docmdBin)
+          ? `"${docmdBin}" build`
+          : `node -e "import('docmd-search').then(m => m.indexDirectory({ rootDir: '${cwd}', outDir: '${path.join(outputDir, '.docmd-search')}' }))"`;
+        execSync(cmd, { stdio: 'inherit', cwd, timeout: 300000 });
+        if (showTui) tui.step('Semantic search index built', 'DONE');
+      } catch (err: any) {
+        if (showTui) tui.warn('  Subprocess indexing failed — semantic search unavailable this build.');
+      }
     } else {
       if (showTui) tui.step('Building semantic search index', 'WAIT');
 
@@ -480,7 +543,7 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
         }
         // Fall through to keyword search
       }
-    }
+    } // close else (not freshInstall)
   }
 
   // ── Keyword search path (default / fallback) ────────────────────────────

@@ -29,6 +29,9 @@ const PLATFORM_MAP = {
 const platformId = `${process.platform}-${process.arch}`;
 const binaryName = PLATFORM_MAP[platformId];
 
+// This script only downloads a pre-built .node binary from npm CDN
+// (unpkg / jsdelivr) for your platform. Source: https://github.com/docmd-io/docmd
+// You can safely approve it with: npm approve-scripts @docmd/engine-rust
 if (!binaryName) {
   console.warn(`[@docmd/engine-rust] Unsupported platform: ${platformId}`);
   console.warn(`Supported: ${Object.keys(PLATFORM_MAP).join(', ')}`);

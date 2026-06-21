@@ -259,7 +259,9 @@ function getDocmdVersion(): string {
  * Installs the exact version matching the current docmd version.
  */
 async function autoInstallPlugin(packageName: string): Promise<boolean> {
-  const shortName = packageName.replace('@docmd/plugin-', '');
+  const shortName = packageName
+    .replace('@docmd/plugin-', '')
+    .replace('@docmd/template-', '');
   const registry = getPluginRegistry();
   
   // Security: Only auto-install plugins in the official registry
