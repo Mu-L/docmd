@@ -18,7 +18,7 @@
  * --------------------------------------------------------------------
  */
 
-/* global requestAnimationFrame, cancelAnimationFrame, CSS */
+/* global CSS */
 
 (function () {
 
