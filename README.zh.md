@@ -132,7 +132,7 @@ docmd build  # 构建用于部署
 docker run -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.7
 ```
 
-> 以非 root 用户（UID 1001）运行 — 传递 `-u $(id -u):$(id -g)` 以保持宿主机的文件归属。固定一个版本以获得可复现的构建。
+> 固定一个版本以获得可复现的构建。
 
 </details>
 
