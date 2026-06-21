@@ -1,0 +1,71 @@
+<%# ---------------------------------------------------------------
+  # docmd : the zero-config documentation engine.
+  # Cookie consent dialog.
+  #
+  # Rendered only when `config.cookie` is set (opt-in). The companion
+  # CSS lives in `docmd-main.css`; the persistence + UI logic lives in
+  # `docmd-main.js`. Both are overridable by templates via the standard
+  # CSS / JS asset priority system, but never by customCss (which always
+  # wins).
+  #
+  # Configuration:
+  #   {
+  #     "cookie": {
+  #       "enabled": true,                     // default: true
+  #       "message": "...",                    // default: translation key `cookieMessage`
+  #       "acceptText": "Accept",              // default: translation key `cookieAccept`
+  #       "declineText": "Decline",            // default: translation key `cookieDecline`
+  #       "policyUrl": "/privacy",             // optional
+  #       "position": "bottom",                // "bottom" | "bottom-left" | "bottom-right" | "center"
+  #       "dismissible": true,                 // show a close (X) button
+  #       "expiryDays": 180                    // localStorage TTL
+  #     }
+  #   }
+  # ---------------------------------------------------------------
+%>
+<% const cookie = (typeof config !== 'undefined' && config.cookie) || null; %>
+<% if (cookie && cookie.enabled !== false) { %>
+<%
+  const _cMsg = cookie.message || (typeof t === 'function' ? t('cookieMessage') : 'This site uses cookies to ensure you get the best experience.');
+  const _cAccept = cookie.acceptText || (typeof t === 'function' ? t('cookieAccept') : 'Accept');
+  const _cDecline = cookie.declineText || (typeof t === 'function' ? t('cookieDecline') : 'Decline');
+  const _cPos = cookie.position || 'bottom';
+  const _cDismissible = cookie.dismissible !== false;
+  const _cPolicy = cookie.policyUrl || null;
+  const _cExpiry = cookie.expiryDays || 180;
+%>
+<div
+  class="docmd-cookie-banner docmd-cookie-banner--<%= _cPos %><%= _cDismissible ? ' is-dismissible' : '' %>"
+  data-cookie-consent
+  data-cookie-expiry="<%= _cExpiry %>"
+  data-cookie-policy="<%= _cPolicy || '' %>"
+  role="dialog"
+  aria-live="polite"
+  aria-label="<%= typeof t === 'function' ? t('cookieConsent') : 'Cookie consent' %>"
+  hidden
+>
+  <div class="docmd-cookie-banner__inner">
+    <div class="docmd-cookie-banner__content">
+      <p class="docmd-cookie-banner__message"><%= _cMsg %></p>
+      <% if (_cPolicy) { %>
+        <a class="docmd-cookie-banner__policy" href="<%= relativePathToRoot %><%= _cPolicy.startsWith('/') ? _cPolicy.substring(1) : _cPolicy %>" target="_blank" rel="noopener noreferrer">
+          <%= typeof t === 'function' ? t('cookiePolicy') : 'Privacy policy' %>
+        </a>
+      <% } %>
+    </div>
+    <div class="docmd-cookie-banner__actions">
+      <button type="button" class="docmd-cookie-banner__btn docmd-cookie-banner__btn--accept" data-cookie-accept>
+        <%= _cAccept %>
+      </button>
+      <button type="button" class="docmd-cookie-banner__btn docmd-cookie-banner__btn--decline" data-cookie-decline>
+        <%= _cDecline %>
+      </button>
+      <% if (_cDismissible) { %>
+        <button type="button" class="docmd-cookie-banner__close" data-cookie-dismiss aria-label="<%= typeof t === 'function' ? t('close') : 'Close' %>">
+          <%- renderIcon('x') %>
+        </button>
+      <% } %>
+    </div>
+  </div>
+</div>
+<% } %>

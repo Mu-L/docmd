@@ -128,6 +128,17 @@ const opts = {
   json: values.json
 };
 
+// `--verbose` is a global flag: it must be honoured by every command,
+// not just `add` / `remove`. Setting DOCMD_VERBOSE in the process
+// environment gives every command (including third-party plugins, the
+// TUI, and future commands) a uniform, opt-in way to surface detailed
+// logs without having to thread `opts.verbose` through every call site.
+// The structured `opts.verbose` is still kept and forwarded to the
+// commands that already accept it (installPlugin, removePlugin).
+if (opts.verbose) {
+  process.env.DOCMD_VERBOSE = 'true';
+}
+
 if (command !== 'stop' && !values.json) {
   TUI.banner(undefined, version);
 }
@@ -135,11 +146,11 @@ if (command !== 'stop' && !values.json) {
 if (command === 'init') {
   initProject();
 } else if (command === 'build') {
-  buildSite(opts.config, { isDev: false, offline: opts.offline });
+  buildSite(opts.config, { isDev: false, offline: opts.offline, verbose: opts.verbose });
 } else if (command === 'dev') {
   startDevServer(opts.config, opts);
 } else if (command === 'live') {
-  buildLive({ serve: !opts.buildOnly }).catch((e) => {
+  buildLive({ serve: !opts.buildOnly, verbose: opts.verbose }).catch((e) => {
     console.error(e);
     process.exit(1);
   });

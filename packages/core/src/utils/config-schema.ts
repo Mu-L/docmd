@@ -15,6 +15,20 @@
 import { normalizeNavPaths, normalizeMenubarPaths } from '@docmd/parser';
 
 /**
+ * CSS themes shipped with @docmd/themes. Any other value of `theme.name`
+ * is treated as a template name (see Section 4.0 of normalizeConfig).
+ *
+ * The "none" sentinel value suppresses the CSS overlay entirely.
+ */
+const KNOWN_CSS_THEMES: ReadonlySet<string> = new Set([
+    'default',
+    'sky',
+    'ruby',
+    'retro',
+    'none',
+]);
+
+/**
  * Normalizes user config to ensure all required nested objects exist.
  * Handles legacy backward compatibility transparently.
  */
@@ -29,6 +43,10 @@ export function normalizeConfig(userConfig: any) {
     config.src = config.src || config.srcDir || config.source || 'docs';
     config.out = process.env.DOCMD_PROJECT_OUT || config.out || config.outDir || config.outputDir || 'site';
     config.base = process.env.DOCMD_PROJECT_PREFIX || config.base || '/';
+    // Top-level QoL defaults — opt out by setting `false`.
+    if (config.pageNavigation === undefined) config.pageNavigation = true;
+    if (config.copyCode === undefined) config.copyCode = true;
+    if (config.autoTitleFromH1 === undefined) config.autoTitleFromH1 = true;
 
     // Failsafe: Keep legacy keys attached for older plugins (SEO, Sitemap) to prevent breakage during transition.
     config.siteTitle = config.title;
@@ -50,6 +68,7 @@ export function normalizeConfig(userConfig: any) {
 
     config.layout = {
         spa: true,
+        breadcrumbs: true,
         ...userLayout
     };
 
@@ -71,6 +90,7 @@ export function normalizeConfig(userConfig: any) {
     // Legacy Mapping: Footer
     const legacyFooter = config.footer;
     config.footer = {
+        copyright: `© ${new Date().getFullYear()}`,
         style: 'minimal',
         content: typeof legacyFooter === 'string' ? legacyFooter : null,
         branding: true,
@@ -95,6 +115,27 @@ export function normalizeConfig(userConfig: any) {
         },
         ...(userLayout.optionsMenu || config.optionsMenu || {})
     };
+
+    // --- 3.1. Site-wide Banner (new in 0.8.7) ---
+    // Sits above the menubar. Opt-in — defaults to null (no banner rendered).
+    if (config.layout?.banner) {
+        const ub = config.layout.banner;
+        config.layout.banner = {
+            content: typeof ub === 'string' ? ub : (ub.content || ub.html || ''),
+            html: typeof ub === 'object' && ub.html ? ub.html : undefined,
+            type: (typeof ub === 'object' && ub.type) ? ub.type : 'info',
+            dismissible: typeof ub === 'object' && ub.dismissible === false ? false : true,
+            link: typeof ub === 'object' && ub.link && ub.link.url ? ub.link : null,
+            icon: typeof ub === 'object' && ub.icon ? ub.icon : null,
+        };
+        // If only a string was passed, `ub` is a string and `content` is the string.
+        // If it's an object, ensure `content` and `html` are mutually consistent.
+        if (config.layout.banner.html && !config.layout.banner.content) {
+            config.layout.banner.content = config.layout.banner.html;
+        }
+    } else {
+        config.layout.banner = null;
+    }
 
     // --- Menubar (Top Navigation Bar) ---
     const userMenubar = userLayout.menubar || config.menubar;
@@ -144,6 +185,7 @@ export function normalizeConfig(userConfig: any) {
         name: 'default',
         appearance: 'system',
         customCss: [],
+        codeHighlight: true,
         ...(config.theme || {})
     };
 
@@ -154,6 +196,46 @@ export function normalizeConfig(userConfig: any) {
 
     // Ensure defaultMode is still available for legacy templates/plugins
     config.theme.defaultMode = config.theme.appearance;
+
+    // --- 4.0. Theme name → Template auto-promotion (new in 0.8.7) ---
+    // The CSS themes shipped with @docmd/themes are a known, short list.
+    // Any other value in `theme.name` is treated as a template name (so
+    // users only need to learn ONE key: `theme.name`).
+    // Explicit `theme.template` always wins.
+    if (config.theme.name && !config.theme.template && !KNOWN_CSS_THEMES.has(config.theme.name)) {
+        config.theme.template = config.theme.name;
+        // Keep `theme.name` so the original intent is preserved, but
+        // mark the theme as "no CSS overlay" so the generator does not
+        // try to load `docmd-theme-${name}.css` (which would 404).
+        config.theme._noCssOverlay = true;
+    }
+
+    // --- 4.1. Cookie Consent (new in 0.8.7) ---
+    // Opt-in. Users add `"cookie": { ... }` to enable the consent dialog.
+    // Defaults are kept conservative; templates can ship their own defaults
+    // by reading config.cookie and supplying a copy in their template's
+    // onboarding step. The user is always in control.
+    if (config.cookie) {
+        const uc = config.cookie;
+        if (uc === true) {
+            config.cookie = { enabled: true };
+        } else if (typeof uc === 'object') {
+            config.cookie = {
+                enabled: uc.enabled !== false,
+                message: uc.message || null,
+                acceptText: uc.acceptText || null,
+                declineText: uc.declineText || null,
+                policyUrl: uc.policyUrl || null,
+                position: ['bottom', 'bottom-left', 'bottom-right', 'center'].includes(uc.position) ? uc.position : 'bottom',
+                dismissible: uc.dismissible !== false,
+                expiryDays: typeof uc.expiryDays === 'number' && uc.expiryDays > 0 ? uc.expiryDays : 180,
+            };
+        } else {
+            config.cookie = null;
+        }
+    } else {
+        config.cookie = null;
+    }
 
     config.customJs = config.customJs || [];
 

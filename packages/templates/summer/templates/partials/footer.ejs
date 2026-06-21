@@ -1,0 +1,69 @@
+<%# ---------------------------------------------------------------
+  # @docmd/template-summer  —  partials/footer.ejs
+  #
+  # Two visual styles:
+  #   - "complete" (config.footer.style === 'complete') — multi-column
+  #     footer with branding, description, link columns
+  #   - "minimal" / default — single-line bar with copyright + branding
+  # ---------------------------------------------------------------
+%>
+<% const _fc = (typeof footerConfig !== 'undefined' ? footerConfig : (locals.footerConfig || {})); %>
+<% if (_fc?.style === 'complete' && Array.isArray(_fc.columns) && _fc.columns.length) { %>
+  <footer class="summer-footer summer-footer--complete">
+    <div class="summer-footer__top">
+      <div class="summer-footer__brand">
+        <div class="summer-footer__brand-logo">
+          <% if (logo && (logo.light || logo.dark)) { %>
+            <a href="<%= logo.href || relativePathToRoot %>" aria-label="<%= logo.alt || siteTitle %>">
+              <% if (logo.light) { %><img src="<%= relativePathToRoot %><%= logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>" alt="<%= logo.alt || siteTitle %>" class="summer-logo__light"><% } %>
+              <% if (logo.dark)  { %><img src="<%= relativePathToRoot %><%= logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>"  alt="<%= logo.alt || siteTitle %>" class="summer-logo__dark"><% } %>
+            </a>
+          <% } else { %>
+            <span class="summer-logo summer-logo--text"><span class="summer-logo__icon"><%= (siteTitle || 'D').charAt(0).toUpperCase() %></span><span><%= siteTitle %></span></span>
+          <% } %>
+        </div>
+        <% if (_fc.description) { %>
+          <p class="summer-footer__desc"><%= _fc.description %></p>
+        <% } %>
+      </div>
+      <% _fc.columns.forEach(col => { %>
+        <div class="summer-footer__col">
+          <h4 class="summer-footer__col-title"><%= col.title %></h4>
+          <ul>
+            <% (col.links || []).forEach(link => { %>
+              <li><a href="<%= link.external ? (link.url || '#') : buildRelativeUrl(link.url || '#') %>" <%= link.external ? 'target="_blank" rel="noopener noreferrer"' : '' %>><%= link.text %></a></li>
+            <% }) %>
+          </ul>
+        </div>
+      <% }) %>
+    </div>
+    <div class="summer-footer__inner">
+      <div class="summer-footer__user"><%- footerHtml || (_fc.copyright ? _fc.copyright : '') %></div>
+      <% if (_fc.branding !== false) { %>
+        <div class="summer-footer__branding">
+          <span><%= typeof t === 'function' ? t('builtWith') : 'Built with' %></span>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>
+          <a href="https://docmd.io" target="_blank" rel="noopener">docmd</a>
+          <span style="margin: 0 6px; opacity: 0.5;">·</span>
+          <a href="https://github.com/sponsors/mgks" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 4px;">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="14" height="14"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <span>Sponsor</span>
+          </a>
+        </div>
+      <% } %>
+    </div>
+  </footer>
+<% } else { %>
+  <footer class="summer-footer">
+    <div class="summer-footer__inner">
+      <div class="summer-footer__user"><%- footerHtml || (_fc?.copyright ? _fc.copyright : '') %></div>
+      <% if (_fc?.branding !== false) { %>
+        <div class="summer-footer__branding">
+          <span><%= typeof t === 'function' ? t('builtWith') : 'Built with' %></span>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>
+          <a href="https://docmd.io" target="_blank" rel="noopener">docmd</a>
+        </div>
+      <% } %>
+    </div>
+  </footer>
+<% } %>

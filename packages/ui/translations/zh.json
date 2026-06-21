@@ -26,5 +26,21 @@
   "unavailable": "N/A",
   "fallbackMessage": "此页面暂无{active}版本。显示默认语言（{default}）。",
   "copyMarkdown": "复制 Markdown",
-  "copyContext": "复制上下文"
+  "copyContext": "复制上下文",
+  "close": "关闭",
+  "cookieAccept": "接受",
+  "cookieConsent": "Cookie 同意",
+  "cookieDecline": "拒绝",
+  "cookieMessage": "本站使用 Cookie 以提供最佳体验。",
+  "cookiePolicy": "隐私政策",
+  "goBack": "返回",
+  "lastUpdated": "最后更新",
+  "pageNotFoundMsg": "您查找的页面不存在或已移动。",
+  "readMore": "阅读更多",
+  "recentCommits": "最近提交",
+  "searchPlaceholder": "搜索文档...",
+  "selectProject": "选择项目",
+  "poweredBy": "由...驱动",
+  "viewSource": "查看源代码",
+  "goToTop": "回到顶部"
 }

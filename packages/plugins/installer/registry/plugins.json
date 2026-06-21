@@ -58,5 +58,12 @@
     "description": "Math rendering support for docmd using KaTeX",
     "configKey": "math",
     "defaultConfig": "{}"
+  },
+  "summer": {
+    "package": "@docmd/template-summer",
+    "description": "Summer template — bright, hopeful, summer-feel layout with top search bar and halo accents",
+    "kind": "template",
+    "configKey": "summer",
+    "templateName": "summer"
   }
 }
