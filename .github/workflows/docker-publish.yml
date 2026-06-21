@@ -93,6 +93,10 @@ jobs:
       # Extract metadata for Docker
       # -------------------------------------------------------------------------
       - name: Extract Docker metadata
+        # Skip on plain branch pushes (the "for testing" trigger) — the
+        # build below is local-only (push: is gated to release / manual),
+        # so no tags are needed and the action's tag rules don't apply.
+        if: github.event_name != 'push' || startsWith(github.ref, 'refs/tags/')
         id: meta
         uses: docker/metadata-action@v5
         with:
