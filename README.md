@@ -121,8 +121,9 @@ npm install -g @docmd/core
 # Or via pnpm
 pnpm add -g @docmd/core
 
-```bash
-docker run -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.6
+# Run it
+docmd dev    # start dev server
+docmd build  # build for deployment
 ```
 
 Or run via Docker:
