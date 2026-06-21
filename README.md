@@ -121,9 +121,8 @@ npm install -g @docmd/core
 # Or via pnpm
 pnpm add -g @docmd/core
 
-# Run it
-docmd dev    # start dev server
-docmd build  # build for deployment
+```bash
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.6
 ```
 
 Or run via Docker:
@@ -279,4 +278,4 @@ Full reference: [Node API](https://docs.docmd.io/development/node-api-reference/
 
 ## License
 
-MIT — see [`LICENSE`](./LICENSE) for details.
+MIT License. See `LICENSE` for details.
