@@ -193,13 +193,7 @@ docker inspect --format='{{.State.Health.Status}}' <container-id>
 
 ### Permission Issues
 
-```bash
-# Fix permissions on host
-chmod -R 755 ./docs
-
-# Or run with specific user
-docker run --user $(id -u):$(id -g) -v $(pwd)/docs:/docs ghcr.io/docmd-io/docmd:latest
-```
+The entrypoint automatically remaps to the uid:gid of the mounted directory, so files are always owned by the correct host user. If you hit permission issues, verify the mounted path exists and is writable on the host.
 
 ### Network Issues
 
