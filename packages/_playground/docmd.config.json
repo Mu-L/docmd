@@ -1,31 +1,16 @@
 {
   "engine": "rust",
   "title": "_playground",
-  "src": "docs",
-  "out": "site",
   "favicon": "assets/favicon.ico",
-  "minify": true,
-  "copyCode": true,
   "theme": {
-    "name": "default",
-    "appearance": "light",
-    "codeHighlight": true,
+    "name": "summer",
     "customCss": []
   },
-
   "layout": {
-    "spa": true,
     "menubar": {
       "enabled": true,
       "position": "header",
       "left": [ { "text": "Menu 1", "url": "/" }, { "text": "Menu 2", "url": "/nostyle" } ]
-    },
-    "header": {
-      "enabled": true
-    },
-    "sidebar": {
-      "collapsible": true,
-      "defaultCollapsed": false
     },
     "optionsMenu": {
       "position": "menubar",
@@ -39,7 +24,6 @@
       "style": "minimal"
     }
   },
-
   "plugins": {
     "search": {
       "semantic": true,
@@ -79,16 +63,25 @@
       { "id": "en", "label": "English", "dir": "ltr" },
       { "id": "hi", "label": "हिन्दी", "dir": "ltr" },
       { "id": "zh", "label": "中文", "dir": "ltr" },
-      { "id": "es", "label": "Español", "dir": "ltr" },
-      { "id": "de", "label": "Deutsch", "dir": "ltr" },
-      { "id": "ja", "label": "日本語", "dir": "ltr" },
-      { "id": "fr", "label": "Français", "dir": "ltr" }
+      { "id": "es", "label": "Español", "dir": "ltr" }
     ]
   },
 
   "navigation": [
-    { "title": "Latest Home", "path": "/", "icon": "home" },
-    { "title": "Nostyle", "path": "/nostyle", "icon": "file" },
-    { "title": "Mermaid icon test", "path": "/mermaid-icon-test", "icon": "mermaid"}
+    {
+      "title": "Getting Started",
+      "children": [
+        { "title": "Latest Home", "path": "/", "icon": "home" },
+        {
+          "title": "Mermaid icon test",
+          "path": "/mermaid-icon-test",
+          "icon": "mermaid",
+          "children": [
+            { "title": "Nested Page 1", "path": "/nested-page-1" },
+            { "title": "Nested Page 2", "path": "/nested-page-2" }
+          ]
+        }
+      ]
+    }
   ]
 }

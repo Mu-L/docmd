@@ -25,6 +25,10 @@ name: Build and Push Docker Image
 on:
   release:
     types: [published]
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       push_image:
@@ -33,9 +37,14 @@ on:
         default: true
         type: boolean
       version:
-        description: 'Version tag (e.g., 0.8.6)'
+        description: 'Version tag (e.g., X.Y.Z)'
         required: false
         type: string
+      tag_latest:
+        description: 'Also tag this build as :latest (use only for stable releases)'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -88,16 +97,25 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}
+          # Two and only two tags are ever produced for any single image:
+          #   - The version (e.g. X.Y.Z, v-prefix stripped)
+          #   - The floating `:latest` alias
+          # `:latest` is only ever applied to released versions. A branch
+          # build or unreleased commit can never be pulled as `:latest`.
+          # flavor=latest=false disables the action's auto-latest so the
+          # only source of `:latest` is the explicit rule below.
+          flavor: |
+            latest=false
           tags: |
-            # For releases: use the release tag
+            # Version: ref on tag push and release events (strips 'v' prefix)
             type=ref,event=tag
-            # For manual dispatch: use provided version or default
+            # Version: ref on release events
+            type=ref,event=release
+            # :latest — only on release events
+            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+            # Manual dispatch: use provided version + optional :latest
             type=raw,value=${{ inputs.version }},enable=${{ github.event_name == 'workflow_dispatch' && inputs.version != '' }}
-            # For main branch: use 'latest' and 'edge'
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
-            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
-            # Add commit SHA for traceability
-            type=sha,prefix=
+            type=raw,value=latest,enable=${{ github.event_name == 'workflow_dispatch' && inputs.tag_latest }}
           labels: |
             org.opencontainers.image.title=docmd
             org.opencontainers.image.description=The minimalist, zero-config documentation generator

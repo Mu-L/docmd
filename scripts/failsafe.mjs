@@ -180,6 +180,34 @@ function runCmd(cmd, cwd, silent = true) {
     }
     TUI.step('Type-checking plugins', 'DONE');
 
+    // 1b'. Template type-checking (new in 0.8.7)
+    TUI.step('Type-checking templates', 'WAIT');
+    const templatesDir = path.join(CWD, 'packages/templates');
+    const templateTypeErrors = [];
+    if (nativeFs.existsSync(templatesDir)) {
+        for (const entry of nativeFs.readdirSync(templatesDir)) {
+            const templateDir = path.join(templatesDir, entry);
+            if (!nativeFs.existsSync(path.join(templateDir, 'tsconfig.json'))) continue;
+            try {
+                execSync('npx tsc --noEmit', { cwd: templateDir, stdio: 'pipe' });
+            } catch (e) {
+                const stderr = e.stderr?.toString() || e.stdout?.toString() || '';
+                templateTypeErrors.push({ template: entry, errors: stderr });
+            }
+        }
+    }
+    if (templateTypeErrors.length > 0) {
+        TUI.step('Type-checking templates', 'FAIL');
+        for (const { template, errors } of templateTypeErrors) {
+            TUI.error(`Type errors in template ${template}:`);
+            errors.split('\n').slice(0, 10).forEach(l => {
+                console.error(`\x1b[34m│\x1b[0m  \x1b[2m${l}\x1b[0m`);
+            });
+        }
+        throw new Error(`TypeScript type errors found in templates: ${templateTypeErrors.map(e => e.template).join(', ')}`);
+    }
+    TUI.step('Type-checking templates', 'DONE');
+
     // 1c. Version consistency
     TUI.step('Checking version consistency', 'WAIT');
     const packagesDir = path.join(CWD, 'packages');

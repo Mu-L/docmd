@@ -111,11 +111,31 @@ function changelogRule(state, startLine, endLine, silent) {
 
   state.push('changelog_open', 'div', 1);
 
-  entries.forEach(entry => {
+  // Slugify a changelog entry's meta string into a URL-safe id. Mirrors
+  // the Unicode-aware rules used by the parser-side heading slug
+  // generator (see markdown-processor.ts) so anchors for non-ASCII
+  // dates work the same as anchors for non-ASCII headings.
+  const slugifyMeta = (text: string): string =>
+    text.toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^\p{L}\p{N}-]+/gu, '')
+      .replace(/--+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '') || 'entry';
+
+  // Lucide `link-2` icon — same SVG used by .heading-anchor and
+  // .step-permalink so all three permalink affordances are visually
+  // identical.
+  const PERMALINK_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg>';
+
+  entries.forEach((entry, idx) => {
     // We render HTML blocks directly for the timeline structure
+    const slug = `changelog-${slugifyMeta(entry.meta || String(idx))}`;
+    const permalink = `<a href="#${slug}" class="changelog-permalink" aria-label="Permalink to this entry">${PERMALINK_SVG}</a>`;
     const entryOpen = state.push('html_block', '', 0);
     entryOpen.content = `<div class="changelog-entry">
-      <div class="changelog-meta"><span class="changelog-date">${state.md.renderInline(entry.meta)}</span></div>
+      <div class="changelog-meta"><span class="changelog-date" id="${slug}">${state.md.renderInline(entry.meta)}</span>${permalink}</div>
       <div class="changelog-body">`;
 
     // Recurse render the markdown inside the entry

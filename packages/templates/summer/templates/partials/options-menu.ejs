@@ -1,0 +1,45 @@
+<%# ---------------------------------------------------------------
+  # @docmd/template-summer  —  partials/options-menu.ejs
+  #
+  # Custom options menu for summer template. The search component is
+  # intentionally NOT rendered here because the top-bar already
+  # shows the search button. The remaining discrete actions
+  # (theme switch, language, project switcher, sponsor) are surfaced
+  # as icon buttons, styled with `.summer-iconbtn`.
+  # ---------------------------------------------------------------
+%>
+<% if (optionsMenu && optionsMenu.components) { %>
+  <div class="summer-options-menu" data-summer-options-menu>
+    <%# Note: search is rendered separately in the topbar, see layout.ejs %>
+
+    <% if (locals.workspace && workspace.switcher.enabled && workspace.switcher.position === 'options-menu') { %>
+      <div class="summer-options-menu__item">
+        <%- await include('project-switcher', { workspace, config, renderIcon, compact: true }) %>
+      </div>
+    <% } %>
+
+    <% if (locals.allLocales && allLocales && allLocales.length > 1 && locals.config && config.i18n && config.i18n.position === 'options-menu') { %>
+      <div class="summer-options-menu__item">
+        <%- await include('language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: true, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
+      </div>
+    <% } %>
+
+    <% if (optionsMenu.components.themeSwitch !== false) { %>
+      <button class="summer-iconbtn" data-summer-theme-toggle aria-label="<%= typeof t === 'function' ? t('toggleTheme') : 'Toggle theme' %>">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>
+      </button>
+    <% } %>
+
+    <% if (optionsMenu.components.sponsor) { %>
+      <a href="<%= optionsMenu.components.sponsor %>" target="_blank" rel="noopener noreferrer" class="summer-iconbtn" aria-label="<%= typeof t === 'function' ? t('sponsor') : 'Sponsor' %>">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      </a>
+    <% } %>
+
+    <% if (optionsMenu.components.github) { %>
+      <a href="<%= optionsMenu.components.github %>" target="_blank" rel="noopener noreferrer" class="summer-iconbtn" aria-label="GitHub">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 .5C5.4.5 0 5.9 0 12.5c0 5.3 3.4 9.8 8.2 11.4.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.6-4-1.6-.5-1.4-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.3.5-2.4 1.3-3.2-.1-.3-.6-1.5.1-3.2 0 0 1-.3 3.3 1.2 1-.3 2-.4 3-.4s2 .1 3 .4c2.3-1.5 3.3-1.2 3.3-1.2.7 1.7.2 2.9.1 3.2.8.8 1.3 1.9 1.3 3.2 0 4.7-2.8 5.7-5.5 6 .4.4.8 1.1.8 2.3v3.4c0 .3.2.7.8.6 4.8-1.6 8.2-6.1 8.2-11.4C24 5.9 18.6.5 12 .5z"/></svg>
+      </a>
+    <% } %>
+  </div>
+<% } %>

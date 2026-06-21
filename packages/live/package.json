@@ -1,6 +1,6 @@
 {
   "name": "@docmd/live",
-  "version": "0.8.6",
+  "version": "0.8.7",
   "description": "Browser-based editor engine for docmd.",
   "type": "module",
   "main": "dist/index.js",
@@ -20,6 +20,9 @@
     "public",
     "src"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "@docmd/parser": "workspace:*",
     "@docmd/plugin-math": "workspace:*",
@@ -28,12 +31,13 @@
     "@docmd/tui": "workspace:*",
     "@docmd/ui": "workspace:*",
     "buffer": "^6.0.3",
-    "esbuild": "^0.28.0",
+    "esbuild": "^0.28.1",
     "katex": "^0.17.0",
     "markdown-it-texmath": "^1.0.0"
   },
   "devDependencies": {
-    "@docmd/api": "workspace:*"
+    "@docmd/api": "workspace:*",
+    "@types/node": "^24.13.2"
   },
   "keywords": [
     "docmd",

@@ -1,6 +1,6 @@
 {
   "name": "@docmd/engine-js",
-  "version": "0.8.6",
+  "version": "0.8.7",
   "description": "Default JavaScript engine for docmd using Node.js native APIs.",
   "type": "module",
   "main": "dist/index.js",
@@ -17,6 +17,12 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2"
+  },
   "keywords": [
     "docmd",
     "engine",
@@ -41,8 +47,5 @@
   },
   "homepage": "https://docmd.io",
   "funding": "https://github.com/sponsors/mgks",
-  "license": "MIT",
-  "devDependencies": {
-    "@types/node": "^25.9.1"
-  }
+  "license": "MIT"
 }

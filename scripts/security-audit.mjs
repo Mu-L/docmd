@@ -94,7 +94,9 @@ const AUDIT_CONFIG = {
         return true;
     },
     extensions: ['.ts', '.js', '.ejs', '.json'],
-    excludeDirs: ['node_modules', 'dist', 'site', '.git', 'temp', 'public', 'vendor']
+    // Build output directories are excluded because their content is generated
+    // and minified — the audit is meant to catch issues in source code.
+    excludeDirs: ['node_modules', 'dist', 'site', 'site-sky', 'out', '.git', 'temp', 'public', 'vendor', '_backup']
 };
 
 let issuesCount = 0;

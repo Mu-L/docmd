@@ -74,7 +74,13 @@
 
         <!-- Preview -->
         <div class="pane preview-pane" id="previewPane">
-            <div class="pane-header">Preview</div>
+            <div class="pane-header">
+                <span>Preview</span>
+                <button class="preview-theme-toggle" id="previewThemeToggle" type="button" aria-label="Toggle preview theme" title="Toggle light/dark">
+                    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>
+                    <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
+            </div>
             <iframe id="preview"></iframe>
         </div>
     </div>
@@ -87,17 +93,17 @@
 
     <script>
         const SNIPPETS = {
-            basics: `---\ntitle: Welcome\ndescription: Getting started with docmd\n---\n\n# Hello World\n\nThis is **docmd**. It's fast, simple, and runs in your browser.\n\n::: card\n## Features\n1. Zero Config\n2. Offline Search\n3. Isomorphic Core\n:::`,
+            basics: `---\ntitle: Welcome to docmd\ndescription: The zero-config documentation engine\n---\n\n# Hello World\n\nThis is **docmd**. It turns Markdown folders into production-ready static sites with built-in search, i18n, theming, and an MCP server.\n\n::: card "Why docmd?" icon:zap\nThe core engine is **isomorphic** — the same parser runs in Node, the browser, and edge runtimes. Build thousands of pages in milliseconds.\n:::\n\n::: callout tip "Just starting?" icon:rocket\nRun \`npx @docmd/core init\` in an empty folder, then \`npx @docmd/core dev\` to see this live editor in action.\n:::`,
 
-            containers: `---\ntitle: Containers\n---\n\n# UI Components\n\n::: callout info Note\nThis is a callout block.\n:::\n\n::: card Feature Overview\nCards are great for grouping content.\n:::\n\n::: button "Action Button" https://docmd.io external\n`,
+            containers: `---\ntitle: Containers\n---\n\n# UI Components\n\n::: callout info "Five semantic types" icon:info\nCallouts isolate information that requires attention. Choose from \`info\`, \`tip\`, \`warning\`, \`danger\`, or \`success\`.\n:::\n\n::: callout warning "Breaking Change" icon:alert-triangle\n\`docmd.config.ts\` files are no longer supported in v0.8+. Migrate to \`docmd.config.json\` or \`docmd.config.js\`.\n:::\n\n::: card "Feature Highlight" icon:sparkles\nCards give content a distinct frame with optional title and icon. They support nested Markdown including code and buttons.\n\n::: button "Cards Reference" /containers/cards.md\n:::\n\n::: tag "Stable" color:#22c55e url:external:https://github.com/docmd-io/docmd\nOpen Source\n:::`,
 
-            tabs: `---\ntitle: Tabs\n---\n\n# Tabs Example\n\n::: tabs\n\n== tab "HTML"\n\`\`\`html\n<div>\n   <b>This is indentation</b>\n</div>\n\`\`\`\n\n== tab "JavaScript"\n\`\`\`javascript\nconsole.log('Hello');\n\`\`\`\n\n== tab "Python"\n\`\`\`python\nprint('Hello')\n\`\`\`\n\n:::`,
+            tabs: `---\ntitle: Tabs\n---\n\n# Package Manager Instructions\n\n::: tabs\n\n== tab "pnpm" icon:package\n\`\`\`bash\npnpm add @docmd/core\n\`\`\`\n\n== tab "npm" icon:package\n\`\`\`bash\nnpm install @docmd/core\n\`\`\`\n\n== tab "yarn" icon:package\n\`\`\`bash\nyarn add @docmd/core\n\`\`\`\n\n== tab "bun" icon:package\n\`\`\`bash\nbun add @docmd/core\n\`\`\`\n\n:::`,
 
-            steps: `---\ntitle: Steps\n---\n\n# How to Install\n\n::: steps\n\n1. **Download**\n   Get the CLI tool.\n\n2. **Initialize**\n   Run \`docmd init\`.\n\n3. **Build**\n   Run \`docmd build\`.\n\n:::`,
+            steps: `---\ntitle: Steps\n---\n\n# Quick Start\n\n::: steps\n\n1. **Initialise Project**\n   Run \`npx @docmd/core init\` to scaffold your directory with a starter \`docmd.config.json\`.\n\n2. **Author Content**\n   Write your docs in standard Markdown. The parser auto-discovers \`.md\` files in your \`src/\` directory.\n\n3. **Build & Deploy**\n   Run \`npx @docmd/core build\` to produce a static site under \`./site\`, ready for any CDN.\n\n:::`,
 
-            mermaid: `---\ntitle: Diagrams\n---\n\n# Mermaid.js Support\n\n\`\`\`mermaid\ngraph TD\n  A[Start] --> B{Is it working?}\n  B -->|Yes| C[Nice!]\n  B -->|No| D[Debug]\n\`\`\``,
+            mermaid: `---\ntitle: Diagrams\n---\n\n# Mermaid.js Support\n\n\`\`\`mermaid\ngraph LR\n  A[Markdown] --> B[docmd Parser]\n  B --> C[Static HTML]\n  C --> D[Production Site]\n\n  style A fill:#068ad5,color:#fff\n  style D fill:#22c55e,color:#fff\n\`\`\``,
 
-            math: `---\ntitle: Math\n---\n\n# KaTeX Math Support\n\nWrite inline math with single dollar signs: $E = mc^2$\n\nOr use double dollar signs for block equations:\n\n$$\n\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}\n$$\n\n$$\n\\sum_{i=1}^n i^2 = \\frac{n(n+1)(2n+1)}{6}\n$$\n\nThe quadratic formula: $x = \\dfrac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$`
+            math: `---\ntitle: Math\n---\n\n# KaTeX Math Support\n\nInline math with single dollar signs: $E = mc^2$\n\nBlock equations with double dollar signs:\n\n$$\n\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}\n$$\n\n$$\n\\sum_{i=1}^n i^2 = \\frac{n(n+1)(2n+1)}{6}\n$$\n\nThe quadratic formula: $x = \\dfrac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$`
         };
 
         const input = document.getElementById('input');
@@ -156,6 +162,22 @@
             clearTimeout(timer);
             timer = setTimeout(render, 300);
         });
+
+        // Preview pane: light/dark toggle. Mutates the iframe's
+        // document data-theme and persists via the same localStorage
+        // key the theme-init script reads on next render.
+        const previewThemeToggle = document.getElementById('previewThemeToggle');
+        if (previewThemeToggle) {
+          previewThemeToggle.addEventListener('click', () => {
+            const doc = preview.contentWindow && preview.contentWindow.document;
+            if (!doc) return;
+            const html = doc.documentElement;
+            const current = html.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            try { doc.defaultView.localStorage.setItem('docmd-theme', next); } catch (e) {}
+          });
+        }
 
         render();
 

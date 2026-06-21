@@ -148,6 +148,39 @@ body {
     justify-content: space-between;
 }
 
+/* Light/dark toggle in the preview pane header. Sits on the right via
+   the .pane-header's space-between layout. Sun icon shows in dark
+   mode (clicking returns to light), moon icon shows in light mode. */
+.preview-theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    color: #888;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.preview-theme-toggle:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: #333;
+}
+
+.preview-theme-toggle svg {
+    width: 15px;
+    height: 15px;
+    stroke-width: 2;
+}
+
+.preview-theme-toggle .icon-sun { display: none; }
+.preview-theme-toggle .icon-moon { display: inline-block; }
+[data-theme="dark"] .preview-theme-toggle .icon-sun { display: inline-block; }
+[data-theme="dark"] .preview-theme-toggle .icon-moon { display: none; }
+
 .editor-pane {
     width: 50%
 }

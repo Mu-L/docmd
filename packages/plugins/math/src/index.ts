@@ -18,7 +18,7 @@ import type { PluginDescriptor } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'math',
-  version: '0.8.6',
+  version: '0.8.7',
   capabilities: ['markdown', 'assets']
 };
 
@@ -38,7 +38,13 @@ export function getAssets() {
     {
       url: 'https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css',
       type: 'css',
-      location: 'head'
+      location: 'head',
+      // Conditional loading (new in 0.8.7): only inject KaTeX's stylesheet
+      // on pages that actually have rendered math (KaTeX emits `class="katex"`
+      // on every formula and `class="katex-display"` on display math). On
+      // pages with no math the CSS request is skipped entirely, saving the
+      // ~30 KB katex.min.css fetch plus the render cost on mobile.
+      condition: { pageHtmlMatches: ['class="katex"', 'class="katex-display"'] }
     }
   ];
 }

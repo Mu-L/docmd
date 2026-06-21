@@ -146,7 +146,8 @@ export async function buildLocales({
   options,
   CWD,
   onProgress,
-  targetFiles
+  targetFiles,
+  coreVersion
 }: {
   config: any;
   rootOutputDir: string;
@@ -156,6 +157,7 @@ export async function buildLocales({
   CWD: string;
   onProgress?: (current: number, total: number) => void;
   targetFiles?: string[];
+  coreVersion?: string;
 }): Promise<any[]> {
   const allGeneratedPages = [];
 
@@ -263,7 +265,8 @@ export async function buildLocales({
         CWD,
         pathPrefix,
         onProgress,
-        targetFiles
+        targetFiles,
+        coreVersion
       });
       allGeneratedPages.push(...pages);
       if (isStringMode && isDefault) defaultPassPages = pages;
@@ -285,16 +288,17 @@ export async function buildLocales({
       }
 
       const pages = await renderPages({
-        config: localeConfig, 
+        config: localeConfig,
         srcDir: localeSrcDir,
         fallbackSrcDir,
-        outputDir: rootOutputDir, 
-        hooks, 
-        buildHash, 
+        outputDir: rootOutputDir,
+        hooks,
+        buildHash,
         options,
         outputPrefix: pathPrefix,
         onProgress,
-        targetFiles
+        targetFiles,
+        coreVersion
       });
       allGeneratedPages.push(...pages);
       if (isStringMode && (isDefault || !localeId)) defaultPassPages = pages;

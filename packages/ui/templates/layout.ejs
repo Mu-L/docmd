@@ -10,7 +10,7 @@
 <html lang="<%= (locals.activeLocale && locals.activeLocale.id) ? locals.activeLocale.id : 'en' %>"<%= (locals.activeLocale && locals.activeLocale.dir && locals.activeLocale.dir !== 'ltr') ? ' dir="' + locals.activeLocale.dir + '"' : '' %>>
   <head>
     <meta charset="UTF-8">
-    <meta name="generator" content="docmd v0.5.x">
+    <meta name="generator" content="docmd v<%= coreVersion %>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <%- themeInitScript %>
     <style>
@@ -69,7 +69,7 @@
 
     <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position !=='header' ) { %>
       <%- await include('partials/menubar', {
-        menubarConfig, relativePathToRoot, renderIcon, optionsMenu: locals.optionsMenu
+        menubarConfig, relativePathToRoot, renderIcon, optionsMenu: locals.optionsMenu, t: typeof t === 'function' ? t : null
       }) %>
     <% } %>
     <% if (sidebarConfig?.enabled !==false) { %>
@@ -98,23 +98,23 @@
         <div class="sidebar-top-group">
           <% if (locals.workspace && workspace.switcher.enabled && workspace.switcher.position === 'sidebar-top') { %>
             <div class="sidebar-project-switcher-wrapper">
-              <%- await include('partials/project-switcher', { workspace, config, renderIcon, compact: false }) %>
+              <%- await include('partials/project-switcher', { workspace, config, renderIcon, compact: false, t: typeof t === 'function' ? t : null }) %>
             </div>
           <% } %>
           <% if (locals.optionsMenu && optionsMenu.position==='sidebar-top' ) { %>
             <div class="sidebar-options-wrapper">
-              <%- await include('partials/options-menu', { optionsMenu, allLocales: locals.allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config: locals.config, renderIcon, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix, workspace }) %>
+              <%- await include('partials/options-menu', { optionsMenu, allLocales: locals.allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config: locals.config, renderIcon, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix, workspace, t: typeof t === 'function' ? t : null }) %>
             </div>
           <% } %>
           <% if (config.versions && config.versions.position==='sidebar-top' ) { %>
             <div class="sidebar-version-wrapper">
               <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion:
-                config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config }) %>
+                config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config, t: typeof t === 'function' ? t : null }) %>
             </div>
           <% } %>
           <% if (locals.allLocales && allLocales && allLocales.length > 1 && config.i18n && config.i18n.position === 'sidebar-top') { %>
             <div class="sidebar-language-wrapper">
-              <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: false, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
+              <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: false, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix, t: typeof t === 'function' ? t : null }) %>
             </div>
           <% } %>
         </div>
@@ -123,31 +123,35 @@
           <% if (config.versions && config.versions.position==='sidebar-bottom' ) { %>
             <div class="sidebar-version-wrapper">
               <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion:
-                config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config }) %>
+                config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config, t: typeof t === 'function' ? t : null }) %>
             </div>
           <% } %>
           <% if (locals.allLocales && allLocales && allLocales.length > 1 && config.i18n && config.i18n.position === 'sidebar-bottom') { %>
             <div class="sidebar-language-wrapper">
-              <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: false, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
+              <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: false, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix, t: typeof t === 'function' ? t : null }) %>
             </div>
           <% } %>
           <% if (locals.workspace && workspace.switcher.enabled && workspace.switcher.position === 'sidebar-bottom') { %>
             <div class="sidebar-project-switcher-wrapper">
-              <%- await include('partials/project-switcher', { workspace, config, renderIcon, compact: false }) %>
+              <%- await include('partials/project-switcher', { workspace, config, renderIcon, compact: false, t: typeof t === 'function' ? t : null }) %>
             </div>
           <% } %>
           <% if (locals.optionsMenu && optionsMenu.position==='sidebar-bottom' ) { %>
             <div class="sidebar-options-wrapper">
-              <%- await include('partials/options-menu', { optionsMenu, allLocales: locals.allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config: locals.config, renderIcon, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix, workspace }) %>
+              <%- await include('partials/options-menu', { optionsMenu, allLocales: locals.allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config: locals.config, renderIcon, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix, workspace, t: typeof t === 'function' ? t : null }) %>
             </div>
           <% } %>
         </div>
       </aside>
       <% } %>
+      <%# Site-wide announcement banner (new in 0.8.7). Sits above the menubar. %>
+      <% if (locals.config && config.layout && config.layout.banner) { %>
+        <%- await include('partials/banner', { config, relativePathToRoot, renderIcon, t: typeof t === 'function' ? t : null }) %>
+      <% } %>
       <div class="main-content-wrapper">
         <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position==='header' ) { %>
           <%- await include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu:
-            locals.optionsMenu }) %>
+            locals.optionsMenu, t: typeof t === 'function' ? t : null }) %>
         <% } %>
         <% if (headerConfig?.enabled !==false) { %>
           <header class="page-header">
@@ -166,7 +170,7 @@
             </div>
             <div class="header-right">
               <% if (optionsMenu?.position==='header' ) { %>
-                <%- await include('partials/options-menu', { optionsMenu, allLocales: locals.allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config: locals.config, renderIcon, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix, workspace }) %>
+                <%- await include('partials/options-menu', { optionsMenu, allLocales: locals.allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config: locals.config, renderIcon, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix, workspace, t: typeof t === 'function' ? t : null }) %>
               <% } %>
             </div>
           </header>
@@ -250,7 +254,7 @@
                 <% } %>
               </div>
               <div class="toc-sidebar">
-                <%- await include('toc', { content, headings, navigationHtml, isActivePage }) %>
+                <%- await include('toc', { content, headings, navigationHtml, isActivePage, t: typeof t === 'function' ? t : null }) %>
               </div>
             </div>
             <div class="page-footer-actions">
@@ -300,7 +304,7 @@
             </div>
           </main>
           <%- await include('partials/footer', { footerConfig, config, relativePathToRoot, logo, siteTitle,
-            footerHtml }) %>
+            footerHtml, t: typeof t === 'function' ? t : null }) %>
         </div>
       </div>
       <% if (locals.allLocales && allLocales && allLocales.length > 1) { %>
@@ -316,5 +320,9 @@
           src="<%= relativePathToRoot %><%= jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>?v=<%= buildHash %>"></script>
         <% }
       }); %>
+      <%# Cookie consent dialog (new in 0.8.7). Rendered only when config.cookie is set. %>
+      <% if (locals.config && config.cookie && config.cookie.enabled !== false) { %>
+        <%- await include('partials/cookie-consent', { config, relativePathToRoot, renderIcon, t: typeof t === 'function' ? t : null }) %>
+      <% } %>
   </body>
 </html>

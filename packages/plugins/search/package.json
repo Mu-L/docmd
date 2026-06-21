@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-search",
-  "version": "0.8.6",
+  "version": "0.8.7",
   "description": "Offline full-text search for docmd.",
   "type": "module",
   "main": "dist/index.js",
@@ -12,7 +12,11 @@
     "dist",
     "i18n"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
+    "markdown-it": "^14.2.0",
     "minisearch": "^7.2.0"
   },
   "peerDependencies": {
@@ -26,9 +30,8 @@
   "devDependencies": {
     "@docmd/api": "workspace:*",
     "@types/markdown-it": "^14.1.2",
-    "@types/node": "^25.9.1",
-    "esbuild": "^0.28.0",
-    "markdown-it": "^14.2.0"
+    "@types/node": "^24.13.2",
+    "esbuild": "^0.28.1"
   },
   "keywords": [
     "docmd",

@@ -101,3 +101,10 @@ export function getTemplatePath(name: string) {
     const fileName = name.endsWith('.ejs') ? name : `${name}.ejs`;
     return path.join(__dirname, '..', 'templates', fileName);
 }
+
+// --- Template Resolver (new in 0.8.7) ---
+// Resolves which `.ejs` file to render for a given template slot on a given
+// page, honouring frontmatter / config overrides and falling back to the
+// default templates shipped with @docmd/ui.
+export { resolveTemplate, clearTemplateResolverCache } from './template-resolver.js';
+export type { TemplateSlot, TemplateHook, TemplateResolutionContext, ResolvedTemplate } from '@docmd/api';
