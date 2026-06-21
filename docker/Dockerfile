@@ -44,7 +44,9 @@ RUN apk add --no-cache \
 # Install pnpm — version is pinned via the root package.json `packageManager` field.
 # `corepack prepare` with no version reads that field, so a single bump of
 # `packageManager` moves both the lockfile and the Docker build forward.
-RUN corepack enable && corepack prepare --activate
+# Update corepack first: node:20-alpine ships with corepack ~0.27 which
+# may not know about recent pnpm versions (e.g. 10.33+).
+RUN npm install -g corepack@latest && corepack enable && corepack prepare --activate
 
 WORKDIR /app
 
@@ -81,7 +83,8 @@ RUN apk add --no-cache \
 
 # Install pnpm globally — version is pinned via the root package.json
 # `packageManager` field. `corepack prepare` with no version reads that field.
-RUN corepack enable && corepack prepare --activate
+# Update corepack first: see note in the builder stage above.
+RUN npm install -g corepack@latest && corepack enable && corepack prepare --activate
 
 # Configure pnpm global directories
 ENV PNPM_HOME="/usr/local/share/pnpm"
