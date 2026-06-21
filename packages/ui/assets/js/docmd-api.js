@@ -20,7 +20,7 @@
  * Injected automatically by the dev server.
  */
 
-/* global WebSocket, sessionStorage, queueMicrotask, requestAnimationFrame */
+/* global WebSocket, sessionStorage, queueMicrotask */
 
 (function() {
   if (typeof window === 'undefined') return;

@@ -135,12 +135,16 @@ function createMarkdownProcessor(config: any = {}, pluginsCallback: any) {
       return `<pre class="mermaid">${new MarkdownIt().utils.escapeHtml(str)}</pre>`;
     }
     const highlighted = highlight(str, { language: lang, mimicHljs: true }).value;
-    return `<pre class="hljs"><code>${highlighted}</code></pre>`;
+    // Tag the code with language-xxx so consumers (e.g. the summer
+    // template's codeblock title bar) can pick up the language.
+    const langAttr = lang ? ` class="language-${lang}"` : '';
+    return `<pre class="hljs"><code${langAttr}>${highlighted}</code></pre>`;
   };
 
   mdOptions.highlight = config.theme?.codeHighlight !== false ? highlightFn : (str: any, lang: any) => {
     if (lang === 'mermaid') return `<pre class="mermaid">${new MarkdownIt().utils.escapeHtml(str)}</pre>`;
-    return `<pre><code>${new MarkdownIt().utils.escapeHtml(str)}</code></pre>`;
+    const langAttr = lang ? ` class="language-${lang}"` : '';
+    return `<pre><code${langAttr}>${new MarkdownIt().utils.escapeHtml(str)}</code></pre>`;
   };
 
   const md = new MarkdownIt(mdOptions);

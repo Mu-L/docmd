@@ -49,6 +49,9 @@ function deepWipe() {
 // 1. Initial Reporting
 run('node scripts/status.js start:reset', false);
 
+// 1a. Lint gate — fail fast on lint errors before the slow pipeline runs.
+run('pnpm lint', false);
+
 // 2. Stop any running servers
 process.stdout.write(`\x1b[36m│\x1b[0m  \x1b[2mStopping active servers\x1b[0m`.padEnd(45));
 run('pnpm -s stop');
