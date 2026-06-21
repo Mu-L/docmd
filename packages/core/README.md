@@ -1,3 +1,4 @@
+
 <div align="center">
 
   <a href="https://docmd.io">
@@ -123,8 +124,10 @@ docmd build  # build for deployment
 Or run via Docker:
 
 ```bash
-docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.7
 ```
+
+> Non-root (UID 1001) — pass `-u $(id -u):$(id -g)` to keep host ownership. Pin a version for reproducible builds.
 
 </details>
 
@@ -271,4 +274,4 @@ Full reference: [Node API](https://docs.docmd.io/development/node-api-reference/
 
 ## License
 
-MIT — see [`LICENSE`](./LICENSE) for details.
+MIT License. See `LICENSE` for details.
