@@ -82,11 +82,29 @@ async function compile(markdown: string, config: any = {}) {
     </script>
     `;
 
-    // Stripped-down preview HTML — no topbar, sidebar, page-header, footer,
-    // or docmd-main.js (which is what injects the per-code-block copy
-    // buttons). The preview is purely the rendered content region with
-    // theme tokens, KaTeX, and mermaid. A small stylesheet tail adjusts
-    // the bare body for iframe rendering.
+    // Minimal interactivity for the preview iframe. docmd-main.js is not
+    // loaded here (we stripped the chrome), so tab switching has to be
+    // wired here. Collapsibles use native <details>, so they need no JS.
+    const interactivityScript = `
+    <script>
+    (function () {
+        document.addEventListener('click', function (e) {
+            var tabItem = e.target.closest('.docmd-tabs-nav-item');
+            if (!tabItem) return;
+            var container = tabItem.closest('.docmd-tabs');
+            if (!container) return;
+            var navItems = container.querySelectorAll('.docmd-tabs-nav-item');
+            var panes = container.querySelectorAll('.docmd-tab-pane');
+            var index = Array.prototype.indexOf.call(navItems, tabItem);
+            for (var i = 0; i < navItems.length; i++) navItems[i].classList.remove('active');
+            for (var j = 0; j < panes.length; j++) panes[j].classList.remove('active');
+            tabItem.classList.add('active');
+            if (panes[index]) panes[index].classList.add('active');
+        });
+    })();
+    <\/script>
+    `;
+
     return `<!DOCTYPE html>
 <html lang="en" data-theme="${appearance}">
 <head>
@@ -105,6 +123,7 @@ async function compile(markdown: string, config: any = {}) {
 </head>
 <body>
 ${result.htmlContent}
+${interactivityScript}
 ${mermaidScript}
 </body>
 </html>`;
