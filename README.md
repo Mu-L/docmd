@@ -132,7 +132,7 @@ Or run via Docker:
 docker run -p 3000:3000 ghcr.io/docmd-io/docmd:0.8.7
 ```
 
-> Non-root (UID 1001) — pass `-u $(id -u):$(id -g)` to keep host ownership. Pin a version for reproducible builds.
+> Pin a version for reproducible builds.
 
 </details>
 
