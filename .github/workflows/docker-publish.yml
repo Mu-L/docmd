@@ -112,12 +112,6 @@ jobs:
             latest=false
           tags: |
             # Version: ref on tag push and release events (strips 'v' prefix)
-            # type=ref,event=tag covers both — GitHub fires a 'release' event
-            # for tag pushes, and the action correctly extracts the tag ref.
-            # The 'type=ref,event=release' rule that lived here was removed:
-            # in docker/metadata-action v6 it throws "Invalid event for
-            # type=ref,event=release" on tag-based release events because
-            # it expects a release-specific ref format, not a tag ref.
             type=ref,event=tag
             # :latest — only on release events
             type=raw,value=latest,enable=${{ github.event_name == 'release' }}
