@@ -546,15 +546,23 @@ Before finalizing your work, always run the validation suite to detect errors:
 
 ---
 
-## 8. Additional Skills (separate install)
+## 8. Install docmd-skills
 
-This file is the project-local **docmd** skill. The full skill set — including **docmd-dev** (framework contributor) and **docmd-writer** (multi-language documentation writer) — ships as the \`docmd-skills\` npm package:
+This file is the project-local **docmd** skill (read by \`docmd mcp\`'s \`get_skill\` tool). For the full agent skill set — including **docmd-dev** (framework contributor) and **docmd-writer** (multi-language documentation writer) — install the [\`docmd-skills\`](https://www.npmjs.com/package/docmd-skills) npm package into your agent's skills directory.
+
+**Single-line install (run once per machine):**
 
 \`\`\`bash
-npx docmd-skills ~/.claude/skills    # or ~/.cursor/skills, ./.skills, etc.
+npx docmd-skills ~/.claude/skills
 \`\`\`
 
-Run that once and the additional skill modules are available to your agent alongside this file.
+The \`[dir]\` argument is the directory your agent reads skills from. Common choices:
+
+- \`~/.claude/skills\` (Claude Code)
+- \`~/.cursor/skills\` (Cursor)
+- \`./.skills\` (project-local)
+
+After running the command above, the additional \`docmd-skills\`, \`docmd-dev\`, and \`docmd-writer\` modules are available to your agent alongside this file. \`npx docmd-skills --help\` lists all subcommands (e.g. \`npx docmd-skills dev [dir]\` to install only \`docmd-dev\`).
 `;
 
 export async function initProject(opts: { force?: boolean; yes?: boolean } = {}) {
