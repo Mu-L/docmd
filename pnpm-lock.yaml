@@ -219,6 +219,9 @@ importers:
       '@docmd/tui':
         specifier: workspace:*
         version: link:../tui
+      '@docmd/utils':
+        specifier: workspace:*
+        version: link:../utils
       embed-lite:
         specifier: ^0.1.4
         version: 0.1.4
@@ -366,6 +369,10 @@ importers:
         version: 0.28.1
 
   packages/plugins/seo:
+    dependencies:
+      '@docmd/utils':
+        specifier: workspace:*
+        version: link:../../utils
     devDependencies:
       '@docmd/api':
         specifier: workspace:*

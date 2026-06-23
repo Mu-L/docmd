@@ -16,6 +16,26 @@ import MarkdownIt from 'markdown-it';
 import matter from 'lite-matter';
 import { highlight } from 'lite-hl';
 import { resolveHref } from './utils/normalize-href.js';
+import { attrEsc } from '@docmd/utils';
+
+// URL schemes that can execute code or exfiltrate data when clicked.
+// Phase 1.B (T-S4 fix, defense in depth): markdown-it 14 already rejects these
+// at the parser layer, but we re-check inside the link_open override so any
+// future refactor of the parser pipeline cannot accidentally re-introduce them.
+const DANGEROUS_URL_SCHEMES = new Set([
+  'javascript:',
+  'data:text/html',
+  'vbscript:',
+  'file:'
+]);
+
+function isDangerousHref(href: string): boolean {
+  const lower = href.trim().toLowerCase();
+  for (const prefix of DANGEROUS_URL_SCHEMES) {
+    if (lower.startsWith(prefix)) return true;
+  }
+  return false;
+}
 
 // Standard Plugins
 import attrs from 'markdown-it-attrs';
@@ -210,6 +230,14 @@ function createMarkdownProcessor(config: any = {}, pluginsCallback: any) {
 
     if (hrefIndex >= 0) {
       const href = token.attrs[hrefIndex][1];
+
+      // Phase 1.B (T-S4 fix): drop dangerous schemes. The link is rendered as
+      // a safe hash-anchor instead so the surrounding text still appears as a
+      // clickable (but inert) element.
+      if (isDangerousHref(href)) {
+        token.attrs[hrefIndex][1] = '#';
+        return self.renderToken(tokens, idx, options);
+      }
 
       const isHashOnly = href.startsWith('#');
       const isAsset = href.match(/(^|\/)assets\//);

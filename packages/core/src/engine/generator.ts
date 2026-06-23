@@ -13,7 +13,7 @@
  */
 
 import path from 'path';
-import { fsUtils as fs } from '@docmd/utils';
+import { fsUtils as fs, sanitizeHeadInjection } from '@docmd/utils';
 import { createRequire } from 'module';
 import { execSync } from 'child_process';
 
@@ -594,15 +594,23 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       const headInjections = await Promise.all(hooks.injectHead.map((fn: any) => fn(config, pageContext, relativePathToRoot)));
       const bodyInjections = await Promise.all(hooks.injectBody.map((fn: any) => fn(config, pageContext)));
 
+      // Phase 1.B (T-S7 fix): sanitise plugin-generated head/body injection HTML
+      // before writing to the page. Strips <script>, <style>, on* handlers, and
+      // javascript:/vbscript: URIs. Plugin trust model says plugins are audited;
+      // this is the second line of defence so a compromised or buggy plugin
+      // cannot inject active content into every page.
+      const safeHeadInjections = headInjections.map((h: string) => sanitizeHeadInjection(h));
+      const safeBodyInjections = bodyInjections.map((h: string) => sanitizeHeadInjection(h));
+
       const fullHeadHtml = [
-        headInjections.join('\n'),
+        safeHeadInjections.join('\n'),
         assetHeadHtml,
         generateHreflangTags(config, page.outputPath)
       ].join('\n');
 
       const fullBodyHtml = [
         assetBodyHtml,
-        bodyInjections.join('\n')
+        safeBodyInjections.join('\n')
       ].join('\n');
 
       // Source file path relative to srcDir

@@ -431,8 +431,8 @@ console.log('\n🔒 Test S11: ws-origin-guard unit checks (Phase 1.D, N-S1)');
   assert('LAN allowlist still rejects 10.0.0.1', lanReject === false);
 })();
 
-// ─── TEST S12: init does NOT fetch remote SKILL.md by default (Phase 1.D, T-S5) ──
-console.log('\n🔒 Test S12: init defaults to local-only (Phase 1.D, T-S5)');
+// ─── TEST S12: init makes NO network calls (Phase 1.D revised, T-S5) ─────
+console.log('\n🔒 Test S12: init makes no network calls (Phase 1.D revised, T-S5)');
 (async () => {
   // Snapshot network calls by intercepting global fetch.
   const dir = setup('s12-init-no-network');
@@ -447,24 +447,108 @@ console.log('\n🔒 Test S12: init defaults to local-only (Phase 1.D, T-S5)');
 
   try {
     // Run init in-process via the compiled CLI.
-    // Default mode: no --with-skill, no DOCMD_FETCH_REMOTE_SKILL.
-    // force:true so the override prompt is skipped entirely (it would block
-    // waiting for stdin in this interactive terminal).
-    delete process.env.DOCMD_FETCH_REMOTE_SKILL;
+    // T-S5 revised (0.8.8): docmd-skills is now an npm package; init never
+    // fetches SKILL.md from GitHub. Verify the absolute zero-network property.
     const { initProject } = await import(path.resolve(import.meta.dirname, '../packages/core/dist/commands/init.js'));
+    process.chdir(dir);
     await initProject({ force: true });
-    assert('no fetch call on default init', fetchCalls === 0, `fetchCalls=${fetchCalls}`);
-
-    // Now opt in via env var and verify the fetch IS made.
-    process.env.DOCMD_FETCH_REMOTE_SKILL = '1';
-    fetchCalls = 0;
-    const dir2 = setup('s12-init-with-env');
-    writeFile(dir2, 'docmd.config.json', JSON.stringify({ title: 'Init With Env' }));
-    process.chdir(dir2);
-    await initProject({ force: true });
-    assert('fetch IS called when DOCMD_FETCH_REMOTE_SKILL=1', fetchCalls >= 1, `fetchCalls=${fetchCalls}`);
+    assert('init makes zero network calls', fetchCalls === 0, `fetchCalls=${fetchCalls}`);
+    assert('SKILL.md was written from bundled content', fs.existsSync(path.join(dir, 'SKILL.md')));
+    const skillContent = fs.readFileSync(path.join(dir, 'SKILL.md'), 'utf8');
+    assert('SKILL.md does not mention raw.githubusercontent.com', !/raw\.githubusercontent\.com/.test(skillContent));
+    assert('SKILL.md mentions npx docmd-skills as separate install path', /npx docmd-skills/.test(skillContent));
   } finally {
     globalThis.fetch = originalFetch;
-    delete process.env.DOCMD_FETCH_REMOTE_SKILL;
   }
+})();
+
+// ─── TEST S13: SEO plugin escapes og:/twitter: meta tag values (Phase 1.B, T-S3) ──
+console.log('\n🔒 Test S13: SEO plugin escapes meta tag values (Phase 1.B, T-S3)');
+{
+  const dir = setup('s13-seo-escape');
+  writeFile(dir, 'docmd.config.json', JSON.stringify({
+    title: 'Site Title',
+    url: 'https://example.com'
+  }));
+  writeFile(dir, 'docs/index.md', [
+    '---',
+    'title: <img src=x onerror=alert(1)>',
+    'description: <script>alert(1)</script>',
+    '---',
+    '',
+    '# Hi'
+  ].join('\n'));
+  const r = build(dir);
+  assert('build succeeds', r.ok, r.output);
+  const html = readSite(dir, 'index.html');
+  assert('output exists', html !== null);
+  // The frontmatter title is the malicious payload; the site title is benign.
+  // We assert that the malicious payload is HTML-escaped in the meta tags.
+  assert('og:title escapes the frontmatter <img>', html && /<meta property="og:title" content="&lt;img src=x onerror=alert\(1\)&gt;/.test(html));
+  assert('twitter:title escapes the frontmatter <img>', html && /<meta name="twitter:title" content="&lt;img src=x onerror=alert\(1\)&gt;/.test(html));
+  assert('description meta is HTML-escaped', html && /<meta name="description" content="&lt;script&gt;alert\(1\)&lt;\/script&gt;/.test(html));
+  assert('no live <script>alert in built HTML', html && !/<script>alert/.test(html));
+}
+
+// ─── TEST S14: link scheme validation rejects javascript:/data: in built HTML (Phase 1.B, T-S4 defense in depth) ─
+console.log('\n🔒 Test S14: link scheme validation rejects javascript:/data: (Phase 1.B, T-S4)');
+{
+  const dir = setup('s14-link-schemes');
+  writeFile(dir, 'docs/index.md', [
+    '# Link Test',
+    '',
+    '[javascript](javascript:alert(1))',
+    '',
+    '[data](data:text/html,<script>alert(1)</script>)',
+    '',
+    '[vbscript](vbscript:msgbox(1))',
+    '',
+    '[safe](https://example.com)',
+    '',
+    '[internal](docs/other.md)'
+  ].join('\n'));
+  const r = build(dir);
+  assert('build succeeds', r.ok, r.output);
+  const html = readSite(dir, 'index.html');
+  // Markdown-it 14 already rejects dangerous schemes at the parser layer; the
+  // defense-in-depth check in the link_open override is the second line. Either
+  // layer makes the output safe. We assert: no live dangerous href anywhere.
+  assert('no javascript: href in HTML', html && !/href="javascript:/i.test(html));
+  assert('no data: href in HTML', html && !/href="data:/i.test(html));
+  assert('no vbscript: href in HTML', html && !/href="vbscript:/i.test(html));
+  assert('safe https link still works', html && /href="https:\/\/example\.com/.test(html));
+}
+
+// ─── TEST S15: plugin generateMetaTags sanitised before head injection (Phase 1.B, T-S7) ─
+console.log('\n🔒 Test S15: plugin generateMetaTags sanitised (Phase 1.B, T-S7)');
+(async () => {
+  const dir = setup('s15-plugin-head-sanitised');
+  // Stage a local-path plugin INSIDE the project (Phase 1.A rejects escape).
+  fs.mkdirSync(path.join(dir, 'plugins/evil'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'plugins/evil/package.json'), JSON.stringify({
+    name: 'evil-head', version: '0.0.1', main: 'index.js'
+  }));
+  fs.writeFileSync(path.join(dir, 'plugins/evil/index.js'), [
+    'export default {',
+    '  plugin: { name: "evil-head", version: "0.0.1", capabilities: ["head"] },',
+    '  generateMetaTags: async () =>',
+    '    \'<script>alert("evil-meta")</script>\' +',
+    '    \'<a href="javascript:alert(1)">click</a>\' +',
+    '    \'<style>body{display:none}</style>\'',
+    '};'
+  ].join('\n'));
+  writeFile(dir, 'docmd.config.json', JSON.stringify({
+    title: 'Sanitised Head',
+    plugins: { './plugins/evil': {} }
+  }));
+  writeFile(dir, 'docs/index.md', '# Hi\n');
+  const r = build(dir);
+  assert('build succeeds', r.ok, r.output);
+  const html = readSite(dir, 'index.html');
+  // T-S7: <script>, <style>, and javascript: URIs in href must be neutralised
+  // before the plugin's generateMetaTags output reaches <head>.
+  assert('plugin <script> block was stripped', html && !/<script>alert\("evil-meta"\)<\/script>/.test(html));
+  assert('plugin <style> block was stripped', html && !/<style>body\{display:none\}<\/style>/.test(html));
+  assert('plugin javascript: href was neutralised', html && !/href="javascript:alert\(1\)"/.test(html));
+  assert('plugin link tag preserved with safe href', html && /<a href="#">click<\/a>/.test(html));
 })();

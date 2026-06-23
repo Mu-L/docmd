@@ -277,7 +277,7 @@ export async function runMcpServer() {
               "---",
               "name: docmd",
               "description: Fallback agent instruction set for docmd.",
-              "skills: https://github.com/docmd-io/docmd-skills",
+              "skills: docmd-skills (npm)",
               "docs: https://docs.docmd.io",
               "llms-context: https://docs.docmd.io/llms-full.txt",
               "---",
@@ -287,16 +287,12 @@ export async function runMcpServer() {
               "This project uses **docmd**, the zero-config AI-first documentation engine.",
               "",
               "## Agent Instructions & Skills Reference",
-              "The authoritative prompt library and instruction set for docmd is maintained in the official repository:",
-              "👉 **[github.com/docmd-io/docmd-skills](https://github.com/docmd-io/docmd-skills)**",
+              "The authoritative skill set ships as the [`docmd-skills`](https://www.npmjs.com/package/docmd-skills) npm package. Run `npx docmd-skills [dir]` to install the full `docmd-skills`, `docmd-dev`, and `docmd-writer` skill set into your agent directory.",
               "",
-              "To fetch specific skills, you can reference the modules at `docmd-skills`:",
-              "- **CLI / Config / Plugins**: For configuration rules, commands, and plugin setup.",
-              "- **Formatting / Syntax**: For Callouts, tabs, steps, grids, and URL embeds.",
-              "- **API**: MCP integrations, client-side events, and live editor.",
+              "For this project specifically, you can also reference the local `SKILL.md` (if present) at the project root for project-specific overrides.",
               "",
               "### Local Customisation",
-              "To create a customized instruction set for this specific workspace, create a `SKILL.md` file in the root of your project."
+              "Drop a `SKILL.md` file at the root of your project to override this fallback for project-specific instructions."
             ].join('\n');
           }
 

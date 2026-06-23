@@ -45,7 +45,6 @@ const options = {
   help: { type: 'boolean', short: 'h' },
   force: { type: 'boolean' },
   yes: { type: 'boolean', short: 'y' },
-  'with-skill': { type: 'boolean' },
   json: { type: 'boolean' }
 } as const;
 
@@ -106,8 +105,7 @@ if (!command || values.help) {
     ['-v, --version', 'Output the version number'],
     ['-h, --help', 'Display help for command'],
     ['--force', 'Overwrite existing files (use with init)'],
-    ['-y, --yes', 'Answer "yes" to all prompts (use with init in CI)'],
-    ['--with-skill', 'Fetch latest SKILL.md from docmd-skills repo (use with init); implies a network call']
+    ['-y, --yes', 'Answer "yes" to all prompts (use with init in CI)']
   ];
   optsList.forEach(([o, d]) => TUI.item(o, d, TUI.cyan));
   
@@ -149,7 +147,7 @@ if (command !== 'stop' && !values.json) {
 }
 
 if (command === 'init') {
-  initProject({ force: values.force, yes: values.yes, withSkill: values['with-skill'] });
+  initProject({ force: values.force, yes: values.yes });
 } else if (command === 'build') {
   buildSite(opts.config, { isDev: false, offline: opts.offline, verbose: opts.verbose });
 } else if (command === 'dev') {
