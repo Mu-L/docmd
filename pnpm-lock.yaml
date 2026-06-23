@@ -260,6 +260,10 @@ importers:
         version: 2.1.1
 
   packages/plugins/analytics:
+    dependencies:
+      '@docmd/utils':
+        specifier: workspace:*
+        version: link:../../utils
     devDependencies:
       '@docmd/api':
         specifier: workspace:*
@@ -321,6 +325,18 @@ importers:
         specifier: ^4.22.4
         version: 4.22.4
 
+  packages/plugins/okf:
+    devDependencies:
+      '@docmd/api':
+        specifier: workspace:*
+        version: link:../../api
+      '@types/node':
+        specifier: ^24.13.2
+        version: 24.13.2
+      tsx:
+        specifier: ^4.22.4
+        version: 4.22.4
+
   packages/plugins/openapi:
     dependencies:
       '@docmd/utils':
@@ -335,6 +351,10 @@ importers:
         version: 24.13.2
 
   packages/plugins/pwa:
+    dependencies:
+      '@docmd/utils':
+        specifier: workspace:*
+        version: link:../../utils
     devDependencies:
       '@docmd/api':
         specifier: workspace:*
