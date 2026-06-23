@@ -10,7 +10,7 @@
  * Run: node scripts/brute-test-security.js
  */
 
-import { execSync } from 'child_process';
+import { execSync, spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
@@ -190,13 +190,188 @@ console.log('\n🔒 Test S6: Markdown rendering unaffected by HTML policy');
   assert('inline code renders as <code>', html && html.includes('<code>'));
 }
 
-// ─── SUMMARY ───
-console.log('\n' + '═'.repeat(50));
-console.log(`  ${passed} passed, ${failed} failed out of ${passed + failed} assertions`);
-if (failures.length > 0) {
-  console.log(`\n  Failures:`);
-  failures.forEach(f => console.log(`    ${FAIL} ${f}`));
-}
-console.log('═'.repeat(50) + '\n');
+// ─── TEST S7: OpenAPI plugin rejects spec path that escapes project root (S-2) ──
+console.log('\n🔒 Test S7: OpenAPI plugin safePath enforcement (Phase 1.A, S-2)');
+{
+  // Place a canary file outside the project
+  const canaryDir = '/tmp/docmd-openapi-canary';
+  fs.mkdirSync(canaryDir, { recursive: true });
+  const canaryPath = path.join(canaryDir, 'canary-spec.json');
+  fs.writeFileSync(canaryPath, JSON.stringify({
+    openapi: '3.0.0',
+    info: { title: 'CANARY-PATH-TRAVERSAL-PROOF', version: '1.0.0' },
+    paths: { '/canary': { get: { summary: 'Path traversal confirmed' } } }
+  }));
 
-process.exit(failed > 0 ? 1 : 0);
+  const dir = setup('s7-openapi-traversal');
+  writeFile(dir, 'docmd.config.json', JSON.stringify({
+    title: 'OA PoC',
+    plugins: { openapi: {} }
+  }));
+  writeFile(dir, 'docs/poc.md', [
+    '# PoC',
+    '',
+    '```openapi',
+    canaryPath,
+    '```',
+    ''
+  ].join('\n'));
+  const r = build(dir);
+  assert('build succeeds', r.ok, r.output);
+  const html = readSite(dir, 'poc/index.html');
+  assert('canary title NOT in output', html && !html.includes('CANARY-PATH-TRAVERSAL-PROOF'));
+  assert('canary summary NOT in output', html && !html.includes('Path traversal confirmed'));
+  assert('error message shown instead', html && html.includes('oa-error'));
+  assert('error mentions path escape', html && /escapes project root/i.test(html));
+}
+
+// ─── TEST S8: OpenAPI plugin accepts in-project spec ─────────────────────
+console.log('\n🔒 Test S8: OpenAPI plugin accepts in-project spec (regression)');
+{
+  const dir = setup('s8-openapi-allowed');
+  // Note: the plugin computes srcDir from process.cwd() (pre-existing quirk:
+  // markdownSetup reads options.config.src, but the plugin options object is
+  // config.plugins.openapi which has no .config field). Spec must live at
+  // project root for the regression test.
+  writeFile(dir, 'specs-ok.json', JSON.stringify({
+    openapi: '3.0.0',
+    info: { title: 'OK-Spec', version: '1.0.0' },
+    paths: { '/ok': { get: { summary: 'Allowed' } } }
+  }));
+  writeFile(dir, 'docmd.config.json', JSON.stringify({
+    title: 'OA OK',
+    plugins: { openapi: {} }
+  }));
+  writeFile(dir, 'docs/poc.md', [
+    '# PoC',
+    '',
+    '```openapi',
+    './specs-ok.json',
+    '```',
+    ''
+  ].join('\n'));
+  const r = build(dir);
+  assert('build succeeds', r.ok, r.output);
+  const html = readSite(dir, 'poc/index.html');
+  assert('OK-Spec rendered', html && html.includes('OK-Spec'));
+  assert('Allowed summary rendered', html && html.includes('Allowed'));
+}
+
+// ─── TEST S9: Plugin loader rejects local-path that escapes project root (T-S8) ─
+console.log('\n🔒 Test S9: Plugin loader rejects local-path escape (Phase 1.A, T-S8)');
+{
+  // Place a malicious plugin OUTSIDE the project root
+  const evilDir = '/tmp/docmd-evil-plugin';
+  fs.mkdirSync(path.join(evilDir, 'evil'), { recursive: true });
+  fs.writeFileSync(path.join(evilDir, 'evil', 'package.json'), JSON.stringify({
+    name: 'evil', version: '1.0.0', main: 'index.js'
+  }));
+  fs.writeFileSync(path.join(evilDir, 'evil', 'index.js'), [
+    'export default {',
+    '  plugin: { name: "evil", version: "1.0.0", capabilities: [] },',
+    '  onConfigResolved: async (config) => { config.title = "PWNED-VIA-PATH-ESCAPE"; }',
+    '};'
+  ].join('\n'));
+
+  const dir = setup('s9-plugin-path-escape');
+  writeFile(dir, 'docmd.config.json', JSON.stringify({
+    title: 'Legit Title',
+    plugins: { '../evil': {} }  // Tries to escape via ../
+  }));
+  writeFile(dir, 'docs/index.md', '# Hi\n');
+  const r = build(dir);
+  // The build may succeed (with a plugin error logged) but the title must NOT be overwritten
+  const html = readSite(dir, 'index.html');
+  assert('evil plugin did not execute', html && !html.includes('PWNED-VIA-PATH-ESCAPE'));
+  assert('original title preserved', html && html.includes('Legit Title'));
+}
+
+// ─── TEST S10: MCP read_doc rejects path traversal (Phase 1.A, S-3) ───────
+console.log('\n🔒 Test S10: MCP read_doc rejects path traversal (Phase 1.A, S-3)');
+
+// Spawn the MCP server as a subprocess and exchange JSON-RPC messages over stdio.
+function callMcp(cwd, messages) {
+  return new Promise((resolve, reject) => {
+    const proc = spawn('node', [DOCMD, 'mcp'], { cwd, stdio: ['pipe', 'pipe', 'pipe'] });
+    const responses = new Map();
+    let stdoutBuf = '';
+    let stderrBuf = '';
+
+    proc.stdout.on('data', (chunk) => {
+      stdoutBuf += chunk.toString();
+      const lines = stdoutBuf.split('\n');
+      stdoutBuf = lines.pop();
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const msg = JSON.parse(line);
+          if (msg.id != null) responses.set(msg.id, msg);
+        } catch {}
+      }
+    });
+    proc.stderr.on('data', (chunk) => { stderrBuf += chunk.toString(); });
+    proc.on('error', reject);
+
+    let i = 0;
+    function sendNext() {
+      if (i >= messages.length) {
+        proc.stdin.end();
+        setTimeout(() => {
+          proc.kill('SIGTERM');
+          resolve({ responses, stderr: stderrBuf });
+        }, 800);
+        return;
+      }
+      proc.stdin.write(JSON.stringify(messages[i]) + '\n');
+      i++;
+      setTimeout(sendNext, 100);
+    }
+    sendNext();
+  });
+}
+
+const cases = [
+  { id: 2, route: '/etc/passwd',                 expectError: /Absolute paths are not allowed/ },
+  { id: 3, route: '/tmp/should-not-exist.txt',   expectError: /Absolute paths are not allowed/ },
+  { id: 4, route: '../../../etc/passwd',         expectError: /escapes project root/ },
+  { id: 5, route: 'docs/index.md',               expectValid: '# MCP test content' }
+];
+
+(async () => {
+  const dir = setup('s10-mcp-read-doc');
+  writeFile(dir, 'docmd.config.json', JSON.stringify({ title: 'MCP test' }));
+  writeFile(dir, 'docs/index.md', '# MCP test content\n');
+
+  const messages = [
+    { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 't', version: '1' } } },
+    ...cases.map(c => ({
+      jsonrpc: '2.0', id: c.id, method: 'tools/call',
+      params: { name: 'read_doc', arguments: { route: c.route } }
+    }))
+  ];
+
+  const { responses } = await callMcp(dir, messages);
+
+  assert('initialize response received', responses.has(1));
+
+  for (const c of cases) {
+    const r = responses.get(c.id);
+    const text = r?.result?.content?.[0]?.text || r?.error?.message || '';
+    if (c.expectError) {
+      assert(`read_doc rejects "${c.route}"`, c.expectError.test(text), `got: ${text.slice(0, 80)}`);
+    }
+    if (c.expectValid) {
+      assert(`read_doc accepts "${c.route}"`, text.includes(c.expectValid), `got: ${text.slice(0, 80)}`);
+    }
+  }
+
+  // Final summary run after async S10
+  console.log('\n' + '═'.repeat(50));
+  console.log(`  ${passed} passed, ${failed} failed out of ${passed + failed} assertions`);
+  if (failures.length > 0) {
+    console.log(`\n  Failures:`);
+    failures.forEach(f => console.log(`    ${FAIL} ${f}`));
+  }
+  console.log('═'.repeat(50) + '\n');
+  process.exit(failed > 0 ? 1 : 0);
+})();

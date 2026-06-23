@@ -17,6 +17,7 @@ import fs from 'fs';
 import path from 'path';
 import { buildSite } from './build.js';
 import { loadConfig } from '../utils/config-loader.js';
+import { safePath, asUserPath } from '@docmd/utils';
 
 const pkgUrl = new URL('../../package.json', import.meta.url);
 const { version } = JSON.parse(fs.readFileSync(pkgUrl, 'utf-8'));
@@ -375,8 +376,20 @@ export async function runMcpServer() {
             sendResponse(id, { content: [{ type: "text", text: "Error: Route is required." }] });
             return;
           }
-
-          const resolvedFilePath = path.resolve(process.cwd(), route);
+          // Phase 1.A: CWE-22 fix (S-3, T-S1). Reject absolute paths outright and
+          // require relative paths to resolve inside the project root (cwd) via safePath().
+          // Preserves the pre-fix semantic where route was resolved against process.cwd().
+          if (path.isAbsolute(route)) {
+            sendResponse(id, { content: [{ type: "text", text: `Error: Absolute paths are not allowed.` }] });
+            return;
+          }
+          let resolvedFilePath: string;
+          try {
+            resolvedFilePath = safePath(process.cwd(), asUserPath(route));
+          } catch (_e: any) {
+            sendResponse(id, { content: [{ type: "text", text: `Error: Path "${route}" escapes project root.` }] });
+            return;
+          }
           if (!fs.existsSync(resolvedFilePath)) {
             sendResponse(id, { content: [{ type: "text", text: `Error: File not found at path "${route}".` }] });
             return;

@@ -319,6 +319,10 @@ importers:
         version: 4.22.4
 
   packages/plugins/openapi:
+    dependencies:
+      '@docmd/utils':
+        specifier: workspace:*
+        version: link:../../utils
     devDependencies:
       '@docmd/api':
         specifier: workspace:*
