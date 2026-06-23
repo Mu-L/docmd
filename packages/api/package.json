@@ -22,7 +22,8 @@
   },
   "dependencies": {
     "@docmd/parser": "workspace:*",
-    "@docmd/tui": "workspace:*"
+    "@docmd/tui": "workspace:*",
+    "@docmd/utils": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.13.2"
