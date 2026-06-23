@@ -12,7 +12,8 @@
     }
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "node --test 'test/**/*.test.js'"
   },
   "files": [
     "dist"
