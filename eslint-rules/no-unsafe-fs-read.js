@@ -64,19 +64,33 @@ export default {
   create(context) {
     const safeNames = new Set();
 
+    function isSafePathCall(node) {
+      return node &&
+        node.type === 'CallExpression' &&
+        node.callee.type === 'Identifier' &&
+        node.callee.name === 'safePath';
+    }
+
     function trackSafePathReturn(node) {
       if (!node.init) return;
-      const init = node.init;
-      if (init.type === 'CallExpression' &&
-          init.callee.type === 'Identifier' &&
-          init.callee.name === 'safePath' &&
-          node.id.type === 'Identifier') {
+      if (node.id.type !== 'Identifier') return;
+      if (isSafePathCall(node.init)) {
         safeNames.add(node.id.name);
+      }
+    }
+
+    function trackAssignment(node) {
+      // Pattern: x = safePath(...)
+      if (node.left.type !== 'Identifier') return;
+      if (node.operator !== '=') return;
+      if (isSafePathCall(node.right)) {
+        safeNames.add(node.left.name);
       }
     }
 
     return {
       VariableDeclarator: trackSafePathReturn,
+      AssignmentExpression: trackAssignment,
       CallExpression(node) {
         const method = getFsMethod(node);
         if (!method) return;

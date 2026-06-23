@@ -23,6 +23,9 @@
   "peerDependencies": {
     "@docmd/api": "workspace:*"
   },
+  "dependencies": {
+    "@docmd/utils": "workspace:*"
+  },
   "devDependencies": {
     "@docmd/api": "workspace:*",
     "@types/node": "^24.13.2"
