@@ -122,8 +122,13 @@ const headingIdPlugin = (md, options: any = {}) => {
 
 // Main Factory Function to Create a Markdown Processor
 function createMarkdownProcessor(config: any = {}, pluginsCallback: any) {
+  // HTML policy from config (Phase 0.D, default 'escape').
+  // 'allow'  -> markdown-it html: true (raw HTML passes through, UNSAFE)
+  // 'escape' -> markdown-it html: false (HTML escaped and shown as text)
+  // 'strip'  -> html: false + disable html_block/html_inline rules (HTML removed)
+  const htmlPolicy = (config && config.security && config.security.html) || 'escape';
   const mdOptions: any = {
-    html: true,
+    html: htmlPolicy === 'allow',
     linkify: true,
     typographer: true,
     breaks: config.markdown?.breaks ?? true,
@@ -148,6 +153,13 @@ function createMarkdownProcessor(config: any = {}, pluginsCallback: any) {
   };
 
   const md = new MarkdownIt(mdOptions);
+
+  // 'strip' policy: drop html_block and html_inline rules entirely so HTML
+  // tokens are never emitted. Distinct from 'escape' which keeps tokens and
+  // HTML-escapes their content.
+  if (htmlPolicy === 'strip') {
+    md.disable(['html_block', 'html_inline']);
+  }
 
   // Core Plugins
   md.use(attrs, { leftDelimiter: '{', rightDelimiter: '}' });
