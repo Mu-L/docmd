@@ -10,7 +10,7 @@
  * Run: node scripts/brute-test-security.js
  */
 
-import { execSync, spawn } from 'child_process';
+import { execSync, spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
@@ -31,12 +31,19 @@ function setup(name) {
 }
 
 function build(dir) {
-  try {
-    execSync(`node ${DOCMD} build`, { cwd: dir, stdio: 'pipe', encoding: 'utf8' });
-    return { ok: true, output: '' };
-  } catch (e) {
-    return { ok: false, output: e.stderr || e.stdout || '' };
-  }
+  // Use spawnSync so we can capture both stdout AND stderr on success too
+  // (execSync discards stderr on success). Plugins use console.error to
+  // surface validation warnings (e.g. S-4 analytics, S-5 PWA).
+  const r = spawnSync('node', [DOCMD, 'build'], {
+    cwd: dir,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe']
+  });
+  return {
+    ok: r.status === 0,
+    output: r.stdout || '',
+    stderr: r.stderr || ''
+  };
 }
 
 function writeFile(dir, filePath, content) {
@@ -519,36 +526,118 @@ console.log('\n🔒 Test S14: link scheme validation rejects javascript:/data: (
   assert('safe https link still works', html && /href="https:\/\/example\.com/.test(html));
 }
 
-// ─── TEST S15: plugin generateMetaTags sanitised before head injection (Phase 1.B, T-S7) ─
-console.log('\n🔒 Test S15: plugin generateMetaTags sanitised (Phase 1.B, T-S7)');
+// ─── TEST S15: sanitizeHeadInjection helper unit checks (Phase 1.B T-S7, helper-only) ─
+console.log('\n🔒 Test S15: sanitizeHeadInjection helper (Phase 1.B T-S7 helper-only)');
 (async () => {
-  const dir = setup('s15-plugin-head-sanitised');
-  // Stage a local-path plugin INSIDE the project (Phase 1.A rejects escape).
-  fs.mkdirSync(path.join(dir, 'plugins/evil'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'plugins/evil/package.json'), JSON.stringify({
-    name: 'evil-head', version: '0.0.1', main: 'index.js'
-  }));
-  fs.writeFileSync(path.join(dir, 'plugins/evil/index.js'), [
-    'export default {',
-    '  plugin: { name: "evil-head", version: "0.0.1", capabilities: ["head"] },',
-    '  generateMetaTags: async () =>',
-    '    \'<script>alert("evil-meta")</script>\' +',
-    '    \'<a href="javascript:alert(1)">click</a>\' +',
-    '    \'<style>body{display:none}</style>\'',
-    '};'
-  ].join('\n'));
-  writeFile(dir, 'docmd.config.json', JSON.stringify({
-    title: 'Sanitised Head',
-    plugins: { './plugins/evil': {} }
-  }));
-  writeFile(dir, 'docs/index.md', '# Hi\n');
-  const r = build(dir);
-  assert('build succeeds', r.ok, r.output);
-  const html = readSite(dir, 'index.html');
-  // T-S7: <script>, <style>, and javascript: URIs in href must be neutralised
-  // before the plugin's generateMetaTags output reaches <head>.
-  assert('plugin <script> block was stripped', html && !/<script>alert\("evil-meta"\)<\/script>/.test(html));
-  assert('plugin <style> block was stripped', html && !/<style>body\{display:none\}<\/style>/.test(html));
-  assert('plugin javascript: href was neutralised', html && !/href="javascript:alert\(1\)"/.test(html));
-  assert('plugin link tag preserved with safe href', html && /<a href="#">click<\/a>/.test(html));
+  // Phase 1.B T-S7 was revised: the framework no longer auto-sanitises plugin
+  // output (would break legitimate analytics <script> tags). The
+  // sanitizeHeadInjection helper is still exported from @docmd/utils so
+  // individual plugins can sanitise their own output if they want. This
+  // scenario unit-checks the helper itself.
+  const helperPath = path.resolve(import.meta.dirname, '../packages/utils/dist/html-escape.js');
+  const { sanitizeHeadInjection } = await import(helperPath);
+
+  const cases = [
+    { name: 'strips <script>...</script>', in: '<script>alert(1)</script>', out: '' },
+    { name: 'strips <style>...</style>', in: '<style>body{color:red}</style>', out: '' },
+    { name: 'strips <script src=...></script> (self-closing)', in: '<script async src="x.js"></script>', out: '' },
+    { name: 'neutralises javascript: href', in: '<a href="javascript:alert(1)">x</a>', out: '<a href="#">x</a>' },
+    { name: 'neutralises vbscript: href', in: '<a href="vbscript:msgbox(1)">x</a>', out: '<a href="#">x</a>' },
+    { name: 'leaves safe <a href> alone', in: '<a href="https://example.com">x</a>', out: '<a href="https://example.com">x</a>' },
+    { name: 'leaves safe <link rel=stylesheet> alone', in: '<link rel="stylesheet" href="x.css">', out: '<link rel="stylesheet" href="x.css">' },
+    { name: 'handles mixed content', in: '<p>safe</p><script>x</script>', out: '<p>safe</p>' }
+  ];
+
+  for (const c of cases) {
+    const actual = sanitizeHeadInjection(c.in);
+    assert(
+      c.name,
+      actual === c.out,
+      `input=${JSON.stringify(c.in)} actual=${JSON.stringify(actual)} expected=${JSON.stringify(c.out)}`
+    );
+  }
 })();
+
+// ─── TEST S16: Analytics plugin rejects invalid measurementId / trackingId (Phase 1.C, S-4) ─
+console.log('\n🔒 Test S16: Analytics plugin format-validates IDs (Phase 1.C, S-4)');
+{
+  // Case 1: invalid GA4 id with XSS payload
+  {
+    const dir = setup('s16-analytics-bad-ga4');
+    writeFile(dir, 'docmd.config.json', JSON.stringify({
+      title: 'Bad GA4',
+      plugins: { analytics: { googleV4: { measurementId: 'G-FAKE\'; alert(1); //' } } }
+    }));
+    writeFile(dir, 'docs/index.md', '# Hi\n');
+    const r = build(dir);
+    assert('build succeeds with invalid GA4 id', r.ok, r.stderr || r.output);
+    const html = readSite(dir, 'index.html');
+    assert('no alert(1) in built HTML', html && !/alert\(1\)/.test(html));
+    assert('no googletagmanager script injected', html && !/googletagmanager\.com/.test(html));
+    assert('error log mentions invalid id', /Invalid googleV4/.test(r.stderr || r.output));
+  }
+
+  // Case 2: valid GA4 id should still work
+  {
+    const dir = setup('s16-analytics-good-ga4');
+    writeFile(dir, 'docmd.config.json', JSON.stringify({
+      title: 'Good GA4',
+      plugins: { analytics: { googleV4: { measurementId: 'G-ABC123XYZ' } } }
+    }));
+    writeFile(dir, 'docs/index.md', '# Hi\n');
+    const r = build(dir);
+    assert('build succeeds with valid GA4 id', r.ok, r.stderr || r.output);
+    const html = readSite(dir, 'index.html');
+    assert('googletagmanager script IS injected', html && /googletagmanager\.com/.test(html));
+    assert('valid id appears as JSON-quoted string', html && /gtag\('config', "G-ABC123XYZ"\)/.test(html));
+  }
+
+  // Case 3: invalid UA id
+  {
+    const dir = setup('s16-analytics-bad-ua');
+    writeFile(dir, 'docmd.config.json', JSON.stringify({
+      title: 'Bad UA',
+      plugins: { analytics: { googleUA: { trackingId: 'UA-INJECTED\'); alert(1); (' } } }
+    }));
+    writeFile(dir, 'docs/index.md', '# Hi\n');
+    const r = build(dir);
+    assert('build succeeds with invalid UA id', r.ok, r.stderr || r.output);
+    const html = readSite(dir, 'index.html');
+    assert('no UA injection', html && !/google-analytics\.com\/analytics\.js/.test(html) || !/attacker/.test(html));
+    assert('error log mentions invalid UA', /Invalid googleUA/.test(r.stderr || r.output));
+  }
+}
+
+// ─── TEST S17: PWA plugin validates themeColor (Phase 1.C, S-5) ─
+console.log('\n🔒 Test S17: PWA plugin validates themeColor (Phase 1.C, S-5)');
+{
+  // Case 1: valid hex color works
+  {
+    const dir = setup('s17-pwa-valid-color');
+    writeFile(dir, 'docmd.config.json', JSON.stringify({
+      title: 'PWA valid',
+      plugins: { pwa: { themeColor: '#ff00aa' } }
+    }));
+    writeFile(dir, 'docs/index.md', '# Hi\n');
+    const r = build(dir);
+    assert('build succeeds', r.ok, r.stderr || r.output);
+    const html = readSite(dir, 'index.html');
+    assert('valid theme color preserved', html && /<meta name="theme-color" content="#ff00aa">/.test(html));
+  }
+
+  // Case 2: invalid themeColor (XSS payload) is rejected
+  {
+    const dir = setup('s17-pwa-xss-color');
+    writeFile(dir, 'docmd.config.json', JSON.stringify({
+      title: 'PWA XSS',
+      plugins: { pwa: { themeColor: '"><script>alert(1)</script>' } }
+    }));
+    writeFile(dir, 'docs/index.md', '# Hi\n');
+    const r = build(dir);
+    assert('build succeeds with invalid themeColor', r.ok, r.stderr || r.output);
+    const html = readSite(dir, 'index.html');
+    assert('no live script from themeColor XSS', html && !/<script>alert\(1\)<\/script>/.test(html));
+    assert('error log mentions invalid themeColor', /Invalid themeColor/.test(r.stderr || r.output));
+    assert('default theme color used as fallback', html && /<meta name="theme-color" content="#1e293b">/.test(html));
+  }
+}

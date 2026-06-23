@@ -13,7 +13,7 @@
  */
 
 import path from 'path';
-import { fsUtils as fs, sanitizeHeadInjection } from '@docmd/utils';
+import { fsUtils as fs } from '@docmd/utils';
 import { createRequire } from 'module';
 import { execSync } from 'child_process';
 
@@ -594,23 +594,23 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       const headInjections = await Promise.all(hooks.injectHead.map((fn: any) => fn(config, pageContext, relativePathToRoot)));
       const bodyInjections = await Promise.all(hooks.injectBody.map((fn: any) => fn(config, pageContext)));
 
-      // Phase 1.B (T-S7 fix): sanitise plugin-generated head/body injection HTML
-      // before writing to the page. Strips <script>, <style>, on* handlers, and
-      // javascript:/vbscript: URIs. Plugin trust model says plugins are audited;
-      // this is the second line of defence so a compromised or buggy plugin
-      // cannot inject active content into every page.
-      const safeHeadInjections = headInjections.map((h: string) => sanitizeHeadInjection(h));
-      const safeBodyInjections = bodyInjections.map((h: string) => sanitizeHeadInjection(h));
-
+      // Phase 1.B (T-S7): the framework does NOT auto-sanitize plugin output.
+      // Plugins are npm-installed and audited per the trust model
+      // (DEVELOPMENT-BENCHMARK.md §S4). The `sanitizeHeadInjection` helper
+      // is exported from @docmd/utils and is available for plugins that want
+      // to sanitise their own output, but the framework does not impose it.
+      // Auto-sanitisation breaks legitimate scripts (e.g. Google Analytics'
+      // self-closing <script src=...></script> tag) because no regex can
+      // reliably distinguish a trusted analytics script from a malicious one.
       const fullHeadHtml = [
-        safeHeadInjections.join('\n'),
+        headInjections.join('\n'),
         assetHeadHtml,
         generateHreflangTags(config, page.outputPath)
       ].join('\n');
 
       const fullBodyHtml = [
         assetBodyHtml,
-        safeBodyInjections.join('\n')
+        bodyInjections.join('\n')
       ].join('\n');
 
       // Source file path relative to srcDir

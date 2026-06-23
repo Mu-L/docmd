@@ -286,13 +286,18 @@ export async function runMcpServer() {
               "",
               "This project uses **docmd**, the zero-config AI-first documentation engine.",
               "",
-              "## Agent Instructions & Skills Reference",
-              "The authoritative skill set ships as the [`docmd-skills`](https://www.npmjs.com/package/docmd-skills) npm package. Run `npx docmd-skills [dir]` to install the full `docmd-skills`, `docmd-dev`, and `docmd-writer` skill set into your agent directory.",
+              "## Get the full skill set (single-line install)",
               "",
-              "For this project specifically, you can also reference the local `SKILL.md` (if present) at the project root for project-specific overrides.",
+              "Run this once per machine to install the full agent skill set into your agent's skills directory:",
               "",
-              "### Local Customisation",
-              "Drop a `SKILL.md` file at the root of your project to override this fallback for project-specific instructions."
+              "```bash",
+              "npx docmd-skills ~/.claude/skills",
+              "```",
+              "",
+              "Replace `~/.claude/skills` with the directory your agent reads skills from: `~/.cursor/skills` (Cursor), `./.skills` (project-local), etc. Run `npx docmd-skills --help` for the full subcommand list. The single install command pulls in the `docmd-skills`, `docmd-dev`, and `docmd-writer` skill modules — see https://github.com/docmd-io/docmd-skills for details.",
+              "",
+              "## Project-local override",
+              "This fallback content covers the general case. For project-specific instructions, create a `SKILL.md` at the root of the docmd project — `docmd mcp`'s `get_skill` tool returns that local file in preference to this fallback."
             ].join('\n');
           }
 
