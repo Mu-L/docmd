@@ -19,7 +19,7 @@ importers:
         version: 4.1.2
       docmd-search:
         specifier: 0.1.0-alpha.1
-        version: 0.1.0-alpha.1(@huggingface/transformers@4.2.0)(onnxruntime-node@1.26.0)
+        version: 0.1.0-alpha.1(@docmd/engine-js@0.8.7)(@docmd/engine-rust@0.8.7)(@huggingface/transformers@4.2.0)(onnxruntime-node@1.26.0)
       esbuild:
         specifier: ^0.28.1
         version: 0.28.1
@@ -56,6 +56,9 @@ importers:
       '@docmd/tui':
         specifier: workspace:*
         version: link:../tui
+      '@docmd/utils':
+        specifier: workspace:*
+        version: link:../utils
     devDependencies:
       '@types/node':
         specifier: ^24.13.2
@@ -337,7 +340,7 @@ importers:
     dependencies:
       docmd-search:
         specifier: '>=0.1.0-alpha.1'
-        version: 0.1.0-alpha.1(@huggingface/transformers@4.2.0)(onnxruntime-node@1.26.0)
+        version: 0.1.0-alpha.1(@docmd/engine-js@0.8.7)(@docmd/engine-rust@0.8.7)(@huggingface/transformers@4.2.0)(onnxruntime-node@1.26.0)
       markdown-it:
         specifier: ^14.2.0
         version: 14.2.0
@@ -463,6 +466,14 @@ packages:
   '@ctrl/tinycolor@4.1.0':
     resolution: {integrity: sha512-WyOx8cJQ+FQus4Mm4uPIZA64gbk3Wxh0so5Lcii0aJifqwoVOlfFtorjLE0Hen4OYyHZMXDWqMmaQemBhgxFRQ==}
     engines: {node: '>=14'}
+
+  '@docmd/engine-js@0.8.7':
+    resolution: {integrity: sha512-YdPTR/Y4PFZtuSmQ0noSG0+SCMN1YXjgP26G5cN6Kd3mLpv71UqKxHsviEFpzgQDzcZL4tuMxcFMOvP5YiopeA==}
+    engines: {node: '>=18'}
+
+  '@docmd/engine-rust@0.8.7':
+    resolution: {integrity: sha512-BgCxmXja3QL/yam0BeJ+pYOFZWbv442nA+uFagGs1BCZuViQQUUTxkCqnfrPUw0mQc19BTIXyI/32MDANbC3hQ==}
+    engines: {node: '>=18'}
 
   '@emnapi/runtime@1.11.1':
     resolution: {integrity: sha512-vgj7R3y3Wgx24IQaGPA/R6YFXLHVMOZ0uVEyIQPaWs+rd1AzfEMXlAC22FYwO1XkKR6NPsq7mUandH8oIRdZFw==}
@@ -1680,6 +1691,12 @@ snapshots:
 
   '@ctrl/tinycolor@4.1.0': {}
 
+  '@docmd/engine-js@0.8.7':
+    optional: true
+
+  '@docmd/engine-rust@0.8.7':
+    optional: true
+
   '@emnapi/runtime@1.11.1':
     dependencies:
       tslib: 2.8.1
@@ -2221,8 +2238,10 @@ snapshots:
   detect-node@2.1.0:
     optional: true
 
-  docmd-search@0.1.0-alpha.1(@huggingface/transformers@4.2.0)(onnxruntime-node@1.26.0):
+  docmd-search@0.1.0-alpha.1(@docmd/engine-js@0.8.7)(@docmd/engine-rust@0.8.7)(@huggingface/transformers@4.2.0)(onnxruntime-node@1.26.0):
     optionalDependencies:
+      '@docmd/engine-js': 0.8.7
+      '@docmd/engine-rust': 0.8.7
       '@huggingface/transformers': 4.2.0
       onnxruntime-node: 1.26.0
 
