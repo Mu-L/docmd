@@ -26,6 +26,7 @@ import nativeFs from 'node:fs';
 import process from 'node:process';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { safePath, asUserPath } from '@docmd/utils';
 import type { PluginDescriptor, PluginHooks, PluginModule, Capability, TemplateHook, TemplateAssetHook } from './types.js';
 
 const require = createRequire(import.meta.url);
@@ -415,7 +416,20 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
 
         // 2. Standard NPM Resolution: if not found locally, use Node's resolution
         if (!loadedFromMonorepo) {
-          const resolvedPath = require.resolve(name, { paths: resolvePaths });
+          let resolvedPath: string;
+          if (name.startsWith('./') || name.startsWith('../') || name.startsWith('/')) {
+            // Phase 1.A: CWE-22/CWE-94 fix (T-S8). Local-path plugins must resolve
+            // inside the project root. Without this, require.resolve(name, { paths })
+            // can search parent directories and load arbitrary plugins.
+            const projectRoot = path.resolve(process.cwd());
+            try {
+              resolvedPath = safePath(projectRoot, asUserPath(name));
+            } catch (_e: any) {
+              throw new Error(`Local plugin path "${name}" escapes project root`);
+            }
+          } else {
+            resolvedPath = require.resolve(name, { paths: resolvePaths });
+          }
           rawModule = await import(pathToFileURL(resolvedPath).href);
         }
       } catch (_e: any) {
