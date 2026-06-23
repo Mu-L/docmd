@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@docmd/tui": "workspace:*",
+    "@docmd/utils": "workspace:*",
     "embed-lite": "^0.1.4",
     "lite-hl": "^0.1.2",
     "lite-matter": "^0.1.1",
