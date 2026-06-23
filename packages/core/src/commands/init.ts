@@ -558,7 +558,7 @@ async function fetchRemoteSkill(): Promise<string | null> {
   return null;
 }
 
-export async function initProject() {
+export async function initProject(opts: { force?: boolean; yes?: boolean; withSkill?: boolean } = {}) {
   const baseDir = process.cwd();
   const packageJsonFile = path.join(baseDir, 'package.json');
   const configFile = path.join(baseDir, 'docmd.config.json');
@@ -619,27 +619,43 @@ export async function initProject() {
   }
 
   // Determine if we should override existing files
-  let shouldOverride = false;
-  if (existingFiles.length > 0) {
+  let shouldOverride = !!opts.force;
+  if (existingFiles.length > 0 && !shouldOverride) {
     TUI.warn('Existing files detected:');
     existingFiles.forEach(file => TUI.item('', file));
 
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
+    // In a non-interactive environment (CI, piped input, Docker without -it,
+    // npx with no TTY), skip the prompt. Default to "no" for safety unless
+    // --yes is passed.
+    const isInteractive = !!process.stdin.isTTY;
+    if (!isInteractive) {
+      if (opts.yes) {
+        shouldOverride = true;
+        TUI.dim('  (non-interactive mode + --yes: overriding existing files)');
+      } else {
+        shouldOverride = false;
+        TUI.dim('  (non-interactive mode: keeping existing files. Pass --force to override.)');
+      }
+    } else {
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+      });
 
-    const answer = await new Promise(resolve => {
-      rl.question(`\n ${TUI.bold('Do you want to override these files?')} (y/N): `, resolve);
-    });
+      const answer = await new Promise(resolve => {
+        rl.question(`\n ${TUI.bold('Do you want to override these files?')} (y/N): `, resolve);
+      });
 
-    rl.close();
+      rl.close();
 
-    shouldOverride = (answer as string).toLowerCase() === 'y';
+      shouldOverride = (answer as string).toLowerCase() === 'y';
+    }
 
     if (!shouldOverride) {
       TUI.step('Maintaining existing files', 'SKIP');
     }
+  } else if (existingFiles.length > 0 && shouldOverride) {
+    TUI.warn(`Overriding ${existingFiles.length} existing file(s) (--force)`);
   }
 
   // Create docs directory if it doesn't exist
@@ -686,9 +702,15 @@ export async function initProject() {
   // Write SKILL.md if it doesn't exist or user confirmed override
   if (!await fs.pathExists(skillFile) || shouldOverride) {
     let skillContent = defaultSkillContent;
-    const remoteContent = await fetchRemoteSkill();
-    if (remoteContent) {
-      skillContent = remoteContent;
+    // Phase 1.D: T-S5 fix. The remote fetch only happens when the user opts in
+    // via --with-skill or DOCMD_FETCH_REMOTE_SKILL=1. Default behaviour is
+    // local-only — no surprise network calls on `docmd init`.
+    const wantRemote = opts.withSkill || process.env.DOCMD_FETCH_REMOTE_SKILL === '1';
+    if (wantRemote) {
+      const remoteContent = await fetchRemoteSkill();
+      if (remoteContent) {
+        skillContent = remoteContent;
+      }
     }
     await fs.writeFile(skillFile, skillContent, 'utf8');
     TUI.step(`${shouldOverride ? 'Updated' : 'Created'} SKILL.md`, 'DONE');

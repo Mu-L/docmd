@@ -44,6 +44,8 @@ const options = {
   version: { type: 'boolean', short: 'v' },
   help: { type: 'boolean', short: 'h' },
   force: { type: 'boolean' },
+  yes: { type: 'boolean', short: 'y' },
+  'with-skill': { type: 'boolean' },
   json: { type: 'boolean' }
 } as const;
 
@@ -102,7 +104,10 @@ if (!command || values.help) {
     ['--build-only', 'Generate dist/ without starting server'],
     ['-V, --verbose', 'Show detailed package manager logs'],
     ['-v, --version', 'Output the version number'],
-    ['-h, --help', 'Display help for command']
+    ['-h, --help', 'Display help for command'],
+    ['--force', 'Overwrite existing files (use with init)'],
+    ['-y, --yes', 'Answer "yes" to all prompts (use with init in CI)'],
+    ['--with-skill', 'Fetch latest SKILL.md from docmd-skills repo (use with init); implies a network call']
   ];
   optsList.forEach(([o, d]) => TUI.item(o, d, TUI.cyan));
   
@@ -144,7 +149,7 @@ if (command !== 'stop' && !values.json) {
 }
 
 if (command === 'init') {
-  initProject();
+  initProject({ force: values.force, yes: values.yes, withSkill: values['with-skill'] });
 } else if (command === 'build') {
   buildSite(opts.config, { isDev: false, offline: opts.offline, verbose: opts.verbose });
 } else if (command === 'dev') {
