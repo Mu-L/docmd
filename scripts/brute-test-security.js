@@ -375,3 +375,96 @@ const cases = [
   console.log('═'.repeat(50) + '\n');
   process.exit(failed > 0 ? 1 : 0);
 })();
+
+// ─── TEST S11: ws-origin-guard unit checks (Phase 1.D, N-S1) ────────────
+console.log('\n🔒 Test S11: ws-origin-guard unit checks (Phase 1.D, N-S1)');
+(async () => {
+  // Dynamically import the compiled helper from @docmd/core.
+  const helperPath = path.resolve(import.meta.dirname, '../packages/core/dist/utils/ws-origin-guard.js');
+  const { createOriginVerify } = await import(helperPath);
+
+  const cases = [
+    { name: 'http://localhost:3000',         expectAllow: true  },
+    { name: 'http://127.0.0.1:3000',         expectAllow: true  },
+    { name: 'http://[::1]:3000',            expectAllow: true  },
+    { name: 'http://localhost:9999',         expectAllow: true  },  // port-agnostic
+    { name: 'http://192.168.1.10:3000',     expectAllow: false },  // LAN IP, not in default allowlist
+    { name: 'http://evil.com',              expectAllow: false },
+    { name: 'http://evil.com:3000',         expectAllow: false },
+    { name: null,                           expectAllow: false },  // no Origin header
+    { name: '',                             expectAllow: false },  // empty Origin
+    { name: 'not a url',                    expectAllow: false }
+  ];
+
+  const guard = createOriginVerify();
+  for (const c of cases) {
+    const result = await new Promise((resolve) => {
+      guard(
+        { origin: c.name || undefined, req: { headers: {} }, secure: false },
+        (allowed, code, message) => resolve({ allowed, code, message })
+      );
+    });
+    const label = c.name === null ? 'null' : (c.name === '' ? '(empty)' : c.name);
+    assert(
+      `origin ${label} -> ${c.expectAllow ? 'allow' : 'reject'}`,
+      result.allowed === c.expectAllow,
+      `got: ${result.allowed} (code=${result.code || 'n/a'})`
+    );
+  }
+
+  // Extra-host allowlist scenario: LAN dev with --host=0.0.0.0
+  const lanGuard = createOriginVerify(['192.168.1.10']);
+  const lanCase = await new Promise((resolve) => {
+    lanGuard(
+      { origin: 'http://192.168.1.10:3000', req: { headers: {} }, secure: false },
+      (allowed) => resolve(allowed)
+    );
+  });
+  assert('LAN allowlist adds 192.168.1.10', lanCase === true);
+
+  const lanReject = await new Promise((resolve) => {
+    lanGuard(
+      { origin: 'http://10.0.0.1:3000', req: { headers: {} }, secure: false },
+      (allowed) => resolve(allowed)
+    );
+  });
+  assert('LAN allowlist still rejects 10.0.0.1', lanReject === false);
+})();
+
+// ─── TEST S12: init does NOT fetch remote SKILL.md by default (Phase 1.D, T-S5) ──
+console.log('\n🔒 Test S12: init defaults to local-only (Phase 1.D, T-S5)');
+(async () => {
+  // Snapshot network calls by intercepting global fetch.
+  const dir = setup('s12-init-no-network');
+  writeFile(dir, 'docmd.config.json', JSON.stringify({ title: 'Init No Net' }));
+
+  const originalFetch = globalThis.fetch;
+  let fetchCalls = 0;
+  globalThis.fetch = (...args) => {
+    fetchCalls++;
+    return originalFetch(...args);
+  };
+
+  try {
+    // Run init in-process via the compiled CLI.
+    // Default mode: no --with-skill, no DOCMD_FETCH_REMOTE_SKILL.
+    // force:true so the override prompt is skipped entirely (it would block
+    // waiting for stdin in this interactive terminal).
+    delete process.env.DOCMD_FETCH_REMOTE_SKILL;
+    const { initProject } = await import(path.resolve(import.meta.dirname, '../packages/core/dist/commands/init.js'));
+    await initProject({ force: true });
+    assert('no fetch call on default init', fetchCalls === 0, `fetchCalls=${fetchCalls}`);
+
+    // Now opt in via env var and verify the fetch IS made.
+    process.env.DOCMD_FETCH_REMOTE_SKILL = '1';
+    fetchCalls = 0;
+    const dir2 = setup('s12-init-with-env');
+    writeFile(dir2, 'docmd.config.json', JSON.stringify({ title: 'Init With Env' }));
+    process.chdir(dir2);
+    await initProject({ force: true });
+    assert('fetch IS called when DOCMD_FETCH_REMOTE_SKILL=1', fetchCalls >= 1, `fetchCalls=${fetchCalls}`);
+  } finally {
+    globalThis.fetch = originalFetch;
+    delete process.env.DOCMD_FETCH_REMOTE_SKILL;
+  }
+})();
