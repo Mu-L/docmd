@@ -390,6 +390,7 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
     try {
       let rawModule: any;
       let needsAutoInstall = false;
+      const isLocalPath = name.startsWith('./') || name.startsWith('../') || name.startsWith('/');
       
       try {
         let loadedFromMonorepo = false;
@@ -417,7 +418,7 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
         // 2. Standard NPM Resolution: if not found locally, use Node's resolution
         if (!loadedFromMonorepo) {
           let resolvedPath: string;
-          if (name.startsWith('./') || name.startsWith('../') || name.startsWith('/')) {
+          if (isLocalPath) {
             // Phase 1.A: CWE-22/CWE-94 fix (T-S8). Local-path plugins must resolve
             // inside the project root. Without this, require.resolve(name, { paths })
             // can search parent directories and load arbitrary plugins.
@@ -427,6 +428,23 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
             } catch (_e: any) {
               throw new Error(`Local plugin path "${name}" escapes project root`);
             }
+            // Resolve directory imports to the package's main field (or index.js).
+            // Node ESM does not support bare directory imports.
+            try {
+              const stat = nativeFs.statSync(resolvedPath);
+              if (stat.isDirectory()) {
+                const pkgPath = path.join(resolvedPath, 'package.json');
+                if (nativeFs.existsSync(pkgPath)) {
+                  const pkg = JSON.parse(nativeFs.readFileSync(pkgPath, 'utf8'));
+                  const main = (pkg.main || 'index.js').replace(/^\.\//, '');
+                  resolvedPath = path.join(resolvedPath, main);
+                } else if (nativeFs.existsSync(path.join(resolvedPath, 'index.js'))) {
+                  resolvedPath = path.join(resolvedPath, 'index.js');
+                }
+              }
+            } catch (_e: any) {
+              throw new Error(`Local plugin directory "${name}" has no resolvable entry point: ${_e.message}`);
+            }
           } else {
             resolvedPath = require.resolve(name, { paths: resolvePaths });
           }
@@ -435,6 +453,11 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
       } catch (_e: any) {
         if (name.startsWith('@docmd/plugin-') || name.startsWith('@docmd/template-')) {
           needsAutoInstall = true;
+        } else if (isLocalPath) {
+          // Phase 1.A: a local-path plugin that fails safePath or import must
+          // be reported with the original safety error, not swallowed into the
+          // generic "Failed to resolve" fallback.
+          throw _e;
         } else {
           // Fallback for non-package plugins or when resolution fails
           try {
