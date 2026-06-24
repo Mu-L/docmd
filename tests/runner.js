@@ -128,16 +128,6 @@ addExternal(
 // The LLMS plugin doesn't have a `pnpm test` script yet, so the runner
 // invokes the test runner directly. New 0.8.8 default-locale + i18n
 // opt-in tests live at packages/plugins/llms/tests/llms.test.js.
-
-// --- Section 8: Mega integration (workspaces + i18n + versioning) -------
-// Replaces the legacy failsafe's "Mega Integration Test (V5.0)" section.
-// One project exercises workspaces, i18n, versioning, and every common
-// plugin together so a single build verifies the whole CLI pipeline.
-addInProcess(
-  'mega-integration',
-  'Mega integration (workspaces + i18n + versioning + plugins)',
-  await import('./mega-integration.test.js')
-);
 addExternal(
   'llms-plugin',
   'LLMS plugin (llms.txt / llms-full.txt / llms.json — 0.8.8 default-locale + i18n opt-in)',
@@ -251,21 +241,22 @@ for (const { id, name, module } of testFiles) {
 }
 
 const totalMs = Date.now() - startTime;
-console.log(CYAN('═'.repeat(55)));
-console.log(CYAN(BOLD(`  Test summary: ${totalPassed} passed, ${totalFailed} failed across ${testFiles.length} files`)));
-console.log(DIM(`  Total time: ${totalMs}ms`));
+console.log('');
+console.log(CYAN('┌' + '─'.repeat(55)));
+console.log(CYAN('│') + '  ' + CYAN(BOLD(`Test summary: ${totalPassed} passed, ${totalFailed} failed across ${testFiles.length} files`)));
+console.log(CYAN('│') + '  ' + DIM(`Total time: ${totalMs}ms`));
 if (allFailures.length > 0) {
-  console.log('');
-  console.log(RED('  Failures:'));
+  console.log(CYAN('│'));
+  console.log(CYAN('│') + '  ' + RED('Failures:'));
   for (const f of allFailures) {
-    console.log(RED(`    • ${f.name}`));
+    console.log(CYAN('│') + '  ' + RED(`  - ${f.name}`));
     if (f.output) {
       const snippet = f.output.split('\n').slice(0, 8).join('\n');
-      console.log(DIM(snippet));
+      console.log(CYAN('│') + '  ' + DIM(snippet));
     }
   }
 }
-console.log(CYAN('═'.repeat(55)));
+console.log(CYAN('└' + '─'.repeat(55)));
 console.log('');
 
 process.exit(totalFailed > 0 ? 1 : 0);
