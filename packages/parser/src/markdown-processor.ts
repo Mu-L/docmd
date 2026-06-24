@@ -17,6 +17,10 @@ import matter from 'lite-matter';
 import { highlight } from 'lite-hl';
 import { resolveHref } from './utils/normalize-href.js';
 import { attrEsc } from '@docmd/utils';
+import {
+  normaliseContainers,
+  type NormaliserWarning
+} from './utils/container-normaliser.js';
 
 // URL schemes that can execute code or exfiltrate data when clicked.
 // Phase 1.B (T-S4 fix, defense in depth): markdown-it 14 already rejects these
@@ -35,6 +39,32 @@ function isDangerousHref(href: string): boolean {
     if (lower.startsWith(prefix)) return true;
   }
   return false;
+}
+
+/**
+ * Phase 2 (F1–F5): emit a normaliser warning to stderr. Output format
+ * matches the legacy `robust-parser-shim` plugin so existing log-parsing
+ * tools (TUI scrapers, CI greps) keep working.
+ */
+function emitNormaliserWarning(w: NormaliserWarning): void {
+  // eslint-disable-next-line no-console
+  console.warn(`[normaliser] ${w.severity.toUpperCase()} ${w.path}:${w.line} — ${w.message}`);
+}
+
+/**
+ * Phase 2 (F1–F5): run the container normaliser on the markdown body before
+ * it is handed to markdown-it (and before any user plugin's `onBeforeParse`
+ * hook so they always see balanced input).
+ *
+ * The function is allocation-only on the input — no module-level state — so
+ * output is deterministic across worker threads.
+ */
+function applyContainerNormaliser(markdownContent: string, env: { filePath?: string }): string {
+  const norm = normaliseContainers(markdownContent, {
+    sourcePath: env && env.filePath ? env.filePath : '<source>',
+    onWarning: emitNormaliserWarning
+  });
+  return norm.source;
 }
 
 // Standard Plugins
@@ -336,6 +366,11 @@ function processContent(rawString, mdInstance, config, env = {}) {
     if (h1Match) frontmatter.title = h1Match[1].trim();
   }
 
+  // Phase 2 (F1–F5): rewrite unbalanced `:::` containers so the existing
+  // depth-tracking block rule in features/common-containers.ts always sees
+  // a matching close.
+  markdownContent = applyContainerNormaliser(markdownContent, env);
+
   const htmlContent = mdInstance.render(markdownContent, env);
   const headings = extractHeadings(htmlContent);
 
@@ -362,6 +397,11 @@ async function processContentAsync(rawString: string, mdInstance: any, config: a
     console.error('Error parsing frontmatter:', e.message);
     return null;
   }
+
+  // Phase 2 (F1–F5): rewrite unbalanced `:::` containers BEFORE user plugins
+  // so they always see balanced input, and BEFORE markdown-it so the
+  // depth-tracking block rule can match every container it sees.
+  markdownContent = applyContainerNormaliser(markdownContent, env);
 
   if (hooks && hooks.onBeforeParse) {
     for (const fn of hooks.onBeforeParse) {
