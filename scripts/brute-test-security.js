@@ -286,11 +286,25 @@ console.log('\n🔒 Test S9: Plugin loader rejects local-path escape (Phase 1.A,
     plugins: { '../evil': {} }  // Tries to escape via ../
   }));
   writeFile(dir, 'docs/index.md', '# Hi\n');
-  const r = build(dir);
-  // The build may succeed (with a plugin error logged) but the title must NOT be overwritten
+  // Phase 3 PR 3.A (F6) made missing plugins a hard build failure rather
+  // than a silent warning. The security property — evil plugin does NOT
+  // execute — holds in BOTH cases:
+  //   - silent skip: build succeeds with original title
+  //   - hard fail:   build exits 1, no HTML written, PWNED title
+  //                  never appears anywhere
+  // Assert the property, not the implementation detail.
+  const r = build(dir, true /* expectFail is OK — security property is what we test */);
   const html = readSite(dir, 'index.html');
-  assert('evil plugin did not execute', html && !html.includes('PWNED-VIA-PATH-ESCAPE'));
-  assert('original title preserved', html && html.includes('Legit Title'));
+  const titleNotOverwritten = !html || !html.includes('PWNED-VIA-PATH-ESCAPE');
+  assert('evil plugin did not execute', titleNotOverwritten);
+  // The title-original assertion holds in BOTH outcomes:
+  //   - silent skip: html exists and contains "Legit Title"
+  //   - hard fail:   html is null, original title is vacuously "preserved"
+  //                              (the build did not complete with the
+  //                              PWNED title; the config title was never
+  //                              overwritten by the plugin's onConfigResolved)
+  const titlePreserved = !html || html.includes('Legit Title');
+  assert('original title preserved (or build failed loudly)', titlePreserved);
 }
 
 // ─── TEST S10: MCP read_doc rejects path traversal (Phase 1.A, S-3) ───────

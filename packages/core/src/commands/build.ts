@@ -17,7 +17,7 @@ import { fileURLToPath } from 'url';
 import nativeFs from 'fs';
 import { fsUtils as fs, WorkerPool } from '@docmd/utils';
 import { loadConfig } from '../utils/config-loader.js';
-import { TUI, loadPlugins } from '@docmd/api';
+import { TUI, loadPlugins, getPluginLoadErrors } from '@docmd/api';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { prepareAssets, prepareTemplateAssets } from '../engine/assets.js';
@@ -70,6 +70,20 @@ export async function buildSite(configPath: string, opts: any = {}) {
     config._workerPool = workerPool;
 
     const hooks = await loadPlugins(config, { resolvePaths: [__dirname] });
+
+    // Phase 3 PR 3.A (F6): a plugin the user listed in `config.plugins` but
+    // which failed to load is a build failure, not a warning. Without this
+    // check, `docmd build` exits 0 even when a plugin is missing — the
+    // site still builds but the user has no way to know a plugin was
+    // dropped unless they read the warning text.
+    const loadErrors = getPluginLoadErrors();
+    if (loadErrors.length > 0) {
+      const lines = loadErrors.map((e) => `${e.plugin}: ${e.message}`);
+      throw new Error(
+        `Build failed: ${loadErrors.length} plugin(s) could not be loaded:\n` +
+        lines.map((l) => `  - ${l}`).join('\n')
+      );
+    }
 
     // Execute onConfigResolved hooks
     for (const fn of hooks.onConfigResolved) {

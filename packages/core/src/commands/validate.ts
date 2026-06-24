@@ -40,7 +40,14 @@ export async function validateProject(options: { json?: boolean } = {}) {
   const errors = validateLinks(docsDir);
 
   if (options.json) {
+    // Phase 3 PR 3.A (M-12): even when JSON output is requested, the
+    // process MUST exit 1 if any errors were found. CI pipelines
+    // (`docmd validate --json | jq .errors | if [ $(. | length) -gt 0 ]; then exit 1`)
+    // rely on the exit code, not the JSON payload, to gate merges.
     console.log(JSON.stringify({ errors }));
+    if (errors.length > 0) {
+      process.exit(1);
+    }
   } else {
     TUI.section('Documentation Validation');
     if (errors.length === 0) {

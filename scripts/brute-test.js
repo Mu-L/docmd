@@ -751,6 +751,76 @@ console.log('\n🏷️ Test 29: Hreflang Tags Consistency');
   assert('no /fr/fr/ in FR guide hreflang', !frGuide?.includes('/fr/fr/'));
 }
 
+// ─── TEST 26: Exit-code contract (Phase 3 PR 3.A — F6, M-12) ───
+console.log('\n🚦 Test 26: Exit-code contract');
+{
+  function exitCodeOf(cmd, cwd) {
+    try {
+      execSync(cmd, { cwd, stdio: 'pipe' });
+      return 0;
+    } catch (e) {
+      return e.status == null ? -1 : e.status;
+    }
+  }
+
+  // F6 — build with an unknown plugin must exit 1 (was 0)
+  {
+    const dir = setup('26-build-unknown-plugin');
+    writeFile(dir, 'docs/index.md', '# Hi\n');
+    writeFile(dir, 'docmd.config.json', JSON.stringify({
+      title: 'F6', src: './docs', out: './site',
+      plugins: { 'nonexistent-plugin-xyz-f6': {} }
+    }));
+    const code = exitCodeOf(`node ${DOCMD} build`, dir);
+    assert('build with unknown plugin exits 1', code === 1);
+  }
+
+  // F6 — migrate with no source must exit 1 (was 0)
+  {
+    const dir = setup('26-migrate-no-source');
+    const code = exitCodeOf(`node ${DOCMD} migrate`, dir);
+    assert('migrate with no source exits 1', code === 1);
+  }
+
+  // F6 — migrate --help must exit 0 (it's a successful no-op help print)
+  {
+    const dir = setup('26-migrate-help');
+    const code = exitCodeOf(`node ${DOCMD} migrate --help`, dir);
+    assert('migrate --help exits 0', code === 0);
+  }
+
+  // F6 — remove of a non-existent plugin must exit 1 (was 0)
+  {
+    const dir = setup('26-remove-nonexistent');
+    const code = exitCodeOf(`node ${DOCMD} remove nonexistent-f6-plugin`, dir);
+    assert('remove nonexistent plugin exits 1', code === 1);
+  }
+
+  // M-12 — validate --json with broken links must exit 1 (was 0)
+  {
+    const dir = setup('26-validate-json-errors');
+    writeFile(dir, 'docs/index.md', '# P1\n\n[bad](/nope/)\n');
+    const code = exitCodeOf(`node ${DOCMD} validate --json`, dir);
+    assert('validate --json with errors exits 1', code === 1);
+  }
+
+  // M-12 — validate --json with NO errors exits 0
+  {
+    const dir = setup('26-validate-json-clean');
+    writeFile(dir, 'docs/index.md', '# P1\n\nAll links fine.\n');
+    const code = exitCodeOf(`node ${DOCMD} validate --json`, dir);
+    assert('validate --json with no errors exits 0', code === 0);
+  }
+
+  // Sanity — build (no error) still exits 0
+  {
+    const dir = setup('26-build-ok');
+    writeFile(dir, 'docs/index.md', '# Hi\n');
+    const code = exitCodeOf(`node ${DOCMD} build`, dir);
+    assert('clean build exits 0', code === 0);
+  }
+}
+
 // ─── SUMMARY ───
 console.log('\n' + '═'.repeat(50));
 console.log(`  ${passed} passed, ${failed} failed out of ${passed + failed} assertions`);
