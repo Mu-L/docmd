@@ -1,0 +1,139 @@
+/**
+ * --------------------------------------------------------------------
+ * docmd : the zero-config documentation engine.
+ *
+ * Shared test helpers — extracted from `scripts/brute-test.js` so the
+ * categorised tests under `tests/` can share a single source of truth
+ * for the project-fixture utilities (setup, writeFile, build,
+ * readSite, exitCodeOf, assert).
+ *
+ * Each test file in `tests/` calls `runTestFile({ name, run })` from
+ * the runner — the runner owns the pass/fail counter, the TUI section
+ * output, and the per-file result aggregation. This file owns ONLY
+ * the stateless helpers.
+ *
+ * Pattern:
+ *   import { setup, writeFile, assert, build, readSite, exitCodeOf,
+ *           runTestFile, DOCMD } from '../shared.js';
+ *
+ *   runTestFile({
+ *     name: 'Exit-code contract',
+ *     emoji: '🚦',
+ *     run: ({ assert, setup, writeFile, exitCodeOf }) => {
+ *       // ... assertions ...
+ *     }
+ *   });
+ * --------------------------------------------------------------------
+ */
+
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+
+export const DOCMD = path.resolve(
+  import.meta.dirname,
+  '..',
+  'packages/core/dist/bin/docmd.js'
+);
+
+export const TEST_ROOT = '/tmp/docmd-brute-tests';
+export const PASS = '✅';
+export const FAIL = '❌';
+
+/**
+ * Create an empty test directory under TEST_ROOT and return its path.
+ * The directory is wiped clean on every call (no test-pollution).
+ */
+export function setup(name) {
+  const dir = path.join(TEST_ROOT, name);
+  fs.rmSync(dir, { recursive: true, force: true });
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+/**
+ * Run `node ${DOCMD} build` in `dir`. Returns `{ ok, output }` where
+ * `ok` is true on exit 0 and `output` is the captured stdout/stderr.
+ * Set `expectFail = true` to invert the meaning of `ok` (the caller
+ * is testing a documented failure path).
+ */
+export function build(dir, expectFail = false) {
+  try {
+    const out = execSync(`node ${DOCMD} build`, {
+      cwd: dir,
+      stdio: 'pipe',
+      encoding: 'utf8'
+    });
+    if (expectFail) return { ok: false, output: out };
+    return { ok: true, output: out };
+  } catch (e) {
+    if (expectFail) return { ok: true, output: e.stderr || e.stdout || '' };
+    return { ok: false, output: e.stderr || e.stdout || '' };
+  }
+}
+
+/**
+ * Run a command in `dir` and return its numeric exit code.
+ * 0 = success, 1+ = documented failure, -1 = killed by signal.
+ */
+export function exitCodeOf(cmd, cwd) {
+  try {
+    execSync(cmd, { cwd, stdio: 'pipe' });
+    return 0;
+  } catch (e) {
+    return e.status == null ? -1 : e.status;
+  }
+}
+
+/**
+ * Write `content` to `<dir>/<filePath>`. Parent directories are
+ * created automatically.
+ */
+export function writeFile(dir, filePath, content) {
+  const full = path.join(dir, filePath);
+  fs.mkdirSync(path.dirname(full), { recursive: true });
+  fs.writeFileSync(full, content);
+}
+
+/**
+ * Read `<dir>/site/<filePath>`. Returns `null` if the file does
+ * not exist (test fixtures use this to assert "build did not
+ * produce output X").
+ */
+export function readSite(dir, filePath) {
+  const full = path.join(dir, 'site', filePath);
+  if (!fs.existsSync(full)) return null;
+  return fs.readFileSync(full, 'utf8');
+}
+
+/**
+ * `true` if `<dir>/site/<filePath>` exists. Convenience wrapper
+ * for the common "did the build produce this asset?" check.
+ */
+export function siteExists(dir, filePath) {
+  return fs.existsSync(path.join(dir, 'site', filePath));
+}
+
+/**
+ * Run a test file's `run` callback inside a tracked TUI section.
+ * The runner reads the per-file results and aggregates them into
+ * the global pass/fail counts.
+ *
+ * @param {object}   opts
+ * @param {string}   opts.name    — section title (e.g. "Exit-code contract")
+ * @param {string}   opts.emoji   — single emoji (e.g. "🚦")
+ * @param {Function} opts.run     — `({ assert }) => void | Promise<void>`
+ *                                 Receives the runner's assert helper so
+ *                                 the test's pass/fail count feeds into
+ *                                 the global counter.
+ */
+export function runTestFile(opts) {
+  if (typeof opts !== 'object' || !opts || typeof opts.run !== 'function') {
+    throw new TypeError('runTestFile({ name, emoji, run }) — run must be a function');
+  }
+  return {
+    name: opts.name,
+    emoji: opts.emoji || '📦',
+    run: opts.run
+  };
+}
