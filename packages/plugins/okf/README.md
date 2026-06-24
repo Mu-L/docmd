@@ -1,0 +1,87 @@
+# @docmd/plugin-okf
+
+Generates an [Open Knowledge Format](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing) (OKF) bundle at build time so your documentation is consumable by AI agents — Gemini, Claude, GPT, Cursor, and any tool that speaks the vendor-neutral OKF spec.
+
+OKF represents organisational knowledge as a directory of markdown files with YAML frontmatter, plus a typed manifest (`okf.yaml`), an interactive graph viewer, and a machine-readable bundle summary. The bundle sits next to your site (e.g. `site/okf/`) so agents can be pointed at it directly.
+
+```js
+// docmd.config.json
+
+{
+  "plugins": {
+    "okf": {
+      // config options, okf is enabled by default
+    }
+  }
+}
+```
+
+Part of the **[docmd](https://github.com/docmd-io/docmd)** documentation engine.
+
+## Output structure
+
+```
+site/okf/
+├── okf.yaml                       # Typed manifest (bundle summary)
+├── index.md                       # Karpathy-style catalog grouped by type
+├── graph.html                     # Interactive force-directed viewer
+├── graph.json                     # Graph data (nodes + edges)
+├── graph.js                       # Viewer runtime (vanilla, no CDN deps)
+├── graph.css                      # Viewer styles (theme-aware)
+├── concepts/
+│   └── <slug>.md                 # One markdown file per page
+└── _meta/
+    ├── bundle.json                # JSON mirror of okf.yaml
+    └── lint-report.txt            # Warnings produced during generation
+```
+
+Each concept file carries the OKF-required `type` field in frontmatter plus the original markdown body verbatim, so an agent can both navigate the manifest and read full pages.
+
+## Options
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `outputDir` | `string` | `'okf'` | Bundle directory, relative to the site output. |
+| `bundleName` | `string` | slugified `config.title` | Name used inside `okf.yaml` and the graph viewer title. |
+| `defaultType` | `string` | `'concept'` | Type assigned to pages with no explicit type. |
+| `typeField` | `string` | `'type'` | Frontmatter field name for OKF type. |
+| `warnOnMissingType` | `boolean` | `true` | Emit a TUI warning for pages that fell back to `defaultType`. |
+| `includeFullMarkdown` | `boolean` | `true` | Copy raw `.md` body into each concept file. |
+| `generateGraphViewer` | `boolean` | `true` | Emit `graph.html` + `graph.js` + `graph.css` + `graph.json`. |
+| `localeStrategy` | `'folders' \| 'mixed'` | `'folders'` | Nest concepts by locale id when i18n is enabled. |
+| `versionStrategy` | `'folders' \| 'mixed' \| 'latest-only'` | `'latest-only'` | Nest concepts by version id when versioning is enabled. |
+| `excludePatterns` | `string[]` | `[]` | Additional glob patterns to skip on top of `frontmatter.noindex` / `frontmatter.okf === false`. |
+
+### Per-page opt-out
+
+Pages can opt out of the OKF bundle in two ways:
+
+```markdown
+---
+noindex: true   # also excludes from sitemap, llms.txt, etc.
+---
+
+---
+okf: false       # only excludes from the OKF bundle
+---
+```
+
+### Type resolution precedence
+
+For every page the plugin picks a type with this precedence:
+
+1. `frontmatter.okf.type` (nested)
+2. `frontmatter.type` (top-level)
+3. `frontmatter.okfType` (legacy)
+4. Path-prefix inference (e.g. `/guides/foo` → `guide`)
+5. `defaultType` (with a warning if `warnOnMissingType`)
+
+The path-prefix map covers `guides/`, `api/`, `reference/`, `concepts/`, `runbooks/`, `datasets/`, `metrics/`, and `tables/`.
+
+## Documentation
+
+See **[docs.docmd.io](https://docs.docmd.io)** for full usage and API reference.
+
+## License
+
+MIT
