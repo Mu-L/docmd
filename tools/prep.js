@@ -62,6 +62,7 @@ function section(label, color) {
 }
 
 function footer(color) {
+    console.log('');  // breathing room before footer
     console.log(`${color}└${'─'.repeat(50)}${C.reset}\n`);
 }
 
