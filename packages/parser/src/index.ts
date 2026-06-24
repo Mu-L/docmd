@@ -30,6 +30,18 @@ export {
 };
 
 export { createDepthTrackingContainer } from './features/index.js';
+export {
+  normaliseContainers,
+  classifyLine,
+  indentOf,
+  SELF_CLOSING_CONTAINER_NAMES
+} from './utils/container-normaliser.js';
+export type {
+  NormaliserWarning,
+  NormaliserWarningSeverity,
+  NormaliserResult,
+  NormaliserOptions
+} from './utils/container-normaliser.js';
 export { findPageNeighbors, findBreadcrumbs } from './utils/navigation-helper.js';
 export { normalizeInternalHref, normalizeNavPaths, normalizeMenubarPaths, resolveHref } from './utils/normalize-href.js';
 
