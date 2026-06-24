@@ -81,12 +81,25 @@ export function validateLinks(docsDir: string): { file: string; line: number; li
             resolvedPath = path.resolve(path.dirname(filePath), linkTarget);
           }
 
+          // Phase 3 PR 3.C (M-1): strip trailing slash before the
+          // `.md` / `.markdown` / `index.*` existence checks. Most
+          // markdown editors add a trailing slash to internal links
+          // (e.g. `[page 2](/page-2/)`), and the previous code did
+          // `fs.existsSync('docs/page-2/.md')` which is always false.
+          // The build itself produces `page-2/index.html` and treats
+          // the trailing-slash and no-slash forms as the same link,
+          // so the validator MUST agree or it false-positives every
+          // valid link.
+          const stripped = resolvedPath.endsWith('/') && resolvedPath.length > 1
+            ? resolvedPath.slice(0, -1)
+            : resolvedPath;
+
           const exists =
-            fs.existsSync(resolvedPath) ||
-            fs.existsSync(resolvedPath + '.md') ||
-            fs.existsSync(resolvedPath + '.markdown') ||
-            fs.existsSync(path.join(resolvedPath, 'index.md')) ||
-            fs.existsSync(path.join(resolvedPath, 'index.markdown'));
+            fs.existsSync(stripped) ||
+            fs.existsSync(stripped + '.md') ||
+            fs.existsSync(stripped + '.markdown') ||
+            fs.existsSync(path.join(stripped, 'index.md')) ||
+            fs.existsSync(path.join(stripped, 'index.markdown'));
 
           if (!exists) {
             errors.push({

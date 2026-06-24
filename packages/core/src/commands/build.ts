@@ -45,12 +45,30 @@ export async function buildSite(configPath: string, opts: any = {}) {
   // ── Multi-Project (Workspace) Detection ──────────────────────────
   // If we're NOT already inside a workspace build (no env var set),
   // check if the root config has workspace settings.
+  //
+  // Phase 3 PR 3.C (F8): this block is wrapped in a try/catch so that
+  // workspace validation errors (duplicate prefix, missing source
+  // directory, no root project) are surfaced via `TUI.error` and exit
+  // 1, rather than bubbling up as a raw JS stack trace with exit 0
+  // (the `buildWorkspace` call itself throws plain `Error` objects
+  // that nothing else catches).
   if (!process.env.DOCMD_PROJECT_OUT) {
-    const { detectWorkspace, buildWorkspace } = await import('../engine/workspace.js');
-    const workspaceConfig = await detectWorkspace(configPath);
-    if (workspaceConfig) {
-      await buildWorkspace(workspaceConfig, options);
-      return;
+    try {
+      const { detectWorkspace, buildWorkspace } = await import('../engine/workspace.js');
+      const workspaceConfig = await detectWorkspace(configPath);
+      if (workspaceConfig) {
+        await buildWorkspace(workspaceConfig, options);
+        return;
+      }
+    } catch (wsErr: any) {
+      if (!options.isDev && !options.quiet) {
+        TUI.error('Workspace validation failed', wsErr.message || String(wsErr));
+        if (process.env.npm_lifecycle_event === 'test' || process.env.CI) {
+          console.error(wsErr.stack);
+        }
+        process.exit(1);
+      }
+      throw wsErr;
     }
   }
 
