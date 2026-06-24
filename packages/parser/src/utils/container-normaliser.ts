@@ -40,6 +40,33 @@
  *
  * Output is deterministic: the function is a pure function of its input.
  * Two worker threads given the same source produce byte-identical output.
+ *
+ * ─── DETERMINISM AUDIT ─────────────────────────────────────────────────
+ * Phase 2 (worker-shared-state fix). This module deliberately does NOT
+ * use any of the following non-deterministic primitives. Adding any of
+ * them is a regression and must be flagged in code review.
+ *
+ *   ✗ `Date.now()` / `new Date()`           — wall-clock time
+ *   ✗ `Math.random()` / `crypto.randomUUID` — entropy source
+ *   ✗ module-level `let` / `var`            — mutable shared state
+ *   ✗ `console.log` from inside `normaliseContainers` (use the
+ *     `onWarning` callback instead — `console.log` does not affect
+ *     output but `DOCMD_ROBUST_DEBUG=1` enables it for ad-hoc tracing)
+ *   ✗ reading from `process.env`            — env may differ per worker
+ *                                             (use `options` instead)
+ *
+ * The only module-level binding is `SELF_CLOSING_CONTAINER_NAMES`, a
+ * frozen `ReadonlySet<string>` that is constructed once at module load
+ * and never mutated. Safe to share across workers.
+ *
+ * The empirical guarantee lives in three places:
+ *   1. `packages/parser/test/container-normaliser.test.js` — replay
+ *      determinism, 100-way concurrency, and cross-worker
+ *      `node:worker_threads` determinism.
+ *   2. `packages/core/src/engine/worker-parser.ts` boot-time self-test
+ *      (`verifyDeterminismAtBoot`).
+ *   3. The manual end-to-end check at the bottom of this file's docstring.
+ * ──────────────────────────────────────────────────────────────────────
  */
 
 /**
