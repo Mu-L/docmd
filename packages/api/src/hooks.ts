@@ -142,8 +142,20 @@ function safeCall<T>(hookName: string, pluginName: string, fn: (...args: any[]) 
 
 const pluginErrors: { plugin: string; hook: string; message: string; filePath?: string }[] = [];
 
+// Phase 3 PR 3.A (F6): separate tracker for load-time plugin failures (the
+// "unknown plugin" case from test-report §F6). RUNTIME hook errors go in
+// `pluginErrors`; LOAD failures (could not resolve / import) go here.
+// The build / dev commands check this via `getPluginLoadErrors()` and
+// exit 1 if any are present, so a missing plugin is a hard build failure
+// rather than a silent warning.
+const pluginLoadErrors: { plugin: string; message: string }[] = [];
+
 export function getPluginErrors() {
   return pluginErrors;
+}
+
+export function getPluginLoadErrors() {
+  return pluginLoadErrors;
 }
 
 // Track which plugin warnings have already been printed to avoid repeating them on
@@ -334,6 +346,7 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
   hooks.templates = [];
   hooks.templateAssets = [];
   pluginErrors.length = 0;
+  pluginLoadErrors.length = 0;
 
   // 2. Initialize Plugin Map (Name -> Options)
   const pluginMap = new Map<string, any>();
@@ -498,6 +511,9 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
       }
     } catch (e: any) {
       warnOnce(`load:${name}`, TUI.yellow(`Could not load plugin: ${name} (missing or misconfigured)`) + TUI.dim(`\n   > ${e.message}`));
+      // Phase 3 PR 3.A (F6): track load failures so the build can fail
+      // loudly instead of silently completing with a missing plugin.
+      pluginLoadErrors.push({ plugin: name, message: e.message });
     }
   }
 

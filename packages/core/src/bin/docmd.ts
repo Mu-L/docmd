@@ -183,7 +183,8 @@ if (command === 'init') {
   }
 
   const mv = migrateParsed.values;
-  if (mv.help || (!mv.docusaurus && !mv.mkdocs && !mv.vitepress && !mv.starlight && !mv.upgrade)) {
+  if (mv.help) {
+    // `--help` is a successful no-op — print help and exit 0.
     console.log(`\nUsage: docmd migrate [options]\n`);
     console.log(`Sources:`);
     console.log(`  --docusaurus    Migrate from Docusaurus`);
@@ -192,6 +193,20 @@ if (command === 'init') {
     console.log(`  --starlight     Migrate from Astro Starlight`);
     console.log(`  --upgrade       Upgrade legacy docmd configuration to modern schema`);
     process.exit(0);
+  }
+  if (!mv.docusaurus && !mv.mkdocs && !mv.vitepress && !mv.starlight && !mv.upgrade) {
+    // Phase 3 PR 3.A (F6): `docmd migrate` with no source is a usage error
+    // — the user forgot to tell us what to migrate from. Print the same
+    // help as `--help` but exit 1 so CI pipelines gate on it.
+    console.log(`\nMissing configuration: please specify a migration source.\n`);
+    console.log(`Usage: docmd migrate [options]\n`);
+    console.log(`Sources:`);
+    console.log(`  --docusaurus    Migrate from Docusaurus`);
+    console.log(`  --mkdocs        Migrate from MkDocs`);
+    console.log(`  --vitepress     Migrate from VitePress`);
+    console.log(`  --starlight     Migrate from Astro Starlight`);
+    console.log(`  --upgrade       Upgrade legacy docmd configuration to modern schema`);
+    process.exit(1);
   }
 
   migrateProject({ 
