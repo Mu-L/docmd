@@ -172,8 +172,17 @@ function runDockerCheck() {
 
 // ── Main pipeline ────────────────────────────────────────────────────
 
-// Header (banner comes from tools/status.js start:reset)
-run('node tools/status.js start:reset', false);
+// Header — banner + "Maintenance Pipeline" subtitle. Inlined here
+// (rather than calling `node tools/status.js start:reset`) because
+// that helper opens a section frame which we don't want prep.js
+// to inherit. prep.js owns its own section boundaries.
+const LOGO = '\n'
+    + '    _                 _ \n'
+    + '  _| |___ ___ _____ _| |\n'
+    + ' | . | . |  _|     | . |\n'
+    + ' |___|___|___|_|_|_|___|\n';
+console.log(`${C.blue}${LOGO}${C.reset}`);
+console.log(`${C.dim} Monorepo Maintenance Pipeline ${C.reset}\n`);
 
 // Section 1: Setup
 section('Setup', C.blue);
@@ -197,7 +206,6 @@ section('Setup', C.blue);
     run('pnpm -s clean');
     finishStep(s);
 }
-run('node tools/status.js reset', false);
 footer(C.blue);
 
 // Section 2: Lint
