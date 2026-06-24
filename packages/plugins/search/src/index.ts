@@ -713,7 +713,18 @@ export function generateScripts(config: any, options: any) {
   const isEnabled = config.optionsMenu ? config.optionsMenu.components.search !== false : config.search !== false;
   if (!isEnabled) return {};
 
-  const isSemantic = (options || {}).semantic === true;
+  const semanticRequested = (options || {}).semantic === true;
+  // Only emit `data-semantic="true"` when the full semantic stack is
+  // usable — docmd-search resolvable AND its peer deps (the embedding
+  // model + ONNX runtime) resolvable. The indexing step (`onPostBuild`)
+  // silently falls back to keyword when either is missing; if we set
+  // the attribute unconditionally, the browser tries to load a
+  // non-existent `.docmd-search/` index and surfaces "Failed to load
+  // search index." even though keyword search would work fine.
+  const searchResolvePaths = [process.cwd(), path.join(process.cwd(), 'node_modules')];
+  const isSemantic = semanticRequested
+    && resolveDocmdSearch() !== null
+    && findMissingPeerDep(searchResolvePaths) === null;
   const showConfidence = (options || {}).showConfidence === true;
   // showFilters defaults to true; set false to hide the version filter bar
   const showFilters = (options || {}).showFilters !== false;
