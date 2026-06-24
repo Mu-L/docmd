@@ -128,6 +128,16 @@ addExternal(
 // The LLMS plugin doesn't have a `pnpm test` script yet, so the runner
 // invokes the test runner directly. New 0.8.8 default-locale + i18n
 // opt-in tests live at packages/plugins/llms/tests/llms.test.js.
+
+// --- Section 8: Mega integration (workspaces + i18n + versioning) -------
+// Replaces the legacy failsafe's "Mega Integration Test (V5.0)" section.
+// One project exercises workspaces, i18n, versioning, and every common
+// plugin together so a single build verifies the whole CLI pipeline.
+addInProcess(
+  'mega-integration',
+  'Mega integration (workspaces + i18n + versioning + plugins)',
+  await import('./mega-integration.test.js')
+);
 addExternal(
   'llms-plugin',
   'LLMS plugin (llms.txt / llms-full.txt / llms.json — 0.8.8 default-locale + i18n opt-in)',

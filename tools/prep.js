@@ -22,12 +22,11 @@
  *                    against (clean wipes dist, this rebuilds it)
  *   4. Docker      - optional Docker availability check
  *   5. Tests       - categorised test suite (tests/runner.js,
- *                    342 assertions covering Phase 1 security
+ *                    365+ assertions covering Phase 1 security
  *                    CVEs + Phase 2 container parser + Phase 3
- *                    CLI contracts + OKF/LLMS plugin tests) and
- *                    the comprehensive integration test
- *                    (tests/failsafe.test.mjs, type-check /
- *                    version / engine / mega integration)
+ *                    CLI contracts + OKF/LLMS plugin tests +
+ *                    Mega Integration Test for workspaces,
+ *                    i18n, versioning, and plugin combinations)
  *   6. Link        - optional global npm link
  *
  * Each step inside a section shows [WAIT] (dim) when it starts
@@ -245,17 +244,13 @@ if (args.includes('--skip-tests')) {
 } else {
     const only = args.find((a) => a.startsWith('--only='));
     const runnerArgs = only ? ' ' + only : '';
-    {
-        const s = startStep('Categorised test suite (tests/runner.js)');
-        run('node tests/runner.js' + runnerArgs, false);
-        finishStep(s);
-    }
-    {
-        const s = startStep('Failsafe integration test (tests/failsafe.test.mjs)');
-        const failsafeArgs = args.filter((a) => a !== '--link' && !a.startsWith('--only=')).join(' ');
-        run('node tests/failsafe.test.mjs ' + failsafeArgs, false);
-        finishStep(s);
-    }
+    // The categorised runner now includes the Mega Integration Test
+    // (workspaces + i18n + versioning + plugins), which used to live
+    // in `tests/failsafe.test.mjs`. The old failsafe was removed because
+    // it duplicated Setup / Build work that `pnpm prep` already does.
+    const s = startStep('Categorised test suite (tests/runner.js)');
+    run('node tests/runner.js' + runnerArgs, false);
+    finishStep(s);
 }
 footer(C.blue);
 
