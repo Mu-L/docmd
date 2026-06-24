@@ -124,6 +124,17 @@ addExternal(
   ['--filter', '@docmd/plugin-okf', 'test']
 );
 
+// --- Section 7: LLMS plugin (0.8.8) ---------------------------------------
+// The LLMS plugin doesn't have a `pnpm test` script yet, so the runner
+// invokes the test runner directly. New 0.8.8 default-locale + i18n
+// opt-in tests live at packages/plugins/llms/tests/llms.test.js.
+addExternal(
+  'llms-plugin',
+  'LLMS plugin (llms.txt / llms-full.txt / llms.json — 0.8.8 default-locale + i18n opt-in)',
+  'node',
+  ['--test', 'packages/plugins/llms/tests/llms.test.js']
+);
+
 // ---------------------------------------------------------------------------
 // Runner — execute each entry, print TUI section, aggregate results.
 // ---------------------------------------------------------------------------

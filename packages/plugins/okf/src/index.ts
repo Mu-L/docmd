@@ -180,7 +180,8 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
   const warnOnMissingType = opts.warnOnMissingType !== false;
   const includeFullMarkdown = opts.includeFullMarkdown !== false;
   const generateGraphViewer = opts.generateGraphViewer !== false;
-  const localeStrategy = opts.localeStrategy || 'folders';
+
+  const localeStrategy = opts.localeStrategy || 'default-only';
   const versionStrategy = opts.versionStrategy || 'latest-only';
   const excludePatterns: string[] = Array.isArray(opts.excludePatterns) ? opts.excludePatterns : [];
 
@@ -210,6 +211,12 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
     const pathname = outputPathToPathname(p.outputPath);
     if (matchesPattern(pathname, excludePatterns)) return false;
     if (matchesPattern(p.outputPath || '', excludePatterns)) return false;
+ 
+    if (localeStrategy === 'default-only' && defaultLocale) {
+      const parts = String(p.outputPath || '').split('/').filter(Boolean);
+      const pageLoc = (localeIds.length && parts.length && localeIds.includes(parts[0])) ? parts[0] : defaultLocale;
+      if (pageLoc !== defaultLocale) return false;
+    }
     return true;
   });
 
@@ -250,7 +257,11 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
     const locale = pageLocale(p);
     const version = pageVersion(p);
     const subParts: string[] = [];
-    if (localeStrategy === 'folders' && locale && localeIds.length > 1) subParts.push(locale);
+    // 0.8.8: nest non-default locales under `<locale>/` so the default
+    // locale's files stay at the bundle root (no breaking change for
+    // existing consumers). Only the `folders` strategy is affected;
+    // `default-only` (the new default) writes everything at the root.
+    if (localeStrategy === 'folders' && locale && locale !== defaultLocale && localeIds.length > 1) subParts.push(locale);
     if (versionStrategy === 'folders' && version && versionIds.length > 1) subParts.push(version);
     const subRel = subParts.join('/');
 
