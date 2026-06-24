@@ -151,7 +151,44 @@ links.forEach(function(l){if(typeof l.source==='string')l.source=idx[l.source];i
 nodes.forEach(function(n){n.x=Math.random()*W;n.y=Math.random()*H;n.vx=0;n.vy=0;});
 for(var s=0;s<200;s++){for(var i=0;i<nodes.length;i++){var a=nodes[i];for(var j=0;j<nodes.length;j++){if(i===j)continue;var b=nodes[j],dx=a.x-b.x,dy=a.y-b.y,d2=dx*dx+dy*dy||1;a.vx+=dx/Math.sqrt(d2)*1800/d2*0.01;a.vy+=dy/Math.sqrt(d2)*1800/d2*0.01;}}for(var k=0;k<links.length;k++){var l=links[k],so=l.source,ta=l.target;if(typeof so!=='object'||typeof ta!=='object')continue;var dx2=ta.x-so.x,dy2=ta.y-so.y,d=Math.sqrt(dx2*dx2+dy2*dy2)||1,f=(d-120)*0.05*0.05;so.vx+=dx2/d*f;so.vy+=dy2/d*f;ta.vx-=dx2/d*f;ta.vy-=dy2/d*f;}for(var m=0;m<nodes.length;m++){var nn=nodes[m];nn.vx*=0.82;nn.vy*=0.82;nn.vx+=(W/2-nn.x)*0.001;nn.vy+=(H/2-nn.y)*0.001;nn.x+=nn.vx;nn.y+=nn.vy;if(nn.x<20)nn.x=20;if(nn.x>W-20)nn.x=W-20;if(nn.y<20)nn.y=20;if(nn.y>H-20)nn.y=H-20;}}
 var gL=document.createElementNS(NS,'g');links.forEach(function(l){if(typeof l.source!=='object'||typeof l.target!=='object')return;var ln=document.createElementNS(NS,'line');ln.setAttribute('class','link');ln.setAttribute('x1',l.source.x);ln.setAttribute('y1',l.source.y);ln.setAttribute('x2',l.target.x);ln.setAttribute('y2',l.target.y);gL.appendChild(ln);});svg.appendChild(gL);
-var gN=document.createElementNS(NS,'g');nodes.forEach(function(n){var c=document.createElementNS(NS,'circle');c.setAttribute('class','node');c.setAttribute('cx',n.x);c.setAttribute('cy',n.y);c.setAttribute('r',8);c.setAttribute('fill',cmap[n.type]||'#6b7280');c.addEventListener('click',function(){panel.innerHTML='<h2>'+(n.title||n.id)+'</h2><span class="okf-type">'+(n.type||'concept')+'</span><p>'+(n.description||'<span class=okf-empty>No description.</span>')+'</p><a href="concepts/'+n.id+'.md" target=_blank>Open in OKF bundle</a> <a href="'+(n.source||'#')+'" target=_blank>Open source page</a>';});gN.appendChild(c);var t=document.createElementNS(NS,'text');t.setAttribute('class','label');t.setAttribute('x',n.x);t.setAttribute('y',n.y-12);t.textContent=n.title||n.id;gN.appendChild(t);});svg.appendChild(gN);
+var gN=document.createElementNS(NS,'g');nodes.forEach(function(n){var c=document.createElementNS(NS,'circle');c.setAttribute('class','node');c.setAttribute('cx',n.x);c.setAttribute('cy',n.y);c.setAttribute('r',8);c.setAttribute('fill',cmap[n.type]||'#6b7280');c.addEventListener('click',function(){showDetail(panel,n);});gN.appendChild(c);var t=document.createElementNS(NS,'text');t.setAttribute('class','label');t.setAttribute('x',n.x);t.setAttribute('y',n.y-12);t.textContent=n.title||n.id;gN.appendChild(t);});svg.appendChild(gN);
+
+// Render a node's details into the side panel without using innerHTML.
+// All user-supplied strings (title, type, description, source) flow into
+// DOM nodes via textContent, so a malicious OKF bundle cannot inject HTML
+// or scripts. The two hrefs use a scheme allow-list and encodeURIComponent
+// to neutralise javascript:, data:, and path-traversal payloads.
+function showDetail(panel,n){
+  while(panel.firstChild) panel.removeChild(panel.firstChild);
+  var h=document.createElement('h2');h.textContent=n.title||n.id;panel.appendChild(h);
+  var sp=document.createElement('span');sp.className='okf-type';sp.textContent=n.type||'concept';panel.appendChild(sp);
+  var p=document.createElement('p');
+  if(n.description){p.textContent=n.description;}
+  else{var em=document.createElement('span');em.className='okf-empty';em.textContent='No description.';p.appendChild(em);}
+  panel.appendChild(p);
+  var a1=document.createElement('a');
+  a1.href='concepts/'+encodeURIComponent(n.id)+'.md';
+  a1.target='_blank';a1.rel='noopener noreferrer';
+  a1.textContent='Open in OKF bundle';
+  panel.appendChild(a1);
+  panel.appendChild(document.createTextNode(' '));
+  var a2=document.createElement('a');
+  a2.href=safeHref(n.source);
+  a2.target='_blank';a2.rel='noopener noreferrer';
+  a2.textContent='Open source page';
+  panel.appendChild(a2);
+}
+
+// Allow only the URL schemes that appear in the OKF spec examples
+// (http/https, repo://, dashboard://, docs://, wp-admin:, mailto:, tel:)
+// plus site-relative paths. Anything else collapses to "#" so javascript:
+// and data: URLs cannot execute.
+function safeHref(u){
+  if(!u) return '#';
+  if(/^(?:https?|mailto|tel|repo|dashboard|docs|wp-admin):/i.test(u)) return u;
+  if(u.charAt(0)==='/') return u;
+  return '#';
+}
 })();`;
 
 function graphHtml(name: string, count: number): string {
