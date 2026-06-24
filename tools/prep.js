@@ -1,14 +1,39 @@
 /**
  * --------------------------------------------------------------------
- * docmd : the minimalist, zero-config documentation generator.
+ * docmd : the zero-config documentation generator.
  *
  * @package     @docmd/core (and ecosystem)
  * @website     https://docmd.io
  * @repository  https://github.com/docmd-io/docmd
  * @license     MIT
- * @copyright   Copyright (c) 2025-present docmd.io
+ * @copyright   (c) 2025-present docmd.io
  *
  * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ *
+ * Release preparation pipeline. Runs the full dev suite in five
+ * clear category sections:
+ *
+ *   1. Setup       - stop running servers, wipe global binaries,
+ *                    clean the monorepo
+ *   2. Lint        - eslint over the entire repo, summarised
+ *   3. Docker      - optional Docker availability check
+ *   4. Tests       - categorised test suite (tests/runner.js,
+ *                    342 assertions covering Phase 1 security
+ *                    CVEs + Phase 2 container parser + Phase 3
+ *                    CLI contracts + OKF/LLMS plugin tests) and
+ *                    the comprehensive integration test
+ *                    (tools/failsafe.test.mjs, type-check /
+ *                    version / engine / mega integration)
+ *   5. Link        - optional global npm link
+ *
+ * Each step inside a section shows [WAIT] (dim) when it starts
+ * and [DONE] (green) when it finishes. No emojis.
+ *
+ * Run:  pnpm prep
+ *       pnpm prep --link            (skip tests, install globally)
+ *       pnpm prep --skip-tests     (skip both test suites)
+ *       pnpm prep --only=exit-codes (run a single test section)
  * --------------------------------------------------------------------
  */
 
@@ -17,7 +42,56 @@ const fs = require('fs');
 
 const args = process.argv.slice(2);
 
-function run(cmd, silent = true) {
+// ── TUI design tokens (no emojis, only [WAIT] / [DONE] / [ FAIL ]) ──
+const C = {
+    reset:  '\x1b[0m',
+    bold:   '\x1b[1m',
+    dim:    '\x1b[2m',
+    blue:   '\x1b[34m',
+    cyan:   '\x1b[36m',
+    green:  '\x1b[32m',
+    yellow: '\x1b[33m',
+    red:    '\x1b[31m'
+};
+
+// ── TUI primitives ────────────────────────────────────────────────────
+function section(label, color) {
+    console.log(`\n${color}${C.bold}┌─ ${label}${C.reset}`);
+}
+
+function footer(color) {
+    console.log(`${color}└${'─'.repeat(50)}${C.reset}\n`);
+}
+
+function startStep(label) {
+    // Print the [WAIT] sign and return a handle to update on completion.
+    const bar = `${C.cyan}│${C.reset}`;
+    const text = `${C.dim}${label}${C.reset}`;
+    process.stdout.write(`${bar}  ${text.padEnd(52)}${C.dim}[WAIT]${C.reset}\n`);
+    return { label, startMs: Date.now(), bar, text };
+}
+
+function finishStep(s, status, summary) {
+    // Rewrite the same line with [DONE] / [ WARN ] / [ FAIL ] + elapsed time.
+    // Default status is 'done' — the common case.
+    const effectiveStatus = status || 'done';
+    const ms = Date.now() - s.startMs;
+    const t = ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
+    const tag = effectiveStatus === 'done'
+        ? `${C.green}[ DONE ]${C.reset}`
+        : effectiveStatus === 'warn'
+            ? `${C.yellow}[ WARN ]${C.reset}`
+            : `${C.red}[ FAIL ]${C.reset}`;
+    const sumTxt = summary ? `  ${C.dim}${summary}${C.reset}` : '';
+    // Move cursor up 1 line, clear it, rewrite.
+    process.stdout.write('\x1b[1A\x1b[2K');
+    process.stdout.write(
+        `${s.bar}  ${s.text.padEnd(52)}${tag} ${C.dim}${t}${C.reset}${sumTxt}\n`
+    );
+}
+
+function run(cmd, silent) {
+    if (silent === undefined) silent = true;
     try {
         execSync(cmd, { stdio: silent ? 'ignore' : 'inherit' });
     } catch (e) {
@@ -26,19 +100,16 @@ function run(cmd, silent = true) {
     }
 }
 
-/**
- * Robustly removes any global docmd binaries from the system.
- * Loops until 'which' returns nothing.
- */
+// ── Step helpers ──────────────────────────────────────────────────────
 function deepWipe() {
     const bins = ['docmd', 'docmd-live'];
     for (const bin of bins) {
         try {
-            const paths = execSync(`which -a ${bin}`, { stdio: 'pipe' }).toString().split('\n').filter(Boolean);
+            const paths = execSync(`which -a ${bin}`, { stdio: 'pipe' })
+                .toString().split('\n').filter(Boolean);
             for (const p of paths) {
-                try {
-                    if (fs.existsSync(p)) fs.unlinkSync(p);
-                } catch {
+                try { if (fs.existsSync(p)) fs.unlinkSync(p); }
+                catch {
                     try { execSync(`rm -f "${p}"`, { stdio: 'ignore' }); } catch { /* ignore */ }
                 }
             }
@@ -46,19 +117,8 @@ function deepWipe() {
     }
 }
 
-// 1. Initial Reporting
-run('node tools/status.js start:reset', false);
-
-// 1a. Lint gate — capture eslint JSON, summarise in TUI style, fail
-// fast on errors. Output is silent; developer runs `pnpm lint`
-// directly to see the full file-by-file breakdown.
 function runLint() {
-    const cyan   = (t) => `\x1b[36m${t}\x1b[0m`;
-    const green  = (t) => `\x1b[32m${t}\x1b[0m`;
-    const yellow = (t) => `\x1b[33m${t}\x1b[0m`;
-    const red    = (t) => `\x1b[31m${t}\x1b[0m`;
-    const dim    = (t) => `\x1b[2m${t}\x1b[0m`;
-
+    const s = startStep('Running eslint over monorepo');
     let stdout = '';
     try {
         stdout = execSync('pnpm -s exec eslint . --format json', {
@@ -66,7 +126,7 @@ function runLint() {
             maxBuffer: 64 * 1024 * 1024
         }).toString();
     } catch (e) {
-        // eslint exits non-zero on errors — the JSON is still on stdout
+        // eslint exits non-zero on errors — JSON is still on stdout
         if (e.stdout) stdout = e.stdout.toString();
     }
 
@@ -79,93 +139,112 @@ function runLint() {
                 else if (msg.severity === 1) warnings++;
             }
         }
-    } catch (_) {
-        // malformed output — leave counts at 0
-    }
+    } catch (_) { /* malformed output */ }
 
-    console.log(`\n${cyan('┌─ Lint')}`);
-    if (errors > 0) {
-        console.log(`${cyan('│')}  ${red('[ FAIL ]')} ${red(`${errors} error${errors === 1 ? '' : 's'}`)}`);
-        console.log(`${cyan('│')}`);
-        console.log(`${cyan('│')}  ${dim('Run `pnpm lint` to see the full output.')}`);
-    } else {
-        console.log(`${cyan('│')}  ${green('[ PASS ]')} ${green('0 errors')}`);
-    }
-    if (warnings > 0) {
-        console.log(`${cyan('│')}  ${yellow('[ WARN ]')} ${yellow(`${warnings} warning${warnings === 1 ? '' : 's'}`)}`);
-    }
-    console.log(`${cyan('└──────────────────────────────────────────────────────────')}\n`);
-
+    const status = errors > 0 ? 'fail' : (warnings > 0 ? 'warn' : 'done');
+    const sum = errors + ' error' + (errors === 1 ? '' : 's') + ', '
+              + warnings + ' warning' + (warnings === 1 ? '' : 's');
+    finishStep(s, status, sum);
     if (errors > 0) process.exit(1);
 }
-runLint();
 
-// 2. Stop any running servers
-process.stdout.write(`\x1b[36m│\x1b[0m  \x1b[2mStopping active servers\x1b[0m`.padEnd(45));
-run('pnpm -s stop');
-// process.stdout.write(` \x1b[32m[ DONE ]\x1b[0m\n`);
-process.stdout.write(`\n`);
+function runDockerCheck() {
+    const s = startStep('Checking Docker availability');
+    let hasDocker = '';
+    try {
+        hasDocker = execSync('which docker 2>/dev/null', {
+            encoding: 'utf8',
+            stdio: ['pipe', 'pipe', 'pipe']
+        }).trim();
+    } catch { /* not installed */ }
 
-// 3. Deep Wipe (Unlink)
-process.stdout.write(`\x1b[36m│\x1b[0m  \x1b[2mWiping global binaries\x1b[0m`.padEnd(45));
-const pkgs = ['@docmd/core', '@docmd/monorepo', 'docmd', 'docmd-live'];
-for (const pkg of pkgs) {
-    try { execSync(`npm uninstall -g ${pkg} -s`, { stdio: 'ignore' }); } catch { /* ignore */ }
-    try { execSync(`pnpm uninstall -g ${pkg} -s`, { stdio: 'ignore' }); } catch { /* ignore */ }
-}
-deepWipe();
-// process.stdout.write(` \x1b[32m[ DONE ]\x1b[0m\n`);
-process.stdout.write(`\n`);
-
-// 4. Clean
-process.stdout.write(`\x1b[36m│\x1b[0m  \x1b[2mCleaning monorepo\x1b[0m`.padEnd(45));
-run('pnpm -s clean');
-// process.stdout.write(` \x1b[32m[ DONE ]\x1b[0m\n`);
-process.stdout.write(`\n`);
-
-// 5. Final Reset Report
-run('node tools/status.js reset', false);
-
-// 6. Verify Docker setup (optional)
-try {
-    const hasDocker = require('child_process').execSync('which docker 2>/dev/null', { 
-        encoding: 'utf8', 
-        stdio: ['pipe', 'pipe', 'pipe'] 
-    }).trim();
-    
-    if (hasDocker || process.env.DOCKER_HOST) {
-        process.stdout.write(`\x1b[36m│\x1b[0m  \x1b[2mChecking Docker setup\x1b[0m`.padEnd(45));
-        try {
-            require('child_process').execSync('docker --version', { stdio: 'ignore' });
-            process.stdout.write(` \x1b[32m[ AVAILABLE ]\x1b[0m\n`);
-        } catch {
-            process.stdout.write(` \x1b[33m[ NOT INSTALLED ]\x1b[0m\n`);
-        }
+    if (!hasDocker && !process.env.DOCKER_HOST) {
+        finishStep(s, 'warn', 'not installed — skipped');
+        return;
     }
-} catch {
-    // Docker not installed, skip check silently
+    try {
+        const version = execSync('docker --version', { encoding: 'utf8', stdio: ['pipe', 'pipe'] }).trim();
+        finishStep(s, 'done', version.replace('Docker version ', 'Docker '));
+    } catch {
+        finishStep(s, 'warn', 'docker binary not functional');
+    }
 }
 
-// 7. Verify (this builds and optionally links)
-// Pass --skip-header to avoid duplicate logo
-run(`node tools/verify.js ${args.join(' ')} --skip-header`, false);
+// ── Main pipeline ────────────────────────────────────────────────────
 
-// 8. Categorised test suite
-//    Runs the new `tests/runner.js` which orchestrates:
-//      - CLI contracts (exit-codes, plugin-add-remove, validate-workspace)
-//      - Container normaliser (parser unit tests)
-//      - Utils (path + html-escape)
-//      - Security (Phase 1 CVE suite — 88 assertions)
-//      - Feature integration (legacy brute-test.js, minus Phase 3 dupes)
-//      - OKF plugin
-//    Forward any `--only=<id>` filter so individual sections can be
-//    re-run in isolation during development. Forward `--skip-tests`
-//    to skip this step entirely (e.g. for the `--link` workflow
-//    where the user just wants the global install).
+// Header (banner comes from tools/status.js start:reset)
+run('node tools/status.js start:reset', false);
+
+// Section 1: Setup
+section('Setup', C.blue);
+{
+    const s = startStep('Stopping active servers');
+    run('pnpm -s stop');
+    finishStep(s);
+}
+{
+    const s = startStep('Wiping global docmd binaries');
+    const pkgs = ['@docmd/core', '@docmd/monorepo', 'docmd', 'docmd-live'];
+    for (const pkg of pkgs) {
+        try { execSync('npm uninstall -g ' + pkg + ' -s', { stdio: 'ignore' }); } catch { /* ignore */ }
+        try { execSync('pnpm uninstall -g ' + pkg + ' -s', { stdio: 'ignore' }); } catch { /* ignore */ }
+    }
+    deepWipe();
+    finishStep(s);
+}
+{
+    const s = startStep('Cleaning monorepo');
+    run('pnpm -s clean');
+    finishStep(s);
+}
+run('node tools/status.js reset', false);
+footer(C.blue);
+
+// Section 2: Lint
+section('Lint', C.cyan);
+runLint();
+footer(C.cyan);
+
+// Section 3: Docker (optional)
+section('Docker', C.blue);
+runDockerCheck();
+footer(C.blue);
+
+// Section 4: Tests
+section('Tests', C.blue);
 if (args.includes('--skip-tests')) {
-    console.log('\x1b[36m│\x1b[0m  \x1b[2mSkipping categorised test suite (--skip-tests)\x1b[0m');
+    const s = startStep('Skipping test suite (--skip-tests)');
+    finishStep(s, 'done', 'skipped by user request');
 } else {
     const only = args.find((a) => a.startsWith('--only='));
-    const runnerArgs = only ? ` ${only}` : '';
-    run(`node tests/runner.js${runnerArgs}`, false);
+    const runnerArgs = only ? ' ' + only : '';
+    {
+        const s = startStep('Categorised test suite (tests/runner.js)');
+        run('node tests/runner.js' + runnerArgs, false);
+        finishStep(s);
+    }
+    {
+        const s = startStep('Failsafe integration test (tools/failsafe.test.mjs)');
+        const failsafeArgs = args.filter((a) => a !== '--link' && !a.startsWith('--only=')).join(' ');
+        run('node tools/failsafe.test.mjs ' + failsafeArgs, false);
+        finishStep(s);
+    }
+}
+footer(C.blue);
+
+// Section 5: Link (optional)
+if (args.includes('--link')) {
+    section('Link', C.blue);
+    const s = startStep('Linking @docmd/core globally');
+    try {
+        execSync('npm link --silent', {
+            cwd: require('path').join(process.cwd(), 'packages/core'),
+            stdio: 'ignore'
+        });
+        finishStep(s, 'done', 'docmd command available globally');
+    } catch {
+        finishStep(s, 'fail', 'npm link failed');
+        process.exit(1);
+    }
+    footer(C.blue);
 }
