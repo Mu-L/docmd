@@ -64,6 +64,18 @@ function build(dir, expectFail = false) {
   }
 }
 
+// Phase 3 PR 3.A test helper. Run a command, return its numeric exit
+// code. 0 on success, 1+ on documented failure paths. -1 if the
+// process was killed by a signal (rare; mostly for diagnostics).
+function exitCodeOf(cmd, cwd) {
+  try {
+    execSync(cmd, { cwd, stdio: 'pipe' });
+    return 0;
+  } catch (e) {
+    return e.status == null ? -1 : e.status;
+  }
+}
+
 function writeFile(dir, filePath, content) {
   const full = path.join(dir, filePath);
   fs.mkdirSync(path.dirname(full), { recursive: true });
@@ -754,14 +766,6 @@ console.log('\n🏷️ Test 29: Hreflang Tags Consistency');
 // ─── TEST 26: Exit-code contract (Phase 3 PR 3.A — F6, M-12) ───
 console.log('\n🚦 Test 26: Exit-code contract');
 {
-  function exitCodeOf(cmd, cwd) {
-    try {
-      execSync(cmd, { cwd, stdio: 'pipe' });
-      return 0;
-    } catch (e) {
-      return e.status == null ? -1 : e.status;
-    }
-  }
 
   // F6 — build with an unknown plugin must exit 1 (was 0)
   {
@@ -919,6 +923,83 @@ console.log('\n🔌 Test 27: Plugin add/remove across config formats');
     assert('JS no-plugins: search entry present', /['"]search['"]\s*:\s*\{\s*\}/.test(after));
     // No stray newline-comma in the output (regression guard).
     assert('JS no-plugins: no stray ",\\n" between last key and plugins', !/,\s*\n\s*plugins/.test(after) || /,\n\s*plugins/.test(after));
+  }
+}
+
+// ─── TEST 29: Validate rewrite + workspace errors + init example (Phase 3 PR 3.C — F8, F9, M-1) ───
+console.log('\n📐 Test 29: Validate rewrite + workspace errors + init example');
+{
+  // M-1 — `validate` must not false-positive on a valid link with a
+  // trailing slash. Pre-fix: `[page 2](/page-2/)` was reported as
+  // broken because the code did `fs.existsSync('docs/page-2/.md')`
+  // (always false). Post-fix: the trailing slash is stripped before
+  // the existence checks, and the link resolves to `docs/page-2.md`.
+  {
+    const dir = setup('28-m1-trailing-slash-ok');
+    writeFile(dir, 'docs/index.md', '# P1\n\n[page 2](/page-2/).\n');
+    writeFile(dir, 'docs/page-2.md', '# P2\n');
+    const r = build(dir);
+    const code = exitCodeOf(`node ${DOCMD} validate`, dir);
+    assert('M-1: trailing-slash link to existing .md is valid (exit 0)', code === 0);
+  }
+
+  // M-1 — genuine broken link is still caught.
+  {
+    const dir = setup('28-m1-broken-still-caught');
+    writeFile(dir, 'docs/index.md', '# P1\n\n[bad](/nope/)\n');
+    const code = exitCodeOf(`node ${DOCMD} validate`, dir);
+    assert('M-1: genuinely broken link still exits 1', code === 1);
+  }
+
+  // F8 — workspace validation errors exit 1 with a clean TUI message,
+  // not a raw stack trace.
+  {
+    const dir = setup('28-f8-workspace-error');
+    writeFile(dir, 'docmd.config.json', JSON.stringify({
+      title: 'F8',
+      src: './docs',
+      out: './site',
+      workspace: {
+        projects: [{ src: './totally-missing-f8', prefix: '/' }]
+      }
+    }));
+    const code = exitCodeOf(`node ${DOCMD} build`, dir);
+    assert('F8: workspace with missing source dir exits 1', code === 1);
+  }
+
+  // F8 — duplicate-prefix error also exits 1.
+  {
+    const dir = setup('28-f8-workspace-duplicate');
+    writeFile(dir, 'docmd.config.json', JSON.stringify({
+      title: 'F8 dup',
+      src: './docs',
+      out: './site',
+      workspace: {
+        projects: [
+          { src: './docs', prefix: '/api' },
+          { src: './docs', prefix: '/api' }
+        ]
+      }
+    }));
+    const code = exitCodeOf(`node ${DOCMD} build`, dir);
+    assert('F8: duplicate workspace prefix exits 1', code === 1);
+  }
+
+  // F9 — default init `index.md` must NOT contain the F2 trap pattern
+  // (`::: card ... ::: button ... :::` with the orphan `:::`).
+  // We check the bundled `initProject` source rather than running
+  // `init` (which would write to disk) — we just confirm the
+  // template string no longer teaches the F2 pattern.
+  {
+    const initSrc = fs.readFileSync(
+      path.resolve(import.meta.dirname, '../packages/core/dist/commands/init.js'),
+      'utf8'
+    );
+    // The broken pattern was: `::: button "View Documentation" https://...`
+    // followed by a `:::` close. The replacement uses
+    // `[View the docs →](https://docmd.io){.docmd-button}` instead.
+    assert('F9: bundled init no longer contains broken `::: button ... :::` trap', !/button "View Documentation"/.test(initSrc));
+    assert('F9: bundled init uses `{.docmd-button}` styled link', /\{\.docmd-button\}/.test(initSrc));
   }
 }
 

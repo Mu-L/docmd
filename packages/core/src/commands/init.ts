@@ -110,7 +110,8 @@ You can nest containers, add custom titles, and use emojis! :tada:
 
 ::: card "Flexible Structure"
 Organise your content with cards.
-::: button "View Documentation" https://docs.docmd.io
+
+[View the docs →](https://docmd.io){.docmd-button}
 :::
 
 ### 2. Tabs & Code
