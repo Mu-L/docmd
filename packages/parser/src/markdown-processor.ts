@@ -47,7 +47,6 @@ function isDangerousHref(href: string): boolean {
  * tools (TUI scrapers, CI greps) keep working.
  */
 function emitNormaliserWarning(w: NormaliserWarning): void {
-  // eslint-disable-next-line no-console
   console.warn(`[normaliser] ${w.severity.toUpperCase()} ${w.path}:${w.line} — ${w.message}`);
 }
 
