@@ -821,6 +821,107 @@ console.log('\n🚦 Test 26: Exit-code contract');
   }
 }
 
+// ─── TEST 27: Plugin add/remove across config formats (Phase 3 PR 3.B — F7, M-3) ───
+console.log('\n🔌 Test 27: Plugin add/remove across config formats');
+{
+  // M-3 — `add` must inject the plugin entry into a TS config (was no-op).
+  {
+    const dir = setup('27-m3-add-ts');
+    writeFile(dir, 'docs/index.md', '# Hi\n');
+    writeFile(dir, 'docmd.config.ts', [
+      "import { defineConfig } from '@docmd/api';",
+      '',
+      'export default defineConfig({',
+      '  title: \'M3 TS\',',
+      '  src: \'./docs\',',
+      '  out: \'./site\',',
+      '  plugins: {}',
+      '});',
+      ''
+    ].join('\n'));
+    execSync(`node ${DOCMD} add search`, { cwd: dir, stdio: 'pipe' });
+    const after = fs.readFileSync(path.join(dir, 'docmd.config.ts'), 'utf8');
+    assert('M-3: TS config gets search entry after add', /['"]search['"]\s*:\s*\{\s*\}/.test(after));
+  }
+
+  // M-3 — same for MJS
+  {
+    const dir = setup('27-m3-add-mjs');
+    writeFile(dir, 'docs/index.md', '# Hi\n');
+    writeFile(dir, 'docmd.config.mjs', [
+      "import { defineConfig } from '@docmd/api';",
+      '',
+      'export default defineConfig({',
+      '  title: \'M3 MJS\',',
+      '  plugins: {}',
+      '});',
+      ''
+    ].join('\n'));
+    execSync(`node ${DOCMD} add search`, { cwd: dir, stdio: 'pipe' });
+    const after = fs.readFileSync(path.join(dir, 'docmd.config.mjs'), 'utf8');
+    assert('M-3: MJS config gets search entry after add', /['"]search['"]\s*:\s*\{\s*\}/.test(after));
+  }
+
+  // F7 — `remove` must remove the plugin entry from a TS config (was no-op).
+  {
+    const dir = setup('27-f7-remove-ts');
+    writeFile(dir, 'docmd.config.ts', [
+      "import { defineConfig } from '@docmd/api';",
+      '',
+      'export default defineConfig({',
+      '  title: \'F7 TS\',',
+      '  plugins: {',
+      '    search: {}',
+      '  }',
+      '});',
+      ''
+    ].join('\n'));
+    execSync(`node ${DOCMD} remove search`, { cwd: dir, stdio: 'pipe' });
+    const after = fs.readFileSync(path.join(dir, 'docmd.config.ts'), 'utf8');
+    assert('F7: TS config search entry removed', !/search\s*:/.test(after));
+    assert('F7: TS config plugins block still present', /plugins\s*:/.test(after));
+  }
+
+  // F7 — same for JSON
+  {
+    const dir = setup('27-f7-remove-json');
+    writeFile(dir, 'docmd.config.json', JSON.stringify({ title: 'F7 JSON', plugins: { search: {} } }, null, 2) + '\n');
+    execSync(`node ${DOCMD} remove search`, { cwd: dir, stdio: 'pipe' });
+    const after = fs.readFileSync(path.join(dir, 'docmd.config.json'), 'utf8');
+    assert('F7: JSON config search entry removed', !/"search"\s*:/.test(after));
+  }
+
+  // Idempotency — adding a plugin that's already configured must NOT
+  // create a duplicate entry.
+  {
+    const dir = setup('27-idempotent');
+    writeFile(dir, 'docmd.config.json', JSON.stringify({ title: 'Idem', plugins: { search: {} } }, null, 2) + '\n');
+    execSync(`node ${DOCMD} add search`, { cwd: dir, stdio: 'pipe' });
+    const after = JSON.parse(fs.readFileSync(path.join(dir, 'docmd.config.json'), 'utf8'));
+    const keys = Object.keys(after.plugins);
+    assert('idempotent: only one search entry after re-add', keys.filter((k) => k === 'search').length === 1);
+  }
+
+  // No-plugins-block JS config — `add` should CREATE the plugins block.
+  {
+    const dir = setup('27-js-no-plugins');
+    writeFile(dir, 'docmd.config.js', [
+      'module.exports = {',
+      '  title: \'JS no plugins\',',
+      '  src: \'./docs\',',
+      '  out: \'./site\'',
+      '};',
+      ''
+    ].join('\n'));
+    execSync(`node ${DOCMD} add search`, { cwd: dir, stdio: 'pipe' });
+    const after = fs.readFileSync(path.join(dir, 'docmd.config.js'), 'utf8');
+    assert('JS no-plugins: plugins block created', /plugins\s*:\s*\{/.test(after));
+    assert('JS no-plugins: search entry present', /['"]search['"]\s*:\s*\{\s*\}/.test(after));
+    // No stray newline-comma in the output (regression guard).
+    assert('JS no-plugins: no stray ",\\n" between last key and plugins', !/,\s*\n\s*plugins/.test(after) || /,\n\s*plugins/.test(after));
+  }
+}
+
 // ─── SUMMARY ───
 console.log('\n' + '═'.repeat(50));
 console.log(`  ${passed} passed, ${failed} failed out of ${passed + failed} assertions`);
