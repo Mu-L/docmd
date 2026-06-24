@@ -142,7 +142,7 @@ function safeCall<T>(hookName: string, pluginName: string, fn: (...args: any[]) 
 
 const pluginErrors: { plugin: string; hook: string; message: string; filePath?: string }[] = [];
 
-// Phase 3 PR 3.A (F6): separate tracker for load-time plugin failures (the
+// separate tracker for load-time plugin failures (the
 // "unknown plugin" case from test-report §F6). RUNTIME hook errors go in
 // `pluginErrors`; LOAD failures (could not resolve / import) go here.
 // The build / dev commands check this via `getPluginLoadErrors()` and
@@ -180,11 +180,11 @@ export function resolvePluginName(key: string): string {
     return `@docmd/plugin-${key}`;
   }
   
-  const corePlugins = ['search', 'seo', 'sitemap', 'analytics', 'llms', 'mermaid', 'git', 'openapi'];
+  const corePlugins = ['search', 'seo', 'sitemap', 'analytics', 'llms', 'mermaid', 'git', 'openapi', 'okf'];
   if (corePlugins.includes(key)) {
     return `@docmd/plugin-${key}`;
   }
-  
+
   return key;
 }
 
@@ -353,7 +353,10 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
   const searchEnabled = config.optionsMenu ? config.optionsMenu.components.search !== false : config.search !== false;
 
   // A. Core Plugins - always loaded by default.
-  const corePlugins = ['search', 'seo', 'sitemap', 'analytics', 'llms', 'mermaid', 'git', 'openapi'];
+  // 0.8.8: added `okf` (Open Knowledge Format bundles for AI agents).
+  // `okf` follows the same pattern as `llms` — auto-loaded, opt-out via
+  // `plugins.okf = false` in the user's config.
+  const corePlugins = ['search', 'seo', 'sitemap', 'analytics', 'llms', 'mermaid', 'git', 'openapi', 'okf'];
 
   for (const name of corePlugins) {
     const resolved = `@docmd/plugin-${name}`;
@@ -511,7 +514,7 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
       }
     } catch (e: any) {
       warnOnce(`load:${name}`, TUI.yellow(`Could not load plugin: ${name} (missing or misconfigured)`) + TUI.dim(`\n   > ${e.message}`));
-      // Phase 3 PR 3.A (F6): track load failures so the build can fail
+      // track load failures so the build can fail
       // loudly instead of silently completing with a missing plugin.
       pluginLoadErrors.push({ plugin: name, message: e.message });
     }
