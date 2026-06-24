@@ -17,22 +17,25 @@
  *   1. Setup       - stop running servers, wipe global binaries,
  *                    clean the monorepo
  *   2. Lint        - eslint over the entire repo, summarised
- *   3. Docker      - optional Docker availability check
- *   4. Tests       - categorised test suite (tests/runner.js,
+ *   3. Build       - pnpm install + pnpm -r run build, so the
+ *                    test sections have dist files to run
+ *                    against (clean wipes dist, this rebuilds it)
+ *   4. Docker      - optional Docker availability check
+ *   5. Tests       - categorised test suite (tests/runner.js,
  *                    342 assertions covering Phase 1 security
  *                    CVEs + Phase 2 container parser + Phase 3
  *                    CLI contracts + OKF/LLMS plugin tests) and
  *                    the comprehensive integration test
- *                    (tools/failsafe.test.mjs, type-check /
+ *                    (tests/failsafe.test.mjs, type-check /
  *                    version / engine / mega integration)
- *   5. Link        - optional global npm link
+ *   6. Link        - optional global npm link
  *
  * Each step inside a section shows [WAIT] (dim) when it starts
  * and [DONE] (green) when it finishes. No emojis.
  *
  * Run:  pnpm prep
  *       pnpm prep --link            (skip tests, install globally)
- *       pnpm prep --skip-tests     (skip both test suites)
+ *       pnpm prep --skip-tests      (skip both test suites)
  *       pnpm prep --only=exit-codes (run a single test section)
  * --------------------------------------------------------------------
  */
@@ -213,12 +216,28 @@ section('Lint', C.cyan);
 runLint();
 footer(C.cyan);
 
-// Section 3: Docker (optional)
+// Section 3: Build — required so tests have dist files to run against.
+// `pnpm clean` (called in Setup) wipes every package's dist directory; without
+// this rebuild the test sections all fail with MODULE_NOT_FOUND on dist files.
+section('Build', C.cyan);
+{
+    const s = startStep('Installing monorepo dependencies');
+    run('pnpm install --frozen-lockfile');
+    finishStep(s);
+}
+{
+    const s = startStep('Building all packages (pnpm -r run build)');
+    run('pnpm -r run build');
+    finishStep(s);
+}
+footer(C.cyan);
+
+// Section 4: Docker (optional)
 section('Docker', C.blue);
 runDockerCheck();
 footer(C.blue);
 
-// Section 4: Tests
+// Section 5: Tests
 section('Tests', C.blue);
 if (args.includes('--skip-tests')) {
     const s = startStep('Skipping test suite (--skip-tests)');
@@ -232,9 +251,9 @@ if (args.includes('--skip-tests')) {
         finishStep(s);
     }
     {
-        const s = startStep('Failsafe integration test (tools/failsafe.test.mjs)');
+        const s = startStep('Failsafe integration test (tests/failsafe.test.mjs)');
         const failsafeArgs = args.filter((a) => a !== '--link' && !a.startsWith('--only=')).join(' ');
-        run('node tools/failsafe.test.mjs ' + failsafeArgs, false);
+        run('node tests/failsafe.test.mjs ' + failsafeArgs, false);
         finishStep(s);
     }
 }
