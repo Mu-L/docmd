@@ -448,8 +448,12 @@ describe('brute: 12. versioning + i18n', () => {
     ];
     await flushPages(s.srcDir, pages);
 
-    // CASE A: localeStrategy='folders' + versionStrategy='latest-only' (defaults)
-    // → files nested by locale only; version recorded in frontmatter but no version subdir.
+    // CASE A: localeStrategy='folders' (explicit, was the old default
+    // before 0.8.8) + versionStrategy='latest-only' (still default).
+    // → files nested by locale; version recorded in frontmatter but
+    // no version subdir. 0.8.8 made 'default-only' the new default
+    // for localeStrategy, so this case now requires the explicit
+    // `folders` opt-in.
     const ctxA = buildCtx({
       config: {
         title: 'I18N', url: 'https://example.com',
@@ -468,20 +472,23 @@ describe('brute: 12. versioning + i18n', () => {
             { id: 'v2', dir: 'docs-v2' }
           ]
         },
-        plugins: { okf: {} }   // use defaults
+        plugins: { okf: { localeStrategy: 'folders' } }   // explicit opt-in
       },
       pages, outputDir: path.join(s.bundleDir, 'a')
     });
     await onPostBuild(ctxA);
 
     const rootA = path.join(s.bundleDir, 'a', 'okf');
-    // No version subfolders — all under locale/ (default=en for version pages).
+    // 0.8.8: default-locale (en) files sit at the bundle root
+    // (no `en/` subfolder). Non-default locales (hi, zh) are nested
+    // under `<locale>/`. No version subfolders (default
+    // `versionStrategy: 'latest-only'`).
     for (const rel of [
-      'en/concepts/en-page.md',
-      'hi/concepts/hi-page.md',
+      'concepts/en-page.md',         // default locale at root
+      'hi/concepts/hi-page.md',      // non-default locale in subdir
       'zh/concepts/zh-page.md',
-      'en/concepts/v1-old.md',   // locale detected as default 'en', no version subfolder
-      'en/concepts/v2-new.md'
+      'concepts/v1-old.md',          // version pages are detected as default-locale
+      'concepts/v2-new.md'
     ]) {
       await fs.access(path.join(rootA, rel));
     }
@@ -492,6 +499,10 @@ describe('brute: 12. versioning + i18n', () => {
     await assert.rejects(
       fs.access(path.join(rootA, 'v2', 'concepts')), /ENOENT/
     ).catch(() => { /* expected to NOT exist */ });
+    // The default-locale `en/` subfolder does NOT exist.
+    await assert.rejects(
+      fs.access(path.join(rootA, 'en', 'concepts')), /ENOENT/
+    ).catch(() => { /* expected: default locale at root, not in en/ */ });
 
     const yamlA = await fs.readFile(path.join(rootA, 'okf.yaml'), 'utf8');
     assert.match(yamlA, /concepts: 5/);
@@ -499,13 +510,52 @@ describe('brute: 12. versioning + i18n', () => {
     assert.match(yamlA, /versions:\s*\n\s+- v1\s*\n\s+- v2/);
 
     // Frontmatter: v1 page reports version=v1 (detected), locale=default en
-    const v1page = await fs.readFile(path.join(rootA, 'en/concepts/v1-old.md'), 'utf8');
+    const v1page = await fs.readFile(path.join(rootA, 'concepts/v1-old.md'), 'utf8');
     assert.match(v1page, /version: v1/);
     assert.match(v1page, /locale: en/);
-    const v2page = await fs.readFile(path.join(rootA, 'en/concepts/v2-new.md'), 'utf8');
+    const v2page = await fs.readFile(path.join(rootA, 'concepts/v2-new.md'), 'utf8');
     assert.match(v2page, /version: v2/);
     const hipage = await fs.readFile(path.join(rootA, 'hi/concepts/hi-page.md'), 'utf8');
     assert.match(hipage, /locale: hi/);
+
+    // CASE A2: default `localeStrategy: 'default-only'` (the 0.8.8 default)
+    // → only the default-locale pages make it into the bundle; the bundle
+    // sits at the root (no `<locale>/` subfolder).
+    const ctxA2 = buildCtx({
+      config: {
+        title: 'I18N-default', url: 'https://example.com',
+        i18n: {
+          default: 'en',
+          locales: [
+            { id: 'en', label: 'English' },
+            { id: 'hi', label: 'Hindi' },
+            { id: 'zh', label: 'Chinese' }
+          ]
+        },
+        versions: { current: 'v2', all: [{ id: 'v2', dir: 'docs-v2' }] },
+        plugins: { okf: {} }   // use defaults
+      },
+      pages, outputDir: path.join(s.bundleDir, 'a2')
+    });
+    await onPostBuild(ctxA2);
+
+    const rootA2 = path.join(s.bundleDir, 'a2', 'okf');
+    // 3 pages total, but only the en page is in the bundle (1 concept).
+    for (const rel of ['concepts/en-page.md', 'concepts/v1-old.md', 'concepts/v2-new.md']) {
+      await fs.access(path.join(rootA2, rel));
+    }
+    // hi/zh pages are NOT in the bundle.
+    for (const rel of ['hi', 'zh', 'concepts/hi-page.md', 'concepts/zh-page.md']) {
+      await assert.rejects(
+        fs.access(path.join(rootA2, rel)), /ENOENT/
+      ).catch(() => { /* expected to NOT exist */ });
+    }
+    const yamlA2 = await fs.readFile(path.join(rootA2, 'okf.yaml'), 'utf8');
+    assert.match(yamlA2, /concepts: 3/);  // en-page + v1 + v2 (v1/v2 detected as default en)
+    // The yaml STILL lists all configured locales for downstream consumers
+    // (the bundle content is filtered, but the manifest reports the
+    // site's full i18n configuration).
+    assert.match(yamlA2, /locales:\s*\n\s+- en\s*\n\s+- hi\s*\n\s+- zh/);
 
     // CASE B: versionStrategy='folders' → version subfolders appear
     const ctxB = buildCtx({
