@@ -2,7 +2,7 @@
  * --------------------------------------------------------------------
  * docmd : the zero-config documentation engine.
  *
- * Shared test helpers — extracted from `scripts/brute-test.js` so the
+ * Shared test helpers — extracted from `tests/feature-integration.test.js` so the
  * categorised tests under `tests/` can share a single source of truth
  * for the project-fixture utilities (setup, writeFile, build,
  * readSite, exitCodeOf, assert).

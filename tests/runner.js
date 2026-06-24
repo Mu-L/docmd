@@ -5,7 +5,9 @@
  *
  * Categorised test runner
  *
- * Replaces the monolithic `scripts/brute-test.js` + `scripts/brute-test-security.js`
+ * Replaces the monolithic `scripts/brute-test.js` +
+ * `scripts/brute-test-security.js` (now `tests/feature-integration.test.js`
+ * and `tests/security.test.js` after the scripts/ → tests/ move)
  * with a set of smaller, focused test files under `tests/`. Each file
  * exports a `test` object (created via `runTestFile()`) and a `results`
  * object with `passed`, `failed`, `failures` getters.
@@ -18,12 +20,10 @@
  *   4. Aggregates pass/fail across all files into a final summary.
  *   5. Exits 1 if any file failed, 0 otherwise.
  *
- * Wired into `scripts/prep.js` (called by `pnpm prep` via the status
+ * Wired into `tools/prep.js` (called by `pnpm prep` via the status
  * pipeline) so a single `pnpm prep` runs the entire categorised suite.
  *
- * The legacy `scripts/brute-test.js` (minus the Phase 3 tests, which
- * have been moved here) is also invoked from the "Feature integration"
- * section so the existing feature scenarios (zero-config, i18n,
+ * The legacy feature-integration scenarios (zero-config, i18n,
  * versioning, containers, code blocks, etc.) still run.
  *
  * Run: `node tests/runner.js`
@@ -105,15 +105,15 @@ addExternal(
   'security',
   'Security (Phase 1 CVE suite — 88 assertions)',
   'node',
-  ['scripts/brute-test-security.js']
+  ['tests/security.test.js']
 );
 
-// --- Section 5: Feature integration (legacy brute-test.js) --------------
+// --- Section 5: Feature integration (legacy feature-integration.test.js) --------------
 addExternal(
   'features',
   'Feature integration (29 scenarios — zero-config, i18n, versioning, navigation, code blocks, search, sitemap, etc.)',
   'node',
-  ['scripts/brute-test.js']
+  ['tests/feature-integration.test.js']
 );
 
 // --- Section 6: OKF plugin (0.8.8) ---------------------------------------
@@ -171,7 +171,8 @@ for (const { id, name, module } of testFiles) {
     }
     if (result.status === 0) {
       // Parse the assertion count. Two output formats are supported:
-      //   1. `scripts/brute-test.js` style: "X passed, Y failed out of Z"
+      //   1. `tests/feature-integration.test.js` style: "X passed,
+      //      Y failed out of Z"
       //   2. `node:test` TAP-style:    "pass N" / "fail N" (one per line)
       //      The `node:test` runner prints lines like:
       //        ℹ tests 60

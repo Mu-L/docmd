@@ -232,12 +232,12 @@ function runCmd(cmd, cwd, silent = true) {
     TUI.step('Running security audit', 'WAIT');
     try {
         // Run our custom monorepo security audit
-        execSync('node scripts/security-audit.mjs --skip-header', { cwd: CWD, stdio: 'inherit' });
+        execSync('node tools/security-audit.mjs --skip-header', { cwd: CWD, stdio: 'inherit' });
         TUI.step('Running security audit', 'DONE');
     } catch (e) {
         TUI.step('Running security audit', 'FAIL');
         TUI.error('High-risk security patterns detected in source code or templates.');
-        throw new Error('Security audit failed. Fix issues in scripts/security-audit.mjs baseline or patch vulnerabilities.');
+        throw new Error('Security audit failed. Fix issues in tools/security-audit.mjs baseline or patch vulnerabilities.');
     }
     TUI.footer();
 

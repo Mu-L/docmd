@@ -7,7 +7,7 @@
  *   - escape helpers (escHtml / attrEsc / jsonInject / scriptLiteral) integration
  *   - safePath() path-traversal guard
  *
- * Run: node scripts/brute-test-security.js
+ * Run: node tests/security.test.js
  */
 
 import { execSync, spawn, spawnSync } from 'child_process';

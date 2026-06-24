@@ -3,7 +3,7 @@
  * docmd Comprehensive Feature Test Suite
  * =======================================
  * Brute tests every major docmd feature in isolation and combination.
- * Run: node scripts/brute-test.js
+ * Run: node tests/feature-integration.test.js
  *
  * Tests:
  *  1. Zero-config (no config file)

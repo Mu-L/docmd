@@ -31,14 +31,14 @@ function run(cmd, silent = true) {
 
 // 1. Show starting logo (only if not in CI or if user wants it)
 if (!isCI) {
-    const headerCmd = skipHeader ? 'node scripts/status.js start:verify --skip-header' : 'node scripts/status.js start:verify';
+    const headerCmd = skipHeader ? 'node tools/status.js start:verify --skip-header' : 'node tools/status.js start:verify';
     run(headerCmd, false);
 }
 
 // 2. Run the actual failsafe check
 // Forwarding arguments to failsafe.mjs
 const failsafeArgs = args.filter(a => a !== '--link' && a !== '--skip-header').join(' ');
-run(`node scripts/failsafe.mjs ${failsafeArgs}`, false);
+run(`node tools/failsafe.mjs ${failsafeArgs}`, false);
 
 // 3. Handle global linking if requested
 if (shouldLink) {
@@ -53,7 +53,7 @@ if (shouldLink) {
 
 // 4. Show final completion status
 if (!isCI) {
-    const statusCmd = 'node scripts/status.js verify';
+    const statusCmd = 'node tools/status.js verify';
     run(statusCmd, false);
 } else {
     console.log('\n\x1b[32m\x1b[1m⬢ Docmd verification passed!\x1b[0m\n');

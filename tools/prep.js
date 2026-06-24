@@ -47,7 +47,7 @@ function deepWipe() {
 }
 
 // 1. Initial Reporting
-run('node scripts/status.js start:reset', false);
+run('node tools/status.js start:reset', false);
 
 // 1a. Lint gate — capture eslint JSON, summarise in TUI style, fail
 // fast on errors. Output is silent; developer runs `pnpm lint`
@@ -124,7 +124,7 @@ run('pnpm -s clean');
 process.stdout.write(`\n`);
 
 // 5. Final Reset Report
-run('node scripts/status.js reset', false);
+run('node tools/status.js reset', false);
 
 // 6. Verify Docker setup (optional)
 try {
@@ -148,7 +148,7 @@ try {
 
 // 7. Verify (this builds and optionally links)
 // Pass --skip-header to avoid duplicate logo
-run(`node scripts/verify.js ${args.join(' ')} --skip-header`, false);
+run(`node tools/verify.js ${args.join(' ')} --skip-header`, false);
 
 // 8. Categorised test suite
 //    Runs the new `tests/runner.js` which orchestrates:
