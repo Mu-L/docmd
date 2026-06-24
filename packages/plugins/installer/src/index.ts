@@ -36,6 +36,32 @@ function formatSpawnError(err: any, cmdExe: string, action: string, opts: { verb
 
   if (isMissingBinary) {
     const binary = err.path || cmdExe;
+
+    // Special case: if the failing binary is a package manager but Node itself
+    // is reachable, the issue is likely that docmd was launched through npx
+    // and the spawned child process can't see the parent's PATH. Suggest
+    // installing the plugin via the host package manager directly.
+    const nodeReachable = (() => {
+      try { require('child_process').execFileSync(process.execPath, ['--version'], { stdio: 'pipe' }); return true; }
+      catch { return false; }
+    })();
+    const isPkgManager = /^(npm|pnpm|yarn|bun)(\.cmd)?$/i.test(path.basename(binary));
+
+    if (nodeReachable && isPkgManager) {
+      return [
+        `Could not spawn ${binary} — it was not found on PATH when running through npx.`,
+        ``,
+        `This is a common issue when @docmd/core itself was launched via npx on`,
+        `Windows or in restricted shells. Install the plugin directly using your`,
+        `package manager, then run the build again:`,
+        ``,
+        `  npm install <package-name>`,
+        ``,
+        `If you still see this after a direct install, run with --verbose for the`,
+        `full spawn error.`,
+      ].join('\n');
+    }
+
     return [
       `The package manager '${binary}' was not found on your system PATH.`,
       ``,
@@ -52,6 +78,47 @@ function formatSpawnError(err: any, cmdExe: string, action: string, opts: { verb
 
   if (opts.verbose && err && err.message) return err.message;
   return 'Run with --verbose for detailed logs.';
+}
+
+/**
+ * Resolves the absolute path to a package-manager binary, falling back
+ * to PATH lookup if not found next to Node.
+ *
+ * On Windows, `npm`/`pnpm`/`yarn` are `.cmd` shims that may not be on
+ * PATH when `@docmd/core` is itself launched through `npx`. Since all
+ * major package managers ship their CLI scripts in Node's install
+ * directory (e.g. `node_modules/npm/bin/npm-cli.js`), resolving from
+ * `process.execPath` works reliably across all platforms and invocation
+ * methods (including `npx`).
+ */
+function resolvePackageManagerBin(name: string): string {
+  const nodeDir = path.dirname(process.execPath);
+
+  // Candidate scripts to look for, in priority order.
+  const candidates: Record<string, string[]> = {
+    npm:  ['npm-cli.js', `npm${process.platform === 'win32' ? '.cmd' : ''}`],
+    pnpm: ['pnpm.js', `pnpm${process.platform === 'win32' ? '.cmd' : ''}`],
+    yarn: ['yarn.js', `yarn${process.platform === 'win32' ? '.cmd' : ''}`],
+    bun:  ['bun.js', `bun${process.platform === 'win32' ? '.cmd' : ''}`],
+  };
+
+  const files = candidates[name] || [name];
+
+  // 1. Look next to the running Node binary (npm ships here, pnpm global does too).
+  for (const file of files) {
+    const candidate = path.join(nodeDir, file);
+    if (fs.existsSync(candidate)) return candidate;
+  }
+
+  // 2. Look in Node's lib/node_modules (npm/pnpm install here on most setups).
+  const libModules = path.join(nodeDir, 'lib', 'node_modules');
+  for (const file of files) {
+    const candidate = path.join(libModules, name, file === `${name}.cmd` ? 'bin' : 'bin', file);
+    if (fs.existsSync(candidate)) return candidate;
+  }
+
+  // 3. Last resort: return the bare name and let PATH resolve it.
+  return files[files.length - 1];
 }
 
 /**
@@ -317,10 +384,10 @@ async function installPlugin(pluginInput: string, opts: { verbose?: boolean } = 
 
   let cmdExe = '';
   let cmdArgs: string[] = [];
-  if (pkgManager === 'npm') { cmdExe = 'npm'; cmdArgs = ['install', packageName]; }
-  else if (pkgManager === 'yarn') { cmdExe = 'yarn'; cmdArgs = ['add', packageName]; }
-  else if (pkgManager === 'pnpm') { cmdExe = 'pnpm'; cmdArgs = ['add', packageName]; }
-  else if (pkgManager === 'bun') { cmdExe = 'bun'; cmdArgs = ['add', packageName]; }
+  if (pkgManager === 'npm') { cmdExe = resolvePackageManagerBin('npm'); cmdArgs = ['install', packageName]; }
+  else if (pkgManager === 'yarn') { cmdExe = resolvePackageManagerBin('yarn'); cmdArgs = ['add', packageName]; }
+  else if (pkgManager === 'pnpm') { cmdExe = resolvePackageManagerBin('pnpm'); cmdArgs = ['add', packageName]; }
+  else if (pkgManager === 'bun') { cmdExe = resolvePackageManagerBin('bun'); cmdArgs = ['add', packageName]; }
 
   if (pkgManager === 'npm' && !fs.existsSync(path.join(cwd, 'package.json'))) {
     cmdArgs.push('--no-save');
@@ -361,13 +428,17 @@ async function installPlugin(pluginInput: string, opts: { verbose?: boolean } = 
 async function removePlugin(pluginInput: string, opts: { verbose?: boolean } = {}) {
   const cwd = process.cwd();
   const pkgManager = getPackageManager(cwd);
-  
+
   let meta;
   try {
     meta = resolvePluginMeta(pluginInput);
   } catch (err: any) {
     TUI.error('Removal Aborted', err.message);
-    return;
+    // Phase 3 PR 3.A (F6): exit 1 so CI pipelines can gate on the
+    // documented "Removal Aborted" failure path. Previously this
+    // `return` left the process at exit code 0, silently passing a
+    // failed removal.
+    process.exit(1);
   }
   const packageName = meta.package;
   const isTemplate = meta.kind === 'template';
