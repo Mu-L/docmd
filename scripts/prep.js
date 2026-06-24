@@ -149,3 +149,23 @@ try {
 // 7. Verify (this builds and optionally links)
 // Pass --skip-header to avoid duplicate logo
 run(`node scripts/verify.js ${args.join(' ')} --skip-header`, false);
+
+// 8. Categorised test suite
+//    Runs the new `tests/runner.js` which orchestrates:
+//      - CLI contracts (exit-codes, plugin-add-remove, validate-workspace)
+//      - Container normaliser (parser unit tests)
+//      - Utils (path + html-escape)
+//      - Security (Phase 1 CVE suite — 88 assertions)
+//      - Feature integration (legacy brute-test.js, minus Phase 3 dupes)
+//      - OKF plugin
+//    Forward any `--only=<id>` filter so individual sections can be
+//    re-run in isolation during development. Forward `--skip-tests`
+//    to skip this step entirely (e.g. for the `--link` workflow
+//    where the user just wants the global install).
+if (args.includes('--skip-tests')) {
+    console.log('\x1b[36m│\x1b[0m  \x1b[2mSkipping categorised test suite (--skip-tests)\x1b[0m');
+} else {
+    const only = args.find((a) => a.startsWith('--only='));
+    const runnerArgs = only ? ` ${only}` : '';
+    run(`node tests/runner.js${runnerArgs}`, false);
+}
