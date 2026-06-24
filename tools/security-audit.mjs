@@ -50,7 +50,8 @@ const AUDIT_CONFIG = {
             regex: /(?<!\.(?:[a-zA-Z0-9_$]+))\bexec\s*\(/g,
             severity: 'HIGH',
             exclude: [
-                /scripts\//, // Build scripts are allowed
+                /scripts\//, // Build scripts are allowed (legacy path)
+                /tools\//, // Build tooling is allowed (current path)
                 /packages\/core\/src\/engine\/workspace\.ts/ // Legit for git metadata
             ],
             notes: 'Check if this is child_process.exec. Avoid RegExp.exec false positives.'
@@ -61,6 +62,7 @@ const AUDIT_CONFIG = {
             severity: 'MEDIUM',
             exclude: [
                 /scripts\//,
+                /tools\//,
                 /packages\/core\/src\/engine\//, // Core engine handles paths
                 /packages\/plugins\/search\/src\/index\.ts/
             ]
@@ -162,7 +164,7 @@ if (!skipHeader) {
 
 try {
     scanDir(path.join(CWD, 'packages'));
-    scanDir(path.join(CWD, 'scripts'));
+    scanDir(path.join(CWD, 'tools'));
 
     if (issuesCount > 0) {
         if (!skipHeader) {
