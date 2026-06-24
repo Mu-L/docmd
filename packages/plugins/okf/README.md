@@ -48,7 +48,7 @@ Each concept file carries the OKF-required `type` field in frontmatter plus the 
 | `warnOnMissingType` | `boolean` | `true` | Emit a TUI warning for pages that fell back to `defaultType`. |
 | `includeFullMarkdown` | `boolean` | `true` | Copy raw `.md` body into each concept file. |
 | `generateGraphViewer` | `boolean` | `true` | Emit `graph.html` + `graph.js` + `graph.css` + `graph.json`. |
-| `localeStrategy` | `'folders' \| 'mixed'` | `'folders'` | Nest concepts by locale id when i18n is enabled. |
+| `localeStrategy` | `'default-only' \| 'folders' \| 'mixed' \| 'latest-only'` | `'default-only'` | Single-locale by default (the bundle contains only pages in the default locale). Set to `'folders'` to nest concepts by locale id when i18n is enabled, or `'mixed'` / `'latest-only'` for the other strategies. |
 | `versionStrategy` | `'folders' \| 'mixed' \| 'latest-only'` | `'latest-only'` | Nest concepts by version id when versioning is enabled. |
 | `excludePatterns` | `string[]` | `[]` | Additional glob patterns to skip on top of `frontmatter.noindex` / `frontmatter.okf === false`. |
 
