@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-threads",
-  "version": "0.8.7",
+  "version": "0.8.8",
   "type": "module",
   "description": "Inline discussion threads for docmd.",
   "main": "dist/index.js",
@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "@docmd/api": "workspace:*",
-    "@playwright/test": "^1.61.0",
+    "@playwright/test": "^1.61.1",
     "@types/node": "^24.13.2",
     "esbuild": "^0.28.1"
   },

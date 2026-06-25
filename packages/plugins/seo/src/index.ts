@@ -17,10 +17,11 @@ import fs from 'fs/promises';
 import nativeFs from 'fs';
 import type { PluginDescriptor } from '@docmd/api';
 import { outputPathToPathname, sanitizeUrl } from '@docmd/api';
+import { attrEsc } from '@docmd/utils';
 
 export const plugin: PluginDescriptor = {
   name: 'seo',
-  version: '0.8.7',
+  version: '0.8.8',
   capabilities: ['head', 'post-build']
 };
 
@@ -65,7 +66,10 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
     description = pageData.searchData.content.length > 150 ? contentPrefix + '...' : contentPrefix;
   }
 
-  html += `<meta name="description" content="${description}">\n`;
+  // Phase 1.B (T-S3 fix): all content="..." values are user-controllable
+  // (frontmatter.title, frontmatter.description, config.url, config.title, etc.).
+  // Apply attrEsc() to prevent stored XSS in social-media previews.
+  html += `<meta name="description" content="${attrEsc(description)}">\n`;
 
   // 3. Canonical URL
   // Use centralised URL utility for consistent URL generation.
@@ -75,17 +79,17 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
 
   const canonical = seo.canonicalUrl || frontmatter.canonicalUrl || pageUrl;
   if (canonical) {
-    html += `<link rel="canonical" href="${canonical}">\n`;
+    html += `<link rel="canonical" href="${attrEsc(canonical)}">\n`;
   }
 
   // 4. Open Graph (Facebook/LinkedIn)
   const appendTitle = frontmatter.titleAppend !== false;
   const fullTitle = (appendTitle && siteTitle && pageTitle !== siteTitle) ? `${pageTitle} - ${siteTitle}` : pageTitle;
 
-  html += `<meta property="og:title" content="${fullTitle}">\n`;
-  html += `<meta property="og:description" content="${description}">\n`;
-  html += `<meta property="og:url" content="${pageUrl}">\n`;
-  html += `<meta property="og:type" content="${seo.ogType || frontmatter.ogType || 'website'}">\n`;
+  html += `<meta property="og:title" content="${attrEsc(fullTitle)}">\n`;
+  html += `<meta property="og:description" content="${attrEsc(description)}">\n`;
+  html += `<meta property="og:url" content="${attrEsc(pageUrl)}">\n`;
+  html += `<meta property="og:type" content="${attrEsc(seo.ogType || frontmatter.ogType || 'website')}">\n`;
 
   // Image Logic
   let image = seo.image || frontmatter.image || globalSeo.openGraph?.defaultImage;
@@ -94,28 +98,28 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
       // Resolve relative image path to absolute URL
       image = `${siteUrl}/${image.replace(/^\.?\//, '')}`;
     }
-    html += `<meta property="og:image" content="${image}">\n`;
+    html += `<meta property="og:image" content="${attrEsc(image)}">\n`;
   }
 
   // 5. Twitter
   const cardType = seo.twitterCard || globalSeo.twitter?.cardType || 'summary_large_image';
-  html += `<meta name="twitter:card" content="${cardType}">\n`;
+  html += `<meta name="twitter:card" content="${attrEsc(cardType)}">\n`;
 
   if (globalSeo.twitter?.siteUsername) {
-    html += `<meta name="twitter:site" content="${globalSeo.twitter.siteUsername}">\n`;
+    html += `<meta name="twitter:site" content="${attrEsc(globalSeo.twitter.siteUsername)}">\n`;
   }
 
-  html += `<meta name="twitter:title" content="${fullTitle}">\n`;
-  html += `<meta name="twitter:description" content="${description}">\n`;
+  html += `<meta name="twitter:title" content="${attrEsc(fullTitle)}">\n`;
+  html += `<meta name="twitter:description" content="${attrEsc(description)}">\n`;
   if (image) {
-    html += `<meta name="twitter:image" content="${image}">\n`;
+    html += `<meta name="twitter:image" content="${attrEsc(image)}">\n`;
   }
 
   // 6. Keywords
   const keywords = seo.keywords || frontmatter.keywords;
   if (keywords) {
     const kwStr = Array.isArray(keywords) ? keywords.join(', ') : keywords;
-    html += `<meta name="keywords" content="${kwStr}">\n`;
+    html += `<meta name="keywords" content="${attrEsc(kwStr)}">\n`;
   }
 
   return html;

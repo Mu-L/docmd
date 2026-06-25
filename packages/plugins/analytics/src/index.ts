@@ -17,12 +17,19 @@
  */
 
 import type { PluginDescriptor } from '@docmd/api';
+import { scriptLiteral } from '@docmd/utils';
 
 export const plugin: PluginDescriptor = {
   name: 'analytics',
-  version: '0.8.7',
+  version: '0.8.8',
   capabilities: ['head', 'body']
 };
+
+// Phase 1.C (S-4 fix): format-validate the IDs before interpolation.
+// GA4 measurementId is `G-XXXXXXXX` (uppercase letters and digits after the prefix).
+// UA trackingId is `UA-XXXXXXX-Y`.
+const GA4_ID_RE = /^G-[A-Z0-9]{6,12}$/;
+const UA_ID_RE = /^UA-\d{6,12}-\d{1,3}$/;
 
 export function generateScripts(config: any) {
   let headScriptsHtml = '';
@@ -33,28 +40,38 @@ export function generateScripts(config: any) {
   // Google Analytics 4
   if (analytics.googleV4?.measurementId) {
     const id = analytics.googleV4.measurementId;
-    headScriptsHtml += `
+    if (!GA4_ID_RE.test(id)) {
+      console.error(`[analytics] Invalid googleV4.measurementId: ${JSON.stringify(id)}. Expected format G-XXXXXXXX. Analytics script skipped.`);
+    } else {
+      const idLiteral = scriptLiteral(id);
+      headScriptsHtml += `
     <!-- GA4 -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=${id}"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=${idLiteral}"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', '${id}');
+      gtag('config', ${idLiteral});
     </script>\n`;
+    }
   }
 
   // Legacy UA
   if (analytics.googleUA?.trackingId) {
     const id = analytics.googleUA.trackingId;
-    headScriptsHtml += `
+    if (!UA_ID_RE.test(id)) {
+      console.error(`[analytics] Invalid googleUA.trackingId: ${JSON.stringify(id)}. Expected format UA-XXXXXXX-Y. Analytics script skipped.`);
+    } else {
+      const idLiteral = scriptLiteral(id);
+      headScriptsHtml += `
     <!-- UA (Legacy) -->
     <script async src="https://www.google-analytics.com/analytics.js"></script>
     <script>
       window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-      ga('create', '${id}', 'auto');
+      ga('create', ${idLiteral}, 'auto');
       ga('send', 'pageview');
     </script>\n`;
+    }
   }
 
   // Auto-event Tagging (V2)

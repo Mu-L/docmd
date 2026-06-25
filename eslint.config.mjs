@@ -1,5 +1,6 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import docmdRules from './eslint-rules/index.js';
 
 export default [
   eslint.configs.recommended,
@@ -49,5 +50,14 @@ export default [
   },
   {
     ignores: ['**/dist/**', '**/node_modules/**', '**/site/**', 'temp-*/**', '**/public/**']
+  },
+  {
+    // docmd internal security rules — Phase 0 failsafe for DEVELOPMENT-BENCHMARK.md S1 and S3.
+    // Promoted to 'error' after Phase 1 cleans up the surface area.
+    plugins: { docmd: docmdRules },
+    rules: {
+      'docmd/no-unsafe-fs-read': 'warn',
+      'docmd/require-verify-client': 'error'
+    }
   }
 ];

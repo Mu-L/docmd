@@ -17,6 +17,7 @@ import fs from 'fs';
 import path from 'path';
 import { buildSite } from './build.js';
 import { loadConfig } from '../utils/config-loader.js';
+import { safePath, asUserPath } from '@docmd/utils';
 
 const pkgUrl = new URL('../../package.json', import.meta.url);
 const { version } = JSON.parse(fs.readFileSync(pkgUrl, 'utf-8'));
@@ -80,12 +81,25 @@ export function validateLinks(docsDir: string): { file: string; line: number; li
             resolvedPath = path.resolve(path.dirname(filePath), linkTarget);
           }
 
+          // Phase 3 PR 3.C (M-1): strip trailing slash before the
+          // `.md` / `.markdown` / `index.*` existence checks. Most
+          // markdown editors add a trailing slash to internal links
+          // (e.g. `[page 2](/page-2/)`), and the previous code did
+          // `fs.existsSync('docs/page-2/.md')` which is always false.
+          // The build itself produces `page-2/index.html` and treats
+          // the trailing-slash and no-slash forms as the same link,
+          // so the validator MUST agree or it false-positives every
+          // valid link.
+          const stripped = resolvedPath.endsWith('/') && resolvedPath.length > 1
+            ? resolvedPath.slice(0, -1)
+            : resolvedPath;
+
           const exists =
-            fs.existsSync(resolvedPath) ||
-            fs.existsSync(resolvedPath + '.md') ||
-            fs.existsSync(resolvedPath + '.markdown') ||
-            fs.existsSync(path.join(resolvedPath, 'index.md')) ||
-            fs.existsSync(path.join(resolvedPath, 'index.markdown'));
+            fs.existsSync(stripped) ||
+            fs.existsSync(stripped + '.md') ||
+            fs.existsSync(stripped + '.markdown') ||
+            fs.existsSync(path.join(stripped, 'index.md')) ||
+            fs.existsSync(path.join(stripped, 'index.markdown'));
 
           if (!exists) {
             errors.push({
@@ -276,7 +290,7 @@ export async function runMcpServer() {
               "---",
               "name: docmd",
               "description: Fallback agent instruction set for docmd.",
-              "skills: https://github.com/docmd-io/docmd-skills",
+              "skills: docmd-skills (npm)",
               "docs: https://docs.docmd.io",
               "llms-context: https://docs.docmd.io/llms-full.txt",
               "---",
@@ -285,17 +299,18 @@ export async function runMcpServer() {
               "",
               "This project uses **docmd**, the zero-config AI-first documentation engine.",
               "",
-              "## Agent Instructions & Skills Reference",
-              "The authoritative prompt library and instruction set for docmd is maintained in the official repository:",
-              "👉 **[github.com/docmd-io/docmd-skills](https://github.com/docmd-io/docmd-skills)**",
+              "## Get the full skill set (single-line install)",
               "",
-              "To fetch specific skills, you can reference the modules at `docmd-skills`:",
-              "- **CLI / Config / Plugins**: For configuration rules, commands, and plugin setup.",
-              "- **Formatting / Syntax**: For Callouts, tabs, steps, grids, and URL embeds.",
-              "- **API**: MCP integrations, client-side events, and live editor.",
+              "Run this once per machine to install the full agent skill set into your agent's skills directory:",
               "",
-              "### Local Customisation",
-              "To create a customized instruction set for this specific workspace, create a `SKILL.md` file in the root of your project."
+              "```bash",
+              "npx docmd-skills ~/.claude/skills",
+              "```",
+              "",
+              "Replace `~/.claude/skills` with the directory your agent reads skills from: `~/.cursor/skills` (Cursor), `./.skills` (project-local), etc. Run `npx docmd-skills --help` for the full subcommand list. The single install command pulls in the `docmd-skills`, `docmd-dev`, and `docmd-writer` skill modules — see https://github.com/docmd-io/docmd-skills for details.",
+              "",
+              "## Project-local override",
+              "This fallback content covers the general case. For project-specific instructions, create a `SKILL.md` at the root of the docmd project — `docmd mcp`'s `get_skill` tool returns that local file in preference to this fallback."
             ].join('\n');
           }
 
@@ -375,8 +390,20 @@ export async function runMcpServer() {
             sendResponse(id, { content: [{ type: "text", text: "Error: Route is required." }] });
             return;
           }
-
-          const resolvedFilePath = path.resolve(process.cwd(), route);
+          // Phase 1.A: CWE-22 fix (S-3, T-S1). Reject absolute paths outright and
+          // require relative paths to resolve inside the project root (cwd) via safePath().
+          // Preserves the pre-fix semantic where route was resolved against process.cwd().
+          if (path.isAbsolute(route)) {
+            sendResponse(id, { content: [{ type: "text", text: `Error: Absolute paths are not allowed.` }] });
+            return;
+          }
+          let resolvedFilePath: string;
+          try {
+            resolvedFilePath = safePath(process.cwd(), asUserPath(route));
+          } catch (_e: any) {
+            sendResponse(id, { content: [{ type: "text", text: `Error: Path "${route}" escapes project root.` }] });
+            return;
+          }
           if (!fs.existsSync(resolvedFilePath)) {
             sendResponse(id, { content: [{ type: "text", text: `Error: File not found at path "${route}".` }] });
             return;

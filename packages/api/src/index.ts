@@ -13,10 +13,14 @@
  */
 
 // Plugin loader & hook registry
-export { loadPlugins, hooks, resolvePluginName, resolveTemplateName, getPluginErrors } from './hooks.js';
+export { loadPlugins, hooks, resolvePluginName, resolveTemplateName, getPluginErrors, getPluginLoadErrors } from './hooks.js';
 
 // RPC action/event dispatcher
-export { createActionDispatcher, safePath } from './rpc.js';
+export { createActionDispatcher } from './rpc.js';
+
+// Path safety helper — canonical implementation lives in @docmd/utils.
+// Re-exported here for backward compatibility with existing plugin imports.
+export { safePath } from '@docmd/utils';
 
 // Source editing tools
 export { createSourceTools } from './source.js';

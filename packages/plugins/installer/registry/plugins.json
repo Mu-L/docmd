@@ -41,6 +41,12 @@
     "configKey": "llms",
     "defaultConfig": "{}"
   },
+  "okf": {
+    "package": "@docmd/plugin-okf",
+    "description": "Open Knowledge Format (OKF) bundle generator for AI-agent consumption",
+    "configKey": "okf",
+    "defaultConfig": "{}"
+  },
   "pwa": {
     "package": "@docmd/plugin-pwa",
     "description": "Progressive Web App support for docmd",

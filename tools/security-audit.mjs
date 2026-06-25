@@ -50,7 +50,8 @@ const AUDIT_CONFIG = {
             regex: /(?<!\.(?:[a-zA-Z0-9_$]+))\bexec\s*\(/g,
             severity: 'HIGH',
             exclude: [
-                /scripts\//, // Build scripts are allowed
+                /scripts\//, // Build scripts are allowed (legacy path)
+                /tools\//, // Build tooling is allowed (current path)
                 /packages\/core\/src\/engine\/workspace\.ts/ // Legit for git metadata
             ],
             notes: 'Check if this is child_process.exec. Avoid RegExp.exec false positives.'
@@ -61,17 +62,31 @@ const AUDIT_CONFIG = {
             severity: 'MEDIUM',
             exclude: [
                 /scripts\//,
+                /tools\//,
                 /packages\/core\/src\/engine\//, // Core engine handles paths
                 /packages\/plugins\/search\/src\/index\.ts/
             ]
         }
     ],
-    // Custom filter to skip RegExp.exec specifically if the lookbehind isn't enough
+    // Custom filter to skip RegExp.exec specifically if the lookbehind isn't enough.
+    // The `Unsafe Shell Execution` regex above uses a variable-length negative
+    // lookbehind that only suppresses method calls on identifiers of 2+ chars
+    // (e.g. `child_process.exec` — the chars before `exec(` are `s.`, which
+    // matches the lookbehind pattern). Short identifiers like `re` slip
+    // through because the chars before `exec(` are `e.` (just 2 chars) and
+    // the lookbehind's `\.[a-zA-Z0-9_$]+` requires at least 1 identifier
+    // char AFTER the dot, so it doesn't match `.` alone.
+    //
+    // To compensate, this filter suppresses the match when the line's
+    // `.exec(` call is on a recognised RegExp variable name. The list
+    // covers every common JS naming convention for a RegExp instance.
+    // Real or potentially-real shell calls (any other variable name,
+    // `child_process.exec`, `cp.exec`, standalone `exec(cmd)`, etc.)
+    // are NOT suppressed — they remain flagged for operator review.
     filter: (pattern, line) => {
-        if (pattern.name === 'Unsafe Shell Execution' && (line.includes('.exec(') || line.includes('Regex'))) {
-            // Check if it's likely a RegExp exec by looking at what precedes it
+        if (pattern.name === 'Unsafe Shell Execution' && line.includes('.exec(')) {
             const before = line.split('.exec(')[0];
-            if (before && (before.toLowerCase().includes('regex') || before.toLowerCase().includes('match'))) return false;
+            if (before && /(?:re|regex|regexp|rgx|match|matcher|pattern|pat)(?![a-zA-Z_$])\s*(?:\.|$)/i.test(before)) return false;
         }
 
         if (pattern.name === 'Raw EJS Output (<%-)') {
@@ -162,7 +177,7 @@ if (!skipHeader) {
 
 try {
     scanDir(path.join(CWD, 'packages'));
-    scanDir(path.join(CWD, 'scripts'));
+    scanDir(path.join(CWD, 'tools'));
 
     if (issuesCount > 0) {
         if (!skipHeader) {

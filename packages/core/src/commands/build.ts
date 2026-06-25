@@ -17,7 +17,8 @@ import { fileURLToPath } from 'url';
 import nativeFs from 'fs';
 import { fsUtils as fs, WorkerPool } from '@docmd/utils';
 import { loadConfig } from '../utils/config-loader.js';
-import { TUI, loadPlugins } from '@docmd/api';
+import { TUI, loadPlugins, getPluginLoadErrors } from '@docmd/api';
+import { flushNormaliserWarnings, setNormaliserVerbose } from '@docmd/parser';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { prepareAssets, prepareTemplateAssets } from '../engine/assets.js';
@@ -38,19 +39,43 @@ export async function buildSite(configPath: string, opts: any = {}) {
     showStats: opts.showStats || false,   // Show version/locale stats even when quiet
     onProgress: opts.onProgress || null,  // External progress callback
     targetFiles: opts.targetFiles || null, // Optional: only rebuild specific files
+    verbose: opts.verbose === true || process.env.DOCMD_VERBOSE === 'true',
   };
+
+  // Per-warning normaliser logging is opt-in via --verbose / DOCMD_VERBOSE
+  // so dev-server output stays quiet while CI / verbose builds get the
+  // full breakdown of every container-normaliser issue.
+  if (options.verbose) setNormaliserVerbose(true);
 
   const CWD = process.cwd();
 
   // ── Multi-Project (Workspace) Detection ──────────────────────────
   // If we're NOT already inside a workspace build (no env var set),
   // check if the root config has workspace settings.
+  //
+  // Phase 3 PR 3.C (F8): this block is wrapped in a try/catch so that
+  // workspace validation errors (duplicate prefix, missing source
+  // directory, no root project) are surfaced via `TUI.error` and exit
+  // 1, rather than bubbling up as a raw JS stack trace with exit 0
+  // (the `buildWorkspace` call itself throws plain `Error` objects
+  // that nothing else catches).
   if (!process.env.DOCMD_PROJECT_OUT) {
-    const { detectWorkspace, buildWorkspace } = await import('../engine/workspace.js');
-    const workspaceConfig = await detectWorkspace(configPath);
-    if (workspaceConfig) {
-      await buildWorkspace(workspaceConfig, options);
-      return;
+    try {
+      const { detectWorkspace, buildWorkspace } = await import('../engine/workspace.js');
+      const workspaceConfig = await detectWorkspace(configPath);
+      if (workspaceConfig) {
+        await buildWorkspace(workspaceConfig, options);
+        return;
+      }
+    } catch (wsErr: any) {
+      if (!options.isDev && !options.quiet) {
+        TUI.error('Workspace validation failed', wsErr.message || String(wsErr));
+        if (process.env.npm_lifecycle_event === 'test' || process.env.CI) {
+          console.error(wsErr.stack);
+        }
+        process.exit(1);
+      }
+      throw wsErr;
     }
   }
 
@@ -70,6 +95,20 @@ export async function buildSite(configPath: string, opts: any = {}) {
     config._workerPool = workerPool;
 
     const hooks = await loadPlugins(config, { resolvePaths: [__dirname] });
+
+    // Phase 3 PR 3.A (F6): a plugin the user listed in `config.plugins` but
+    // which failed to load is a build failure, not a warning. Without this
+    // check, `docmd build` exits 0 even when a plugin is missing — the
+    // site still builds but the user has no way to know a plugin was
+    // dropped unless they read the warning text.
+    const loadErrors = getPluginLoadErrors();
+    if (loadErrors.length > 0) {
+      const lines = loadErrors.map((e) => `${e.plugin}: ${e.message}`);
+      throw new Error(
+        `Build failed: ${loadErrors.length} plugin(s) could not be loaded:\n` +
+        lines.map((l) => `  - ${l}`).join('\n')
+      );
+    }
 
     // Execute onConfigResolved hooks
     for (const fn of hooks.onConfigResolved) {
@@ -265,15 +304,27 @@ export async function buildSite(configPath: string, opts: any = {}) {
       for (const fn of indexingHooks) await fn(postBuildCtx);
       if (hasIndexingWork && !options.quiet) TUI.footer(TUI.blue);
 
-      // Publishing — sitemap, llms, pwa, etc.
+      // Publishing — each plugin renders as a parent line + indented children
       if (publishingHooks.length > 0) {
         if (!options.quiet) TUI.section('Publishing', TUI.blue);
-        for (const fn of publishingHooks) await fn(postBuildCtx);
+        for (const fn of publishingHooks) {
+          const pluginName = String((fn as any)._pluginName || 'plugin');
+          const entries: Array<{ msg: string; status: 'DONE'|'SKIP'|'FAIL'|'WAIT' }> = [];
+          const pluginCtx = {
+            ...postBuildCtx,
+            log: (msg: string, status: 'DONE'|'SKIP'|'FAIL'|'WAIT' = 'DONE') => {
+              entries.push({ msg, status });
+            },
+          };
+          await fn(pluginCtx);
+          if (!options.quiet) TUI.pluginTree(pluginName, entries, TUI.blue);
+        }
         if (!options.quiet) TUI.footer(TUI.blue);
       }
     }
 
     if (!options.isDev && !options.quiet) {
+      flushNormaliserWarnings();
       TUI.success(`Build complete. Generated ${allGeneratedPages.length} pages in ${elapsed()}.`);
     }
 

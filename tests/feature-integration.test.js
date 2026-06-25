@@ -3,7 +3,7 @@
  * docmd Comprehensive Feature Test Suite
  * =======================================
  * Brute tests every major docmd feature in isolation and combination.
- * Run: node scripts/brute-test.js
+ * Run: node tests/feature-integration.test.js
  *
  * Tests:
  *  1. Zero-config (no config file)
@@ -64,6 +64,18 @@ function build(dir, expectFail = false) {
   }
 }
 
+// Run a command, return its numeric exit
+// code. 0 on success, 1+ on documented failure paths. -1 if the
+// process was killed by a signal (rare; mostly for diagnostics).
+function exitCodeOf(cmd, cwd) {
+  try {
+    execSync(cmd, { cwd, stdio: 'pipe' });
+    return 0;
+  } catch (e) {
+    return e.status == null ? -1 : e.status;
+  }
+}
+
 function writeFile(dir, filePath, content) {
   const full = path.join(dir, filePath);
   fs.mkdirSync(path.dirname(full), { recursive: true });
@@ -96,10 +108,10 @@ function countPages(dir) {
 
 function assert(testName, condition, detail = '') {
   if (condition) {
-    console.log(`  ${PASS} ${testName}`);
+    console.log(`│  ${PASS} ${testName}`);
     passed++;
   } else {
-    console.log(`  ${FAIL} ${testName}${detail ? ': ' + detail : ''}`);
+    console.log(`│  ${FAIL} ${testName}${detail ? ': ' + detail : ''}`);
     failed++;
     failures.push(testName);
   }
@@ -749,6 +761,155 @@ console.log('\n🏷️ Test 29: Hreflang Tags Consistency');
   // Ensure no duplicate locale prefixes
   assert('no /fr/fr/ in FR hreflang', !frIdx?.includes('/fr/fr/'));
   assert('no /fr/fr/ in FR guide hreflang', !frGuide?.includes('/fr/fr/'));
+}
+
+// ─── TEST 30: Workspaces (multi-project) ───
+// Two sub-projects compiled into one site via a root workspace config.
+// Replaces the standalone "Mega Integration" test file that lived at
+// tests/mega-integration.test.js (deleted). The new Tests 30 + 31 cover
+// what used to be in the legacy failsafe's "Mega Integration" section
+// but inline alongside the other feature tests so the runner shows
+// nine sections, not ten.
+
+{
+  const dir = setup('features-30-workspaces');
+  fs.mkdirSync(path.join(dir, 'main/docs'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'api/docs'), { recursive: true });
+  writeFile(dir, 'main/docmd.config.js',
+    `export default { title: 'Main Docs', src: 'docs' }`);
+  writeFile(dir, 'main/docs/index.md', '# Main Home\n');
+  writeFile(dir, 'api/docmd.config.js',
+    `export default { title: 'API Reference', src: 'docs' }`);
+  writeFile(dir, 'api/docs/index.md', '# API Index\n');
+  writeFile(dir, 'docmd.config.js',
+    `export default {
+       workspace: {
+         projects: [
+           { prefix: '/', src: 'main' },
+           { prefix: '/api', src: 'api' }
+         ]
+       }
+     }`);
+
+  build(dir);
+
+  assert('workspaces: main root built',
+    fs.existsSync(path.join(dir, 'site/index.html')));
+  assert('workspaces: api root built',
+    fs.existsSync(path.join(dir, 'site/api/index.html')));
+  const mainIdx = readSite(dir, 'index.html');
+  assert('workspaces: main page has its title',
+    mainIdx?.includes('Main Docs'));
+  const apiIdx = readSite(dir, 'api/index.html');
+  assert('workspaces: api page has its title',
+    apiIdx?.includes('API Reference'));
+}
+
+// ─── TEST 31: Mega integration (workspaces + i18n + versioning + plugins) ───
+// One project that exercises EVERY docmd feature at once. Equivalent to
+// the legacy failsafe's "Mega Integration Test (V5.0)" — assertions
+// cover the artefacts every common plugin is supposed to produce and
+// the cross-feature interactions (i18n + versioning + workspaces).
+
+{
+  const dir = setup('features-31-mega');
+  fs.mkdirSync(path.join(dir, 'main/docs/en'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'main/docs/fr'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'main/docs-v1/en'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'main/assets/css'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'api/docs'), { recursive: true });
+
+  writeFile(dir, 'main/docmd.config.js',
+    `export default {
+       title: 'Mega Docs',
+       url: 'https://example.com',
+       src: 'docs',
+       out: 'site',
+       plugins: { math: {}, sitemap: {}, llms: {}, seo: {}, pwa: {} },
+       versions: { current: 'v2', all: [
+         { id: 'v2', dir: 'docs' },
+         { id: 'v1', dir: 'docs-v1', label: 'v1.0' }
+       ]},
+       i18n: { default: 'en', locales: [
+         { id: 'en', label: 'English' },
+         { id: 'fr', label: 'Français' }
+       ]}
+     }`);
+  writeFile(dir, 'api/docmd.config.js',
+    `export default {
+       title: 'API Reference',
+       url: 'https://example.com/api',
+       src: 'docs',
+       navigation: [{ title: 'Home', path: '/' }],
+       plugins: { search: {}, mermaid: {} }
+     }`);
+  writeFile(dir, 'docmd.config.js',
+    `export default {
+       workspace: {
+         projects: [
+           { prefix: '/', src: 'main' },
+           { prefix: '/api', src: 'api' }
+         ]
+       }
+     }`);
+
+  writeFile(dir, 'main/docs/en/index.md',
+    '---\ntitle: Home\n---\n# Home\nWelcome.');
+  writeFile(dir, 'main/docs/en/guide.md',
+    '---\ntitle: Guide\n---\n# Guide\n## Steps\n');
+  writeFile(dir, 'main/docs/en/math.md',
+    '---\ntitle: Math\n---\n# Math\nInline $E = mc^2$.');
+  writeFile(dir, 'main/docs/en/mermaid.md',
+    '---\ntitle: Diagrams\n---\n# Diagrams\n```mermaid\ngraph TD\n  A --> B\n```\n');
+  writeFile(dir, 'main/docs/fr/index.md', '# Accueil\n');
+  writeFile(dir, 'main/docs-v1/en/index.md', '# v1 Home\nOld.');
+  writeFile(dir, 'api/docs/index.md',
+    '---\ntitle: API\n---\n# API\n## Endpoints\n');
+  writeFile(dir, 'main/assets/css/custom.css', '.x{color:red}');
+
+  build(dir);
+
+  assert('mega: main index built',
+    fs.existsSync(path.join(dir, 'site/index.html')));
+  assert('mega: main guide built',
+    fs.existsSync(path.join(dir, 'site/guide/index.html')));
+  assert('mega: api index built',
+    fs.existsSync(path.join(dir, 'site/api/index.html')));
+  assert('mega: French locale index built',
+    fs.existsSync(path.join(dir, 'site/fr/index.html')));
+  assert('mega: v1 index built',
+    fs.existsSync(path.join(dir, 'site/v1/index.html')));
+  assert('mega: v1 guide absent',
+    !fs.existsSync(path.join(dir, 'site/v1/guide/index.html')));
+  assert('mega: search-index generated',
+    fs.existsSync(path.join(dir, 'site/search-index.json')));
+  assert('mega: sitemap generated',
+    fs.existsSync(path.join(dir, 'site/sitemap.xml')));
+  assert('mega: llms.txt generated',
+    fs.existsSync(path.join(dir, 'site/llms.txt')));
+  assert('mega: llms-full.txt generated',
+    fs.existsSync(path.join(dir, 'site/llms-full.txt')));
+  assert('mega: PWA manifest generated',
+    fs.existsSync(path.join(dir, 'site/manifest.webmanifest')) ||
+    fs.existsSync(path.join(dir, 'site/manifest.json')));
+  assert('mega: service worker generated',
+    fs.existsSync(path.join(dir, 'site/service-worker.js')) ||
+    fs.existsSync(path.join(dir, 'site/sw.js')));
+  assert('mega: sitemap has root URL',
+    readSite(dir, 'sitemap.xml')?.includes('example.com'));
+  assert('mega: sitemap has French URL',
+    readSite(dir, 'sitemap.xml')?.includes('/fr/'));
+  assert('mega: llms.txt has links',
+    readSite(dir, 'llms.txt')?.includes('[') &&
+    readSite(dir, 'llms.txt')?.includes(']('));
+  assert('mega: math page has katex',
+    readSite(dir, 'math/index.html')?.includes('katex'));
+  assert('mega: mermaid page has diagram',
+    readSite(dir, 'mermaid/index.html')?.includes('class="mermaid"'));
+  assert('mega: index has SEO meta tags',
+    !!readSite(dir, 'index.html')?.match(/<meta\s+name=["']description["']/i));
+  assert('mega: custom assets copied',
+    fs.existsSync(path.join(dir, 'site/assets/css/custom.css')));
 }
 
 // ─── SUMMARY ───
