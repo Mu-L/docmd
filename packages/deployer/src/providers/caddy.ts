@@ -33,10 +33,17 @@ ${caddyAddress} {
     # SPA Routing Fallback
 ${spaCaddyLine}
 
-    # Security Headers
+    # Security headers
     header {
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options   "nosniff"
+        X-Frame-Options          "SAMEORIGIN"
+        X-XSS-Protection         "1; mode=block"
+        Referrer-Policy          "strict-origin-when-cross-origin"
+        Permissions-Policy       "camera=(), microphone=(), geolocation=()"
+        # HSTS (1 year). Only enable after verifying HTTPS works end-to-end.
+        # Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        # CSP — adjust if you embed third-party widgets or analytics.
+        Content-Security-Policy  "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'"
         -Server
     }
 

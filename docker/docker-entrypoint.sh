@@ -32,6 +32,24 @@ if [ "$(id -u)" = "0" ] && [ -d /docs ]; then
     DOCS_GID="1001"
   fi
 
+  # ── writability check (N-18) ───────────────────────────────────────────
+  # Catch read-only volume mounts early with a clear message instead of
+  # letting docmd crash mid-build with a cryptic EROFS / EACCES error.
+  # Only applies to write commands — `dev`, `build`, `init`.
+  # Read-only mounts are valid for `validate`, `mcp`, etc.
+  case "$FIRST_ARG" in
+    dev|build|init)
+      if ! touch /docs/.docmd_write_test 2>/dev/null; then
+        printf '\n[docmd] ERROR: /docs is read-only (or not writable by uid %s).\n' "$DOCS_UID" >&2
+        printf '[docmd] Mount a writable directory:\n' >&2
+        printf '[docmd]   docker run -v $(pwd)/docs:/docs ghcr.io/docmd-io/docmd\n' >&2
+        printf '[docmd] Or check directory permissions on the host.\n' >&2
+        exit 1
+      fi
+      rm -f /docs/.docmd_write_test
+      ;;
+  esac
+
   # Seed demo template before dropping privileges (root can always write).
   if [ "$FIRST_ARG" != "init" ] && \
      [ -z "$(ls -A /docs 2>/dev/null)" ] && \

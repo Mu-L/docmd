@@ -39,10 +39,17 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    # Security
+    # Security headers
     server_tokens off;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options   "nosniff"                          always;
+    add_header X-Frame-Options          "SAMEORIGIN"                       always;
+    add_header X-XSS-Protection         "1; mode=block"                    always;
+    add_header Referrer-Policy          "strict-origin-when-cross-origin"  always;
+    add_header Permissions-Policy       "camera=(), microphone=(), geolocation=()" always;
+    # HSTS (1 year). Only enable after verifying HTTPS works end-to-end.
+    # add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    # CSP — adjust 'default-src' if you embed third-party widgets or analytics.
+    add_header Content-Security-Policy  "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'" always;
 
     # GZIP Compression
     gzip on;
