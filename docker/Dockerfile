@@ -56,13 +56,13 @@ RUN pnpm install --frozen-lockfile
 # Stub out packages that can't build in Docker before running the full build:
 #   - engine-rust-binaries: requires cargo; pre-built .node files are in the repo
 #   - _playground: dev sandbox, not part of the production image
-RUN sh scripts/docker-prebuild.sh
+RUN sh tools/docker-prebuild.sh
 
 # Build all packages
 RUN pnpm -r run build
 
 # Resolve workspace:* deps to real version numbers for standalone use
-RUN node scripts/resolve-ws-deps.js
+RUN node tools/resolve-ws-deps.js
 
 # Pack all packages into tarballs (mimics npm publish)
 RUN pnpm -r pack --pack-destination /tarballs
