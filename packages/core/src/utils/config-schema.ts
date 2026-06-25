@@ -29,6 +29,28 @@ const KNOWN_CSS_THEMES: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Hardcoded English defaults for the 404 page. These are intentionally
+ * NOT injected into `config.notFound` during normalisation — if we did,
+ * the build site's `|| t('pageNotFound')` fallback would never fire
+ * (the user-supplied English string would shadow it), and a site with
+ * default locale = 'zh' would still render "404 : Page Not Found" in
+ * English.
+ *
+ * Instead, the build command resolves the actual title/content at
+ * render-time using this priority chain:
+ *   1. config.notFound.title / config.notFound.content (user override)
+ *   2. t('pageNotFound') / t('pageNotFoundMsg') (translated to default locale)
+ *   3. NOT_FOUND_DEFAULTS.title / content (this constant, English)
+ *
+ * Exported here so the defaults live next to the rest of the config
+ * schema rather than buried in the build command.
+ */
+export const NOT_FOUND_DEFAULTS = {
+  title:   'Page Not Found',
+  content: 'The page you’re looking for doesn’t exist or has moved.'
+};
+
+/**
  * Normalizes user config to ensure all required nested objects exist.
  * Handles legacy backward compatibility transparently.
  */
@@ -291,11 +313,14 @@ export function normalizeConfig(userConfig: any) {
     }
 
     // --- 7. SEO Redirects & 404 ---
+    // config.notFound is normalised to an empty object here so build
+    // commands can read `config.notFound?.title` / `content` without
+    // optional-chaining every access. The English defaults live in the
+    // exported NOT_FOUND_DEFAULTS constant and are applied at render
+    // time (NOT pre-injected into config.notFound — that would shadow
+    // the translation fallback chain in the build command).
     config.redirects = config.redirects || {};
-    config.notFound = config.notFound || {
-        title: '404 : Page Not Found',
-        content: 'The page you are looking for does not exist or has been moved.'
-    };
+    config.notFound = config.notFound || {};
 
     // --- 8. Internationalisation (i18n) ---
     if (config.i18n && config.i18n.locales && Array.isArray(config.i18n.locales) && config.i18n.locales.length > 0) {
