@@ -88,29 +88,18 @@ WORKDIR /app
 # Copy packed tarballs from builder
 COPY --from=builder /tarballs /tarballs
 
-# Install @docmd/* packages by manually extracting each tarball into a flat
-# /usr/local/lib/node_modules tree. This bypasses npm/pnpm's registry
-# lookup, which would fail because @docmd/* packages aren't published to
-# the npm registry yet at build time. Sibling-tarball resolution isn't a
-# thing npm supports natively, so we just lay the files down ourselves.
+# Install only @docmd/* packages (the transitive deps of @docmd/core).
+# We extract each docmd-*.tgz tarball into /usr/local/lib/node_modules/@docmd/<name>.
+# This bypasses npm/pnpm registry lookups (packages aren't published yet at
+# build time). Legacy wrappers (doc.md, @mgks/docmd) and the monorepo root
+# tarball are excluded by only matching the docmd-* prefix.
 RUN mkdir -p /usr/local/lib/node_modules && \
-    for tarball in /tarballs/*.tgz; do
-      # Skip the monorepo root tarball (private, but guard anyway).
-      case "$(basename "$tarball")" in docmd-monorepo-*) continue ;; esac
-      # Skip the legacy doc.md wrapper — not needed in production.
-      case "$(basename "$tarball")" in doc.md-*) continue ;; esac
+    for tarball in /tarballs/docmd-*.tgz; do
       fname=$(basename "$tarball" .tgz)
       # Strip version suffix: docmd-core-0.8.8 -> docmd-core
       pkg="${fname%-*}"
-      # Map flattened names back to scoped names:
-      #   docmd-core      -> @docmd/core
-      #   docmd-plugin-x  -> @docmd/plugin-x
-      #   mgks-docmd      -> @mgks/docmd
-      case "$pkg" in
-        docmd-*)  scoped="@docmd/${pkg#docmd-}" ;;
-        mgks-*)   scoped="@mgks/${pkg#mgks-}" ;;
-        *)        scoped="$pkg" ;;
-      esac
+      # Map to scoped name: docmd-core -> @docmd/core
+      scoped="@docmd/${pkg#docmd-}"
       mkdir -p "/usr/local/lib/node_modules/$scoped"
       tar -xzf "$tarball" -C "/usr/local/lib/node_modules/$scoped" --strip-components=1
     done
@@ -141,7 +130,7 @@ RUN mkdir -p /docs /site && chown -R docmd:docmd /docs /site
 # is in the build log above this block for diagnosis.
 RUN mkdir -p /template && \
     cd /template && \
-    if echo 'y' | docmd init; then \
+    if docmd init --yes; then \
       if [ ! -f /template/docmd.config.json ]; then \
         printf '\n[docmd-docker] WARNING: docmd init exited 0 but /template/docmd.config.json is missing.\n' >&2; \
         printf '[docmd-docker] Demo seeding will not work. Mount your own /docs.\n' >&2; \
