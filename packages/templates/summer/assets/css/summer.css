@@ -3047,6 +3047,11 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution {
 
 .summer-content .docmd-container.grids {
   display: grid;
+  /* `auto-fit` with `minmax(240px, 1fr)` matches the default template's
+     grid width and keeps 2 cards side-by-side from ~520px upward.
+     Bumping the min to 280px+ pushed the grid into a single 1fr column
+     when the .summer-content container is ~608px wide, which made cards
+     stretch edge-to-edge (the "stretching wide" regression). */
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
   margin: 1.5rem 0;
@@ -3054,9 +3059,14 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution {
 }
 
 .summer-content .docmd-container.grid-item {
+  /* Same fix as the default template: flex-direction: column is required
+     or the inner card's title + content lay out horizontally. width: 100%
+     keeps the item filling its grid cell, and the outer grids container's
+     `gap: 16px` (set above) handles equal spacing between items. */
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
+  width: 100%;
   transition: border-color var(--summer-fast) var(--summer-ease);
 
 }

@@ -184,8 +184,13 @@ export default {
       const { title, icon } = parseTitleAndIcon(tokens[idx].info);
       const renderedTitle = title ? md.renderInline(title) : '';
       const iconHtml = icon ? renderIcon(icon, { class: 'card-icon-heading' }) : '';
-      return `<div class="docmd-container card">${renderedTitle || iconHtml ? `<div class="card-title">${iconHtml}${renderedTitle}</div>` : ''}<div class="card-content">\n`;
-    }, () => '</div></div>\n');
+      // No trailing newline after <div class="card-content">: any inline
+      // markdown immediately after the ::: card opener (e.g. a callout
+      // block or a heading) would otherwise get a literal newline inserted
+      // before its first tag, which broke card layouts where the inner
+      // block was meant to sit flush against the card edge.
+      return `<div class="docmd-container card">${renderedTitle || iconHtml ? `<div class="card-title">${iconHtml}${renderedTitle}</div>` : ''}<div class="card-content">`;
+    }, () => '</div></div>');
 
     // 3. Collapsible
     createDepthTrackingContainer(md, 'collapsible', (tokens, idx) => {
