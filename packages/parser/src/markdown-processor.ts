@@ -16,6 +16,85 @@ import MarkdownIt from 'markdown-it';
 import matter from 'lite-matter';
 import { highlight } from 'lite-hl';
 import { resolveHref } from './utils/normalize-href.js';
+import { attrEsc } from '@docmd/utils';
+import {
+  normaliseContainers,
+  type NormaliserWarning
+} from './utils/container-normaliser.js';
+
+// URL schemes that can execute code or exfiltrate data when clicked.
+// Phase 1.B (T-S4 fix, defense in depth): markdown-it 14 already rejects these
+// at the parser layer, but we re-check inside the link_open override so any
+// future refactor of the parser pipeline cannot accidentally re-introduce them.
+const DANGEROUS_URL_SCHEMES = new Set([
+  'javascript:',
+  'data:text/html',
+  'vbscript:',
+  'file:'
+]);
+
+function isDangerousHref(href: string): boolean {
+  const lower = href.trim().toLowerCase();
+  for (const prefix of DANGEROUS_URL_SCHEMES) {
+    if (lower.startsWith(prefix)) return true;
+  }
+  return false;
+}
+
+/**
+ * Phase 2 (F1–F5): accumulated warnings, summarised once at the end of
+ * the build via `flushNormaliserWarnings()`. Per-warning logging to
+ * stderr is opt-in via `setNormaliserVerbose(true)` so the dev-server
+ * console stays clean (one summary line per build instead of one line
+ * per warning) while CI / verbose mode still gets the full detail.
+ */
+const normaliserWarnings: NormaliserWarning[] = [];
+let normaliserVerbose = false;
+
+function emitNormaliserWarning(w: NormaliserWarning): void {
+  normaliserWarnings.push(w);
+  if (normaliserVerbose) {
+    console.warn(`[normaliser] ${w.severity.toUpperCase()} ${w.path}:${w.line} — ${w.message}`);
+  }
+}
+
+export function setNormaliserVerbose(verbose: boolean): void {
+  normaliserVerbose = verbose;
+}
+
+export function flushNormaliserWarnings(): void {
+  if (normaliserWarnings.length === 0) return;
+  const errors = normaliserWarnings.filter(w => w.severity === 'error').length;
+  const warnings = normaliserWarnings.length - errors;
+  const fileCount = new Set(normaliserWarnings.map(w => w.path)).size;
+  const severity = errors > 0 ? 'ERROR' : 'WARN';
+  const tag = errors > 0 ? '\x1b[31m' : '\x1b[33m';
+  const reset = '\x1b[0m';
+  console.warn(
+    `${tag}[normaliser] ${severity}${reset} ` +
+    `${normaliserWarnings.length} issue${normaliserWarnings.length === 1 ? '' : 's'} ` +
+    `(${errors} error${errors === 1 ? '' : 's'}, ${warnings} warning${warnings === 1 ? '' : 's'}) ` +
+    `across ${fileCount} file${fileCount === 1 ? '' : 's'}. ` +
+    `Run with --verbose to list each one.`
+  );
+  normaliserWarnings.length = 0;
+}
+
+/**
+ * Phase 2 (F1–F5): run the container normaliser on the markdown body before
+ * it is handed to markdown-it (and before any user plugin's `onBeforeParse`
+ * hook so they always see balanced input).
+ *
+ * The function is allocation-only on the input — no module-level state — so
+ * output is deterministic across worker threads.
+ */
+function applyContainerNormaliser(markdownContent: string, env: { filePath?: string }): string {
+  const norm = normaliseContainers(markdownContent, {
+    sourcePath: env && env.filePath ? env.filePath : '<source>',
+    onWarning: emitNormaliserWarning
+  });
+  return norm.source;
+}
 
 // Standard Plugins
 import attrs from 'markdown-it-attrs';
@@ -122,8 +201,13 @@ const headingIdPlugin = (md, options: any = {}) => {
 
 // Main Factory Function to Create a Markdown Processor
 function createMarkdownProcessor(config: any = {}, pluginsCallback: any) {
+  // HTML policy from config (Phase 0.D, default 'escape').
+  // 'allow'  -> markdown-it html: true (raw HTML passes through, UNSAFE)
+  // 'escape' -> markdown-it html: false (HTML escaped and shown as text)
+  // 'strip'  -> html: false + disable html_block/html_inline rules (HTML removed)
+  const htmlPolicy = (config && config.security && config.security.html) || 'escape';
   const mdOptions: any = {
-    html: true,
+    html: htmlPolicy === 'allow',
     linkify: true,
     typographer: true,
     breaks: config.markdown?.breaks ?? true,
@@ -148,6 +232,13 @@ function createMarkdownProcessor(config: any = {}, pluginsCallback: any) {
   };
 
   const md = new MarkdownIt(mdOptions);
+
+  // 'strip' policy: drop html_block and html_inline rules entirely so HTML
+  // tokens are never emitted. Distinct from 'escape' which keeps tokens and
+  // HTML-escapes their content.
+  if (htmlPolicy === 'strip') {
+    md.disable(['html_block', 'html_inline']);
+  }
 
   // Core Plugins
   md.use(attrs, { leftDelimiter: '{', rightDelimiter: '}' });
@@ -198,6 +289,14 @@ function createMarkdownProcessor(config: any = {}, pluginsCallback: any) {
 
     if (hrefIndex >= 0) {
       const href = token.attrs[hrefIndex][1];
+
+      // Phase 1.B (T-S4 fix): drop dangerous schemes. The link is rendered as
+      // a safe hash-anchor instead so the surrounding text still appears as a
+      // clickable (but inert) element.
+      if (isDangerousHref(href)) {
+        token.attrs[hrefIndex][1] = '#';
+        return self.renderToken(tokens, idx, options);
+      }
 
       const isHashOnly = href.startsWith('#');
       const isAsset = href.match(/(^|\/)assets\//);
@@ -296,6 +395,11 @@ function processContent(rawString, mdInstance, config, env = {}) {
     if (h1Match) frontmatter.title = h1Match[1].trim();
   }
 
+  // Phase 2 (F1–F5): rewrite unbalanced `:::` containers so the existing
+  // depth-tracking block rule in features/common-containers.ts always sees
+  // a matching close.
+  markdownContent = applyContainerNormaliser(markdownContent, env);
+
   const htmlContent = mdInstance.render(markdownContent, env);
   const headings = extractHeadings(htmlContent);
 
@@ -322,6 +426,11 @@ async function processContentAsync(rawString: string, mdInstance: any, config: a
     console.error('Error parsing frontmatter:', e.message);
     return null;
   }
+
+  // Phase 2 (F1–F5): rewrite unbalanced `:::` containers BEFORE user plugins
+  // so they always see balanced input, and BEFORE markdown-it so the
+  // depth-tracking block rule can match every container it sees.
+  markdownContent = applyContainerNormaliser(markdownContent, env);
 
   if (hooks && hooks.onBeforeParse) {
     for (const fn of hooks.onBeforeParse) {

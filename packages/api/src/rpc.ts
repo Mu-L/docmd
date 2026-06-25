@@ -21,28 +21,16 @@
  * caller knows whether a browser reload is needed.
  */
 
-import path from 'path';
 import fs from 'fs';
 import { createSourceTools } from './source.js';
 import { TUI } from '@docmd/tui';
+import { safePath } from '@docmd/utils';
 import type {
   ActionContext,
   ActionHandler,
   EventHandler,
   DispatchResult,
 } from './types.js';
-
-/**
- * Resolve a relative path against the project root, rejecting any path
- * that would escape the root directory.
- */
-export function safePath(root: string, relativePath: string): string {
-  const resolved = path.resolve(root, relativePath);
-  if (!resolved.startsWith(root + path.sep) && resolved !== root) {
-    throw new Error(`Path escapes project root: ${relativePath}`);
-  }
-  return resolved;
-}
 
 interface DispatcherHooks {
   actions: Record<string, ActionHandler>;

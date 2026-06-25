@@ -26,6 +26,7 @@ import nativeFs from 'node:fs';
 import process from 'node:process';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { safePath, asUserPath } from '@docmd/utils';
 import type { PluginDescriptor, PluginHooks, PluginModule, Capability, TemplateHook, TemplateAssetHook } from './types.js';
 
 const require = createRequire(import.meta.url);
@@ -141,8 +142,20 @@ function safeCall<T>(hookName: string, pluginName: string, fn: (...args: any[]) 
 
 const pluginErrors: { plugin: string; hook: string; message: string; filePath?: string }[] = [];
 
+// separate tracker for load-time plugin failures (the
+// "unknown plugin" case from test-report §F6). RUNTIME hook errors go in
+// `pluginErrors`; LOAD failures (could not resolve / import) go here.
+// The build / dev commands check this via `getPluginLoadErrors()` and
+// exit 1 if any are present, so a missing plugin is a hard build failure
+// rather than a silent warning.
+const pluginLoadErrors: { plugin: string; message: string }[] = [];
+
 export function getPluginErrors() {
   return pluginErrors;
+}
+
+export function getPluginLoadErrors() {
+  return pluginLoadErrors;
 }
 
 // Track which plugin warnings have already been printed to avoid repeating them on
@@ -167,11 +180,11 @@ export function resolvePluginName(key: string): string {
     return `@docmd/plugin-${key}`;
   }
   
-  const corePlugins = ['search', 'seo', 'sitemap', 'analytics', 'llms', 'mermaid', 'git', 'openapi'];
+  const corePlugins = ['search', 'seo', 'sitemap', 'analytics', 'llms', 'mermaid', 'git', 'openapi', 'okf'];
   if (corePlugins.includes(key)) {
     return `@docmd/plugin-${key}`;
   }
-  
+
   return key;
 }
 
@@ -333,13 +346,17 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
   hooks.templates = [];
   hooks.templateAssets = [];
   pluginErrors.length = 0;
+  pluginLoadErrors.length = 0;
 
   // 2. Initialize Plugin Map (Name -> Options)
   const pluginMap = new Map<string, any>();
   const searchEnabled = config.optionsMenu ? config.optionsMenu.components.search !== false : config.search !== false;
 
   // A. Core Plugins - always loaded by default.
-  const corePlugins = ['search', 'seo', 'sitemap', 'analytics', 'llms', 'mermaid', 'git', 'openapi'];
+  // 0.8.8: added `okf` (Open Knowledge Format bundles for AI agents).
+  // `okf` follows the same pattern as `llms` — auto-loaded, opt-out via
+  // `plugins.okf = false` in the user's config.
+  const corePlugins = ['search', 'seo', 'sitemap', 'analytics', 'llms', 'mermaid', 'git', 'openapi', 'okf'];
 
   for (const name of corePlugins) {
     const resolved = `@docmd/plugin-${name}`;
@@ -389,6 +406,7 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
     try {
       let rawModule: any;
       let needsAutoInstall = false;
+      const isLocalPath = name.startsWith('./') || name.startsWith('../') || name.startsWith('/');
       
       try {
         let loadedFromMonorepo = false;
@@ -415,12 +433,47 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
 
         // 2. Standard NPM Resolution: if not found locally, use Node's resolution
         if (!loadedFromMonorepo) {
-          const resolvedPath = require.resolve(name, { paths: resolvePaths });
+          let resolvedPath: string;
+          if (isLocalPath) {
+            // Phase 1.A: CWE-22/CWE-94 fix (T-S8). Local-path plugins must resolve
+            // inside the project root. Without this, require.resolve(name, { paths })
+            // can search parent directories and load arbitrary plugins.
+            const projectRoot = path.resolve(process.cwd());
+            try {
+              resolvedPath = safePath(projectRoot, asUserPath(name));
+            } catch (_e: any) {
+              throw new Error(`Local plugin path "${name}" escapes project root`);
+            }
+            // Resolve directory imports to the package's main field (or index.js).
+            // Node ESM does not support bare directory imports.
+            try {
+              const stat = nativeFs.statSync(resolvedPath);
+              if (stat.isDirectory()) {
+                const pkgPath = path.join(resolvedPath, 'package.json');
+                if (nativeFs.existsSync(pkgPath)) {
+                  const pkg = JSON.parse(nativeFs.readFileSync(pkgPath, 'utf8'));
+                  const main = (pkg.main || 'index.js').replace(/^\.\//, '');
+                  resolvedPath = path.join(resolvedPath, main);
+                } else if (nativeFs.existsSync(path.join(resolvedPath, 'index.js'))) {
+                  resolvedPath = path.join(resolvedPath, 'index.js');
+                }
+              }
+            } catch (_e: any) {
+              throw new Error(`Local plugin directory "${name}" has no resolvable entry point: ${_e.message}`);
+            }
+          } else {
+            resolvedPath = require.resolve(name, { paths: resolvePaths });
+          }
           rawModule = await import(pathToFileURL(resolvedPath).href);
         }
       } catch (_e: any) {
         if (name.startsWith('@docmd/plugin-') || name.startsWith('@docmd/template-')) {
           needsAutoInstall = true;
+        } else if (isLocalPath) {
+          // Phase 1.A: a local-path plugin that fails safePath or import must
+          // be reported with the original safety error, not swallowed into the
+          // generic "Failed to resolve" fallback.
+          throw _e;
         } else {
           // Fallback for non-package plugins or when resolution fails
           try {
@@ -461,6 +514,9 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
       }
     } catch (e: any) {
       warnOnce(`load:${name}`, TUI.yellow(`Could not load plugin: ${name} (missing or misconfigured)`) + TUI.dim(`\n   > ${e.message}`));
+      // track load failures so the build can fail
+      // loudly instead of silently completing with a missing plugin.
+      pluginLoadErrors.push({ plugin: name, message: e.message });
     }
   }
 

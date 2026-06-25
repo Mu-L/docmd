@@ -594,6 +594,14 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       const headInjections = await Promise.all(hooks.injectHead.map((fn: any) => fn(config, pageContext, relativePathToRoot)));
       const bodyInjections = await Promise.all(hooks.injectBody.map((fn: any) => fn(config, pageContext)));
 
+      // Phase 1.B (T-S7): the framework does NOT auto-sanitize plugin output.
+      // Plugins are npm-installed and audited per the trust model
+      // (DEVELOPMENT-BENCHMARK.md §S4). The `sanitizeHeadInjection` helper
+      // is exported from @docmd/utils and is available for plugins that want
+      // to sanitise their own output, but the framework does not impose it.
+      // Auto-sanitisation breaks legitimate scripts (e.g. Google Analytics'
+      // self-closing <script src=...></script> tag) because no regex can
+      // reliably distinguish a trusted analytics script from a malicious one.
       const fullHeadHtml = [
         headInjections.join('\n'),
         assetHeadHtml,
