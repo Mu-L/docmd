@@ -35,10 +35,11 @@ if (!isCI) {
     run(headerCmd, false);
 }
 
-// 2. Run the actual failsafe check
-// Forwarding arguments to failsafe.mjs
+// 2. Run the categorised test suite (tests/runner.js replaced the
+// legacy scripts/failsafe.mjs after the tests/scripts split in 0.8.8).
+// Forwarding arguments so --skip-setup / future flags reach the runner.
 const failsafeArgs = args.filter(a => a !== '--link' && a !== '--skip-header').join(' ');
-run(`node tools/failsafe.mjs ${failsafeArgs}`, false);
+run(`node tests/runner.js ${failsafeArgs}`, false);
 
 // 3. Handle global linking if requested
 if (shouldLink) {
