@@ -27,15 +27,33 @@
  *                    CLI contracts + OKF/LLMS plugin tests +
  *                    Mega Integration Test for workspaces,
  *                    i18n, versioning, and plugin combinations)
+ *                    followed by per-package unit tests
+ *                    (parser, utils, mermaid, okf) via
+ *                    `pnpm -r run test --if-present` so a local
+ *                    regression fails the release pipeline
  *   6. Link        - optional global npm link
  *
  * Each step inside a section shows [WAIT] (dim) when it starts
  * and [DONE] (green) when it finishes. No emojis.
  *
+ * Default output is intentionally minimal: every step collapses to
+ * one line, and every count (passed tests, lint errors, package
+ * totals, Docker version, ...) accumulates into a single trailing
+ * Summary block at the end of the pipeline. A fully-green run prints
+ * a green `┌─ Summary` listing each section with its stat; a run
+ * with any failure replaces that block with a red `┌─ Issues` listing
+ * every failure with file:line detail.
+ *
+ * Pass --verbose (or --full) to stream the full test output as the
+ * suite runs — useful when actively iterating on a test that just
+ * started failing and you want to see the assertion text inline.
+ *
  * Run:  pnpm prep
  *       pnpm prep --link            (skip tests, install globally)
  *       pnpm prep --skip-tests      (skip both test suites)
  *       pnpm prep --only=exit-codes (run a single test section)
+ *       pnpm prep --verbose         (stream full test output inline)
+ *       pnpm prep --full            (alias for --verbose)
  * --------------------------------------------------------------------
  */
 
@@ -43,6 +61,27 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 
 const args = process.argv.slice(2);
+
+// --verbose / --full streams every step's raw output as it runs.
+// Default mode keeps the pipeline minimal: each step collapses to
+// one line and a final Issues section appears only if something failed.
+const verbose = args.includes('--verbose') || args.includes('--full');
+
+// Issue accumulator — populated by every section so a single trailing
+// "Issues" block can show the operator everything that needs fixing.
+const issues = [];
+function addIssue(severity, section, message, details = []) {
+    issues.push({ severity, section, message, details });
+}
+
+// Stat accumulator — every section contributes a one-line entry that
+// prints in the trailing Summary block. Lets the per-step line stay
+// minimal ("[ DONE ] 28s") while still surfacing the actual numbers
+// (passed counts, lint counts, etc.) at the end.
+const stats = [];
+function addStat(label, value, severity = 'ok') {
+    stats.push({ label, value, severity });
+}
 
 // ── TUI design tokens (no emojis, only [WAIT] / [DONE] / [ FAIL ]) ──
 const C = {
@@ -57,13 +96,14 @@ const C = {
 };
 
 // ── TUI primitives ────────────────────────────────────────────────────
+// section() and footer() pair up to produce exactly one blank line
+// between groups: footer ends with \n, section starts without \n.
 function section(label, color) {
-    console.log(`\n${color}${C.bold}┌─ ${label}${C.reset}`);
+    console.log(`${color}${C.bold}┌─ ${label}${C.reset}`);
 }
 
 function footer(color) {
-    console.log('');  // breathing room before footer
-    console.log(`${color}└${'─'.repeat(50)}${C.reset}\n`);
+    console.log(`${color}└${'─'.repeat(50)}${C.reset}`);
 }
 
 function startStep(label) {
@@ -93,13 +133,34 @@ function finishStep(s, status, summary) {
     );
 }
 
-function run(cmd, silent) {
-    if (silent === undefined) silent = true;
+function run(cmd, opts = {}) {
+    // opts.silent   — when true (default), suppress output unless cmd failed.
+    // opts.capture  — return stdout/stderr as strings; never stream to the TUI.
+    //                 Used by collapsed-mode test steps so we can parse a
+    //                 summary line instead of dumping hundreds of test logs.
+    // The function never calls process.exit; callers inspect `result.ok`.
+    const silent  = opts.silent  !== false;
+    const capture = opts.capture === true;
     try {
-        execSync(cmd, { stdio: silent ? 'ignore' : 'inherit' });
+        const out = execSync(cmd, {
+            stdio: capture
+                ? ['ignore', 'pipe', 'pipe']
+                : (silent ? 'ignore' : 'inherit'),
+            maxBuffer: 64 * 1024 * 1024,
+        });
+        return {
+            ok: true,
+            stdout: capture ? out.toString() : '',
+            stderr: '',
+            status: 0,
+        };
     } catch (e) {
-        if (!silent) console.error(e);
-        process.exit(1);
+        return {
+            ok: false,
+            stdout: capture ? (e.stdout ? e.stdout.toString() : '') : '',
+            stderr: capture ? (e.stderr ? e.stderr.toString() : '') : '',
+            status: e.status,
+        };
     }
 }
 
@@ -122,33 +183,191 @@ function deepWipe() {
 
 function runLint() {
     const s = startStep('Running eslint over monorepo');
-    let stdout = '';
-    try {
-        stdout = execSync('pnpm -s exec eslint . --format json', {
-            stdio: ['ignore', 'pipe', 'pipe'],
-            maxBuffer: 64 * 1024 * 1024
-        }).toString();
-    } catch (e) {
-        // eslint exits non-zero on errors — JSON is still on stdout
-        if (e.stdout) stdout = e.stdout.toString();
-    }
+    // eslint exits non-zero on errors — JSON is still on stdout. run()
+    // never exits the process, so we can collect the lint output cleanly.
+    const result = run('pnpm -s exec eslint . --format json', { capture: true });
 
     let errors = 0, warnings = 0;
+    const details = [];
     try {
-        const results = JSON.parse(stdout || '[]');
+        const results = JSON.parse(result.stdout || '[]');
         for (const file of results) {
             for (const msg of file.messages || []) {
                 if (msg.severity === 2) errors++;
                 else if (msg.severity === 1) warnings++;
+                if (msg.severity >= 1) {
+                    const relPath = (file.filePath || '')
+                        .replace(process.cwd() + '/', '')
+                        .replace(/^.*\/docmd\//, '');
+                    details.push(`${relPath}:${msg.line} — ${msg.message}`);
+                }
             }
         }
     } catch (_) { /* malformed output */ }
 
     const status = errors > 0 ? 'fail' : (warnings > 0 ? 'warn' : 'done');
-    const sum = errors + ' error' + (errors === 1 ? '' : 's') + ', '
-              + warnings + ' warning' + (warnings === 1 ? '' : 's');
-    finishStep(s, status, sum);
-    if (errors > 0) process.exit(1);
+    finishStep(s, status);
+
+    const summary = `${errors} error${errors === 1 ? '' : 's'}, ${warnings} warning${warnings === 1 ? '' : 's'}`;
+    addStat('Lint', summary, errors > 0 ? 'fail' : (warnings > 0 ? 'warn' : 'ok'));
+
+    if (errors > 0) addIssue('error', 'Lint', `${errors} lint error(s)`, details);
+    else if (warnings > 0) addIssue('warning', 'Lint', `${warnings} lint warning(s)`, details);
+}
+
+// ── Collapsed-mode test runner ────────────────────────────────────────
+// Captures test output, parses pass/fail counts and any failure
+// titles, then renders a one-line summary. Verbose mode bypasses
+// the capture and streams raw output as it arrives instead.
+function summariseTests(stdout) {
+    // tests/runner.js emits a single aggregate line at the end.
+    // Pattern: "Test summary: 367 passed, 0 failed across 9 files"
+    let m = stdout.match(/Test summary:\s+(\d+)\s+passed,\s+(\d+)\s+failed\s+across\s+(\d+)\s+files?/i);
+    if (m) {
+        return {
+            tests: parseInt(m[1]) + parseInt(m[2]),
+            pass:  parseInt(m[1]),
+            fail:  parseInt(m[2]),
+            units: parseInt(m[3]),
+            unitLabel: 'files',
+            failures: extractFailures(stdout),
+        };
+    }
+
+    // Per-package output (pnpm -r run test): each suite prints its own
+    // ℹ tests N / ℹ pass N / ℹ fail N block, so we sum them all up.
+    let tests = 0, pass = 0, fail = 0, pkgs = 0;
+    for (const t of stdout.matchAll(/ℹ\s+tests\s+(\d+)/g)) tests += parseInt(t[1]);
+    for (const p of stdout.matchAll(/ℹ\s+pass\s+(\d+)/g))  pass  += parseInt(p[1]);
+    for (const f of stdout.matchAll(/ℹ\s+fail\s+(\d+)/g))  fail  += parseInt(f[1]);
+    // Count distinct packages that reported a result. Look for the
+    // pnpm-recursive "Done" line which marks each package's end.
+    for (const _ of stdout.matchAll(/\bDone$/gm)) pkgs++;
+    // Fallback when no "Done" markers are present: count `ℹ tests` lines.
+    if (pkgs === 0) {
+        for (const _ of stdout.matchAll(/ℹ\s+tests\s+\d+/g)) pkgs++;
+    }
+    return {
+        tests, pass, fail,
+        units: pkgs,
+        unitLabel: pkgs === 1 ? 'package' : 'packages',
+        failures: extractFailures(stdout),
+    };
+}
+
+function extractFailures(stdout) {
+    // node:test prints "not ok N - <name>" lines on failure. Trim
+    // surrounding ANSI noise and keep the title only — full diagnostics
+    // remain in --verbose output.
+    const out = [];
+    // Build the ANSI-stripping regex at runtime so the static linter
+    // doesn't flag the embedded ESC (\x1b) control character.
+    const ANSI_RE = new RegExp(`${String.fromCharCode(0x1b)}\\[[0-9;]*m`, 'g');
+    for (const m of stdout.matchAll(/not ok \d+ - (.+)/g)) {
+        const t = m[1].replace(ANSI_RE, '').trim();
+        if (t) out.push(t);
+        if (out.length >= 20) break;
+    }
+    return out;
+}
+
+function runTestStep(label, cmd, statLabel = label) {
+    const s = startStep(label);
+
+    // Verbose mode: stream the raw output as before. The finish line
+    // rewrites with [DONE] / [FAIL] depending on the exit code.
+    if (verbose) {
+        const result = run(cmd, { silent: false });
+        if (result.ok) finishStep(s);
+        else {
+            finishStep(s, 'fail');
+            addIssue('error', label, 'test step failed', []);
+        }
+        addStat(statLabel, result.ok ? 'passed (see --verbose output for details)' : 'failed', result.ok ? 'ok' : 'fail');
+        return;
+    }
+
+    // Default (collapsed) mode: capture output, summarise, render one line.
+    const result = run(cmd, { capture: true });
+    const sum = summariseTests(result.stdout + result.stderr);
+
+    if (result.ok && sum.fail === 0 && sum.tests > 0) {
+        finishStep(s, 'done');
+        addStat(statLabel, `${sum.pass} passed across ${sum.units} ${sum.unitLabel}`, 'ok');
+    } else if (result.ok && sum.tests === 0) {
+        // No tests ran at all (e.g. --only matched nothing). Be honest
+        // about that rather than printing a misleading "0 passed".
+        finishStep(s, 'warn');
+        addStat(statLabel, 'no tests ran', 'warn');
+    } else {
+        const statValue = sum.fail > 0
+            ? `${sum.fail} of ${sum.tests} failed across ${sum.units} ${sum.unitLabel}`
+            : `command exited with status ${result.status}`;
+        finishStep(s, 'fail');
+        addStat(statLabel, statValue, 'fail');
+        addIssue('error', label,
+            sum.fail > 0 ? `${sum.fail} test failure(s)` : 'test command failed',
+            sum.failures);
+    }
+}
+
+// ── Final Summary / Issues section ───────────────────────────────────
+// Single trailing block. When nothing failed, it renders as a green
+// Summary listing every stat (one line per section). When issues were
+// collected, it flips to a red Issues block with the same group /
+// bullet layout used elsewhere in the TUI. Either way it lives in the
+// same slot at the end of the pipeline, so the operator always knows
+// where to look for the verdict.
+function printSummary() {
+    if (issues.length === 0) {
+        // Green Summary — every stat in one tidy list. Pad the label
+        // column to the longest label so values align regardless of
+        // how many sections contributed.
+        section('Summary', C.green);
+        const pad = Math.max(...stats.map(s => s.label.length)) + 2;
+        for (const s of stats) {
+            const tag = s.severity === 'warn'
+                ? `${C.yellow}[ WARN ]${C.reset}`
+                : `${C.green}[ DONE ]${C.reset}`;
+            const label = `${s.label}`.padEnd(pad);
+            console.log(`${C.green}│${C.reset}  ${tag} ${C.bold}${label}${C.reset}${s.value}`);
+        }
+        footer(C.green);
+        return;
+    }
+
+    // Failure case: render the Issues block.
+    const errors   = issues.filter(i => i.severity === 'error').length;
+    const warnings = issues.filter(i => i.severity === 'warning').length;
+    const color    = errors > 0 ? C.red : C.yellow;
+    const head     = `Issues — ${errors} error${errors === 1 ? '' : 's'}, ${warnings} warning${warnings === 1 ? '' : 's'}`;
+    section(head, color);
+
+    // Group by section so two issues from the same source don't repeat
+    // the section header; the operator reads the section once and then
+    // scans the bullets.
+    const bySection = new Map();
+    for (const i of issues) {
+        if (!bySection.has(i.section)) bySection.set(i.section, []);
+        bySection.get(i.section).push(i);
+    }
+    for (const [name, items] of bySection) {
+        const tag = items.some(i => i.severity === 'error')
+            ? `${C.red}[ FAIL ]${C.reset}`
+            : `${C.yellow}[ WARN ]${C.reset}`;
+        console.log(`${color}│${C.reset}  ${tag} ${C.bold}${name}${C.reset}`);
+        for (const item of items) {
+            console.log(`${color}│${C.reset}    ${item.message}`);
+            const detailCap = 8;
+            for (const detail of item.details.slice(0, detailCap)) {
+                console.log(`${color}│${C.reset}      ${C.dim}${detail}${C.reset}`);
+            }
+            if (item.details.length > detailCap) {
+                console.log(`${color}│${C.reset}      ${C.dim}… ${item.details.length - detailCap} more (re-run with --verbose for full output)${C.reset}`);
+            }
+        }
+    }
+    footer(color);
 }
 
 function runDockerCheck() {
@@ -162,14 +381,17 @@ function runDockerCheck() {
     } catch { /* not installed */ }
 
     if (!hasDocker && !process.env.DOCKER_HOST) {
-        finishStep(s, 'warn', 'not installed — skipped');
+        finishStep(s, 'warn');
+        addStat('Docker', 'not installed — skipped', 'warn');
         return;
     }
     try {
         const version = execSync('docker --version', { encoding: 'utf8', stdio: ['pipe', 'pipe'] }).trim();
-        finishStep(s, 'done', version.replace('Docker version ', 'Docker '));
+        finishStep(s, 'done');
+        addStat('Docker', version.replace('Docker version ', 'Docker '), 'ok');
     } catch {
-        finishStep(s, 'warn', 'docker binary not functional');
+        finishStep(s, 'warn');
+        addStat('Docker', 'binary not functional', 'warn');
     }
 }
 
@@ -191,8 +413,9 @@ console.log(`${C.dim} Monorepo Maintenance Pipeline ${C.reset}\n`);
 section('Setup', C.blue);
 {
     const s = startStep('Stopping active servers');
-    run('pnpm -s stop');
-    finishStep(s);
+    const r = run('pnpm -s stop');
+    if (r.ok) finishStep(s);
+    else { finishStep(s, 'fail', `exit ${r.status}`); addIssue('error', 'Setup', `pnpm stop failed (exit ${r.status})`, []); }
 }
 {
     const s = startStep('Wiping global docmd binaries');
@@ -206,9 +429,11 @@ section('Setup', C.blue);
 }
 {
     const s = startStep('Cleaning monorepo');
-    run('pnpm -s clean');
-    finishStep(s);
+    const r = run('pnpm -s clean');
+    if (r.ok) finishStep(s);
+    else { finishStep(s, 'fail', `exit ${r.status}`); addIssue('error', 'Setup', `pnpm clean failed (exit ${r.status})`, []); }
 }
+addStat('Setup', 'cleaned monorepo', 'ok');
 footer(C.blue);
 
 // Section 2: Lint
@@ -222,14 +447,17 @@ footer(C.cyan);
 section('Build', C.cyan);
 {
     const s = startStep('Installing monorepo dependencies');
-    run('pnpm install --frozen-lockfile');
-    finishStep(s);
+    const r = run('pnpm install --frozen-lockfile');
+    if (r.ok) finishStep(s);
+    else { finishStep(s, 'fail', `exit ${r.status}`); addIssue('error', 'Build', `pnpm install failed (exit ${r.status})`, []); }
 }
 {
     const s = startStep('Building all packages (pnpm -r run build)');
-    run('pnpm -r run build');
-    finishStep(s);
+    const r = run('pnpm -r run build');
+    if (r.ok) finishStep(s);
+    else { finishStep(s, 'fail', `exit ${r.status}`); addIssue('error', 'Build', `pnpm -r run build failed (exit ${r.status})`, []); }
 }
+addStat('Build', 'installed + built all packages', 'ok');
 footer(C.cyan);
 
 // Section 4: Docker (optional)
@@ -241,7 +469,8 @@ footer(C.blue);
 section('Tests', C.blue);
 if (args.includes('--skip-tests')) {
     const s = startStep('Skipping test suite (--skip-tests)');
-    finishStep(s, 'done', 'skipped by user request');
+    finishStep(s, 'done');
+    addStat('Tests', 'skipped by user request', 'ok');
 } else {
     const only = args.find((a) => a.startsWith('--only='));
     const runnerArgs = only ? ' ' + only : '';
@@ -249,13 +478,23 @@ if (args.includes('--skip-tests')) {
     // (workspaces + i18n + versioning + plugins), which used to live
     // in `tests/failsafe.test.mjs`. The old failsafe was removed because
     // it duplicated Setup / Build work that `pnpm prep` already does.
-    const s = startStep('Categorised test suite (tests/runner.js)');
-    run('node tests/runner.js' + runnerArgs, false);
-    finishStep(s);
+    // runTestStep() collapses to a one-line summary by default; pass
+    // --verbose to stream the full output.
+    // The shortLabel is what shows in the Summary block; the longer
+    // stepLabel stays in the per-step line.
+    runTestStep('Categorised test suite (tests/runner.js)',
+        'node tests/runner.js' + runnerArgs, 'Tests · runner.js');
+
+    // Per-package unit tests (parser, utils, mermaid, okf). Packages
+    // without a `test` script are skipped by `--if-present`. Wired in
+    // here so a regression in any plugin's local suite fails the
+    // release pipeline just like a regression in tests/runner.js.
+    runTestStep('Per-package unit tests (pnpm -r run test --if-present)',
+        'pnpm -r run test --if-present', 'Tests · per-package units');
 }
 footer(C.blue);
 
-// Section 5: Link (optional)
+// Section 6: Link (optional)
 if (args.includes('--link')) {
     section('Link', C.blue);
     const s = startStep('Linking @docmd/core globally');
@@ -267,7 +506,18 @@ if (args.includes('--link')) {
         finishStep(s, 'done', 'docmd command available globally');
     } catch {
         finishStep(s, 'fail', 'npm link failed');
-        process.exit(1);
+        addIssue('error', 'Link', 'npm link failed', []);
     }
     footer(C.blue);
 }
+
+// Section 7: Summary / Issues — single trailing block. Renders a
+// green Summary on a clean run, or a red Issues block on failure.
+// Either way it lives in the same slot at the end of the pipeline
+// so the operator always knows where to look for the verdict.
+printSummary();
+
+// Exit code: any error-level issue is fatal. Warnings alone keep the
+// pipeline green so the operator can decide whether to act on them.
+const hasErrors = issues.some(i => i.severity === 'error');
+if (hasErrors) process.exit(1);

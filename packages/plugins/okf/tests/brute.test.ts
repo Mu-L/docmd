@@ -171,7 +171,7 @@ describe('brute: 4. many pages (50)', () => {
     await flushPages(s.srcDir, pages);
 
     const ctx = buildCtx({
-      config: { title: 'Stress', url: 'https://example.com', plugins: { okf: {} } },
+      config: { title: 'Stress', url: 'https://example.com', plugins: { okf: { graph: true } } },
       pages, outputDir: s.bundleDir
     });
     const t0 = Date.now();
@@ -186,7 +186,7 @@ describe('brute: 4. many pages (50)', () => {
     assert.match(yaml, /reference: 12/);
     assert.match(yaml, /concept: 12/);
 
-    const graphJson = JSON.parse(await fs.readFile(path.join(s.bundleDir, 'okf', 'graph.json'), 'utf8'));
+    const graphJson = JSON.parse(await fs.readFile(path.join(s.bundleDir, 'okf', 'graph/graph.json'), 'utf8'));
     assert.equal(graphJson.nodes.length, 50);
     assert.ok(Array.isArray(graphJson.links));
     // Verify every node has the required keys
@@ -213,12 +213,12 @@ describe('brute: 5. internal links and orphan detection', () => {
     await flushPages(s.srcDir, pages);
 
     const ctx = buildCtx({
-      config: { title: 'Links', url: 'https://example.com', plugins: { okf: {} } },
+      config: { title: 'Links', url: 'https://example.com', plugins: { okf: { graph: true } } },
       pages, outputDir: s.bundleDir
     });
     await onPostBuild(ctx);
 
-    const graphJson = JSON.parse(await fs.readFile(path.join(s.bundleDir, 'okf', 'graph.json'), 'utf8'));
+    const graphJson = JSON.parse(await fs.readFile(path.join(s.bundleDir, 'okf', 'graph/graph.json'), 'utf8'));
     const linkPairs = graphJson.links.map((l: any) => [l.source, l.target].sort().join('->'));
     // Expect a->b, a->c, b->c
     assert.ok(linkPairs.includes('a->b'), `expected a->b, got ${JSON.stringify(graphJson.links)}`);
@@ -286,16 +286,16 @@ describe('brute: 7. path-based type inference', () => {
     const root = path.join(s.bundleDir, 'okf', 'concepts');
     const files = await fs.readdir(root);
     // The slug for guides/install.md is guides-install
-    const install = await fs.readFile(path.join(root, files.find(f => f.endsWith('install.md'))!), 'utf8');
+    const install = await fs.readFile(path.join(root, files.find((f: string) => f.endsWith('install.md'))!), 'utf8');
     assert.match(install, /type: guide/);
 
-    const users = await fs.readFile(path.join(root, files.find(f => f.endsWith('users.md'))!), 'utf8');
+    const users = await fs.readFile(path.join(root, files.find((f: string) => f.endsWith('users.md'))!), 'utf8');
     assert.match(users, /type: api/);
 
-    const idea = await fs.readFile(path.join(root, files.find(f => f.endsWith('idea.md'))!), 'utf8');
+    const idea = await fs.readFile(path.join(root, files.find((f: string) => f.endsWith('idea.md'))!), 'utf8');
     assert.match(idea, /type: concept/);
 
-    const restart = await fs.readFile(path.join(root, files.find(f => f.endsWith('restart.md'))!), 'utf8');
+    const restart = await fs.readFile(path.join(root, files.find((f: string) => f.endsWith('restart.md'))!), 'utf8');
     assert.match(restart, /type: runbook/);
   });
 });
@@ -364,14 +364,14 @@ describe('brute: 10. non-ASCII titles and content', () => {
     const root = path.join(s.bundleDir, 'okf');
     const files = await fs.readdir(path.join(root, 'concepts'));
 
-    const emojiContent = await fs.readFile(path.join(root, 'concepts', files.find(f => f.endsWith('emoji.md'))!), 'utf8');
+    const emojiContent = await fs.readFile(path.join(root, 'concepts', files.find((f: string) => f.endsWith('emoji.md'))!), 'utf8');
     assert.match(emojiContent, /title: 🚀 Launch Party/);
     assert.match(emojiContent, /celebrate 🎉/);
 
-    const cjkContent = await fs.readFile(path.join(root, 'concepts', files.find(f => f.endsWith('cjk.md'))!), 'utf8');
+    const cjkContent = await fs.readFile(path.join(root, 'concepts', files.find((f: string) => f.endsWith('cjk.md'))!), 'utf8');
     assert.match(cjkContent, /中文标题/);
 
-    const rtlContent = await fs.readFile(path.join(root, 'concepts', files.find(f => f.endsWith('rtl.md'))!), 'utf8');
+    const rtlContent = await fs.readFile(path.join(root, 'concepts', files.find((f: string) => f.endsWith('rtl.md'))!), 'utf8');
     assert.match(rtlContent, /مرحبا بالعالم/);
 
     // Bundle name slugified — slugify drops CJK + emoji and collapses runs of

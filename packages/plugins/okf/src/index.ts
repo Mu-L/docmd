@@ -15,11 +15,11 @@
 import path from 'path';
 import fs from 'fs/promises';
 import type { PluginDescriptor } from '@docmd/api';
-import { outputPathToPathname, sanitizeUrl } from '@docmd/api';
+import { outputPathToPathname, sanitizeUrl, TUI } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'okf',
-  version: '0.8.7',
+  version: '0.8.8',
   capabilities: ['post-build']
 };
 
@@ -140,43 +140,48 @@ const GRAPH_CSS = `:root{--okf-fg:#1f2937;--okf-bg:#fafafa;--okf-panel-bg:#fff;-
 @media (prefers-color-scheme:dark){:root{--okf-fg:#e5e7eb;--okf-bg:#0f172a;--okf-panel-bg:#1e293b;--okf-border:#334155;--okf-link:#475569;--okf-node-stroke:#0f172a;--okf-chip:#312e81;--okf-chip-fg:#c7d2fe;--okf-muted:#94a3b8}}`;
 
 const GRAPH_JS = `(function(){
-var data=window.OKF_GRAPH||{nodes:[],links:[]};
-var cmap={concept:'#6366f1',guide:'#10b981',api:'#f59e0b',reference:'#0ea5e9',runbook:'#ef4444',dataset:'#a855f7',metric:'#ec4899',table:'#14b8a6'};
 var root=document.getElementById('okf-graph'),panel=document.getElementById('okf-panel');
+var sub=root?root.querySelector('.okf-sub'):null;
+var empty=panel?panel.querySelector('.okf-empty'):null;
+function setStatus(t){if(sub)sub.textContent=t;if(empty)empty.textContent=t;}
+function render(data){
+var cmap={concept:'#6366f1',guide:'#10b981',api:'#f59e0b',reference:'#0ea5e9',runbook:'#ef4444',dataset:'#a855f7',metric:'#ec4899',table:'#14b8a6'};
 var NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg');
 svg.setAttribute('viewBox','0 0 800 600');root.appendChild(svg);
-var W=800,H=600,nodes=data.nodes.map(function(n){return n;}),links=data.links;
+var W=800,H=600,nodes=(data.nodes||[]).map(function(n){return n;}),links=data.links||[];
 var idx={};nodes.forEach(function(n){idx[n.id]=n;});
 links.forEach(function(l){if(typeof l.source==='string')l.source=idx[l.source];if(typeof l.target==='string')l.target=idx[l.target];});
 nodes.forEach(function(n){n.x=Math.random()*W;n.y=Math.random()*H;n.vx=0;n.vy=0;});
 for(var s=0;s<200;s++){for(var i=0;i<nodes.length;i++){var a=nodes[i];for(var j=0;j<nodes.length;j++){if(i===j)continue;var b=nodes[j],dx=a.x-b.x,dy=a.y-b.y,d2=dx*dx+dy*dy||1;a.vx+=dx/Math.sqrt(d2)*1800/d2*0.01;a.vy+=dy/Math.sqrt(d2)*1800/d2*0.01;}}for(var k=0;k<links.length;k++){var l=links[k],so=l.source,ta=l.target;if(typeof so!=='object'||typeof ta!=='object')continue;var dx2=ta.x-so.x,dy2=ta.y-so.y,d=Math.sqrt(dx2*dx2+dy2*dy2)||1,f=(d-120)*0.05*0.05;so.vx+=dx2/d*f;so.vy+=dy2/d*f;ta.vx-=dx2/d*f;ta.vy-=dy2/d*f;}for(var m=0;m<nodes.length;m++){var nn=nodes[m];nn.vx*=0.82;nn.vy*=0.82;nn.vx+=(W/2-nn.x)*0.001;nn.vy+=(H/2-nn.y)*0.001;nn.x+=nn.vx;nn.y+=nn.vy;if(nn.x<20)nn.x=20;if(nn.x>W-20)nn.x=W-20;if(nn.y<20)nn.y=20;if(nn.y>H-20)nn.y=H-20;}}
 var gL=document.createElementNS(NS,'g');links.forEach(function(l){if(typeof l.source!=='object'||typeof l.target!=='object')return;var ln=document.createElementNS(NS,'line');ln.setAttribute('class','link');ln.setAttribute('x1',l.source.x);ln.setAttribute('y1',l.source.y);ln.setAttribute('x2',l.target.x);ln.setAttribute('y2',l.target.y);gL.appendChild(ln);});svg.appendChild(gL);
-var gN=document.createElementNS(NS,'g');nodes.forEach(function(n){var c=document.createElementNS(NS,'circle');c.setAttribute('class','node');c.setAttribute('cx',n.x);c.setAttribute('cy',n.y);c.setAttribute('r',8);c.setAttribute('fill',cmap[n.type]||'#6b7280');c.addEventListener('click',function(){showDetail(panel,n);});gN.appendChild(c);var t=document.createElementNS(NS,'text');t.setAttribute('class','label');t.setAttribute('x',n.x);t.setAttribute('y',n.y-12);t.textContent=n.title||n.id;gN.appendChild(t);});svg.appendChild(gN);
+var gN=document.createElementNS(NS,'g');nodes.forEach(function(n){var c=document.createElementNS(NS,'circle');c.setAttribute('class','node');c.setAttribute('cx',n.x);c.setAttribute('cy',n.y);c.setAttribute('r',8);c.setAttribute('fill',cmap[n.type]||'#6b7280');c.addEventListener('click',function(){showDetail(n);});gN.appendChild(c);var t=document.createElementNS(NS,'text');t.setAttribute('class','label');t.setAttribute('x',n.x);t.setAttribute('y',n.y-12);t.textContent=n.title||n.id;gN.appendChild(t);});svg.appendChild(gN);
+if(empty)empty.textContent='Click a node to see details.';
+}
 
 // Render a node's details into the side panel without using innerHTML.
 // All user-supplied strings (title, type, description, source) flow into
 // DOM nodes via textContent, so a malicious OKF bundle cannot inject HTML
 // or scripts. The two hrefs use a scheme allow-list and encodeURIComponent
 // to neutralise javascript:, data:, and path-traversal payloads.
-function showDetail(panel,n){
-  while(panel.firstChild) panel.removeChild(panel.firstChild);
-  var h=document.createElement('h2');h.textContent=n.title||n.id;panel.appendChild(h);
-  var sp=document.createElement('span');sp.className='okf-type';sp.textContent=n.type||'concept';panel.appendChild(sp);
-  var p=document.createElement('p');
-  if(n.description){p.textContent=n.description;}
-  else{var em=document.createElement('span');em.className='okf-empty';em.textContent='No description.';p.appendChild(em);}
-  panel.appendChild(p);
-  var a1=document.createElement('a');
-  a1.href='concepts/'+encodeURIComponent(n.id)+'.md';
-  a1.target='_blank';a1.rel='noopener noreferrer';
-  a1.textContent='Open in OKF bundle';
-  panel.appendChild(a1);
-  panel.appendChild(document.createTextNode(' '));
-  var a2=document.createElement('a');
-  a2.href=safeHref(n.source);
-  a2.target='_blank';a2.rel='noopener noreferrer';
-  a2.textContent='Open source page';
-  panel.appendChild(a2);
+function showDetail(n){
+while(panel.firstChild) panel.removeChild(panel.firstChild);
+var h=document.createElement('h2');h.textContent=n.title||n.id;panel.appendChild(h);
+var sp=document.createElement('span');sp.className='okf-type';sp.textContent=n.type||'concept';panel.appendChild(sp);
+var p=document.createElement('p');
+if(n.description){p.textContent=n.description;}
+else{var em=document.createElement('span');em.className='okf-empty';em.textContent='No description.';p.appendChild(em);}
+panel.appendChild(p);
+var a1=document.createElement('a');
+a1.href='concepts/'+encodeURIComponent(n.id)+'.md';
+a1.target='_blank';a1.rel='noopener noreferrer';
+a1.textContent='Open in OKF bundle';
+panel.appendChild(a1);
+panel.appendChild(document.createTextNode(' '));
+var a2=document.createElement('a');
+a2.href=safeHref(n.source);
+a2.target='_blank';a2.rel='noopener noreferrer';
+a2.textContent='Open source page';
+panel.appendChild(a2);
 }
 
 // Allow only the URL schemes that appear in the OKF spec examples
@@ -184,11 +189,24 @@ function showDetail(panel,n){
 // plus site-relative paths. Anything else collapses to "#" so javascript:
 // and data: URLs cannot execute.
 function safeHref(u){
-  if(!u) return '#';
-  if(/^(?:https?|mailto|tel|repo|dashboard|docs|wp-admin):/i.test(u)) return u;
-  if(u.charAt(0)==='/') return u;
-  return '#';
+if(!u) return '#';
+if(/^(?:https?|mailto|tel|repo|dashboard|docs|wp-admin):/i.test(u)) return u;
+if(u.charAt(0)==='/') return u;
+return '#';
 }
+
+// Boot: prefer window.OKF_GRAPH (escape hatch for embedders), else fetch
+// graph.json from the same directory. Render only after data is in hand;
+// surface a clear loading/error state instead of a silent empty canvas.
+var embedded=window.OKF_GRAPH;
+if(embedded){render(embedded);return;}
+setStatus('Loading graph…');
+fetch('graph.json',{cache:'no-store'}).then(function(r){
+if(!r.ok) throw new Error('HTTP '+r.status);
+return r.json();
+}).then(function(data){render(data||{nodes:[],links:[]});}).catch(function(err){
+setStatus('Failed to load graph data: '+err.message);
+});
 })();`;
 
 function graphHtml(name: string, count: number): string {
@@ -216,7 +234,16 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
   const typeField = opts.typeField || 'type';
   const warnOnMissingType = opts.warnOnMissingType !== false;
   const includeFullMarkdown = opts.includeFullMarkdown !== false;
-  const generateGraphViewer = opts.generateGraphViewer !== false;
+
+  // Graph viewer is opt-in (0.8.8+). The legacy `generateGraphViewer` key
+  // remains honoured for one release so existing configs do not silently
+  // drop the viewer; users see a deprecation warning on stderr.
+  const graphEnabled =
+    opts.graph === true ||
+    (opts.graph === undefined && opts.generateGraphViewer === true);
+  if (opts.graph === undefined && opts.generateGraphViewer !== undefined) {
+    TUI.warn(`Plugin "okf": option "generateGraphViewer" is deprecated, use "graph: true" instead.`);
+  }
 
   const localeStrategy = opts.localeStrategy || 'default-only';
   const versionStrategy = opts.versionStrategy || 'latest-only';
@@ -224,6 +251,10 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
 
   const siteUrl = (config.url || '').replace(/\/$/, '');
   const warnings: string[] = [];
+  // 0.8.8: count per-page "missing type" so the TUI shows ONE summary
+  // line instead of N per-page `SKIP` lines. The lint-report.txt still
+  // lists every page so detail isn't lost.
+  let missingTypeCount = 0;
 
   if (!config.url) {
     const msg = `OKF: config.url is missing — generated \`source:\` fields will be relative paths only`;
@@ -288,7 +319,7 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
 
     if (fallback && warnOnMissingType) {
       warnings.push(`[WARN] missing-type ${pathname}  (using fallback '${defaultType}')`);
-      if (log) log(`OKF: missing type for ${pathname} → fallback '${defaultType}'`, 'SKIP');
+      missingTypeCount++;
     }
 
     const locale = pageLocale(p);
@@ -371,7 +402,7 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
   for (const c of concepts) byType[c.type] = (byType[c.type] || 0) + 1;
 
   const manifest = {
-    okf_version: '0.1',
+    okf_version: '0.8.8',
     bundle: {
       name: bundleName, title: config.title || bundleName, description: config.description || '',
       url: config.url || '', generated_by: '@docmd/plugin-okf', generated_at: new Date().toISOString(),
@@ -388,8 +419,9 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
   // index.md (Karpathy-style catalog)
   const idxLines: string[] = [`# ${manifest.bundle.title} — Knowledge Catalog`, '', `> Generated by ${manifest.bundle.generated_by} on ${manifest.bundle.generated_at}`, ''];
   if (manifest.bundle.description) idxLines.push(manifest.bundle.description, '');
-  idxLines.push(`**${manifest.stats.concepts} concepts** across **${Object.keys(manifest.stats.by_type).length} types**.`, '',
-    '- [Manifest](okf.yaml)', '- [Bundle summary (JSON)](_meta/bundle.json)', '- [Graph viewer](graph.html)', '- [Lint report](_meta/lint-report.txt)', '');
+  const links: string[] = ['- [Manifest](okf.yaml)', '- [Bundle summary (JSON)](_meta/bundle.json)', '- [Lint report](_meta/lint-report.txt)'];
+  if (graphEnabled) links.splice(2, 0, '- [Graph viewer](graph/)');
+  idxLines.push(`**${manifest.stats.concepts} concepts** across **${Object.keys(manifest.stats.by_type).length} types**.`, '', ...links, '');
   const groups = new Map<string, any[]>();
   for (const c of concepts) { if (!groups.has(c.type)) groups.set(c.type, []); groups.get(c.type)!.push(c); }
   for (const type of Array.from(groups.keys()).sort()) {
@@ -410,11 +442,22 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
   }
   await fs.writeFile(path.join(bundleRoot, 'index.md'), idxLines.join('\n'));
 
-  if (generateGraphViewer) {
-    await fs.writeFile(path.join(bundleRoot, 'graph.json'), JSON.stringify({ nodes: nodeList, links: linkList }, null, 2));
-    await fs.writeFile(path.join(bundleRoot, 'graph.css'), GRAPH_CSS);
-    await fs.writeFile(path.join(bundleRoot, 'graph.js'), GRAPH_JS);
-    await fs.writeFile(path.join(bundleRoot, 'graph.html'), graphHtml(bundleName, concepts.length));
+  if (graphEnabled) {
+    const graphDir = path.join(bundleRoot, 'graph');
+    await fs.mkdir(graphDir, { recursive: true });
+    await fs.writeFile(path.join(graphDir, 'graph.json'), JSON.stringify({ nodes: nodeList, links: linkList }, null, 2));
+    await fs.writeFile(path.join(graphDir, 'graph.css'), GRAPH_CSS);
+    await fs.writeFile(path.join(graphDir, 'graph.js'), GRAPH_JS);
+    // index.html (not graph.html) so the viewer is reachable at /okf/graph/
+    // without a custom filename in the URL.
+    await fs.writeFile(path.join(graphDir, 'index.html'), graphHtml(bundleName, concepts.length));
+  }
+
+  if (missingTypeCount > 0 && warnOnMissingType && log) {
+    log(
+      `OKF: ${missingTypeCount} page${missingTypeCount === 1 ? '' : 's'} missing explicit type (using fallback '${defaultType}') — add \`type:\` to frontmatter or set \`warnOnMissingType: false\` to silence`,
+      'SKIP'
+    );
   }
 
   if (log) log(`OKF bundle written to /${outputRel}/ (${concepts.length} concepts, ${warnings.length} warnings)`);
