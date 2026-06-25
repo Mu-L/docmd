@@ -226,11 +226,6 @@ export async function buildSite(configPath: string, opts: any = {}) {
     const { renderTemplateAsync } = await import('@docmd/parser/dist/html-renderer.js');
     const ui = await import('@docmd/ui');
 
-    // Load translations for the default locale (404 is a global page)
-    const defaultLocaleId = config.i18n?.default || null;
-    const notFoundStrings = ui.loadTranslations(defaultLocaleId);
-    const t = ui.createT(notFoundStrings);
-
     const notFoundTemplatePath = path.join(ui.getTemplatesDir(), '404.ejs');
     let notFoundTemplateStr = '';
     if (await fs.exists(notFoundTemplatePath)) {
@@ -245,26 +240,67 @@ export async function buildSite(configPath: string, opts: any = {}) {
     // Determine Absolute Base (usually '/' unless 'base' config is set)
     const absoluteRoot = config.base && config.base !== '/' ? config.base.replace(/\/$/, '') + '/' : '/';
 
-    const full404Html = await renderTemplateAsync(notFoundTemplateStr, {
-      pageTitle: config.notFound.title || t('pageNotFound'),
-      title: config.notFound.title || t('pageNotFound'),
-      content: config.notFound.content || 'The page you are looking for does not exist.',
-      logo: config.logo,
-      t,
+    // Build a 404 page per locale. The default-locale one sits at the site
+    // root (404.html) so existing single-locale sites and quick-start setups
+    // keep working. Every additional locale gets <locale>/404.html so a host
+    // server can `try_files` to the right one based on URL prefix. The
+    // activeLocale object is passed to the template so the <html lang="…">
+    // tag, dir attribute, and any locale-aware markup stay correct.
+    const localeList: Array<{ id: string; label?: string; dir?: string }> =
+      Array.isArray(config.i18n?.locales) && config.i18n.locales.length
+        ? config.i18n.locales
+        : [{ id: (config.i18n?.default as string) || 'en' }];
+    const defaultLocaleId = (config.i18n?.default as string) || localeList[0]?.id || 'en';
 
-      // Context for Assets
-      relativePathToRoot: absoluteRoot,
-      buildHash,
-      appearance: config.theme?.appearance || config.theme?.defaultMode || 'system',
-      defaultMode: config.theme?.appearance || config.theme?.defaultMode || 'system',
-      theme: config.theme,
-      customCssFiles: config.theme.customCss || [],
+    for (const localeEntry of localeList) {
+      const localeId = localeEntry.id;
+      const notFoundStrings = ui.loadTranslations(localeId);
+      const t = ui.createT(notFoundStrings);
 
-      faviconLinkHtml: config.favicon ? `<link rel="icon" href="${absoluteRoot}${config.favicon.replace(/^\//, '')}">` : '',
-      themeInitScript
-    });
+      // For non-default locales the assets root shifts up by one directory
+      // (because the file is written to /<locale>/404.html, not /404.html).
+      // Absolute-rooted asset paths (/assets/...) keep working for the
+      // default locale.
+      const isDefault = localeId === defaultLocaleId;
+      const localeAssetRoot = isDefault ? absoluteRoot : '../';
 
-    await fs.writeFile(path.join(rootOutputDir, '404.html'), full404Html);
+      // Translate title and body per locale. config-schema.js injects a
+      // hardcoded English default into config.notFound before this loop,
+      // so we treat its strings as fallbacks only when the user hasn't
+      // overridden them — and only for the default locale.
+      const fallbackTitle = isDefault ? (config.notFound?.title || t('pageNotFound')) : t('pageNotFound');
+      const fallbackContent = isDefault
+        ? (config.notFound?.content || t('pageNotFoundMsg'))
+        : t('pageNotFoundMsg');
+
+      const full404Html = await renderTemplateAsync(notFoundTemplateStr, {
+        pageTitle: fallbackTitle,
+        title: fallbackTitle,
+        content: fallbackContent,
+        logo: config.logo,
+        t,
+        activeLocale: localeEntry,
+
+        // Context for Assets
+        relativePathToRoot: localeAssetRoot,
+        buildHash,
+        appearance: config.theme?.appearance || config.theme?.defaultMode || 'system',
+        defaultMode: config.theme?.appearance || config.theme?.defaultMode || 'system',
+        theme: config.theme,
+        customCssFiles: config.theme.customCss || [],
+
+        faviconLinkHtml: config.favicon
+          ? `<link rel="icon" href="${absoluteRoot}${config.favicon.replace(/^\//, '')}">`
+          : '',
+        themeInitScript
+      });
+
+      const outPath = isDefault
+        ? path.join(rootOutputDir, '404.html')
+        : path.join(rootOutputDir, localeId, '404.html');
+      await fs.ensureDir(path.dirname(outPath));
+      await fs.writeFile(outPath, full404Html);
+    }
 
     // --- 4. GENERATE STATIC REDIRECTS ---
     if (config.redirects && Object.keys(config.redirects).length > 0) {
