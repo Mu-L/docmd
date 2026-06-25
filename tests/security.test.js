@@ -327,7 +327,7 @@ function callMcp(cwd, messages) {
         try {
           const msg = JSON.parse(line);
           if (msg.id != null) responses.set(msg.id, msg);
-        } catch {}
+        } catch { /* non-JSON line, skip */ }
       }
     });
     proc.stderr.on('data', (chunk) => { stderrBuf += chunk.toString(); });
