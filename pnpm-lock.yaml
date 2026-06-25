@@ -44,6 +44,9 @@ importers:
       '@docmd/plugin-math':
         specifier: workspace:*
         version: link:../plugins/math
+      '@docmd/plugin-pwa':
+        specifier: ^0.8.7
+        version: 0.8.7
       '@docmd/template-summer':
         specifier: workspace:*
         version: link:../templates/summer
@@ -100,6 +103,9 @@ importers:
       '@docmd/plugin-mermaid':
         specifier: workspace:*
         version: link:../plugins/mermaid
+      '@docmd/plugin-okf':
+        specifier: workspace:*
+        version: link:../plugins/okf
       '@docmd/plugin-openapi':
         specifier: workspace:*
         version: link:../plugins/openapi
@@ -497,6 +503,10 @@ packages:
   '@ctrl/tinycolor@4.1.0':
     resolution: {integrity: sha512-WyOx8cJQ+FQus4Mm4uPIZA64gbk3Wxh0so5Lcii0aJifqwoVOlfFtorjLE0Hen4OYyHZMXDWqMmaQemBhgxFRQ==}
     engines: {node: '>=14'}
+
+  '@docmd/plugin-pwa@0.8.7':
+    resolution: {integrity: sha512-53/gkYrXXw7Zl8UD3046I8InZzeBj/nNU12KF2vLXipaHExKk89WqrMaxbcvdnc8mvSsAzGK2eFrj8EBpqikNw==}
+    engines: {node: '>=18'}
 
   '@emnapi/runtime@1.11.1':
     resolution: {integrity: sha512-vgj7R3y3Wgx24IQaGPA/R6YFXLHVMOZ0uVEyIQPaWs+rd1AzfEMXlAC22FYwO1XkKR6NPsq7mUandH8oIRdZFw==}
@@ -1713,6 +1723,8 @@ snapshots:
       - '@types/react'
 
   '@ctrl/tinycolor@4.1.0': {}
+
+  '@docmd/plugin-pwa@0.8.7': {}
 
   '@emnapi/runtime@1.11.1':
     dependencies:
