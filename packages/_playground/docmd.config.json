@@ -40,7 +40,10 @@
       "repo": "https://github.com/docmd-io/docmd"
     },
     "openapi": {},
-    "math": {}
+    "math": {},
+    "okf": {
+      "graph": true
+    }
   },
 
   "versions": {

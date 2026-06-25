@@ -197,6 +197,52 @@ export const TUI = {
     console.log(`${barColor('│')}  ${labelColor(label.padEnd(15))} ${value}`);
   },
 
+  /**
+   * Render a per-plugin tree inside an open section.
+   *
+   *   │ [ DONE ] [seo] Generated robots.txt
+   *   │          ├─ [ DONE ] Generated .nojekyll (disables Jekyll on GitHub Pages)
+   *
+   * Single-entry plugins collapse to one parent line; warnings and follow-up
+   * events become indented children. Parent is the first DONE/FAIL entry
+   * (the main action); when every entry was SKIP, the first entry is used.
+   *
+   * Pass an empty `entries` array and the helper is a no-op.
+   */
+  pluginTree: (
+    pluginName: string,
+    entries: Array<{ msg: string; status: 'DONE'|'SKIP'|'FAIL'|'WAIT' }>,
+    color = chalk.cyan,
+  ) => {
+    commitState();
+    if (!entries || entries.length === 0) return;
+
+    const bar  = color('│');
+    const key  = chalk.bold(`[${pluginName}]`).padEnd(8);
+
+    const parentIdx = (() => {
+      const idx = entries.findIndex(e => e.status === 'DONE' || e.status === 'FAIL');
+      return idx === -1 ? 0 : idx;
+    })();
+
+    const parent = entries[parentIdx];
+    console.log(`${bar}  ${flag(parent.status)} ${key} ${chalk.dim(parent.msg)}`);
+
+    if (entries.length === 1) return;
+
+    // Build the children list in original order, skipping the parent.
+    const childIndices: number[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      if (i !== parentIdx) childIndices.push(i);
+    }
+    childIndices.forEach((idx, i) => {
+      const isLast = i === childIndices.length - 1;
+      const branch = isLast ? '└─' : '├─';
+      const e      = entries[idx];
+      console.log(`${bar}             ${chalk.dim(branch)} ${flag(e.status)} ${chalk.dim(e.msg)}`);
+    });
+  },
+
   footer: (color = chalk.cyan) => {
     commitState();
     console.log(`${color('└──────────────────────────────────────────────────────────')}`);

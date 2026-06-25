@@ -48,6 +48,18 @@ export function normalizeConfig(userConfig: any) {
     if (config.copyCode === undefined) config.copyCode = true;
     if (config.autoTitleFromH1 === undefined) config.autoTitleFromH1 = true;
 
+    // --- 1.5 Security defaults (Phase 0.D, new in v0.8.8) ---
+    // Controls how the markdown parser handles raw HTML in user content.
+    //   'allow'  - raw HTML passes through to the rendered output (UNSAFE)
+    //   'escape' - raw HTML is HTML-escaped and shown as text (default)
+    //   'strip'  - raw HTML blocks are removed from the rendered output
+    // The default flips from allow to escape in v0.8.8 to mitigate S-2 and S-7.
+    const VALID_HTML_POLICIES = new Set(['allow', 'escape', 'strip']);
+    const userHtmlPolicy = config.security && config.security.html;
+    config.security = {
+        html: VALID_HTML_POLICIES.has(userHtmlPolicy) ? userHtmlPolicy : 'escape',
+    };
+
     // Failsafe: Keep legacy keys attached for older plugins (SEO, Sitemap) to prevent breakage during transition.
     config.siteTitle = config.title;
     config.siteUrl = config.url;

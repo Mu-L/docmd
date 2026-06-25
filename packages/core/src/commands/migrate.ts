@@ -49,7 +49,8 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
     else if (nativeFs.existsSync(tsConfigPath)) activeConfigPath = tsConfigPath;
     else {
       TUI.error('Missing configuration', 'docusaurus.config.js or docusaurus.config.ts not found.');
-      return;
+      // Phase 3 PR 3.A (F6): exit 1 so CI pipelines can gate on it.
+      process.exit(1);
     }
 
     const backupDir = path.resolve(CWD, 'docusaurus-backup');
@@ -88,7 +89,8 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
 
     if (!nativeFs.existsSync(configPath)) {
       TUI.error('Missing configuration', 'mkdocs.yml not found.');
-      return;
+      // Phase 3 PR 3.A (F6): exit 1 so CI pipelines can gate on it.
+      process.exit(1);
     }
 
     const backupDir = path.resolve(CWD, 'mkdocs-backup');
@@ -143,7 +145,8 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
 
     if (!activeConfigPath) {
       TUI.error('Missing configuration', '.vitepress/config.[js|ts|mjs] not found.');
-      return;
+      // Phase 3 PR 3.A (F6): exit 1 so CI pipelines can gate on it.
+      process.exit(1);
     }
 
     const backupDir = path.resolve(CWD, 'vitepress-backup');
@@ -197,7 +200,8 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
     else if (nativeFs.existsSync(tsConfigPath)) activeConfigPath = tsConfigPath;
     else {
       TUI.error('Missing configuration', 'astro.config.mjs or astro.config.ts not found.');
-      return;
+      // Phase 3 PR 3.A (F6): exit 1 so CI pipelines can gate on it.
+      process.exit(1);
     }
 
     const backupDir = path.resolve(CWD, 'starlight-backup');
@@ -253,7 +257,8 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
 
     if (!activePath) {
       TUI.error('Upgrade Failed', 'No docmd configuration file (docmd.config.json/js/ts) found in current directory.');
-      return;
+      // Phase 3 PR 3.A (F6): exit 1 so CI pipelines can gate on it.
+      process.exit(1);
     }
 
     TUI.step(`Found configuration: ${TUI.cyan(path.basename(activePath))}`, 'WAIT');
@@ -353,6 +358,8 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
       TUI.success(`Successfully upgraded config file to modern schema.`);
     } catch (error: any) {
       TUI.error('Upgrade Error', `Failed to parse or write config file: ${error.message}`);
+      // Phase 3 PR 3.A (F6): exit 1 so CI pipelines can gate on it.
+      process.exit(1);
     }
   }
 }
