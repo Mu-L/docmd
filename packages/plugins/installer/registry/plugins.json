@@ -35,6 +35,12 @@
     "configKey": "mermaid",
     "defaultConfig": "{}"
   },
+  "openapi": {
+    "package": "@docmd/plugin-openapi",
+    "description": "OpenAPI / Swagger spec rendering for docmd",
+    "configKey": "openapi",
+    "defaultConfig": "{}"
+  },
   "llms": {
     "package": "@docmd/plugin-llms",
     "description": "LLM integration plugin for docmd",
