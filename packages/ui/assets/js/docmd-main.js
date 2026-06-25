@@ -465,11 +465,31 @@
 
     document.querySelectorAll('pre').forEach(preElement => {
       const outerWrapper = preElement.closest('.docmd-code-block-wrapper');
-      const anchor = outerWrapper || preElement.parentNode;
-      if (anchor.querySelector(':scope > .copy-code-button')) return;
+      if (outerWrapper && outerWrapper.querySelector(':scope > .copy-code-button, :scope > .docmd-code-block-header > .copy-code-button')) return;
 
-      let host = anchor;
-      if (!outerWrapper) {
+      // Choose a host that gives the absolutely-positioned button a
+      // sensible anchor. The CSS positions the button at top: .85rem;
+      // right: .5rem of its containing positioned element.
+      //
+      // Titled case (```lang "title"```): the <pre> sits inside a
+      // .docmd-code-block-wrapper that also contains a header strip.
+      // Anchoring the button to the wrapper would land it on top of
+      // the header — wrong place. Anchor to the header instead: the
+      // header is `display: flex` with the title on the left, and a
+      // button appended to it lands cleanly on the right.
+      //
+      // Untitled case: the <pre> has no positioned ancestor. Wrap
+      // it in a `.code-wrapper` that we then position:relative so
+      // the button anchors inside the code area.
+      let host = null;
+      if (outerWrapper) {
+        const header = outerWrapper.querySelector(':scope > .docmd-code-block-header');
+        if (header) {
+          header.classList.add('has-copy-button');
+          host = header;
+        }
+      }
+      if (!host) {
         const wrapper = document.createElement('div');
         wrapper.className = 'code-wrapper';
         wrapper.style.position = 'relative';
@@ -477,6 +497,7 @@
         wrapper.appendChild(preElement);
         host = wrapper;
       }
+      if (host.querySelector(':scope > .copy-code-button')) return;
 
       const copyButton = document.createElement('button');
       copyButton.className = 'copy-code-button';
