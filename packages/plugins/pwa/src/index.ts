@@ -15,10 +15,11 @@
 import fs from 'fs/promises';
 import path from 'path';
 import type { PluginDescriptor } from '@docmd/api';
+import { attrEsc } from '@docmd/utils';
 
 export const plugin: PluginDescriptor = {
   name: 'pwa',
-  version: '0.8.7',
+  version: '0.8.8',
   capabilities: ['post-build', 'head', 'body']
 };
 
@@ -147,11 +148,22 @@ export function generateMetaTags(config: any) {
   const pwaConfig = config.plugins?.pwa || {};
   if (pwaConfig.enabled === false) return '';
 
-  const themeColor = pwaConfig.themeColor || '#1e293b';
+  // Phase 1.C (S-5 fix): validate themeColor is a real CSS color before
+  // interpolation. Format: #hex (3/4/6/8 digits), rgb(), rgba(), hsl(), hsla(),
+  // or a CSS named color. Falls back to default on invalid input.
+  const DEFAULT_THEME_COLOR = '#1e293b';
+  const rawTheme = pwaConfig.themeColor || DEFAULT_THEME_COLOR;
+  const CSS_COLOR_RE = /^(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\)|[a-zA-Z]+)$/;
+  const themeColor = CSS_COLOR_RE.test(rawTheme) ? rawTheme : DEFAULT_THEME_COLOR;
+  if (rawTheme !== DEFAULT_THEME_COLOR && themeColor === DEFAULT_THEME_COLOR) {
+    console.error(`[pwa] Invalid themeColor: ${JSON.stringify(rawTheme)}. Falling back to ${DEFAULT_THEME_COLOR}.`);
+  }
+  // attrEsc is defence-in-depth: a valid hex color is unaffected, but a payload
+  // that somehow slipped past the regex still won't break out of the attribute.
 
   return `
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="${themeColor}">
+<meta name="theme-color" content="${attrEsc(themeColor)}">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">

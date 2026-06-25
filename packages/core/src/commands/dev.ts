@@ -17,6 +17,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import nativeFs from 'node:fs';
 import path from 'path';
 import { fsUtils as fs, WorkerPool, FileSignatureTracker } from '@docmd/utils';
+import { createOriginVerify } from '../utils/ws-origin-guard.js';
 import { TUI } from '@docmd/api';
 import { buildSite } from './build.js';
 import { loadConfig } from '../utils/config-loader.js';
@@ -355,11 +356,23 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
 
   // Server Startup Logic
   const PORT = parseInt(options.port || process.env.PORT || 3000, 10);
+  // Phase 1.D: default to loopback. Set DOCMD_HOST=0.0.0.0 to expose on LAN
+  // (with the verifyClient callback below still guarding the Origin header).
+  const BIND_HOST = process.env.DOCMD_HOST || '127.0.0.1';
 
   function tryStartServer(port) {
-    server.listen(port, '0.0.0.0')
+    server.listen(port, BIND_HOST)
       .once('listening', async () => {
-        wss = new WebSocketServer({ server });
+        if (BIND_HOST !== '127.0.0.1' && BIND_HOST !== '::1' && BIND_HOST !== 'localhost') {
+          TUI.warn(`Dev server bound to ${BIND_HOST} (LAN). Any host able to reach this port can connect; verifyClient guards Origin.`);
+        }
+        // Phase 1.D: CWE-1385 CSWSH fix (N-S1). verifyClient validates the
+        // Origin header against the loopback allowlist before accepting the
+        // WebSocket handshake.
+        wss = new WebSocketServer({
+          server,
+          verifyClient: createOriginVerify(),
+        });
         wss.on('error', (e: any) => TUI.error('WebSocket Error', e.message));
 
         // Action dispatcher for plugin actions/events
