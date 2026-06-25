@@ -1537,7 +1537,6 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 
 .callout .callout-content> :first-child,
 .card .card-content> :first-child,
-.docmd-container> :first-child,
 .step-content> :first-child,
 .step-title {
     margin-top: 0;
@@ -3286,8 +3285,14 @@ code {
 
 .docmd-container.grids {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: var(--space-2);
+    /* `auto-fit` with `minmax(240px, 1fr)` makes 2 cards wrap side-by-side
+       starting at ~520px container width. Smaller min would force too
+       many cards per row on narrow viewports; bigger min made the
+       grid fall back to a single 1fr column that stretched the card
+       content edge-to-edge (the "stretching wide" regression). 240px
+       hits the sweet spot for the default 4-card showcase. */
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-4);
     margin: var(--space-4) 0;
     width: 100%;
     border: 0;
@@ -3296,8 +3301,13 @@ code {
 }
 
 .docmd-container.grid-item {
+    /* `flex-direction: column` is required — without it the inner card
+       (title + content) lay out horizontally because the default
+       flex-direction is row. Items inherit full width from the grid
+       container's `align-items: stretch` (the CSS grid default). */
     display: flex;
     flex-direction: column;
+    width: 100%;
     gap: var(--space-4);
     min-width: 0;
     background: transparent;
