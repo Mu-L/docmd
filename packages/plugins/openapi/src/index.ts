@@ -16,6 +16,7 @@ import fs from 'fs';
 import path from 'path';
 import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
+import { safePath, asUserPath } from '@docmd/utils';
 import type { PluginDescriptor } from '@docmd/api';
 
 const require = createRequire(import.meta.url);
@@ -23,7 +24,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const plugin: PluginDescriptor = {
   name: 'openapi',
-  version: '0.8.7',
+  version: '0.8.8',
   capabilities: ['markdown', 'assets']
 };
 
@@ -259,8 +260,10 @@ function renderOperation(method: string, path_: string, op: OAOperation, spec: O
 </div>`;
 }
 
-/** Parse OpenAPI spec from a file path (JSON or YAML) */
+/** Parse OpenAPI spec from a file path (JSON or YAML). specPath is validated
+ *  upstream by safePath() in renderSpec(); this function assumes it is safe. */
 function parseSpec(specPath: string): OASpec {
+  // eslint-disable-next-line docmd/no-unsafe-fs-read -- specPath is validated by safePath() in renderSpec()
   const raw = fs.readFileSync(specPath, 'utf8');
   // JSON detection
   const trimmed = raw.trimStart();
@@ -281,7 +284,14 @@ function parseSpec(specPath: string): OASpec {
 
 /** Render full spec as HTML */
 function renderSpec(specPath: string, rootDir: string, options: any): string {
-  const absPath = path.isAbsolute(specPath) ? specPath : path.resolve(rootDir, specPath);
+  // Phase 1.A: CWE-22 fix (S-2, N-S2). Use safePath() to enforce boundary.
+  // Absolute paths and ../ traversal are rejected by safePath() (throws).
+  let absPath: string;
+  try {
+    absPath = safePath(rootDir, asUserPath(specPath));
+  } catch (_e: any) {
+    return `<div class="oa-error">OpenAPI spec path escapes project root: <code>${esc(specPath)}</code></div>`;
+  }
 
   if (!fs.existsSync(absPath)) {
     return `<div class="oa-error">OpenAPI spec not found: <code>${esc(specPath)}</code></div>`;

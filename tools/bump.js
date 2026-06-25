@@ -18,7 +18,7 @@ const path = require("path");
 const newVersion = process.argv[2];
 
 if (!newVersion) {
-  console.error("Usage: node scripts/bump-version.js <new-version>");
+  console.error("Usage: node tools/bump-version.js <new-version>");
   process.exit(1);
 }
 

@@ -50,8 +50,11 @@ WORKDIR /app
 # Copy everything (excluding files via .dockerignore)
 COPY . .
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install dependencies. `--config.confirmModulesPurge=false` stops
+# pnpm from prompting to confirm removal of node_modules in non-TTY
+# environments (Docker build). The ENV CI=true route is broader and
+# leaks into every subsequent RUN, so the targeted flag is preferred.
+RUN pnpm install --frozen-lockfile --config.confirmModulesPurge=false
 
 # Stub out packages that can't build in Docker before running the full build:
 #   - engine-rust-binaries: requires cargo; pre-built .node files are in the repo

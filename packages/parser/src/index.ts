@@ -12,7 +12,7 @@
  * --------------------------------------------------------------------
  */
 
-import { createMarkdownProcessor, processContent, processContentAsync } from './markdown-processor.js';
+import { createMarkdownProcessor, processContent, processContentAsync, flushNormaliserWarnings, setNormaliserVerbose } from './markdown-processor.js';
 import { renderTemplateAsync } from './html-renderer.js';
 import { renderIcon } from './utils/icon-renderer.js';
 import { validateConfig } from './utils/validator.js';
@@ -26,10 +26,24 @@ export {
   validateConfig,
 
   // Utils
-  renderIcon
+  renderIcon,
+  flushNormaliserWarnings,
+  setNormaliserVerbose
 };
 
 export { createDepthTrackingContainer } from './features/index.js';
+export {
+  normaliseContainers,
+  classifyLine,
+  indentOf,
+  SELF_CLOSING_CONTAINER_NAMES
+} from './utils/container-normaliser.js';
+export type {
+  NormaliserWarning,
+  NormaliserWarningSeverity,
+  NormaliserResult,
+  NormaliserOptions
+} from './utils/container-normaliser.js';
 export { findPageNeighbors, findBreadcrumbs } from './utils/navigation-helper.js';
 export { normalizeInternalHref, normalizeNavPaths, normalizeMenubarPaths, resolveHref } from './utils/normalize-href.js';
 

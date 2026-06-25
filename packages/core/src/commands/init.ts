@@ -110,7 +110,8 @@ You can nest containers, add custom titles, and use emojis! :tada:
 
 ::: card "Flexible Structure"
 Organise your content with cards.
-::: button "View Documentation" https://docs.docmd.io
+
+[View the docs →](https://docmd.io){.docmd-button}
 :::
 
 ### 2. Tabs & Code
@@ -543,22 +544,29 @@ Before finalizing your work, always run the validation suite to detect errors:
 1. Validate internal link syntax.
 2. Ensure relative paths (e.g. \`[link](./another-file.md)\`) target actual documents.
 3. Correct broken links or missing files automatically.
+
+---
+
+## 8. Install docmd-skills
+
+This file is the project-local **docmd** skill (read by \`docmd mcp\`'s \`get_skill\` tool). For the full agent skill set — including **docmd-dev** (framework contributor) and **docmd-writer** (multi-language documentation writer) — install the [\`docmd-skills\`](https://www.npmjs.com/package/docmd-skills) npm package into your agent's skills directory.
+
+**Single-line install (run once per machine):**
+
+\`\`\`bash
+npx docmd-skills ~/.claude/skills
+\`\`\`
+
+The \`[dir]\` argument is the directory your agent reads skills from. Common choices:
+
+- \`~/.claude/skills\` (Claude Code)
+- \`~/.cursor/skills\` (Cursor)
+- \`./.skills\` (project-local)
+
+After running the command above, the additional \`docmd-skills\`, \`docmd-dev\`, and \`docmd-writer\` modules are available to your agent alongside this file. \`npx docmd-skills --help\` lists all subcommands (e.g. \`npx docmd-skills dev [dir]\` to install only \`docmd-dev\`).
 `;
 
-async function fetchRemoteSkill(): Promise<string | null> {
-  try {
-    const signal = (AbortSignal as any).timeout ? (AbortSignal as any).timeout(3000) : undefined;
-    const res = await fetch('https://raw.githubusercontent.com/docmd-io/docmd-skills/main/SKILL.md', { signal });
-    if (res.ok) {
-      return await res.text();
-    }
-  } catch {
-    // Fail silently, fallback to defaultSkillContent
-  }
-  return null;
-}
-
-export async function initProject() {
+export async function initProject(opts: { force?: boolean; yes?: boolean } = {}) {
   const baseDir = process.cwd();
   const packageJsonFile = path.join(baseDir, 'package.json');
   const configFile = path.join(baseDir, 'docmd.config.json');
@@ -619,27 +627,43 @@ export async function initProject() {
   }
 
   // Determine if we should override existing files
-  let shouldOverride = false;
-  if (existingFiles.length > 0) {
+  let shouldOverride = !!opts.force;
+  if (existingFiles.length > 0 && !shouldOverride) {
     TUI.warn('Existing files detected:');
     existingFiles.forEach(file => TUI.item('', file));
 
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
+    // In a non-interactive environment (CI, piped input, Docker without -it,
+    // npx with no TTY), skip the prompt. Default to "no" for safety unless
+    // --yes is passed.
+    const isInteractive = !!process.stdin.isTTY;
+    if (!isInteractive) {
+      if (opts.yes) {
+        shouldOverride = true;
+        TUI.dim('  (non-interactive mode + --yes: overriding existing files)');
+      } else {
+        shouldOverride = false;
+        TUI.dim('  (non-interactive mode: keeping existing files. Pass --force to override.)');
+      }
+    } else {
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+      });
 
-    const answer = await new Promise(resolve => {
-      rl.question(`\n ${TUI.bold('Do you want to override these files?')} (y/N): `, resolve);
-    });
+      const answer = await new Promise(resolve => {
+        rl.question(`\n ${TUI.bold('Do you want to override these files?')} (y/N): `, resolve);
+      });
 
-    rl.close();
+      rl.close();
 
-    shouldOverride = (answer as string).toLowerCase() === 'y';
+      shouldOverride = (answer as string).toLowerCase() === 'y';
+    }
 
     if (!shouldOverride) {
       TUI.step('Maintaining existing files', 'SKIP');
     }
+  } else if (existingFiles.length > 0 && shouldOverride) {
+    TUI.warn(`Overriding ${existingFiles.length} existing file(s) (--force)`);
   }
 
   // Create docs directory if it doesn't exist
@@ -685,13 +709,14 @@ export async function initProject() {
 
   // Write SKILL.md if it doesn't exist or user confirmed override
   if (!await fs.pathExists(skillFile) || shouldOverride) {
-    let skillContent = defaultSkillContent;
-    const remoteContent = await fetchRemoteSkill();
-    if (remoteContent) {
-      skillContent = remoteContent;
-    }
-    await fs.writeFile(skillFile, skillContent, 'utf8');
+    // T-S5 fix (revised): no network call. docmd-skills is now a standalone
+    // npm package (npx docmd-skills [dir]); users run it separately to install
+    // the full docmd-dev / docmd-writer / docmd-skills skill set into their
+    // agent directory. The local SKILL.md ships with @docmd/core for MCP
+    // consumption and remains editable.
+    await fs.writeFile(skillFile, defaultSkillContent, 'utf8');
     TUI.step(`${shouldOverride ? 'Updated' : 'Created'} SKILL.md`, 'DONE');
+    TUI.dim('  (For the full agent skill set, run `npx docmd-skills` separately.)');
   } else {
     TUI.step('Using existing SKILL.md', 'SKIP');
   }

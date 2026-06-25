@@ -17,6 +17,13 @@ import path from 'path';
 import { execSync, execFileSync } from 'child_process';
 
 import { createRequire } from 'module';
+import {
+  detectConfigFormat,
+  addPluginToJsonConfig,
+  addPluginToPluginsBlock,
+  removePluginFromJsonConfig,
+  removePluginFromPluginsBlock
+} from './config-editor.js';
 
 const require = createRequire(import.meta.url);
 const pluginsRegistry = require('../registry/plugins.json');
@@ -36,6 +43,32 @@ function formatSpawnError(err: any, cmdExe: string, action: string, opts: { verb
 
   if (isMissingBinary) {
     const binary = err.path || cmdExe;
+
+    // Special case: if the failing binary is a package manager but Node itself
+    // is reachable, the issue is likely that docmd was launched through npx
+    // and the spawned child process can't see the parent's PATH. Suggest
+    // installing the plugin via the host package manager directly.
+    const nodeReachable = (() => {
+      try { require('child_process').execFileSync(process.execPath, ['--version'], { stdio: 'pipe' }); return true; }
+      catch { return false; }
+    })();
+    const isPkgManager = /^(npm|pnpm|yarn|bun)(\.cmd)?$/i.test(path.basename(binary));
+
+    if (nodeReachable && isPkgManager) {
+      return [
+        `Could not spawn ${binary} — it was not found on PATH when running through npx.`,
+        ``,
+        `This is a common issue when @docmd/core itself was launched via npx on`,
+        `Windows or in restricted shells. Install the plugin directly using your`,
+        `package manager, then run the build again:`,
+        ``,
+        `  npm install <package-name>`,
+        ``,
+        `If you still see this after a direct install, run with --verbose for the`,
+        `full spawn error.`,
+      ].join('\n');
+    }
+
     return [
       `The package manager '${binary}' was not found on your system PATH.`,
       ``,
@@ -55,6 +88,47 @@ function formatSpawnError(err: any, cmdExe: string, action: string, opts: { verb
 }
 
 /**
+ * Resolves the absolute path to a package-manager binary, falling back
+ * to PATH lookup if not found next to Node.
+ *
+ * On Windows, `npm`/`pnpm`/`yarn` are `.cmd` shims that may not be on
+ * PATH when `@docmd/core` is itself launched through `npx`. Since all
+ * major package managers ship their CLI scripts in Node's install
+ * directory (e.g. `node_modules/npm/bin/npm-cli.js`), resolving from
+ * `process.execPath` works reliably across all platforms and invocation
+ * methods (including `npx`).
+ */
+function resolvePackageManagerBin(name: string): string {
+  const nodeDir = path.dirname(process.execPath);
+
+  // Candidate scripts to look for, in priority order.
+  const candidates: Record<string, string[]> = {
+    npm:  ['npm-cli.js', `npm${process.platform === 'win32' ? '.cmd' : ''}`],
+    pnpm: ['pnpm.js', `pnpm${process.platform === 'win32' ? '.cmd' : ''}`],
+    yarn: ['yarn.js', `yarn${process.platform === 'win32' ? '.cmd' : ''}`],
+    bun:  ['bun.js', `bun${process.platform === 'win32' ? '.cmd' : ''}`],
+  };
+
+  const files = candidates[name] || [name];
+
+  // 1. Look next to the running Node binary (npm ships here, pnpm global does too).
+  for (const file of files) {
+    const candidate = path.join(nodeDir, file);
+    if (fs.existsSync(candidate)) return candidate;
+  }
+
+  // 2. Look in Node's lib/node_modules (npm/pnpm install here on most setups).
+  const libModules = path.join(nodeDir, 'lib', 'node_modules');
+  for (const file of files) {
+    const candidate = path.join(libModules, name, file === `${name}.cmd` ? 'bin' : 'bin', file);
+    if (fs.existsSync(candidate)) return candidate;
+  }
+
+  // 3. Last resort: return the bare name and let PATH resolve it.
+  return files[files.length - 1];
+}
+
+/**
  * Detects the package manager used in the current project by looking for lockfiles upwards.
  * Defaults to 'npm' if no lockfile is found.
  */
@@ -71,19 +145,30 @@ function getPackageManager(cwd) {
 }
 
 /**
- * Resolves the project's config file path. Prefers docmd.config.json
- * (the project standard), falls back to docmd.config.js for legacy
- * projects, and defaults to docmd.config.json when no config exists yet.
+ * Resolves the project's config file path. Phase 3 PR 3.B (M-3):
+ * checks all five supported formats in preference order (JSON > JS >
+ * MJS > CJS > TS) and falls back to JSON when no config exists.
+ *
+ * The previous implementation only looked at `.json` and `.js`, so a
+ * project with `docmd.config.ts` would silently scaffold a new
+ * `docmd.config.json` instead of editing the existing TS file.
  */
 function resolveConfigPath(cwd) {
-  const jsonPath = path.join(cwd, 'docmd.config.json');
-  const jsPath = path.join(cwd, 'docmd.config.js');
-  if (fs.existsSync(jsonPath)) return jsonPath;
-  if (fs.existsSync(jsPath)) return jsPath;
-  return jsonPath;
+  const candidates = [
+    'docmd.config.json',
+    'docmd.config.js',
+    'docmd.config.mjs',
+    'docmd.config.cjs',
+    'docmd.config.ts'
+  ];
+  for (const name of candidates) {
+    const p = path.join(cwd, name);
+    if (fs.existsSync(p)) return p;
+  }
+  return path.join(cwd, 'docmd.config.json');
 }
 
-function detectConfigFormat(configPath) {
+function detectConfigFormatLegacy(configPath) {
   return configPath.endsWith('.json') ? 'json' : 'js';
 }
 
@@ -100,90 +185,75 @@ function resolvePluginMeta(name) {
 
 /**
  * Reads config and safely injects the plugin to the `plugins` object.
+ *
+ * Phase 3 PR 3.B (F7 + M-3): replaced the legacy regex-based injector
+ * (which only matched `module.exports = { ... }` and silently no-op'd
+ * for `export default defineConfig({...})` configs) with the
+ * brace-balanced scanner in `./config-editor.js`. JSON configs are
+ * handled via `JSON.parse` for full safety; JS / TS / MJS / CJS
+ * configs use a scanner that finds the `plugins:` block by
+ * brace-balancing and adds the entry while preserving the existing
+ * indentation and trailing-comma style.
  */
 function injectPluginToConfig(configPath, meta) {
+  const configKey = meta.configKey;
+  const valueText = meta.defaultConfig || '{}';
+
   let content = '';
   if (fs.existsSync(configPath)) {
     content = fs.readFileSync(configPath, 'utf8');
   } else {
-    // Scaffold minimal config if missing
-    content = `module.exports = {\n  plugins: {}\n};\n`;
-  }
-
-  // Strip comments to avoid false positives (e.g., `// analytics: {}`)
-  const strippedContent = content.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
-
-  const configKey = meta.configKey;
-
-  // Check if plugin is already inside
-  if (strippedContent.includes(`'${configKey}'`) || strippedContent.includes(`"${configKey}"`) || strippedContent.includes(`\`${configKey}\``) || strippedContent.includes(`${configKey}:`)) {
-    return false; // Already installed
-  }
-
-  // Look for `plugins: {`
-  const pluginsRegex = /plugins\s*:\s*\{/;
-  const match = content.match(pluginsRegex);
-
-  // Dynamically format multi-line configs to match indentation
-  const formattedConfig = meta.defaultConfig.replace(/\n/g, '\n    ');
-  const injectStr = `'${configKey}': ${formattedConfig}`;
-
-  if (match) {
-    content = content.replace(pluginsRegex, `plugins: {\n    ${injectStr},`);
-  } else {
-    // If there's no plugins object, we can try to inject it before the last closing brace
-    const moduleExportsRegex = /module\.exports\s*=\s*(?:defineConfig\()?\{([\s\S]*?)\}(?:\))?;?/g;
-    let matchE;
-    let lastMatch;
-    while ((matchE = moduleExportsRegex.exec(content)) !== null) {
-      lastMatch = matchE;
-    }
-    if (lastMatch) {
-      const closingBraceIndex = lastMatch.index + lastMatch[0].lastIndexOf('}');
-      const prefix = content.substring(0, closingBraceIndex);
-      const suffix = content.substring(closingBraceIndex);
-      
-      const insert = prefix.trim().endsWith(',') || prefix.trim().endsWith('{') ? 
-        `\n  plugins: {\n    ${injectStr}\n  }\n` : 
-        `,\n  plugins: {\n    ${injectStr}\n  }\n`;
-        
-      content = prefix + insert + suffix;
+    // Scaffold a minimal config in the matching format.
+    const fmt = detectConfigFormat(configPath);
+    if (fmt === 'json') {
+      content = '{\n  "plugins": {}\n}\n';
+    } else if (fmt === 'mjs' || fmt === 'ts') {
+      content = "export default {\n  plugins: {}\n};\n";
     } else {
-      TUI.warn(`Could not automatically inject plugin into config file. Please add '${configKey}': ${meta.defaultConfig} manually to the plugins object.`);
-      return false;
+      content = "module.exports = {\n  plugins: {}\n};\n";
     }
   }
 
-  fs.writeFileSync(configPath, content, 'utf8');
+  const fmt = detectConfigFormat(configPath);
+  let result: { newContent: string; changed: boolean };
+  if (fmt === 'json') {
+    result = addPluginToJsonConfig(content, configKey, valueText);
+  } else {
+    result = addPluginToPluginsBlock(content, configKey, valueText);
+  }
+
+  if (!result.changed) {
+    return false; // Already present
+  }
+
+  fs.writeFileSync(configPath, result.newContent, 'utf8');
   return true;
 }
 
 /**
- * Removes the plugin from the config file.
+ * Removes the plugin from the config file. Phase 3 PR 3.B (F7) fix:
+ * the legacy regex only matched CJS-style configs; the brace-balanced
+ * scanner handles all five supported formats.
  */
 function removePluginFromConfig(configPath, meta) {
   if (!fs.existsSync(configPath)) return false;
 
   const content = fs.readFileSync(configPath, 'utf8');
   const configKey = meta.configKey;
-  const escapedKey = configKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const fmt = detectConfigFormat(configPath);
 
-  if (!content.includes(configKey)) {
-    return false;
+  let result: { newContent: string; changed: boolean };
+  if (fmt === 'json') {
+    result = removePluginFromJsonConfig(content, configKey);
+  } else {
+    result = removePluginFromPluginsBlock(content, configKey);
   }
 
-  // This regex handles both multiline well-formatted configs, and poorly formatted tight inline configs 
-  // generated by the scaffolding fallback e.g. `'search': {},}`
-  const re1 = new RegExp(`\\s*['"\`]?${escapedKey}['"\`]?\\s*:\\s*\\{[^}]*\\}\\s*,?\\s*`, 'gm');
-  
-  // Replace active entries with empty string
-  const newContent = content.replace(re1, '');
-
-  if (content === newContent) {
-    return false; // Regex didn't match (e.g. config differs from expected format)
+  if (!result.changed) {
+    return false; // Not present
   }
 
-  fs.writeFileSync(configPath, newContent, 'utf8');
+  fs.writeFileSync(configPath, result.newContent, 'utf8');
   return true;
 }
 
@@ -317,10 +387,10 @@ async function installPlugin(pluginInput: string, opts: { verbose?: boolean } = 
 
   let cmdExe = '';
   let cmdArgs: string[] = [];
-  if (pkgManager === 'npm') { cmdExe = 'npm'; cmdArgs = ['install', packageName]; }
-  else if (pkgManager === 'yarn') { cmdExe = 'yarn'; cmdArgs = ['add', packageName]; }
-  else if (pkgManager === 'pnpm') { cmdExe = 'pnpm'; cmdArgs = ['add', packageName]; }
-  else if (pkgManager === 'bun') { cmdExe = 'bun'; cmdArgs = ['add', packageName]; }
+  if (pkgManager === 'npm') { cmdExe = resolvePackageManagerBin('npm'); cmdArgs = ['install', packageName]; }
+  else if (pkgManager === 'yarn') { cmdExe = resolvePackageManagerBin('yarn'); cmdArgs = ['add', packageName]; }
+  else if (pkgManager === 'pnpm') { cmdExe = resolvePackageManagerBin('pnpm'); cmdArgs = ['add', packageName]; }
+  else if (pkgManager === 'bun') { cmdExe = resolvePackageManagerBin('bun'); cmdArgs = ['add', packageName]; }
 
   if (pkgManager === 'npm' && !fs.existsSync(path.join(cwd, 'package.json'))) {
     cmdArgs.push('--no-save');
@@ -361,13 +431,17 @@ async function installPlugin(pluginInput: string, opts: { verbose?: boolean } = 
 async function removePlugin(pluginInput: string, opts: { verbose?: boolean } = {}) {
   const cwd = process.cwd();
   const pkgManager = getPackageManager(cwd);
-  
+
   let meta;
   try {
     meta = resolvePluginMeta(pluginInput);
   } catch (err: any) {
     TUI.error('Removal Aborted', err.message);
-    return;
+    // Phase 3 PR 3.A (F6): exit 1 so CI pipelines can gate on the
+    // documented "Removal Aborted" failure path. Previously this
+    // `return` left the process at exit code 0, silently passing a
+    // failed removal.
+    process.exit(1);
   }
   const packageName = meta.package;
   const isTemplate = meta.kind === 'template';
