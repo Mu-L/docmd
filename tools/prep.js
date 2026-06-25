@@ -110,7 +110,7 @@ function startStep(label) {
     // Print the [WAIT] sign and return a handle to update on completion.
     const bar = `${C.cyan}│${C.reset}`;
     const text = `${C.dim}${label}${C.reset}`;
-    process.stdout.write(`${bar}  ${text.padEnd(52)}${C.dim}[WAIT]${C.reset}\n`);
+    process.stdout.write(`${bar}  ${text.padEnd(52)}${C.dim}[ WAIT ]${C.reset}\n`);
     return { label, startMs: Date.now(), bar, text };
 }
 
@@ -489,7 +489,7 @@ if (args.includes('--skip-tests')) {
     // without a `test` script are skipped by `--if-present`. Wired in
     // here so a regression in any plugin's local suite fails the
     // release pipeline just like a regression in tests/runner.js.
-    runTestStep('Per-package unit tests (pnpm -r run test --if-present)',
+    runTestStep('Per-package unit tests (pnpm -r run test)',
         'pnpm -r run test --if-present', 'Tests · per-package units');
 }
 footer(C.blue);
