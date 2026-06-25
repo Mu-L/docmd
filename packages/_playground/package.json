@@ -5,6 +5,7 @@
   "dependencies": {
     "@docmd/core": "workspace:*",
     "@docmd/plugin-math": "workspace:*",
+    "@docmd/plugin-pwa": "^0.8.7",
     "@docmd/template-summer": "workspace:*"
   },
   "scripts": {

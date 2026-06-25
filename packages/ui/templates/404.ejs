@@ -151,7 +151,7 @@
     }
 
     /* Logo switch — matches the existing light/dark convention */
-    .error-logo { height: 60px; margin-bottom: 2rem; width: auto; display: block; }
+    .error-logo { height: 60px; margin:0 auto 2rem; width: auto; display: block; }
     .error-logo.light { display: var(--display-light, block); }
     .error-logo.dark { display: var(--display-dark, none); }
     @media (prefers-color-scheme: dark) {
@@ -174,7 +174,7 @@
     <% } %>
 
     <div class="docmd-404__code" aria-hidden="true"><%= typeof t === 'function' ? t('errorCode404') : '404' %></div>
-    <h1 id="docmd-404-title" class="docmd-404__title"><%= typeof t === 'function' ? t('pageNotFound') : 'Page not found' %></h1>
+    <h1 id="docmd-404-title" class="docmd-404__title"><%= title || (typeof t === 'function' ? t('pageNotFound') : 'Page not found') %></h1>
     <p class="docmd-404__msg"><%= content || (typeof t === 'function' ? t('pageNotFoundMsg') : 'The page you’re looking for doesn’t exist or has moved.') %></p>
     <div class="docmd-404__actions">
       <a href="<%= relativePathToRoot %>" class="docmd-404__btn docmd-404__btn--primary">

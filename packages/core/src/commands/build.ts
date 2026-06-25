@@ -23,6 +23,7 @@ import { flushNormaliserWarnings, setNormaliserVerbose } from '@docmd/parser';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { prepareAssets, prepareTemplateAssets } from '../engine/assets.js';
 import { buildLocales, generateLocaleRedirect, preCountPages } from '../engine/i18n.js';
+import { NOT_FOUND_DEFAULTS } from '../utils/config-schema.js';
 
 // Core package version — threaded through to renderPages for the
 // <meta name="generator"> tag so it stays in sync with @docmd/core.
@@ -223,8 +224,47 @@ export async function buildSite(configPath: string, opts: any = {}) {
     }
 
     // --- 3. GENERATE CUSTOM 404 PAGE ---
+    // The 404 page always lives at <rootOutputDir>/404.html — a single
+    // file at the site root, regardless of how many locales the site has.
+    // Static hosts (Vercel, Netlify, GitHub Pages, Cloudflare Pages,
+    // S3+CloudFront) all auto-serve /404.html on any unmatched route, so
+    // emitting one per locale under subdirectories would either be ignored
+    // or require a manual try_files rule per deployment.
+    //
+    // The page is translated to the site's DEFAULT locale. Visitors on a
+    // non-default locale will still see the default-locale 404 — that's
+    // a deliberate trade-off (one file at root > per-locale subdirs that
+    // most hosts won't pick up). Users who want per-locale 404s can:
+    //   1. Mount a custom 404 via config.notFound (full control), or
+    //   2. Configure their reverse proxy with try_files fallbacks.
     const { renderTemplateAsync } = await import('@docmd/parser/dist/html-renderer.js');
     const ui = await import('@docmd/ui');
+
+    // Resolve default locale (falls back to 'en' when no i18n configured).
+    const defaultLocaleId =
+      (config.i18n?.default as string)
+      || (Array.isArray(config.i18n?.locales) && config.i18n.locales[0]?.id)
+      || 'en';
+    const activeLocale = (Array.isArray(config.i18n?.locales)
+      ? config.i18n.locales.find((l: any) => l.id === defaultLocaleId)
+      : null) || { id: defaultLocaleId };
+
+    const notFoundStrings = ui.loadTranslations(defaultLocaleId);
+    const t = ui.createT(notFoundStrings);
+
+    // Resolution order for the 404 title and body:
+    //   1. User-supplied config.notFound.title / config.notFound.content
+    //      (always wins when present — full customisation escape hatch).
+    //   2. Translated via t('pageNotFound') / t('pageNotFoundMsg') against
+    //      the default locale's strings (zh, de, fr, ja, etc).
+    //   3. NOT_FOUND_DEFAULTS.title / content (defined in config-schema)
+    //      as the final English fallback if a translation key is missing.
+    const resolvedTitle = config.notFound?.title
+      || t('pageNotFound')
+      || NOT_FOUND_DEFAULTS.title;
+    const resolvedContent = config.notFound?.content
+      || t('pageNotFoundMsg')
+      || NOT_FOUND_DEFAULTS.content;
 
     const notFoundTemplatePath = path.join(ui.getTemplatesDir(), '404.ejs');
     let notFoundTemplateStr = '';
@@ -240,67 +280,27 @@ export async function buildSite(configPath: string, opts: any = {}) {
     // Determine Absolute Base (usually '/' unless 'base' config is set)
     const absoluteRoot = config.base && config.base !== '/' ? config.base.replace(/\/$/, '') + '/' : '/';
 
-    // Build a 404 page per locale. The default-locale one sits at the site
-    // root (404.html) so existing single-locale sites and quick-start setups
-    // keep working. Every additional locale gets <locale>/404.html so a host
-    // server can `try_files` to the right one based on URL prefix. The
-    // activeLocale object is passed to the template so the <html lang="…">
-    // tag, dir attribute, and any locale-aware markup stay correct.
-    const localeList: Array<{ id: string; label?: string; dir?: string }> =
-      Array.isArray(config.i18n?.locales) && config.i18n.locales.length
-        ? config.i18n.locales
-        : [{ id: (config.i18n?.default as string) || 'en' }];
-    const defaultLocaleId = (config.i18n?.default as string) || localeList[0]?.id || 'en';
+    const full404Html = await renderTemplateAsync(notFoundTemplateStr, {
+      pageTitle: resolvedTitle,
+      title: resolvedTitle,
+      content: resolvedContent,
+      logo: config.logo,
+      t,
+      activeLocale,
 
-    for (const localeEntry of localeList) {
-      const localeId = localeEntry.id;
-      const notFoundStrings = ui.loadTranslations(localeId);
-      const t = ui.createT(notFoundStrings);
+      // Context for Assets
+      relativePathToRoot: absoluteRoot,
+      buildHash,
+      appearance: config.theme?.appearance || config.theme?.defaultMode || 'system',
+      defaultMode: config.theme?.appearance || config.theme?.defaultMode || 'system',
+      theme: config.theme,
+      customCssFiles: config.theme.customCss || [],
 
-      // For non-default locales the assets root shifts up by one directory
-      // (because the file is written to /<locale>/404.html, not /404.html).
-      // Absolute-rooted asset paths (/assets/...) keep working for the
-      // default locale.
-      const isDefault = localeId === defaultLocaleId;
-      const localeAssetRoot = isDefault ? absoluteRoot : '../';
+      faviconLinkHtml: config.favicon ? `<link rel="icon" href="${absoluteRoot}${config.favicon.replace(/^\//, '')}">` : '',
+      themeInitScript
+    });
 
-      // Translate title and body per locale. config-schema.js injects a
-      // hardcoded English default into config.notFound before this loop,
-      // so we treat its strings as fallbacks only when the user hasn't
-      // overridden them — and only for the default locale.
-      const fallbackTitle = isDefault ? (config.notFound?.title || t('pageNotFound')) : t('pageNotFound');
-      const fallbackContent = isDefault
-        ? (config.notFound?.content || t('pageNotFoundMsg'))
-        : t('pageNotFoundMsg');
-
-      const full404Html = await renderTemplateAsync(notFoundTemplateStr, {
-        pageTitle: fallbackTitle,
-        title: fallbackTitle,
-        content: fallbackContent,
-        logo: config.logo,
-        t,
-        activeLocale: localeEntry,
-
-        // Context for Assets
-        relativePathToRoot: localeAssetRoot,
-        buildHash,
-        appearance: config.theme?.appearance || config.theme?.defaultMode || 'system',
-        defaultMode: config.theme?.appearance || config.theme?.defaultMode || 'system',
-        theme: config.theme,
-        customCssFiles: config.theme.customCss || [],
-
-        faviconLinkHtml: config.favicon
-          ? `<link rel="icon" href="${absoluteRoot}${config.favicon.replace(/^\//, '')}">`
-          : '',
-        themeInitScript
-      });
-
-      const outPath = isDefault
-        ? path.join(rootOutputDir, '404.html')
-        : path.join(rootOutputDir, localeId, '404.html');
-      await fs.ensureDir(path.dirname(outPath));
-      await fs.writeFile(outPath, full404Html);
-    }
+    await fs.writeFile(path.join(rootOutputDir, '404.html'), full404Html);
 
     // --- 4. GENERATE STATIC REDIRECTS ---
     if (config.redirects && Object.keys(config.redirects).length > 0) {

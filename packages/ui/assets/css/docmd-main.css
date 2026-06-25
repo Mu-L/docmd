@@ -423,11 +423,6 @@ span.collapse-icon-wrapper .collapse-icon {
     opacity: .8;
 }
 
-/* Inside a codeblock title bar (the ```lang "title"``` case) the
-   button is permanent chrome — not faded — so it sits beside the
-   filename rather than flashing in/out on hover. The title bar
-   adds the `.has-copy-button` class via injectCopyButtons() so we
-   only apply this when the button actually lives in the header. */
 .docmd-code-block-header.has-copy-button>.copy-code-button,
 .docmd-code-block-header.has-copy-button:hover>.copy-code-button {
     opacity: 1;
@@ -1408,10 +1403,6 @@ pre {
     position: relative;
 }
 
-/* When the copy button lives inside the header, push it to the right
-   edge so it doesn't crowd the title text. The button is still
-   absolutely positioned; padding-right reserves space so the title
-   aligns to the left and the button hugs the right padding edge. */
 .docmd-code-block-header.has-copy-button {
     padding-right: 2.75rem;
 }
@@ -1426,8 +1417,6 @@ pre {
     color: var(--text-color);
     font-family: var(--font-family-sans);
 }
-
-
 
 pre code {
     background-color: transparent;
@@ -1721,20 +1710,6 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
     box-shadow: 0 0 0 4px var(--glow-color);
 }
 
-/* =========================================================================
-   Shared "shareable anchor" permalink
-   -------------------------------------------------------------------------
-   Used by:
-     - .step-permalink      (steps container)
-     - .changelog-permalink (changelog entry date)
-   Common properties (positioning setup, hidden-by-default, reveal
-   transition, SVG sizing, container-hover/focus reveal, own-hover
-   highlight) are declared once in the block below. New permalinks should
-   add their selector to the comma lists and add a small positioning-only
-   override block.
-   ========================================================================= */
-
-/* Base — hidden by default, absolute-positioned, smooth reveal. */
 .docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink,
 .docmd-container.changelog-timeline .changelog-permalink {
     position: absolute;
@@ -1753,7 +1728,6 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
     height: 0.85em;
 }
 
-/* Reveal on container hover or keyboard focus on the permalink itself. */
 .docmd-container.steps-reset ol.steps-list>li.step-item:hover .step-permalink,
 .docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink:focus-visible,
 .docmd-container.changelog-timeline .changelog-entry:hover .changelog-permalink,
@@ -1761,7 +1735,6 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
     opacity: 1;
 }
 
-/* Hovering the permalink itself highlights it (link colour + soft bg). */
 .docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink:hover,
 .docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink:focus-visible,
 .docmd-container.changelog-timeline .changelog-permalink:hover,
@@ -1770,9 +1743,6 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
     background-color: var(--sidebar-bg);
 }
 
-/* ---------- Per-use-case positioning ---------- */
-
-/* Step: hangs to the right of the step's number circle. */
 .docmd-container.steps-reset ol.steps-list>li.step-item .step-permalink {
     right: -0.5rem;
     width: 1.5rem;
@@ -1781,7 +1751,6 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
     z-index: 2;
 }
 
-/* Changelog entry date: sits inside the date pill on the right. */
 .docmd-container.changelog-timeline .changelog-permalink {
     right: 0rem;
     top: .85em;
@@ -1824,7 +1793,6 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 
 .docmd-mermaid-container {
     position: relative;
-    /* Anchor for controls */
     margin: var(--space-6) 0;
     padding: var(--space-6) var(--space-4);
     border: 1px solid var(--border-color-codeblock);
@@ -1836,7 +1804,6 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 .mermaid-wrapper {
     position: relative;
     overflow: hidden;
-    /* Hide scrollbars, we use drag-to-pan */
     cursor: grab;
 }
 
@@ -1872,12 +1839,9 @@ html[data-theme=dark] .theme-toggle-button .icon-sun {
 
 .docmd-mermaid-container svg {
     max-width: none;
-    /* Let SVG size itself, wrapper will scroll */
     display: block;
     margin: 0 auto;
 }
-
-
 
 .mermaid-error {
     color: #e74c3c;
@@ -2050,7 +2014,6 @@ details[open]>.collapsible-summary .collapsible-arrow svg {
     box-shadow: 0 0 0 2px var(--link-color)
 }
 
-/* Smooth out transitions on common interactive elements */
 a,
 button,
 .toc-link,
@@ -2165,10 +2128,6 @@ button,
     display: flex;
     gap: 2rem;
     width: 100%;
-    /* align-items: stretch (default) so .main-content fills the full
-     * available height — lets .page-navigation (margin-top: auto) push
-     * all the way to the bottom of .content-area on short pages, matching
-     * the behavior of .page-footer-actions below. */
     align-items: stretch;
     flex: 1 0 auto;
     min-height: 0
@@ -2529,7 +2488,6 @@ img.lightbox {
     vertical-align: middle;
     margin: 0 0.2em;
     transition: all 0.2s;
-    /* User-defined colors via style attribute if color is passed */
 }
 
 a.docmd-tag-link .docmd-tag:hover {
@@ -2587,12 +2545,6 @@ a.docmd-tag-link .docmd-tag:hover {
     opacity: 1
 }
 
-/* When the button lives inside a codeblock title bar, position it
-   vertically centred against the header (which is shorter than the
-   pre and uses different padding) and tighten the right offset to
-   match the header's `var(--space-4)` (16px) padding rhythm. The
-   base `top: .85rem; right: .5rem` was designed for the pre case
-   and would otherwise drop the button below the header centre line. */
 .docmd-code-block-header.has-copy-button>.copy-code-button {
     top: 50%;
     right: var(--space-2);
@@ -3177,7 +3129,6 @@ hr {
         padding-top: 0
     }
 
-    /* Make menubar sticky at the top of the viewport on mobile */
     body.has-menubar-top .docmd-menubar,
     body.has-menubar-header .docmd-menubar {
         position: sticky !important;
@@ -3189,7 +3140,6 @@ hr {
         z-index: 250 !important;
     }
 
-    /* Disable page-header stickiness on mobile when menubar is enabled */
     body.has-menubar-top .page-header,
     body.has-menubar-header .page-header {
         position: relative !important;
@@ -3304,12 +3254,6 @@ code {
 
 .docmd-container.grids {
     display: grid;
-    /* `auto-fit` with `minmax(240px, 1fr)` makes 2 cards wrap side-by-side
-       starting at ~520px container width. Smaller min would force too
-       many cards per row on narrow viewports; bigger min made the
-       grid fall back to a single 1fr column that stretched the card
-       content edge-to-edge (the "stretching wide" regression). 240px
-       hits the sweet spot for the default 4-card showcase. */
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: var(--space-4);
     margin: var(--space-4) 0;
@@ -3320,10 +3264,6 @@ code {
 }
 
 .docmd-container.grid-item {
-    /* `flex-direction: column` is required — without it the inner card
-       (title + content) lay out horizontally because the default
-       flex-direction is row. Items inherit full width from the grid
-       container's `align-items: stretch` (the CSS grid default). */
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -3334,6 +3274,10 @@ code {
     border: 0;
     box-shadow: none;
     margin-bottom: 0;
+}
+
+.grids .grid-item .card {
+  height: stretch;
 }
 
 ul.contains-task-list {
@@ -3350,10 +3294,6 @@ ul.contains-task-list>li::marker {
     margin-top: .25em;
 }
 
-/**
- * Hero Container (2.0)
- * Handles basic, split, and slider layouts.
- */
 .docmd-hero {
     position: relative;
     width: 100%;
@@ -3378,7 +3318,6 @@ ul.contains-task-list>li::marker {
     pointer-events: none;
 }
 
-/* Default / Banner Layout */
 .docmd-hero.hero-banner {
     text-align: center;
     align-items: center;
@@ -3388,7 +3327,6 @@ ul.contains-task-list>li::marker {
     max-width: 800px;
 }
 
-/* Split Layout */
 .docmd-hero.hero-split {
     display: flex;
     flex-direction: row;
@@ -3410,7 +3348,6 @@ ul.contains-task-list>li::marker {
     align-items: center;
 }
 
-/* Slider Layout */
 .docmd-hero.hero-slider {
     overflow: hidden;
     position: relative;
@@ -3488,7 +3425,6 @@ ul.contains-task-list>li::marker {
     transform: scale(1.3);
 }
 
-/* Typography & Elements */
 .hero-content h1 {
     font-size: clamp(2.5rem, 8vw, 4.5rem);
     font-weight: 900;
@@ -3524,7 +3460,6 @@ ul.contains-task-list>li::marker {
     }
 }
 
-/* Workspace Switcher */
 .project-icon {
     width: 0.9rem;
     height: 0.9rem;
@@ -3550,7 +3485,6 @@ ul.contains-task-list>li::marker {
     line-height: 1em
 }
 
-/* Compact mode (for options menu) */
 .project-compact {
     width: auto;
     margin-top: 0;
@@ -3609,11 +3543,6 @@ ul.contains-task-list>li::marker {
         margin-left: 0;
     }
 }
-/* =========================================================================
-   docmd-banner (new in 0.8.7)
-   Site-wide announcement bar. Above the menubar, below the page header.
-   Customisable per template; user customCss always wins (no !important).
-   ========================================================================= */
 
 .docmd-banner {
   width: 100%;
@@ -3737,13 +3666,6 @@ ul.contains-task-list>li::marker {
 .docmd-banner[hidden] {
   display: none;
 }
-
-/* =========================================================================
-   docmd-cookie-banner (new in 0.8.7)
-   Cookie consent dialog. Opt-in via `config.cookie`. Persistence handled
-   in docmd-main.js; styling deliberately uses CSS custom properties so a
-   template can retheme without !important.
-   ========================================================================= */
 
 .docmd-cookie-banner {
   position: fixed;
