@@ -67,6 +67,12 @@ RUN node tools/resolve-ws-deps.js
 # Pack all packages into tarballs (mimics npm publish)
 RUN pnpm -r pack --pack-destination /tarballs
 
+# Generate a package.json listing every external (non-@docmd) runtime dep of
+# @docmd/core's transitive tree. The production stage installs from this file
+# instead of a hand-rolled list in the Dockerfile, so adding a dep to any
+# @docmd/* package automatically propagates to the Docker image.
+RUN node tools/print-okf-runtime-deps.js --emit-pkg=/tarballs/runtime-deps.json
+
 # -----------------------------------------------------------------------------
 # Stage 2: Production stage - minimal image with only runtime dependencies
 # -----------------------------------------------------------------------------
@@ -102,32 +108,18 @@ RUN mkdir -p /usr/local/lib/node_modules && \
       tar -xzf "$tarball" -C "/usr/local/lib/node_modules/$scoped" --strip-components=1; \
     done
 
-# Install external deps — these are NOT packaged into /tarballs/ because
-# they're published directly to the npm registry. `-g` puts them in
-# /usr/local/lib/node_modules, where node's resolution algorithm finds
-# them when @docmd/* packages require them. Keep this list in sync with
-# the transitive dependencies of @docmd/core (run
-# `node tools/print-okf-runtime-deps.js` to regenerate).
-RUN npm install -g --omit=dev --no-audit --no-fund \
-      buffer@^6.0.3 \
-      chalk@^4.1.2 \
-      embed-lite@^0.1.4 \
-      esbuild@^0.28.1 \
-      katex@^0.17.0 \
-      lite-hl@^0.1.2 \
-      lite-matter@^0.1.1 \
-      lite-template@^0.1.2 \
-      lucide-static@^0.577.0 \
-      markdown-it@^14.2.0 \
-      markdown-it-abbr@^1.0.4 \
-      markdown-it-attrs@^4.5.0 \
-      markdown-it-deflist@^2.1.0 \
-      markdown-it-emoji@^2.0.2 \
-      markdown-it-footnote@^3.0.3 \
-      markdown-it-task-lists@^2.1.1 \
-      markdown-it-texmath@^1.0.0 \
-      minisearch@^7.2.0 \
-      ws@^8.21.0
+# Install external deps from the auto-generated runtime-deps.json produced by
+# the builder stage. We extract the dep list with node and pass it straight to
+# `npm install -g`, which puts packages into /usr/local/lib/node_modules —
+# exactly where Node's global resolution path looks. No hand-rolled list in the
+# Dockerfile: adding a dep to any @docmd/* package propagates automatically on
+# the next build because the builder stage regenerates runtime-deps.json fresh.
+RUN node -e "\
+  const p=JSON.parse(require('fs').readFileSync('/tarballs/runtime-deps.json','utf8')); \
+  const args=Object.entries(p.dependencies).map(([k,v])=>k+'@'+v); \
+  const {execFileSync}=require('child_process'); \
+  execFileSync('npm',['install','-g','--omit=dev','--no-audit','--no-fund',...args],{stdio:'inherit'}); \
+"
 
 # Symlink the docmd CLI onto PATH (chmod +x on the script too — some
 # base images strip the executable bit during COPY).
