@@ -21,9 +21,18 @@ const shouldLink = args.includes('--link');
 const skipHeader = args.includes('--skip-header');
 
 function run(cmd, silent = true) {
+    // Pipe stdout/stderr so a failing child surfaces its real output. With
+    // stdio 'inherit', a CI runner (no TTY) discards the child's output and
+    // execSync's error object carries no captured buffers — leaving us with
+    // an opaque "exit code 1" and no way to see which assertion failed.
     try {
-        execSync(cmd, { stdio: silent ? 'ignore' : 'inherit' });
+        execSync(cmd, {
+            stdio: silent ? 'ignore' : 'pipe',
+            maxBuffer: 64 * 1024 * 1024,
+        });
     } catch (e) {
+        if (e.stdout) process.stderr.write(e.stdout);
+        if (e.stderr) process.stderr.write(e.stderr);
         if (!silent) console.error(e);
         process.exit(1);
     }
