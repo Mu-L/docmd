@@ -158,6 +158,30 @@ export function getPluginLoadErrors() {
   return pluginLoadErrors;
 }
 
+/**
+ * Canonical list of plugins that ship with @docmd/core. These are
+ * auto-loaded on every build unless the user opts out via
+ * `plugins.<name>: false` (or `enabled: false`) in their config.
+ *
+ * This is the single source of truth for the "core plugin set" across
+ * the monorepo. Other packages (the installer, the docs site, etc.)
+ * must import this constant rather than re-declaring the list —
+ * re-declaring causes silent drift when a plugin is added/removed here.
+ *
+ * Adding a plugin: append the key to this array AND make sure the
+ * plugin's @docmd/plugin-* package is listed as a workspace dep in
+ * packages/core/package.json so it ships with @docmd/core on npm.
+ */
+export const CORE_PLUGINS: ReadonlyArray<string> = [
+  'search', 'seo', 'sitemap', 'analytics', 'llms',
+  'mermaid', 'git', 'openapi', 'okf'
+] as const;
+
+/** True if `name` is one of the plugins that ship with @docmd/core. */
+export function isCorePlugin(name: string): boolean {
+  return (CORE_PLUGINS as ReadonlyArray<string>).includes(name);
+}
+
 // Track which plugin warnings have already been printed to avoid repeating them on
 // every dev-server rebuild. Keyed by `pluginName:warningType`.
 const _printedWarnings = new Set<string>();
@@ -180,7 +204,7 @@ export function resolvePluginName(key: string): string {
     return `@docmd/plugin-${key}`;
   }
   
-  const corePlugins = ['search', 'seo', 'sitemap', 'analytics', 'llms', 'mermaid', 'git', 'openapi', 'okf'];
+  const corePlugins = CORE_PLUGINS;
   if (corePlugins.includes(key)) {
     return `@docmd/plugin-${key}`;
   }
@@ -356,7 +380,7 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
   // 0.8.8: added `okf` (Open Knowledge Format bundles for AI agents).
   // `okf` follows the same pattern as `llms` — auto-loaded, opt-out via
   // `plugins.okf = false` in the user's config.
-  const corePlugins = ['search', 'seo', 'sitemap', 'analytics', 'llms', 'mermaid', 'git', 'openapi', 'okf'];
+  const corePlugins = CORE_PLUGINS;
 
   for (const name of corePlugins) {
     const resolved = `@docmd/plugin-${name}`;

@@ -24,6 +24,7 @@ import {
   removePluginFromJsonConfig,
   removePluginFromPluginsBlock
 } from './config-editor.js';
+import { isCorePlugin } from '@docmd/api';
 
 const require = createRequire(import.meta.url);
 const pluginsRegistry = require('../registry/plugins.json');
@@ -379,6 +380,23 @@ async function installPlugin(pluginInput: string, opts: { verbose?: boolean } = 
     TUI.error('Installation Aborted', err.message);
     return;
   }
+
+  // Core plugins (search, seo, sitemap, analytics, llms, mermaid, git,
+  // openapi, okf) ship with @docmd/core — they're already installed
+  // and auto-loaded. `docmd add` for a core plugin would be a no-op at
+  // best and a config corruption at worst (it would inject the entry
+  // even though the package is a workspace dep already, leading to a
+  // duplicate install on user systems). The list lives in @docmd/api
+  // as CORE_PLUGINS so it stays in sync with hooks.ts.
+  if (!meta.kind && isCorePlugin(meta.configKey)) {
+    TUI.error(
+      'Installation Aborted (Plugin Already Present)',
+      `Plugin "${meta.configKey}" is a core plugin that ships with @docmd/core. ` +
+      `You can customise plugin behaviour via "plugins.${meta.configKey}" in your config.`
+    );
+    process.exit(1);
+  }
+
   const packageName = meta.package;
   const isTemplate = meta.kind === 'template';
 
@@ -443,6 +461,18 @@ async function removePlugin(pluginInput: string, opts: { verbose?: boolean } = {
     // failed removal.
     process.exit(1);
   }
+
+  // Same gate as installPlugin: core plugins can't be removed because
+  // they're a workspace dep of @docmd/core, not user-installed.
+  if (!meta.kind && isCorePlugin(meta.configKey)) {
+    TUI.error(
+      'Removal Aborted (Core Plugin)',
+      `Plugin "${meta.configKey}" is a core plugin that ships with @docmd/core. ` +
+      `It cannot be removed — opt out instead via "plugins.${meta.configKey}: false" in your config.`
+    );
+    process.exit(1);
+  }
+
   const packageName = meta.package;
   const isTemplate = meta.kind === 'template';
 
