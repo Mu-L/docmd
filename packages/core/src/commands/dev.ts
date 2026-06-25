@@ -426,6 +426,11 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
           TUI.item('Network Access', networkUrl, TUI.bold, TUI.green);
         }
         TUI.item('Serving from', formatPathForDisplay(paths.outputDir, CWD), TUI.dim, TUI.green);
+        // Show engine + locale/version summary — same details build shows (N-23).
+        const devDetails = TUI.extractProjectDetails(config, paths.outputDir, CWD);
+        if (devDetails.engine)   TUI.item('Engine',   devDetails.engine === 'rust' ? 'rust (preview)' : devDetails.engine, TUI.dim, TUI.green);
+        if (devDetails.versions) TUI.item('Versions', `${devDetails.versions.count} (${devDetails.versions.labels})`, TUI.dim, TUI.green);
+        if (devDetails.locales)  TUI.item('Locales',  `${devDetails.locales.count} (${devDetails.locales.labels})`, TUI.dim, TUI.green);
         TUI.item('','', TUI.dim, TUI.green);
         TUI.footer(TUI.green);
 
