@@ -100,11 +100,12 @@ WORKDIR /app
 # Copy packed tarballs from builder
 COPY --from=builder /tarballs /tarballs
 
-# Install ONLY @docmd/core from the tarball — this pulls in all its dependencies
-# from the other tarballs, creating the exact same structure as `npm install @docmd/core`
-RUN pnpm add --global /tarballs/docmd-core-*.tgz \
-    --global-bin-dir=$PNPM_HOME \
-    --global-dir=/usr/local/lib/pnpm-global
+# Install ONLY @docmd/core from the tarball — pnpm auto-resolves
+# workspace deps from sibling tarballs in /tarballs. PNPM_HOME is set
+# above so the `docmd` CLI symlink lands on PATH; the explicit
+# --global-bin-dir / --global-dir flags were dropped because they
+# conflict with pnpm 10's PNPM_HOME handling on Linux runners.
+RUN pnpm add --global /tarballs/docmd-core-*.tgz
 
 # Clean up tarballs and pnpm cache to reduce image size
 RUN rm -rf /tarballs ~/.local/share/pnpm/store
