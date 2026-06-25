@@ -14,6 +14,7 @@
 
 import { renderIcon } from '../utils/icon-renderer.js';
 import { parseTitleAndIcon } from '../utils/container-helper.js';
+import { normaliseContainers } from '../utils/container-normaliser.js';
 
 function smartDedent(str) {
   const lines = str.split('\n');
@@ -111,7 +112,18 @@ export function createDepthTrackingContainer(md: any, name: string, renderOpen: 
       const lineEnd = state.eMarks[i];
       rawContent += state.src.slice(lineStart, lineEnd) + '\n';
     }
-    const innerContent = smartDedent(rawContent);
+
+    // Phase 2 (F1): re-run the container normaliser on the extracted body
+    // BEFORE smartDedent. The top-level normaliser balances the OUTER
+    // container's open/close depth, but inside a recursive render of the
+    // extracted body the depth-tracker is ambiguous again (e.g. nested
+    // grids with one close per inner card). Normalising here inserts the
+    // missing closes inside the body so the recursive grid/card rule sees
+    // balanced input.
+    const normalisedBody = normaliseContainers(rawContent, {
+      sourcePath: `<${name}-body@L${startLine + 1}>`
+    });
+    const innerContent = smartDedent(normalisedBody.source);
 
     const openToken = state.push(`custom_${name}_open`, 'div', 1);
     openToken.info = info;

@@ -44,6 +44,7 @@ import nativeFs from 'fs';
 import { TUI } from '@docmd/tui';
 import { loadConfig } from '../utils/config-loader.js';
 import { buildSite } from '../commands/build.js';
+import { createOriginVerify } from '../utils/ws-origin-guard.js';
 
 /* ── Types ─────────────────────────────────────────────────── */
 
@@ -488,11 +489,24 @@ export async function devWorkspace(
     }
   }
 
-  server.listen(port, '0.0.0.0', () => {
-    wss = new WebSocketServer({ server });
+  // Phase 1.D: default to loopback. Set DOCMD_HOST=0.0.0.0 to expose on LAN
+  // (with the verifyClient callback below still guarding the Origin header).
+  const BIND_HOST = process.env.DOCMD_HOST || '127.0.0.1';
+
+  server.listen(port, BIND_HOST, () => {
+    if (BIND_HOST !== '127.0.0.1' && BIND_HOST !== '::1' && BIND_HOST !== 'localhost') {
+      TUI.warn(`Workspace dev server bound to ${BIND_HOST} (LAN). verifyClient guards Origin.`);
+    }
+    const networkIp = getNetworkIp();
+    // Phase 1.D: CWE-1385 CSWSH fix (N-S1). Even when bound to LAN, the
+    // verifyClient callback rejects any Origin that isn't loopback or the
+    // LAN IP returned by getNetworkIp().
+    wss = new WebSocketServer({
+      server,
+      verifyClient: createOriginVerify(networkIp ? [networkIp] : []),
+    });
     wss.on('error', (e: any) => TUI.error('WebSocket Error', e.message));
 
-    const networkIp = getNetworkIp();
     const localUrl = `http://127.0.0.1:${port}`;
     const networkUrl = networkIp ? `http://${networkIp}:${port}` : null;
 
