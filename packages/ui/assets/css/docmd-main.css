@@ -423,6 +423,16 @@ span.collapse-icon-wrapper .collapse-icon {
     opacity: .8;
 }
 
+/* Inside a codeblock title bar (the ```lang "title"``` case) the
+   button is permanent chrome — not faded — so it sits beside the
+   filename rather than flashing in/out on hover. The title bar
+   adds the `.has-copy-button` class via injectCopyButtons() so we
+   only apply this when the button actually lives in the header. */
+.docmd-code-block-header.has-copy-button>.copy-code-button,
+.docmd-code-block-header.has-copy-button:hover>.copy-code-button {
+    opacity: 1;
+}
+
 .sidebar-toggle-button {
     position: absolute;
     left: -1rem;
@@ -945,9 +955,6 @@ body.has-menubar-header .docmd-menubar {
     max-height: calc(100vh - var(--sticky-top-offset) - 4rem);
     overflow-y: auto;
     scrollbar-width: thin;
-    /* Don't stretch to match the full .content-layout height — the TOC
-     * is sticky and sizes itself; .main-content needs to fill the height
-     * so .page-navigation (margin-top: auto) can push to the bottom. */
     align-self: flex-start
 }
 
@@ -1105,7 +1112,6 @@ blockquote.docmd-embed {
     display: flex;
 }
 
-/* Shared Pill Toggle */
 .version-dropdown-toggle,
 .language-switcher-toggle,
 .project-switcher-toggle {
@@ -1132,7 +1138,6 @@ blockquote.docmd-embed {
     border-color: var(--text-muted);
 }
 
-/* Shared Dropdown Menu */
 .version-dropdown-menu,
 .language-switcher-menu,
 .project-switcher-menu {
@@ -1163,7 +1168,6 @@ blockquote.docmd-embed {
     transform: translateX(-50%) translateY(0);
 }
 
-/* Shared Dropdown Items */
 .version-dropdown-item,
 .language-switcher-item,
 .project-switcher-item {
@@ -1221,7 +1225,6 @@ blockquote.docmd-embed {
     transform: rotate(180deg);
 }
 
-/* Sidebar bottom overrides */
 .sidebar-bottom-group .version-dropdown-menu,
 .sidebar-bottom-group .language-switcher-menu,
 .sidebar-bottom-group .project-switcher-menu {
@@ -1242,7 +1245,6 @@ blockquote.docmd-embed {
     transform: rotate(180deg);
 }
 
-/* Version latest badge */
 .version-latest-badge {
     font-size: 0.6rem;
     padding: 0.05rem 0.3rem;
@@ -1255,7 +1257,6 @@ blockquote.docmd-embed {
     margin-left: 0.15rem;
 }
 
-/* Language Switcher specifics */
 .language-icon {
     width: 0.8rem;
     height: 0.8rem;
@@ -1265,8 +1266,6 @@ blockquote.docmd-embed {
 .language-label {
     text-align: left;
 }
-
-/* Language label visibility is controlled by template compact mode */
 
 .language-switcher-item.disabled {
     opacity: 0.45;
@@ -1285,7 +1284,6 @@ blockquote.docmd-embed {
     letter-spacing: 0.02em;
 }
 
-/* Language Compact Mode (Options Menu) */
 .language-compact {
     width: auto;
     margin-top: 0;
@@ -1407,6 +1405,15 @@ pre {
     padding: var(--space-2) var(--space-4);
     background-color: rgba(0, 0, 0, 0.04);
     border-bottom: 1px solid var(--border-color-codeblock);
+    position: relative;
+}
+
+/* When the copy button lives inside the header, push it to the right
+   edge so it doesn't crowd the title text. The button is still
+   absolutely positioned; padding-right reserves space so the title
+   aligns to the left and the button hugs the right padding edge. */
+.docmd-code-block-header.has-copy-button {
+    padding-right: 2.75rem;
 }
 
 :root[data-theme=dark] .docmd-code-block-header {
@@ -2580,6 +2587,19 @@ a.docmd-tag-link .docmd-tag:hover {
     opacity: 1
 }
 
+/* When the button lives inside a codeblock title bar, position it
+   vertically centred against the header (which is shorter than the
+   pre and uses different padding) and tighten the right offset to
+   match the header's `var(--space-4)` (16px) padding rhythm. The
+   base `top: .85rem; right: .5rem` was designed for the pre case
+   and would otherwise drop the button below the header centre line. */
+.docmd-code-block-header.has-copy-button>.copy-code-button {
+    top: 50%;
+    right: var(--space-2);
+    transform: translateY(-50%);
+    margin: 0;
+}
+
 hr {
     border-top: 1px solid var(--border-color);
     border-bottom: 0;
@@ -2720,7 +2740,6 @@ hr {
     line-height: 1.4;
 }
 
-/* Right-side meta group: holds version pill + confidence badge */
 .search-result-meta {
     display: flex;
     align-items: center;
