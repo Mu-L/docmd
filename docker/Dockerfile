@@ -94,14 +94,12 @@ COPY --from=builder /tarballs /tarballs
 # build time). Legacy wrappers (doc.md, @mgks/docmd) and the monorepo root
 # tarball are excluded by only matching the docmd-* prefix.
 RUN mkdir -p /usr/local/lib/node_modules && \
-    for tarball in /tarballs/docmd-*.tgz; do
-      fname=$(basename "$tarball" .tgz)
-      # Strip version suffix: docmd-core-0.8.8 -> docmd-core
-      pkg="${fname%-*}"
-      # Map to scoped name: docmd-core -> @docmd/core
-      scoped="@docmd/${pkg#docmd-}"
-      mkdir -p "/usr/local/lib/node_modules/$scoped"
-      tar -xzf "$tarball" -C "/usr/local/lib/node_modules/$scoped" --strip-components=1
+    for tarball in /tarballs/docmd-*.tgz; do \
+      fname=$(basename "$tarball" .tgz) && \
+      pkg="${fname%-*}" && \
+      scoped="@docmd/${pkg#docmd-}" && \
+      mkdir -p "/usr/local/lib/node_modules/$scoped" && \
+      tar -xzf "$tarball" -C "/usr/local/lib/node_modules/$scoped" --strip-components=1; \
     done
 
 # Install external deps (esbuild, ws) — these are NOT packaged into
