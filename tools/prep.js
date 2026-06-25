@@ -433,31 +433,34 @@ section('Setup', C.blue);
     if (r.ok) finishStep(s);
     else { finishStep(s, 'fail', `exit ${r.status}`); addIssue('error', 'Setup', `pnpm clean failed (exit ${r.status})`, []); }
 }
-addStat('Setup', 'cleaned monorepo', 'ok');
+{
+    // pnpm clean wipes node_modules; reinstall before lint so the eslint
+    // binary is on PATH. Without this step the lint section silently exits
+    // 0 with no output because `pnpm exec eslint` can't find the binary.
+    const s = startStep('Installing monorepo dependencies');
+    const r = run('pnpm install --frozen-lockfile');
+    if (r.ok) finishStep(s);
+    else { finishStep(s, 'fail', `exit ${r.status}`); addIssue('error', 'Setup', `pnpm install failed (exit ${r.status})`, []); }
+}
+addStat('Setup', 'cleaned + installed dependencies', 'ok');
 footer(C.blue);
 
-// Section 2: Lint
+// Section 2: Lint — runs after Setup reinstalls deps so eslint is available.
 section('Lint', C.cyan);
 runLint();
 footer(C.cyan);
 
 // Section 3: Build — required so tests have dist files to run against.
-// `pnpm clean` (called in Setup) wipes every package's dist directory; without
-// this rebuild the test sections all fail with MODULE_NOT_FOUND on dist files.
+// `pnpm clean` (called in Setup) wipes every package's dist directory;
+// deps are already restored by Setup's install step.
 section('Build', C.cyan);
-{
-    const s = startStep('Installing monorepo dependencies');
-    const r = run('pnpm install --frozen-lockfile');
-    if (r.ok) finishStep(s);
-    else { finishStep(s, 'fail', `exit ${r.status}`); addIssue('error', 'Build', `pnpm install failed (exit ${r.status})`, []); }
-}
 {
     const s = startStep('Building all packages (pnpm -r run build)');
     const r = run('pnpm -r run build');
     if (r.ok) finishStep(s);
     else { finishStep(s, 'fail', `exit ${r.status}`); addIssue('error', 'Build', `pnpm -r run build failed (exit ${r.status})`, []); }
 }
-addStat('Build', 'installed + built all packages', 'ok');
+addStat('Build', 'built all packages', 'ok');
 footer(C.cyan);
 
 // Section 4: Docker (optional)
