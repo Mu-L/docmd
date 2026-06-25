@@ -79,15 +79,6 @@ RUN apk add --no-cache \
     bash \
     su-exec
 
-# Install pnpm directly — avoids corepack version resolution issues in CI.
-# Bump the pinned version here whenever the monorepo's packageManager field changes.
-RUN npm install -g pnpm@10.33.2
-
-# Configure pnpm global directories
-ENV PNPM_HOME="/usr/local/share/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN mkdir -p $PNPM_HOME
-
 # Create non-root user for security
 RUN addgroup -g 1001 -S docmd && \
     adduser -S -D -H -u 1001 -h /app -s /bin/bash -G docmd -g docmd docmd
@@ -97,14 +88,46 @@ WORKDIR /app
 # Copy packed tarballs from builder
 COPY --from=builder /tarballs /tarballs
 
-# Install ONLY @docmd/core from the tarball — this pulls in all its dependencies
-# from the other tarballs, creating the exact same structure as `npm install @docmd/core`
-RUN pnpm add --global /tarballs/docmd-core-*.tgz \
-    --global-bin-dir=$PNPM_HOME \
-    --global-dir=/usr/local/lib/pnpm-global
+# Install @docmd/* packages by manually extracting each tarball into a flat
+# /usr/local/lib/node_modules tree. This bypasses npm/pnpm's registry
+# lookup, which would fail because @docmd/* packages aren't published to
+# the npm registry yet at build time. Sibling-tarball resolution isn't a
+# thing npm supports natively, so we just lay the files down ourselves.
+RUN mkdir -p /usr/local/lib/node_modules && \
+    for tarball in /tarballs/*.tgz; do
+      # Skip the monorepo tarball — it has a different shape (whole repo).
+      [ "$(basename "$tarball")" = "docmd-monorepo-0.8.8.tgz" ] && continue
+      fname=$(basename "$tarball" .tgz)
+      # Strip version suffix: docmd-core-0.8.8 -> docmd-core
+      pkg="${fname%-*}"
+      # Map flattened names back to scoped names:
+      #   docmd-core      -> @docmd/core
+      #   docmd-plugin-x  -> @docmd/plugin-x
+      #   mgks-docmd      -> @mgks/docmd
+      #   doc.md          -> @doc.md
+      case "$pkg" in
+        docmd-*)  scoped="@docmd/${pkg#docmd-}" ;;
+        mgks-*)   scoped="@mgks/${pkg#mgks-}" ;;
+        doc.md-*) scoped="@doc.md/${pkg#doc.md-}" ;;
+        *)        scoped="$pkg" ;;
+      esac
+      mkdir -p "/usr/local/lib/node_modules/$scoped"
+      tar -xzf "$tarball" -C "/usr/local/lib/node_modules/$scoped" --strip-components=1
+    done
 
-# Clean up tarballs and pnpm cache to reduce image size
-RUN rm -rf /tarballs ~/.local/share/pnpm/store
+# Install external deps (esbuild, ws) — these are NOT packaged into
+# /tarballs/ because they're published directly to the npm registry.
+# `-g` puts them in /usr/local/lib/node_modules, where node's resolution
+# algorithm finds them when @docmd/* packages require them.
+RUN npm install -g esbuild@^0.28.1 ws@^8.21.0 --omit=dev --no-audit --no-fund
+
+# Symlink the docmd CLI onto PATH (chmod +x on the script too — some
+# base images strip the executable bit during COPY).
+RUN ln -sf /usr/local/lib/node_modules/@docmd/core/dist/bin/docmd.js /usr/local/bin/docmd \
+ && chmod +x /usr/local/bin/docmd /usr/local/lib/node_modules/@docmd/core/dist/bin/docmd.js
+
+# Clean up tarballs to reduce image size
+RUN rm -rf /tarballs
 
 # Create directories for user content
 RUN mkdir -p /docs /site && chown -R docmd:docmd /docs /site
