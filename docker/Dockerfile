@@ -95,8 +95,10 @@ COPY --from=builder /tarballs /tarballs
 # thing npm supports natively, so we just lay the files down ourselves.
 RUN mkdir -p /usr/local/lib/node_modules && \
     for tarball in /tarballs/*.tgz; do
-      # Skip the monorepo tarball — it has a different shape (whole repo).
-      [ "$(basename "$tarball")" = "docmd-monorepo-0.8.8.tgz" ] && continue
+      # Skip the monorepo root tarball (private, but guard anyway).
+      case "$(basename "$tarball")" in docmd-monorepo-*) continue ;; esac
+      # Skip the legacy doc.md wrapper — not needed in production.
+      case "$(basename "$tarball")" in doc.md-*) continue ;; esac
       fname=$(basename "$tarball" .tgz)
       # Strip version suffix: docmd-core-0.8.8 -> docmd-core
       pkg="${fname%-*}"
@@ -104,11 +106,9 @@ RUN mkdir -p /usr/local/lib/node_modules && \
       #   docmd-core      -> @docmd/core
       #   docmd-plugin-x  -> @docmd/plugin-x
       #   mgks-docmd      -> @mgks/docmd
-      #   doc.md          -> @doc.md
       case "$pkg" in
         docmd-*)  scoped="@docmd/${pkg#docmd-}" ;;
         mgks-*)   scoped="@mgks/${pkg#mgks-}" ;;
-        doc.md-*) scoped="@doc.md/${pkg#doc.md-}" ;;
         *)        scoped="$pkg" ;;
       esac
       mkdir -p "/usr/local/lib/node_modules/$scoped"
