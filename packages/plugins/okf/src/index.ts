@@ -268,7 +268,7 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
     await fs.mkdir(graphDir, { recursive: true });
     await fs.writeFile(path.join(graphDir, 'graph.json'), JSON.stringify({ nodes: nodeList, links: linkList }, null, 2));
     await fs.writeFile(path.join(graphDir, 'graph.css'), GRAPH_CSS);
-    await fs.writeFile(path.join(graphDir, 'graph.js'), GRAPH_JS);
+    await fs.writeFile(path.join(graphDir, 'graph.js'), GRAPH_JS());
     // index.html (not graph.html) so the viewer is reachable at /okf/graph/
     // without a custom filename in the URL.
     await fs.writeFile(path.join(graphDir, 'index.html'), graphHtml(bundleName, concepts.length));
