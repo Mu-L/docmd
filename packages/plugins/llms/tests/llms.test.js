@@ -38,7 +38,7 @@ describe('onPostBuild — 0.8.8 default behaviour', () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'llms-test-'));
   });
   after(async () => {
-    try { await fs.rm(tmpDir, { recursive: true, force: true }); } catch {}
+    try { await fs.rm(tmpDir, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
   });
 
   it('writes llms.txt for the default locale only (i18n off by default)', async () => {
