@@ -664,7 +664,9 @@ export const GRAPH_JS = `(function(){
     var actions = document.createElement('div');
     var a1 = document.createElement('a');
     a1.className = 'okf-btn';
-    a1.href = 'concepts/' + encodeURIComponent(n.id) + '.md';
+    // Relative to the graph viewer (which lives at <bundle>/graph/).
+    // Concept files live at <bundle>/concepts/, so go up one level.
+    a1.href = '../concepts/' + encodeURIComponent(n.id) + '.md';
     a1.target = '_blank'; a1.rel = 'noopener noreferrer';
     a1.textContent = 'Open in OKF bundle';
     actions.appendChild(a1);
