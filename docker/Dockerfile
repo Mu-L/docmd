@@ -82,15 +82,6 @@ RUN apk add --no-cache \
     bash \
     su-exec
 
-# Install pnpm directly — avoids corepack version resolution issues in CI.
-# Bump the pinned version here whenever the monorepo's packageManager field changes.
-RUN npm install -g pnpm@10.33.2
-
-# Configure pnpm global directories
-ENV PNPM_HOME="/usr/local/share/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN mkdir -p $PNPM_HOME
-
 # Create non-root user for security
 RUN addgroup -g 1001 -S docmd && \
     adduser -S -D -H -u 1001 -h /app -s /bin/bash -G docmd -g docmd docmd
@@ -100,15 +91,14 @@ WORKDIR /app
 # Copy packed tarballs from builder
 COPY --from=builder /tarballs /tarballs
 
-# Install ONLY @docmd/core from the tarball — pnpm auto-resolves
-# workspace deps from sibling tarballs in /tarballs. PNPM_HOME is set
-# above so the `docmd` CLI symlink lands on PATH; the explicit
-# --global-bin-dir / --global-dir flags were dropped because they
-# conflict with pnpm 10's PNPM_HOME handling on Linux runners.
-RUN pnpm add --global /tarballs/docmd-core-*.tgz
+# Install ONLY @docmd/core from the tarball. npm is already present (it
+# was used earlier to install pnpm in the builder stage), and `npm install
+# -g` handles tarball + dependency installation in one step without
+# needing PNPM_HOME / pnpm-store / --global-bin-dir flag juggling.
+RUN npm install -g /tarballs/docmd-core-*.tgz --omit=dev --no-audit --no-fund
 
-# Clean up tarballs and pnpm cache to reduce image size
-RUN rm -rf /tarballs ~/.local/share/pnpm/store
+# Clean up tarballs to reduce image size
+RUN rm -rf /tarballs
 
 # Create directories for user content
 RUN mkdir -p /docs /site && chown -R docmd:docmd /docs /site
