@@ -10,6 +10,28 @@
  *
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
+ *
+ * `@docmd/plugin-okf` — Open Knowledge Format bundle generator.
+ *
+ * Plugin entry point. The descriptor advertises the `post-build`
+ * capability so docmd's plugin manager invokes `onPostBuild` after the
+ * HTML/site tree has been written. That hook then:
+ *
+ *   1. Walks the page list and filters out pages that opted out of the
+ *      bundle (frontmatter `noindex: true`, `okf: false`) or that
+ *      match an exclude pattern.
+ *   2. Resolves each page's OKF `type` (frontmatter > path > default).
+ *   3. Writes one concept file per page under `<output>/okf/concepts/`.
+ *   4. Generates the OKF manifest (`okf.yaml`), the human-readable
+ *      catalog (`index.md`), and a lint report listing orphans / broken
+ *      internal links.
+ *   5. If the user opts in to the graph viewer (`plugins.okf.graph`),
+ *      writes the self-contained viewer (CSS + JS + `index.html`).
+ *
+ * Heavy lifting is split across:
+ *   - `content.ts`     — type resolver, slug, link extractor
+ *   - `yaml.ts`        — manifest serialiser + concept frontmatter
+ *   - `graph-assets.ts` — CSS / JS / HTML shell for the graph viewer
  */
 
 import path from 'path';
@@ -17,201 +39,15 @@ import fs from 'fs/promises';
 import type { PluginDescriptor } from '@docmd/api';
 import { outputPathToPathname, sanitizeUrl, TUI } from '@docmd/api';
 
+import { slugify, resolveType, matchesPattern, extractInternalLinks } from './content.js';
+import { toYaml, serializeConceptFrontmatter } from './yaml.js';
+import { GRAPH_CSS, GRAPH_JS, graphHtml } from './graph-assets.js';
+
 export const plugin: PluginDescriptor = {
   name: 'okf',
   version: '0.8.8',
   capabilities: ['post-build']
 };
-
-// ---- helpers --------------------------------------------------------------
-
-const PATH_TYPE_MAP: Array<[RegExp, string]> = [
-  [/^\/guides\//, 'guide'],
-  [/^\/api\//, 'api'],
-  [/^\/reference\//, 'reference'],
-  [/^\/concepts\//, 'concept'],
-  [/^\/runbooks\//, 'runbook'],
-  [/^\/datasets\//, 'dataset'],
-  [/^\/metrics\//, 'metric'],
-  [/^\/tables\//, 'table']
-];
-
-function slugify(input: string): string {
-  return String(input || '').toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'bundle';
-}
-
-function resolveType(fm: any, pathname: string, defaultType: string, typeField = 'type') {
-  // Precedence: okf.type (nested) → top-level type → custom typeField → okfType → path inference
-  const fmType = (fm?.okf?.type)
-    || (typeField && typeField !== 'type' ? fm?.[typeField] : null)
-    || (typeField === 'type' ? fm?.type : null)
-    || fm?.okfType
-    || null;
-  if (fmType) return { type: String(fmType), fallback: false };
-  for (const [re, t] of PATH_TYPE_MAP) if (re.test(pathname)) return { type: t, fallback: false };
-  return { type: defaultType, fallback: true };
-}
-
-function matchesPattern(text: string, patterns: string[]): boolean {
-  if (!patterns || !patterns.length) return false;
-  for (const p of patterns) {
-    if (!p) continue;
-    try {
-      const re = new RegExp('^' + p.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$');
-      if (re.test(text)) return true;
-    } catch { if (text.includes(p)) return true; }
-  }
-  return false;
-}
-
-function extractInternalLinks(md: string, ownSlug: string, known: Set<string>): string[] {
-  const out: string[] = [];
-  if (!md) return out;
-  const re = /\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(md)) !== null) {
-    let href = m[1].trim();
-    if (!href || href.startsWith('#') || /^[a-z][a-z0-9+.-]*:/i.test(href)) continue;
-    href = href.split('#')[0];
-    if (!href) continue;
-    const slug = slugify(href.replace(/\.md$/i, ''));
-    if (!slug || slug === ownSlug) continue;
-    if (known.has(slug)) out.push(slug);
-  }
-  return out;
-}
-
-function yamlQuote(s: any): string {
-  const v = s === null || s === undefined ? '' : String(s);
-  if (/^[a-zA-Z0-9_\-\.\/]+$/.test(v) && v !== '') return v;
-  return '"' + v.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
-}
-
-function toYaml(obj: any, indent = 0): string {
-  const pad = '  '.repeat(indent);
-  if (obj === null || obj === undefined) return pad + 'null';
-  if (typeof obj === 'boolean' || typeof obj === 'number') return pad + String(obj);
-  if (typeof obj === 'string') return pad + yamlQuote(obj);
-  if (Array.isArray(obj)) {
-    if (!obj.length) return pad + '[]';
-    return obj.map(item => {
-      if (item && typeof item === 'object' && !Array.isArray(item)) {
-        const inner = toYaml(item, indent + 1).trimStart();
-        return pad + '- ' + inner;
-      }
-      return pad + '- ' + (typeof item === 'string' ? yamlQuote(item) : String(item));
-    }).join('\n');
-  }
-  if (typeof obj === 'object') {
-    const lines: string[] = [];
-    for (const k of Object.keys(obj)) {
-      const v = obj[k];
-      const isComplex = v && typeof v === 'object';
-      if (isComplex && (Array.isArray(v) ? v.length : Object.keys(v).length)) {
-        lines.push(`${pad}${k}:`);
-        lines.push(toYaml(v, indent + 1));
-      } else {
-        lines.push(`${pad}${k}: ${v === null || v === undefined ? 'null' : (typeof v === 'string' ? yamlQuote(v) : String(v))}`);
-      }
-    }
-    return lines.join('\n');
-  }
-  return pad + String(obj);
-}
-
-// ---- graph viewer assets (inline strings) ---------------------------------
-
-const GRAPH_CSS = `:root{--okf-fg:#1f2937;--okf-bg:#fafafa;--okf-panel-bg:#fff;--okf-border:#e5e7eb;--okf-link:#cbd5e1;--okf-node-stroke:#fff;--okf-chip:#eef2ff;--okf-chip-fg:#3730a3;--okf-muted:#6b7280}
-.okf-graph{position:relative;width:100%;height:100vh;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--okf-fg);background:var(--okf-bg)}
-.okf-graph svg{display:block;width:100%;height:100%}
-.okf-graph .node{cursor:pointer;stroke:var(--okf-node-stroke);stroke-width:1.5}
-.okf-graph .node:hover{stroke-width:3}
-.okf-graph .label{font-size:11px;fill:var(--okf-fg);pointer-events:none;text-anchor:middle}
-.okf-graph .link{stroke:var(--okf-link);stroke-opacity:.6}
-.okf-panel{position:absolute;top:0;right:0;bottom:0;width:340px;background:var(--okf-panel-bg);border-left:1px solid var(--okf-border);padding:20px;overflow:auto;box-shadow:-4px 0 12px rgba(0,0,0,.05);font-size:13px}
-.okf-panel h2{margin:0 0 8px;font-size:18px;line-height:1.3}
-.okf-panel .okf-type{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--okf-chip);color:var(--okf-chip-fg);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px}
-.okf-panel a{color:#2563eb;text-decoration:none;display:inline-block;margin-right:10px;margin-top:8px}
-.okf-panel .okf-empty{color:var(--okf-muted);font-style:italic}
-.okf-topbar{position:absolute;top:0;left:0;right:340px;padding:12px 16px;background:linear-gradient(180deg,var(--okf-panel-bg) 0%,transparent 100%);z-index:2}
-.okf-topbar h1{margin:0;font-size:14px;font-weight:600}
-.okf-topbar .okf-sub{font-size:11px;color:var(--okf-muted);margin-top:2px}
-@media (prefers-color-scheme:dark){:root{--okf-fg:#e5e7eb;--okf-bg:#0f172a;--okf-panel-bg:#1e293b;--okf-border:#334155;--okf-link:#475569;--okf-node-stroke:#0f172a;--okf-chip:#312e81;--okf-chip-fg:#c7d2fe;--okf-muted:#94a3b8}}`;
-
-const GRAPH_JS = `(function(){
-var root=document.getElementById('okf-graph'),panel=document.getElementById('okf-panel');
-var sub=root?root.querySelector('.okf-sub'):null;
-var empty=panel?panel.querySelector('.okf-empty'):null;
-function setStatus(t){if(sub)sub.textContent=t;if(empty)empty.textContent=t;}
-function render(data){
-var cmap={concept:'#6366f1',guide:'#10b981',api:'#f59e0b',reference:'#0ea5e9',runbook:'#ef4444',dataset:'#a855f7',metric:'#ec4899',table:'#14b8a6'};
-var NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg');
-svg.setAttribute('viewBox','0 0 800 600');root.appendChild(svg);
-var W=800,H=600,nodes=(data.nodes||[]).map(function(n){return n;}),links=data.links||[];
-var idx={};nodes.forEach(function(n){idx[n.id]=n;});
-links.forEach(function(l){if(typeof l.source==='string')l.source=idx[l.source];if(typeof l.target==='string')l.target=idx[l.target];});
-nodes.forEach(function(n){n.x=Math.random()*W;n.y=Math.random()*H;n.vx=0;n.vy=0;});
-for(var s=0;s<200;s++){for(var i=0;i<nodes.length;i++){var a=nodes[i];for(var j=0;j<nodes.length;j++){if(i===j)continue;var b=nodes[j],dx=a.x-b.x,dy=a.y-b.y,d2=dx*dx+dy*dy||1;a.vx+=dx/Math.sqrt(d2)*1800/d2*0.01;a.vy+=dy/Math.sqrt(d2)*1800/d2*0.01;}}for(var k=0;k<links.length;k++){var l=links[k],so=l.source,ta=l.target;if(typeof so!=='object'||typeof ta!=='object')continue;var dx2=ta.x-so.x,dy2=ta.y-so.y,d=Math.sqrt(dx2*dx2+dy2*dy2)||1,f=(d-120)*0.05*0.05;so.vx+=dx2/d*f;so.vy+=dy2/d*f;ta.vx-=dx2/d*f;ta.vy-=dy2/d*f;}for(var m=0;m<nodes.length;m++){var nn=nodes[m];nn.vx*=0.82;nn.vy*=0.82;nn.vx+=(W/2-nn.x)*0.001;nn.vy+=(H/2-nn.y)*0.001;nn.x+=nn.vx;nn.y+=nn.vy;if(nn.x<20)nn.x=20;if(nn.x>W-20)nn.x=W-20;if(nn.y<20)nn.y=20;if(nn.y>H-20)nn.y=H-20;}}
-var gL=document.createElementNS(NS,'g');links.forEach(function(l){if(typeof l.source!=='object'||typeof l.target!=='object')return;var ln=document.createElementNS(NS,'line');ln.setAttribute('class','link');ln.setAttribute('x1',l.source.x);ln.setAttribute('y1',l.source.y);ln.setAttribute('x2',l.target.x);ln.setAttribute('y2',l.target.y);gL.appendChild(ln);});svg.appendChild(gL);
-var gN=document.createElementNS(NS,'g');nodes.forEach(function(n){var c=document.createElementNS(NS,'circle');c.setAttribute('class','node');c.setAttribute('cx',n.x);c.setAttribute('cy',n.y);c.setAttribute('r',8);c.setAttribute('fill',cmap[n.type]||'#6b7280');c.addEventListener('click',function(){showDetail(n);});gN.appendChild(c);var t=document.createElementNS(NS,'text');t.setAttribute('class','label');t.setAttribute('x',n.x);t.setAttribute('y',n.y-12);t.textContent=n.title||n.id;gN.appendChild(t);});svg.appendChild(gN);
-if(empty)empty.textContent='Click a node to see details.';
-}
-
-// Render a node's details into the side panel without using innerHTML.
-// All user-supplied strings (title, type, description, source) flow into
-// DOM nodes via textContent, so a malicious OKF bundle cannot inject HTML
-// or scripts. The two hrefs use a scheme allow-list and encodeURIComponent
-// to neutralise javascript:, data:, and path-traversal payloads.
-function showDetail(n){
-while(panel.firstChild) panel.removeChild(panel.firstChild);
-var h=document.createElement('h2');h.textContent=n.title||n.id;panel.appendChild(h);
-var sp=document.createElement('span');sp.className='okf-type';sp.textContent=n.type||'concept';panel.appendChild(sp);
-var p=document.createElement('p');
-if(n.description){p.textContent=n.description;}
-else{var em=document.createElement('span');em.className='okf-empty';em.textContent='No description.';p.appendChild(em);}
-panel.appendChild(p);
-var a1=document.createElement('a');
-a1.href='concepts/'+encodeURIComponent(n.id)+'.md';
-a1.target='_blank';a1.rel='noopener noreferrer';
-a1.textContent='Open in OKF bundle';
-panel.appendChild(a1);
-panel.appendChild(document.createTextNode(' '));
-var a2=document.createElement('a');
-a2.href=safeHref(n.source);
-a2.target='_blank';a2.rel='noopener noreferrer';
-a2.textContent='Open source page';
-panel.appendChild(a2);
-}
-
-// Allow only the URL schemes that appear in the OKF spec examples
-// (http/https, repo://, dashboard://, docs://, wp-admin:, mailto:, tel:)
-// plus site-relative paths. Anything else collapses to "#" so javascript:
-// and data: URLs cannot execute.
-function safeHref(u){
-if(!u) return '#';
-if(/^(?:https?|mailto|tel|repo|dashboard|docs|wp-admin):/i.test(u)) return u;
-if(u.charAt(0)==='/') return u;
-return '#';
-}
-
-// Boot: prefer window.OKF_GRAPH (escape hatch for embedders), else fetch
-// graph.json from the same directory. Render only after data is in hand;
-// surface a clear loading/error state instead of a silent empty canvas.
-var embedded=window.OKF_GRAPH;
-if(embedded){render(embedded);return;}
-setStatus('Loading graph…');
-fetch('graph.json',{cache:'no-store'}).then(function(r){
-if(!r.ok) throw new Error('HTTP '+r.status);
-return r.json();
-}).then(function(data){render(data||{nodes:[],links:[]});}).catch(function(err){
-setStatus('Failed to load graph data: '+err.message);
-});
-})();`;
-
-function graphHtml(name: string, count: number): string {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${name} — OKF Graph</title><link rel="stylesheet" href="graph.css"></head><body><div class="okf-graph" id="okf-graph"><div class="okf-topbar"><h1>${name}</h1><div class="okf-sub">${count} concepts · Open Knowledge Format graph view</div></div><div class="okf-panel" id="okf-panel"><p class="okf-empty">Click a node to see details.</p></div></div><script src="graph.js"></script></body></html>`;
-}
 
 // ---- onPostBuild ----------------------------------------------------------
 
@@ -279,7 +115,7 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
     const pathname = outputPathToPathname(p.outputPath);
     if (matchesPattern(pathname, excludePatterns)) return false;
     if (matchesPattern(p.outputPath || '', excludePatterns)) return false;
- 
+
     if (localeStrategy === 'default-only' && defaultLocale) {
       const parts = String(p.outputPath || '').split('/').filter(Boolean);
       const pageLoc = (localeIds.length && parts.length && localeIds.includes(parts[0])) ? parts[0] : defaultLocale;
@@ -358,24 +194,9 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
     }
     if (!body && typeof p.rawMarkdown === 'string') body = p.rawMarkdown;
 
-    const fmLines = ['---'];
-    for (const k of Object.keys(conceptFm)) {
-      const v = conceptFm[k];
-      if (Array.isArray(v)) {
-        if (!v.length) { fmLines.push(`${k}: []`); continue; }
-        fmLines.push(`${k}:`);
-        for (const it of v) fmLines.push(`  - ${typeof it === 'string' ? yamlQuote(it) : String(it)}`);
-      } else if (v && typeof v === 'object') {
-        fmLines.push(`${k}:`);
-        for (const kk of Object.keys(v)) fmLines.push(`  ${kk}: ${typeof v[kk] === 'string' ? yamlQuote(v[kk]) : String(v[kk])}`);
-      } else if (v === null || v === undefined) {
-        fmLines.push(`${k}:`);
-      } else {
-        fmLines.push(`${k}: ${typeof v === 'string' ? yamlQuote(v) : String(v)}`);
-      }
-    }
-    fmLines.push('---', '');
-    await fs.writeFile(fileAbs, fmLines.join('\n') + body + (body && !body.endsWith('\n') ? '\n' : ''));
+    const fmYaml = serializeConceptFrontmatter(conceptFm);
+    const fileContent = `---\n${fmYaml}\n---\n` + body + (body && !body.endsWith('\n') ? '\n' : '');
+    await fs.writeFile(fileAbs, fileContent);
 
     concepts.push({
       id: slug, type, title: fm.title || 'Untitled', path: pathname, file: fileRel,
@@ -419,9 +240,9 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
   // index.md (Karpathy-style catalog)
   const idxLines: string[] = [`# ${manifest.bundle.title} — Knowledge Catalog`, '', `> Generated by ${manifest.bundle.generated_by} on ${manifest.bundle.generated_at}`, ''];
   if (manifest.bundle.description) idxLines.push(manifest.bundle.description, '');
-  const links: string[] = ['- [Manifest](okf.yaml)', '- [Bundle summary (JSON)](_meta/bundle.json)', '- [Lint report](_meta/lint-report.txt)'];
-  if (graphEnabled) links.splice(2, 0, '- [Graph viewer](graph/)');
-  idxLines.push(`**${manifest.stats.concepts} concepts** across **${Object.keys(manifest.stats.by_type).length} types**.`, '', ...links, '');
+  const catalogLinks: string[] = ['- [Manifest](okf.yaml)', '- [Bundle summary (JSON)](_meta/bundle.json)', '- [Lint report](_meta/lint-report.txt)'];
+  if (graphEnabled) catalogLinks.splice(2, 0, '- [Graph viewer](graph/)');
+  idxLines.push(`**${manifest.stats.concepts} concepts** across **${Object.keys(manifest.stats.by_type).length} types**.`, '', ...catalogLinks, '');
   const groups = new Map<string, any[]>();
   for (const c of concepts) { if (!groups.has(c.type)) groups.set(c.type, []); groups.get(c.type)!.push(c); }
   for (const type of Array.from(groups.keys()).sort()) {
