@@ -1,6 +1,6 @@
 {
   "name": "@docmd/parser",
-  "version": "0.8.7",
+  "version": "0.8.8",
   "description": "Pure Markdown parsing engine for docmd.",
   "type": "module",
   "main": "dist/index.js",

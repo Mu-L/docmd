@@ -21,18 +21,21 @@ Part of the **[docmd](https://github.com/docmd-io/docmd)** documentation engine.
 ## Output structure
 
 ```
-site/okf/
+site/okf/                          # Always emitted
 ├── okf.yaml                       # Typed manifest (bundle summary)
 ├── index.md                       # Karpathy-style catalog grouped by type
-├── graph.html                     # Interactive force-directed viewer
-├── graph.json                     # Graph data (nodes + edges)
-├── graph.js                       # Viewer runtime (vanilla, no CDN deps)
-├── graph.css                      # Viewer styles (theme-aware)
 ├── concepts/
 │   └── <slug>.md                 # One markdown file per page
 └── _meta/
     ├── bundle.json                # JSON mirror of okf.yaml
     └── lint-report.txt            # Warnings produced during generation
+
+# Emitted only when `plugins.okf.graph: true`
+├── graph/                         # Interactive viewer (open /okf/graph/)
+│   ├── index.html                 # Force-directed graph viewer
+│   ├── graph.json                 # Graph data (nodes + edges)
+│   ├── graph.js                   # Viewer runtime (vanilla, no CDN deps)
+│   └── graph.css                  # Viewer styles (theme-aware)
 ```
 
 Each concept file carries the OKF-required `type` field in frontmatter plus the original markdown body verbatim, so an agent can both navigate the manifest and read full pages.
@@ -47,7 +50,7 @@ Each concept file carries the OKF-required `type` field in frontmatter plus the 
 | `typeField` | `string` | `'type'` | Frontmatter field name for OKF type. |
 | `warnOnMissingType` | `boolean` | `true` | Emit a TUI warning for pages that fell back to `defaultType`. |
 | `includeFullMarkdown` | `boolean` | `true` | Copy raw `.md` body into each concept file. |
-| `generateGraphViewer` | `boolean` | `true` | Emit `graph.html` + `graph.js` + `graph.css` + `graph.json`. |
+| `graph` | `boolean` | `false` | Emit a `graph/` subdirectory containing `index.html` + `graph.js` + `graph.css` + `graph.json`. Opt-in since 0.8.8 — the OKF spec does not require a viewer, and shipping extra files by default adds noise to a clean bundle. The viewer is reachable at `/okf/graph/` without a custom filename, and fetches `graph.json` from the same directory at runtime, so `file://` also works. |
 | `localeStrategy` | `'default-only' \| 'folders' \| 'mixed' \| 'latest-only'` | `'default-only'` | Single-locale by default (the bundle contains only pages in the default locale). Set to `'folders'` to nest concepts by locale id when i18n is enabled, or `'mixed'` / `'latest-only'` for the other strategies. |
 | `versionStrategy` | `'folders' \| 'mixed' \| 'latest-only'` | `'latest-only'` | Nest concepts by version id when versioning is enabled. |
 | `excludePatterns` | `string[]` | `[]` | Additional glob patterns to skip on top of `frontmatter.noindex` / `frontmatter.okf === false`. |

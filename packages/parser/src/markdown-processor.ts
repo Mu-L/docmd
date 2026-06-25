@@ -42,12 +42,42 @@ function isDangerousHref(href: string): boolean {
 }
 
 /**
- * Phase 2 (F1–F5): emit a normaliser warning to stderr. Output format
- * matches the legacy `robust-parser-shim` plugin so existing log-parsing
- * tools (TUI scrapers, CI greps) keep working.
+ * Phase 2 (F1–F5): accumulated warnings, summarised once at the end of
+ * the build via `flushNormaliserWarnings()`. Per-warning logging to
+ * stderr is opt-in via `setNormaliserVerbose(true)` so the dev-server
+ * console stays clean (one summary line per build instead of one line
+ * per warning) while CI / verbose mode still gets the full detail.
  */
+const normaliserWarnings: NormaliserWarning[] = [];
+let normaliserVerbose = false;
+
 function emitNormaliserWarning(w: NormaliserWarning): void {
-  console.warn(`[normaliser] ${w.severity.toUpperCase()} ${w.path}:${w.line} — ${w.message}`);
+  normaliserWarnings.push(w);
+  if (normaliserVerbose) {
+    console.warn(`[normaliser] ${w.severity.toUpperCase()} ${w.path}:${w.line} — ${w.message}`);
+  }
+}
+
+export function setNormaliserVerbose(verbose: boolean): void {
+  normaliserVerbose = verbose;
+}
+
+export function flushNormaliserWarnings(): void {
+  if (normaliserWarnings.length === 0) return;
+  const errors = normaliserWarnings.filter(w => w.severity === 'error').length;
+  const warnings = normaliserWarnings.length - errors;
+  const fileCount = new Set(normaliserWarnings.map(w => w.path)).size;
+  const severity = errors > 0 ? 'ERROR' : 'WARN';
+  const tag = errors > 0 ? '\x1b[31m' : '\x1b[33m';
+  const reset = '\x1b[0m';
+  console.warn(
+    `${tag}[normaliser] ${severity}${reset} ` +
+    `${normaliserWarnings.length} issue${normaliserWarnings.length === 1 ? '' : 's'} ` +
+    `(${errors} error${errors === 1 ? '' : 's'}, ${warnings} warning${warnings === 1 ? '' : 's'}) ` +
+    `across ${fileCount} file${fileCount === 1 ? '' : 's'}. ` +
+    `Run with --verbose to list each one.`
+  );
+  normaliserWarnings.length = 0;
 }
 
 /**

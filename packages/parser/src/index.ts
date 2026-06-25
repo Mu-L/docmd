@@ -12,7 +12,7 @@
  * --------------------------------------------------------------------
  */
 
-import { createMarkdownProcessor, processContent, processContentAsync } from './markdown-processor.js';
+import { createMarkdownProcessor, processContent, processContentAsync, flushNormaliserWarnings, setNormaliserVerbose } from './markdown-processor.js';
 import { renderTemplateAsync } from './html-renderer.js';
 import { renderIcon } from './utils/icon-renderer.js';
 import { validateConfig } from './utils/validator.js';
@@ -26,7 +26,9 @@ export {
   validateConfig,
 
   // Utils
-  renderIcon
+  renderIcon,
+  flushNormaliserWarnings,
+  setNormaliserVerbose
 };
 
 export { createDepthTrackingContainer } from './features/index.js';

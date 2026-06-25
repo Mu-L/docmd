@@ -145,7 +145,7 @@ const allFailures = [];
 const startTime = Date.now();
 
 console.log('');
-console.log(CYAN(BOLD('  docmd v0.8.8 — categorised test suite')));
+console.log(CYAN(BOLD('Categorised test suite')));
 console.log(DIM(`  ${testFiles.length} test file${testFiles.length === 1 ? '' : 's'} • ${new Date().toISOString().slice(0, 10)}`));
 console.log('');
 
