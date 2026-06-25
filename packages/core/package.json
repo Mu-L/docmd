@@ -29,6 +29,7 @@
     "@docmd/plugin-installer": "workspace:*",
     "@docmd/plugin-llms": "workspace:*",
     "@docmd/plugin-mermaid": "workspace:*",
+    "@docmd/plugin-okf": "workspace:*",
     "@docmd/plugin-openapi": "workspace:*",
     "@docmd/plugin-pwa": "workspace:*",
     "@docmd/plugin-search": "workspace:*",
