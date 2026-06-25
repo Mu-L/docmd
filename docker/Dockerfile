@@ -50,22 +50,19 @@ WORKDIR /app
 # Copy everything (excluding files via .dockerignore)
 COPY . .
 
-# Install dependencies. `--config.confirmModulesPurge=false` stops
-# pnpm from prompting to confirm removal of node_modules in non-TTY
-# environments (Docker build). The ENV CI=true route is broader and
-# leaks into every subsequent RUN, so the targeted flag is preferred.
-RUN pnpm install --frozen-lockfile --config.confirmModulesPurge=false
+# Install dependencies
+RUN pnpm install --frozen-lockfile
 
 # Stub out packages that can't build in Docker before running the full build:
 #   - engine-rust-binaries: requires cargo; pre-built .node files are in the repo
 #   - _playground: dev sandbox, not part of the production image
-RUN sh tools/docker-prebuild.sh
+RUN sh scripts/docker-prebuild.sh
 
 # Build all packages
 RUN pnpm -r run build
 
 # Resolve workspace:* deps to real version numbers for standalone use
-RUN node tools/resolve-ws-deps.js
+RUN node scripts/resolve-ws-deps.js
 
 # Pack all packages into tarballs (mimics npm publish)
 RUN pnpm -r pack --pack-destination /tarballs
@@ -82,6 +79,15 @@ RUN apk add --no-cache \
     bash \
     su-exec
 
+# Install pnpm directly — avoids corepack version resolution issues in CI.
+# Bump the pinned version here whenever the monorepo's packageManager field changes.
+RUN npm install -g pnpm@10.33.2
+
+# Configure pnpm global directories
+ENV PNPM_HOME="/usr/local/share/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN mkdir -p $PNPM_HOME
+
 # Create non-root user for security
 RUN addgroup -g 1001 -S docmd && \
     adduser -S -D -H -u 1001 -h /app -s /bin/bash -G docmd -g docmd docmd
@@ -91,14 +97,14 @@ WORKDIR /app
 # Copy packed tarballs from builder
 COPY --from=builder /tarballs /tarballs
 
-# Install ONLY @docmd/core from the tarball. npm is already present (it
-# was used earlier to install pnpm in the builder stage), and `npm install
-# -g` handles tarball + dependency installation in one step without
-# needing PNPM_HOME / pnpm-store / --global-bin-dir flag juggling.
-RUN npm install -g /tarballs/docmd-core-*.tgz --omit=dev --no-audit --no-fund
+# Install ONLY @docmd/core from the tarball — this pulls in all its dependencies
+# from the other tarballs, creating the exact same structure as `npm install @docmd/core`
+RUN pnpm add --global /tarballs/docmd-core-*.tgz \
+    --global-bin-dir=$PNPM_HOME \
+    --global-dir=/usr/local/lib/pnpm-global
 
-# Clean up tarballs to reduce image size
-RUN rm -rf /tarballs
+# Clean up tarballs and pnpm cache to reduce image size
+RUN rm -rf /tarballs ~/.local/share/pnpm/store
 
 # Create directories for user content
 RUN mkdir -p /docs /site && chown -R docmd:docmd /docs /site
