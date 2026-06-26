@@ -14,7 +14,8 @@
   "files": [
     "dist",
     "templates",
-    "assets"
+    "assets",
+    "translations"
   ],
   "engines": {
     "node": ">=18"
