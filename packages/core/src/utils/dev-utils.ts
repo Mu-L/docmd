@@ -18,7 +18,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { execSync, spawn } from 'child_process';
 import { fileURLToPath } from 'url';
-import { fsUtils as fs } from '@docmd/utils';
+import { fsUtils as fs, safePath, asUserPath } from '@docmd/utils';
 
 
 
@@ -112,10 +112,26 @@ export async function serveStatic(req: any, res: any, rootDir: string) {
   const url = new URL(req.url || '/', 'http://localhost');
   const pathname = decodeURIComponent(url.pathname);
   const rootAbs = path.resolve(rootDir);
-  let filePath = path.join(rootAbs, pathname);
-
-  // Security: Prevent directory traversal by ensuring the resolved path is within rootDir
-  if (!filePath.startsWith(rootAbs)) {
+  // Security (Phase 1.A: CWE-22 fix). Use safePath() to enforce the boundary.
+  //
+  // The previous `filePath.startsWith(rootAbs)` check was the outlier in the
+  // repo: it did not append `path.sep`, so a sibling directory whose name
+  // started with rootDir's name (e.g. rootDir=`/x/site`, sibling=`/x/site-private`)
+  // passed the check, and a URL like `/..%2fsite-private/secret.txt` resolved
+  // to the sibling. safePath() enforces the strict `root + path.sep` boundary
+  // and throws on escape.
+  //
+  // Note: URL pathnames always start with `/` (e.g. `/index.html`). We
+  // strip the leading slash before passing to safePath() so the second
+  // argument is treated as a *relative* path. `path.resolve` (which
+  // safePath uses internally) treats `/index.html` as absolute and would
+  // bypass the boundary check; `path.join`-style resolution is the
+  // correct semantic for "join this to the root".
+  let filePath: string;
+  try {
+    const safeRelative = pathname.replace(/^\/+/, '') || '.';
+    filePath = safePath(rootAbs, asUserPath(safeRelative));
+  } catch (_e: any) {
     res.writeHead(403);
     res.end('Forbidden');
     return;
@@ -188,11 +204,15 @@ export async function serveStatic(req: any, res: any, rootDir: string) {
  * Check if a port is in use.
  */
 export function checkPortInUse(port: number): Promise<boolean> {
+  // The probe binds to 127.0.0.1, not 0.0.0.0, so it only checks whether
+  // the loopback interface has the port. Binding to all interfaces here
+  // was unnecessary (we just need to know if "our" port is taken) and
+  // briefly exposed the probe socket to the LAN.
   return new Promise((resolve) => {
     const tester = http.createServer()
       .once('error', (err: any) => resolve(err.code === 'EADDRINUSE'))
       .once('listening', () => tester.close(() => resolve(false)))
-      .listen(port, '0.0.0.0');
+      .listen(port, '127.0.0.1');
   });
 }
 
