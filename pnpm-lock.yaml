@@ -44,9 +44,6 @@ importers:
       '@docmd/plugin-math':
         specifier: workspace:*
         version: link:../plugins/math
-      '@docmd/plugin-pwa':
-        specifier: ^0.8.7
-        version: 0.8.7
       '@docmd/template-summer':
         specifier: workspace:*
         version: link:../templates/summer
@@ -510,10 +507,6 @@ packages:
 
   '@docmd/engine-rust@0.8.8':
     resolution: {integrity: sha512-YoxOo8SDi+LL6LbchYHKjIpXlsnHgzxAI3wUeRAzxKJTHPEMI28T4zQDi5WZOcwinxzJdppz9IGl3bwHmehnLw==}
-    engines: {node: '>=18'}
-
-  '@docmd/plugin-pwa@0.8.7':
-    resolution: {integrity: sha512-53/gkYrXXw7Zl8UD3046I8InZzeBj/nNU12KF2vLXipaHExKk89WqrMaxbcvdnc8mvSsAzGK2eFrj8EBpqikNw==}
     engines: {node: '>=18'}
 
   '@emnapi/runtime@1.11.1':
@@ -1737,8 +1730,6 @@ snapshots:
 
   '@docmd/engine-rust@0.8.8':
     optional: true
-
-  '@docmd/plugin-pwa@0.8.7': {}
 
   '@emnapi/runtime@1.11.1':
     dependencies:
