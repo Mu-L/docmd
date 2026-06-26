@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-git",
-  "version": "0.8.8",
+  "version": "0.8.9",
   "description": "Git integration plugin for docmd.",
   "type": "module",
   "main": "dist/index.js",
@@ -10,6 +10,20 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }
+  },
+  "docmd": {
+    "key": "git",
+    "kind": "plugin",
+    "displayName": "Git",
+    "tagline": "Git integration with last-updated timestamps and commit history.",
+    "capabilities": [
+      "init",
+      "build",
+      "body",
+      "assets",
+      "post-build",
+      "translations"
+    ]
   },
   "scripts": {
     "build": "tsc && node build.js"

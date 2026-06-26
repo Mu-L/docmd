@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-openapi",
-  "version": "0.8.8",
+  "version": "0.8.9",
   "description": "OpenAPI documentation generator plugin for docmd.",
   "type": "module",
   "main": "dist/index.js",
@@ -10,6 +10,16 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }
+  },
+  "docmd": {
+    "key": "openapi",
+    "kind": "plugin",
+    "displayName": "OpenAPI",
+    "tagline": "OpenAPI / Swagger spec rendering for docmd.",
+    "capabilities": [
+      "markdown",
+      "assets"
+    ]
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && node build.js"

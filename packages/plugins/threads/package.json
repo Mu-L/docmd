@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-threads",
-  "version": "0.8.8",
+  "version": "0.8.9",
   "type": "module",
   "description": "Inline discussion threads for docmd.",
   "main": "dist/index.js",
@@ -17,6 +17,19 @@
   ],
   "engines": {
     "node": ">=18"
+  },
+  "docmd": {
+    "key": "threads",
+    "kind": "plugin",
+    "displayName": "Threads",
+    "tagline": "Inline discussion comments stored in Markdown.",
+    "capabilities": [
+      "markdown",
+      "body",
+      "assets",
+      "actions",
+      "translations"
+    ]
   },
   "scripts": {
     "build": "tsc && node build.js",

@@ -1,10 +1,20 @@
 {
   "name": "@docmd/plugin-math",
-  "version": "0.8.8",
+  "version": "0.8.9",
   "description": "Mathematics (KaTeX/LaTeX) plugin for docmd.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "docmd": {
+    "key": "math",
+    "kind": "plugin",
+    "displayName": "Math",
+    "tagline": "Mathematics (KaTeX/LaTeX) plugin for docmd.",
+    "capabilities": [
+      "markdown",
+      "assets"
+    ]
+  },
   "scripts": {
     "build": "tsc"
   },

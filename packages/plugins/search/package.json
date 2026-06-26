@@ -1,10 +1,23 @@
 {
   "name": "@docmd/plugin-search",
-  "version": "0.8.8",
+  "version": "0.8.9",
   "description": "Offline full-text search for docmd.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "docmd": {
+    "key": "search",
+    "kind": "plugin",
+    "displayName": "Search",
+    "tagline": "Offline full-text search for docmd.",
+    "capabilities": [
+      "post-build",
+      "head",
+      "body",
+      "assets",
+      "translations"
+    ]
+  },
   "scripts": {
     "build": "tsc && esbuild src/client.ts --bundle --outfile=dist/docmd-search.js --format=esm --platform=browser --minify"
   },
@@ -20,7 +33,7 @@
     "minisearch": "^7.2.0"
   },
   "peerDependencies": {
-    "docmd-search": ">=0.1.0-alpha.1"
+    "docmd-search": ">=0.1.0"
   },
   "peerDependenciesMeta": {
     "docmd-search": {

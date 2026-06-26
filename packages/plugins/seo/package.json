@@ -1,10 +1,20 @@
 {
   "name": "@docmd/plugin-seo",
-  "version": "0.8.8",
+  "version": "0.8.9",
   "description": "SEO meta tag generator for docmd.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "docmd": {
+    "key": "seo",
+    "kind": "plugin",
+    "displayName": "SEO",
+    "tagline": "SEO meta tag generator for docmd.",
+    "capabilities": [
+      "head",
+      "post-build"
+    ]
+  },
   "scripts": {
     "build": "tsc"
   },

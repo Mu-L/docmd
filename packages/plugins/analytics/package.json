@@ -1,10 +1,20 @@
 {
   "name": "@docmd/plugin-analytics",
-  "version": "0.8.8",
+  "version": "0.8.9",
   "description": "Analytics injection plugin for docmd.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "docmd": {
+    "key": "analytics",
+    "kind": "plugin",
+    "displayName": "Analytics",
+    "tagline": "Analytics injection plugin for docmd.",
+    "capabilities": [
+      "head",
+      "body"
+    ]
+  },
   "scripts": {
     "build": "tsc"
   },
