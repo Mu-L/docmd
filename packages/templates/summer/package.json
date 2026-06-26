@@ -17,7 +17,9 @@
     "clean": "rm -rf dist"
   },
   "files": [
-    "dist"
+    "dist",
+    "templates",
+    "assets"
   ],
   "devDependencies": {
     "@docmd/api": "workspace:*",
