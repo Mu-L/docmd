@@ -1,10 +1,21 @@
 {
   "name": "@docmd/plugin-pwa",
-  "version": "0.8.8",
+  "version": "0.8.9",
   "description": "Progressive Web App (PWA) plugin for docmd.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "docmd": {
+    "key": "pwa",
+    "kind": "plugin",
+    "displayName": "PWA",
+    "tagline": "Progressive Web App support for docmd with offline caching.",
+    "capabilities": [
+      "post-build",
+      "head",
+      "body"
+    ]
+  },
   "scripts": {
     "build": "tsc"
   },

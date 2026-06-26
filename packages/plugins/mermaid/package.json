@@ -1,10 +1,20 @@
 {
   "name": "@docmd/plugin-mermaid",
-  "version": "0.8.8",
+  "version": "0.8.9",
   "description": "Mermaid diagram support plugin for docmd.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "docmd": {
+    "key": "mermaid",
+    "kind": "plugin",
+    "displayName": "Mermaid",
+    "tagline": "Mermaid.js diagram support for docmd.",
+    "capabilities": [
+      "markdown",
+      "assets"
+    ]
+  },
   "scripts": {
     "build": "tsc && esbuild src/client.ts --bundle --outfile=dist/init-mermaid.js --format=esm --platform=browser --minify --external:https://*",
     "test": "tsx --test tests/*.test.ts",
