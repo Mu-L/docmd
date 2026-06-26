@@ -1,6 +1,6 @@
 {
   "name": "@docmd/api",
-  "version": "0.8.8",
+  "version": "0.8.9",
   "description": "Plugin API surface for docmd.",
   "type": "module",
   "main": "dist/index.js",
@@ -12,10 +12,13 @@
     }
   },
   "scripts": {
-    "build": "tsc"
+    "build:registry": "node ../../scripts/build-plugin-registry.mjs",
+    "prebuild": "npm run build:registry",
+    "build": "tsc && node scripts/copy-registry.mjs"
   },
   "files": [
-    "dist"
+    "dist",
+    "registry"
   ],
   "engines": {
     "node": ">=18"
