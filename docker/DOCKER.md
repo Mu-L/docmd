@@ -83,7 +83,9 @@ services:
     volumes:
       - ./docs:/docs
       - ./site:/site
-    command: dev --host 0.0.0.0
+    # The dev server defaults to 127.0.0.1 (loopback). For LAN access from
+    # other devices, set DOCMD_HOST=0.0.0.0 or pass --host 0.0.0.0 explicitly.
+    command: dev
 ```
 
 ### GitHub Actions CI/CD
@@ -144,7 +146,9 @@ spec:
         volumeMounts:
         - name: docs
           mountPath: /docs
-        command: ["docmd", "dev", "--host", "0.0.0.0"]
+        # The dev server defaults to 127.0.0.1. For LAN access, set
+        # DOCMD_HOST=0.0.0.0 or pass --host 0.0.0.0 explicitly.
+        command: ["docmd", "dev"]
       volumes:
       - name: docs
         configMap:
@@ -195,10 +199,22 @@ docker inspect --format='{{.State.Health.Status}}' <container-id>
 
 The entrypoint automatically remaps to the uid:gid of the mounted directory, so files are always owned by the correct host user. If you hit permission issues, verify the mounted path exists and is writable on the host.
 
-### Network Issues
+The dev server defaults to 127.0.0.1 (loopback only). To expose it to the LAN
+from inside a container, pass the host flag explicitly:
 
 ```bash
-# Ensure you're binding to 0.0.0.0
+# Loopback only (default) — access via http://localhost:3000 from the host
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest dev
+
+# LAN access — the dev server binds to 0.0.0.0 inside the container, and
+# the port mapping makes it reachable from other devices on the host's network.
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest dev --host 0.0.0.0
+```
+
+> **Security**: when you bind to 0.0.0.0, every host that can reach the
+> container's port can connect. Only do this on trusted networks. The dev
+> server's WebSocket requires an Origin that matches the bind host
+> (defence against CSWSH, CWE-1385), but loopback-only is the safer default.nsure you're binding to 0.0.0.0
 docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest dev --host 0.0.0.0
 ```
 

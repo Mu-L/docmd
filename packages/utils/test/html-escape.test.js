@@ -76,12 +76,29 @@ test('jsonInject: null round-trips as JSON null', () => {
   assert.equal(jsonInject(null), 'null');
 });
 
-test('jsonInject: known limitation — does not escape </script>; caller must split on it', () => {
+test('jsonInject: escapes </script and <!-- for inline <script> context (new in 0.8.9)', () => {
   const raw = '</script><script>alert(1)</script>';
   const injected = jsonInject(raw);
-  assert.ok(injected.includes('</script>'), 'jsonInject is JSON.stringify only; HTML-context escape is the caller\'s job');
-  const safe = injected.replace(/<\//g, '<\\/');
-  assert.ok(!safe.includes('</script>'), 'caller-side </ -> <\\/ split is the required pattern');
+  // The literal sequence </script> must NOT survive in the output — otherwise
+  // the browser parser would end the surrounding <script> block early.
+  assert.ok(!injected.includes('</script>'),
+    'jsonInject must escape </script> for inline <script> context');
+  assert.ok(!injected.includes('<!--'),
+    'jsonInject must escape <!-- to prevent single-line comment injection');
+  // Round-trip via JSON.parse still works because the escape uses the
+  // JSON-safe form <\/script> — not a JS string escape.
+  const parsed = JSON.parse(injected);
+  assert.equal(parsed, raw);
+});
+
+test('jsonInject: escapes U+2028 and U+2029 line terminators', () => {
+  const raw = 'a\u2028b\u2029c';
+  const injected = jsonInject(raw);
+  // The escapes are required for JS context because some parsers treat
+  // U+2028/U+2029 as line terminators even though they're valid in JSON.
+  assert.ok(!injected.includes('\u2028'), 'jsonInject must escape U+2028');
+  assert.ok(!injected.includes('\u2029'), 'jsonInject must escape U+2029');
+  assert.equal(JSON.parse(injected), raw);
 });
 
 // ─── scriptLiteral ──────────────────────────────────────────────────────

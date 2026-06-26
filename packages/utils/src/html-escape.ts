@@ -14,12 +14,54 @@ export function attrEsc(value: unknown): string {
   return escHtml(value);
 }
 
-export function jsonInject(value: unknown): string {
-  return JSON.stringify(value);
+/**
+ * Escape U+2028 and U+2029 inside a JSON-encoded string. These are valid
+ * in JSON per RFC 8259, but JavaScript's JSON.parse treats them as line
+ * terminators, which means a string parsed and then re-serialised can
+ * silently change meaning. Escaping them is the standard remediation
+ * (also used by React / Vue / Angular) and makes the output safe to
+ * embed inside any JS context, including inline `<script>` blocks and
+ * `<script type="application/json">` payloads.
+ */
+function escapeLineTerminators(json: string): string {
+  return json
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
 }
 
+/**
+ * Serialise a value as JSON and escape the four byte sequences that are
+ * unsafe inside a `<script>` element (regardless of the script's `type`):
+ *
+ *   - `</script`  : the HTML parser ends the script block at this sequence
+ *                   even inside `type="application/json"`.
+ *   - `<!--`      : not parsed by the HTML parser, but it is parsed as a
+ *                   single-line comment by older JS engines when the script
+ *                   has no `type` attribute, which is the `scriptLiteral`
+ *                   case. Defended preemptively for both call sites.
+ *   - U+2028, U+2029 : see `escapeLineTerminators`.
+ *
+ * The output is safe to drop into:
+ *   <script>...</script>            (use scriptLiteral)
+ *   <script type="application/json">...</script>
+ *   <script type="application/ld+json">...</script>
+ *   data-* attributes (callers should additionally HTML-escape)
+ */
+export function jsonInject(value: unknown): string {
+  return escapeLineTerminators(
+    JSON.stringify(value)
+      .replace(/<\/script/gi, '<\\/script')
+      .replace(/<!--/g, '<\\!--')
+  );
+}
+
+/**
+ * Embed a JS literal (string, number, boolean, object, array) inside an
+ * inline `<script>` block. Same escape set as `jsonInject` — a value
+ * serialised by JSON.stringify is, by construction, a valid JS literal.
+ */
 export function scriptLiteral(value: unknown): string {
-  return JSON.stringify(value);
+  return jsonInject(value);
 }
 
 /**

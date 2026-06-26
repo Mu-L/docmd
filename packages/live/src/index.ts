@@ -34,11 +34,14 @@ const MIME_TYPES = {
 };
 
 function checkPortInUse(port: number): Promise<boolean> {
+  // Probe binds to 127.0.0.1 only. We just need to know if the loopback
+  // interface has the port — binding to 0.0.0.0 briefly exposed the probe
+  // socket to the LAN.
   return new Promise((resolve) => {
     const tester = http.createServer()
       .once('error', (err: any) => resolve(err.code === 'EADDRINUSE'))
       .once('listening', () => tester.close(() => resolve(false)))
-      .listen(port, '0.0.0.0');
+      .listen(port, '127.0.0.1');
   });
 }
 
@@ -103,10 +106,24 @@ async function start() {
   });
 
   // 3. Start Listening
-  server.listen(port, '0.0.0.0', () => {
+  // Security: default to loopback. Set DOCMD_HOST=0.0.0.0 to expose on the
+  // LAN. The Live editor serves the built site + the project's `assets/`
+  // directory, so LAN exposure is opt-in only — same model as the main
+  // dev server (packages/core/src/commands/dev.ts).
+  const BIND_HOST = process.env.DOCMD_HOST || '127.0.0.1';
+  if (BIND_HOST !== '127.0.0.1' && BIND_HOST !== '::1' && BIND_HOST !== 'localhost') {
+    TUI.warn(
+      `Live editor bound to ${BIND_HOST} (LAN). Any host able to reach this port ` +
+      `can browse the served site.`
+    );
+  }
+  server.listen(port, BIND_HOST, () => {
     TUI.section('Live Editor Running', TUI.green);
     TUI.item('', '', TUI.dim, TUI.green);
     TUI.item('Local Access', `http://localhost:${port}`, TUI.bold, TUI.green);
+    if (BIND_HOST !== '127.0.0.1' && BIND_HOST !== '::1' && BIND_HOST !== 'localhost') {
+      TUI.item('LAN Access', `http://${BIND_HOST}:${port}`, TUI.bold, TUI.yellow);
+    }
     TUI.item('Serving from', path.relative(process.cwd(), publicDir) || '.', TUI.dim, TUI.green);
     TUI.item('', '', TUI.dim, TUI.green);
     TUI.footer(TUI.green);
