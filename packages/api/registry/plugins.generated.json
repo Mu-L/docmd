@@ -1,0 +1,204 @@
+{
+  "$meta": {
+    "generatedAt": "2026-06-26T15:04:28.652Z",
+    "generator": "scripts/build-plugin-registry.mjs",
+    "packageCount": 15
+  },
+  "analytics": {
+    "package": "@docmd/plugin-analytics",
+    "description": "Analytics injection plugin for docmd.",
+    "configKey": "analytics",
+    "defaultConfig": "{}",
+    "kind": "plugin",
+    "displayName": "Analytics",
+    "tagline": "Analytics injection plugin for docmd.",
+    "capabilities": [
+      "head",
+      "body"
+    ]
+  },
+  "git": {
+    "package": "@docmd/plugin-git",
+    "description": "Git integration plugin for docmd.",
+    "configKey": "git",
+    "defaultConfig": "{}",
+    "kind": "plugin",
+    "displayName": "Git",
+    "tagline": "Git integration with last-updated timestamps and commit history.",
+    "capabilities": [
+      "init",
+      "build",
+      "body",
+      "assets",
+      "post-build",
+      "translations"
+    ]
+  },
+  "llms": {
+    "package": "@docmd/plugin-llms",
+    "description": "Generate llms.txt context files for AI agents from your docmd site.",
+    "configKey": "llms",
+    "defaultConfig": "{}",
+    "kind": "plugin",
+    "displayName": "LLMs",
+    "tagline": "Generates llms.txt and llms-full.txt for LLM consumption.",
+    "capabilities": [
+      "post-build"
+    ]
+  },
+  "math": {
+    "package": "@docmd/plugin-math",
+    "description": "Mathematics (KaTeX/LaTeX) plugin for docmd.",
+    "configKey": "math",
+    "defaultConfig": "{}",
+    "kind": "plugin",
+    "displayName": "Math",
+    "tagline": "Mathematics (KaTeX/LaTeX) plugin for docmd.",
+    "capabilities": [
+      "markdown",
+      "assets"
+    ]
+  },
+  "mermaid": {
+    "package": "@docmd/plugin-mermaid",
+    "description": "Mermaid diagram support plugin for docmd.",
+    "configKey": "mermaid",
+    "defaultConfig": "{}",
+    "kind": "plugin",
+    "displayName": "Mermaid",
+    "tagline": "Mermaid.js diagram support for docmd.",
+    "capabilities": [
+      "markdown",
+      "assets"
+    ]
+  },
+  "okf": {
+    "package": "@docmd/plugin-okf",
+    "description": "Generate an Open Knowledge Format (OKF) bundle from your docmd site for AI agent consumption.",
+    "configKey": "okf",
+    "defaultConfig": "{}",
+    "kind": "plugin",
+    "displayName": "OKF",
+    "tagline": "Open Knowledge Format (OKF) bundle generator for AI-agent consumption.",
+    "capabilities": [
+      "post-build"
+    ]
+  },
+  "openapi": {
+    "package": "@docmd/plugin-openapi",
+    "description": "OpenAPI documentation generator plugin for docmd.",
+    "configKey": "openapi",
+    "defaultConfig": "{}",
+    "kind": "plugin",
+    "displayName": "OpenAPI",
+    "tagline": "OpenAPI / Swagger spec rendering for docmd.",
+    "capabilities": [
+      "markdown",
+      "assets"
+    ]
+  },
+  "pwa": {
+    "package": "@docmd/plugin-pwa",
+    "description": "Progressive Web App (PWA) plugin for docmd.",
+    "configKey": "pwa",
+    "defaultConfig": "{}",
+    "kind": "plugin",
+    "displayName": "PWA",
+    "tagline": "Progressive Web App support for docmd with offline caching.",
+    "capabilities": [
+      "post-build",
+      "head",
+      "body"
+    ]
+  },
+  "search": {
+    "package": "@docmd/plugin-search",
+    "description": "Offline full-text search for docmd.",
+    "configKey": "search",
+    "defaultConfig": "{}",
+    "kind": "plugin",
+    "displayName": "Search",
+    "tagline": "Offline full-text search for docmd.",
+    "capabilities": [
+      "post-build",
+      "head",
+      "body",
+      "assets",
+      "translations"
+    ]
+  },
+  "seo": {
+    "package": "@docmd/plugin-seo",
+    "description": "SEO meta tag generator for docmd.",
+    "configKey": "seo",
+    "defaultConfig": "{}",
+    "kind": "plugin",
+    "displayName": "SEO",
+    "tagline": "SEO meta tag generator for docmd.",
+    "capabilities": [
+      "head",
+      "post-build"
+    ]
+  },
+  "sitemap": {
+    "package": "@docmd/plugin-sitemap",
+    "description": "Sitemap generator plugin for docmd.",
+    "configKey": "sitemap",
+    "defaultConfig": "{}",
+    "kind": "plugin",
+    "displayName": "Sitemap",
+    "tagline": "Sitemap generator for docmd.",
+    "capabilities": [
+      "post-build"
+    ]
+  },
+  "threads": {
+    "package": "@docmd/plugin-threads",
+    "description": "Inline discussion threads for docmd.",
+    "configKey": "threads",
+    "defaultConfig": "{}",
+    "kind": "plugin",
+    "displayName": "Threads",
+    "tagline": "Inline discussion comments stored in Markdown.",
+    "capabilities": [
+      "markdown",
+      "body",
+      "assets",
+      "actions",
+      "translations"
+    ]
+  },
+  "summer": {
+    "package": "@docmd/template-summer",
+    "description": "Summer template for docmd. A bright, hopeful, summer-feel layout with a top search bar and halo accents.",
+    "configKey": "summer",
+    "defaultConfig": "{}",
+    "kind": "template",
+    "displayName": "Summer",
+    "tagline": "A bright, hopeful, summer-feel layout with a top search bar and halo accents.",
+    "capabilities": [
+      "template"
+    ],
+    "preview": "assets/css/summer.css"
+  },
+  "js": {
+    "package": "@docmd/engine-js",
+    "description": "Default JavaScript engine for docmd using Node.js native APIs.",
+    "configKey": "js",
+    "defaultConfig": "{}",
+    "kind": "engine",
+    "displayName": "js",
+    "tagline": "Default JavaScript engine for docmd using Node.js native APIs.",
+    "capabilities": []
+  },
+  "rust": {
+    "package": "@docmd/engine-rust",
+    "description": "Rust-accelerated engine for docmd. The postinstall script downloads a pre-built platform binary from npm CDN (unpkg/jsdelivr). No code is executed beyond copying the .node file. Source: https://github.com/docmd-io/docmd",
+    "configKey": "rust",
+    "defaultConfig": "{}",
+    "kind": "engine",
+    "displayName": "rust",
+    "tagline": "Rust-accelerated engine for docmd. The postinstall script downloads a pre-built platform binary from npm CDN (unpkg/jsdelivr). No code is executed beyond copying the .node file. Source: https://github.com/docmd-io/docmd",
+    "capabilities": []
+  }
+}
