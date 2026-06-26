@@ -91,7 +91,8 @@ if (!command || values.help) {
     ['mcp', 'Run docmd as a Model Context Protocol (MCP) server'],
     ['validate', 'Validate documentation files and check for broken relative links'],
     ['add', 'Install and configure a docmd plugin'],
-    ['remove', 'Remove and unconfigure a docmd plugin']
+    ['remove', 'Remove and unconfigure a docmd plugin'],
+    ['doctor', 'Pre-flight check: report missing plugins, broken configs, mismatched engines (--fix to auto-install)']
   ];
   cmds.forEach(([c, d]) => TUI.item(c, d, TUI.cyan));
 
@@ -286,6 +287,13 @@ if (command === 'init') {
     process.exit(1);
   }
   removePlugin(positionals[1], opts);
+} else if (command === 'doctor') {
+  const { runDoctor } = await import('../commands/doctor.js');
+  const fix = values.fix === true;
+  const asJson = values.json === true;
+  const configPath = typeof values.config === 'string' ? values.config : undefined;
+  const code = await runDoctor({ configPath, fix, json: asJson });
+  if (code !== 0) process.exit(code);
 } else if (command === 'mcp') {
   runMcpServer().catch((e) => {
     console.error(e);

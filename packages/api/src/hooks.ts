@@ -240,24 +240,30 @@ let _pluginRegistry: Record<string, any> | null = null;
 
 function getPluginRegistry(): Record<string, any> {
   if (_pluginRegistry) return _pluginRegistry;
-  
-  try {
-    // Try to load from @docmd/plugin-installer
-    const registryPath = require.resolve('@docmd/plugin-installer/registry/plugins.json', {
-      paths: [process.cwd(), __dirname, __monorepoRoot]
-    });
-    _pluginRegistry = JSON.parse(nativeFs.readFileSync(registryPath, 'utf8'));
-  } catch {
-    // Fallback: try monorepo path
-    const localPath = path.resolve(__monorepoRoot, 'packages/plugins/installer/registry/plugins.json');
-    if (nativeFs.existsSync(localPath)) {
-      _pluginRegistry = JSON.parse(nativeFs.readFileSync(localPath, 'utf8'));
-    } else {
-      _pluginRegistry = {};
+
+  // The registry is generated at build time by `scripts/build-plugin-registry.mjs`
+  // and lives at <package-root>/registry/plugins.generated.json. It is the
+  // single source of truth for the official plugin / template / engine
+  // catalog — regenerated from each package's `package.json#docmd`
+  // namespace, so the hand-maintained
+  // packages/plugins/installer/registry/plugins.json that used to be
+  // here is no longer consulted.
+  //
+  // Two resolution paths:
+  //   1. Monorepo dev: <repo>/packages/api/registry/plugins.generated.json
+  //   2. Published package: <pkg>/registry/plugins.generated.json
+  //      (listed in this package's `files` array)
+  const candidates = [
+    path.resolve(__dirname, '..', 'registry', 'plugins.generated.json'),
+    path.resolve(__monorepoRoot, 'packages', 'api', 'registry', 'plugins.generated.json'),
+  ];
+  for (const candidate of candidates) {
+    if (nativeFs.existsSync(candidate)) {
+      _pluginRegistry = JSON.parse(nativeFs.readFileSync(candidate, 'utf8'));
+      return _pluginRegistry!;
     }
   }
-  
-  return _pluginRegistry!;
+  return {};
 }
 
 /**
@@ -327,9 +333,28 @@ async function autoInstallPlugin(packageName: string): Promise<boolean> {
     execSync(installCmd, { stdio: 'pipe', cwd, timeout: 60000 });
     TUI.step(`Plugin installed: ${shortName}`, 'DONE');
     return true;
-  } catch (_err: any) {
+  } catch (err: any) {
     TUI.step(`Failed to install: ${shortName}`, 'FAIL');
-    warnOnce(`install:${packageName}`, TUI.dim(`Run "docmd add ${shortName}" manually for details`));
+    // Surface the underlying error so users (and CI logs) can see
+    // exactly why the install failed — e.g. ETARGET when the version
+    // isn't on the registry, or EACCES/EPERM when CI has no permission
+    // to mutate the project directory. Without this, "Could not load
+    // … after auto-install" looks like a bug in docmd when it's really
+    // a sandbox/CI issue.
+    const stderr = ((err && (err.stderr || err.message)) || '').toString().split('\n').filter(Boolean).slice(0, 3).join(' | ');
+    const isTemplate = packageName.startsWith('@docmd/template-');
+    // For templates the most reliable fix is to add the package to the
+    // project's `dependencies` (or `devDependencies`) so the user's
+    // normal package manager pulls it during the install step. Doing
+    // it that way survives CI sandboxes that block ad-hoc `pnpm add`
+    // invocations from docmd's runtime.
+    const hint = isTemplate
+      ? `Add "${packageName}" to your package.json dependencies, then run your normal install step.`
+      : `Run "docmd add ${shortName}" to install it, or add "${packageName}" to your package.json.`;
+    warnOnce(`install:${packageName}`, TUI.yellow(
+      `Auto-install of ${packageName} failed: ${stderr || 'unknown error'}\n` +
+      TUI.dim(`  > ${hint}`)
+    ));
     return false;
   }
 }
@@ -513,13 +538,34 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
       if (needsAutoInstall && isOfficial) {
         const installed = await autoInstallPlugin(name);
         if (installed) {
-          // Retry loading after install
+          // Defense in depth: re-verify the package is in the official registry
+          // before loading. autoInstallPlugin already passed this check, but we
+          // re-check here so a future change to that function cannot silently
+          // turn the auto-install path into a generic npm-loader.
+          const shortName = name
+            .replace('@docmd/plugin-', '')
+            .replace('@docmd/template-', '');
+          if (!getPluginRegistry()[shortName]) {
+            warnOnce(`registry:${name}`, TUI.yellow(`Plugin "${shortName}" not in official registry`));
+            continue;
+          }
+          // Retry loading after install. We use dynamic `import()` (not
+          // `require.resolve` + file:// import) so packages that declare
+          // `exports` with only an `import` condition are still resolvable.
           try {
-            const resolvedPath = require.resolve(name, { paths: resolvePaths });
-            rawModule = await import(pathToFileURL(resolvedPath).href);
-          } catch {
-            // If still fails, skip this plugin
-            warnOnce(`autoinstall:${name}`, TUI.yellow(`Could not load ${name} after auto-install`));
+            rawModule = await import(name);
+          } catch (err: any) {
+            // Surface the real error so the user can act on it.
+            // `err.code` is the most useful bit (e.g. ERR_PACKAGE_PATH_NOT_EXPORTED,
+            // ERR_MODULE_NOT_FOUND). The default "Could not load X after auto-install"
+            // used to look like a docmd bug when the real cause was a bad
+            // package.json in the dependency.
+            const errCode = err && err.code ? ` [${err.code}]` : '';
+            const errMsg = err && err.message ? err.message.split('\n')[0] : 'unknown error';
+            warnOnce(
+              `autoinstall:${name}`,
+              TUI.yellow(`Could not load ${name} after auto-install${errCode}: ${errMsg}`)
+            );
             continue;
           }
         } else {
@@ -531,8 +577,13 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
 
       const pluginModule: PluginModule = rawModule.default || rawModule;
 
+      // Stage 4: pull the manifest's declared capabilities (from the
+      // registry) so registerPlugin can cross-check the JS descriptor.
+      const shortKey = name.replace('@docmd/plugin-', '').replace('@docmd/template-', '');
+      const manifestCapabilities = (getPluginRegistry()[shortKey]?.capabilities) as string[] | undefined;
+
       try {
-        registerPlugin(name, pluginModule, options);
+        registerPlugin(name, pluginModule, options, manifestCapabilities);
       } catch (regError: any) {
         warnOnce(`register:${name}`, TUI.yellow(`Plugin loaded but failed to register: ${name}`) + TUI.dim(`\n   > ${regError.message}`));
       }
@@ -552,9 +603,75 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
   return hooks;
 }
 
-function registerPlugin(name: string, plugin: PluginModule, options: any) {
-  const shortName = name.replace(/^@docmd\/plugin-/, '');
-  const isOfficial = name.startsWith('@docmd/plugin-');
+/**
+ * Cached per-key capability sets, derived from the registry once and
+ * reused on every dev-server rebuild. Avoids re-walking the registry
+ * (and the re-`Set` construction) on every hot reload.
+ */
+const _capabilityCache: Map<string, Set<string>> = new Map();
+
+/** Get or build a capability Set for a registry key. */
+function getCapabilitySet(shortName: string): Set<string> {
+  let set = _capabilityCache.get(shortName);
+  if (set) return set;
+  const entry = getPluginRegistry()[shortName];
+  set = new Set<string>(Array.isArray(entry?.capabilities) ? entry.capabilities : []);
+  _capabilityCache.set(shortName, set);
+  return set;
+}
+
+/**
+ * Cross-check the JS descriptor's `capabilities` against the manifest's
+ * `docmd.capabilities` (from the generated registry). Catches:
+ *   - Descriptor declares a capability the manifest doesn't (drift).
+ *   - Manifest declares a capability the descriptor doesn't (drift).
+ *   - Implemented hook without declared capability (the silent-drop bug).
+ *
+ * Not a hard error — capabilities are advisory metadata. But loud
+ * warnings surface drift before it causes a build regression.
+ */
+function checkManifestCapabilityDrift(
+  shortName: string,
+  descriptor: PluginDescriptor | null,
+  plugin: PluginModule,
+): string[] {
+  const warnings: string[] = [];
+  const manifestCaps = Array.from(getCapabilitySet(shortName));
+  if (manifestCaps.length === 0) return warnings; // Third-party or unknown package; skip.
+  if (!descriptor) return warnings;               // Legacy; skip.
+
+  const descCaps = new Set<string>(Array.isArray(descriptor.capabilities) ? (descriptor.capabilities as string[]) : []);
+
+  // Implemented hooks vs declared capabilities.
+  const KNOWN_HOOKS_BY_CAP: Array<[string, keyof PluginModule]> = [
+    ['markdown', 'markdownSetup'],
+    ['head', 'generateMetaTags'],
+    ['body', 'generateScripts'],
+    ['post-build', 'onPostBuild'],
+    ['assets', 'getAssets'],
+    ['actions', 'actions'],
+    ['events', 'events'],
+    ['translations', 'translations'],
+  ];
+  for (const [cap, hook] of KNOWN_HOOKS_BY_CAP) {
+    if (typeof plugin[hook] === 'function' && !descCaps.has(cap) && !manifestCaps.includes(cap)) {
+      warnings.push(
+        `exports \`${hook}\` but neither the descriptor nor the manifest ` +
+        `declares the "${cap}" capability. The hook will be registered.`
+      );
+    }
+  }
+  return warnings;
+}
+
+function registerPlugin(
+  name: string,
+  plugin: PluginModule,
+  options: any,
+  manifestCapabilities?: string[],   // Stage 4: from registry entry, for cross-check
+) {
+  const shortName = name.replace(/^@docmd\/plugin-/, '').replace(/^@docmd\/template-/, '');
+  const isOfficial = name.startsWith('@docmd/plugin-') || name.startsWith('@docmd/template-');
 
   // --- §1: Validate descriptor ---
   const descriptor = plugin.plugin || null;
@@ -573,6 +690,14 @@ function registerPlugin(name: string, plugin: PluginModule, options: any) {
     // Silent for official plugins as they'll be updated together
     if (!isOfficial) {
       TUI.warn(`Plugin "${name}" has no descriptor. This will be required in 0.8.0.`);
+    }
+  }
+
+  // --- §1.5: Manifest / descriptor capability drift (Stage 4) ---
+  if (manifestCapabilities) {
+    const drift = checkManifestCapabilityDrift(shortName, descriptor, plugin);
+    for (const w of drift) {
+      TUI.warn(`Plugin "${shortName}": ${w}`);
     }
   }
 
