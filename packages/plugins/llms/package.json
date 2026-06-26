@@ -1,10 +1,19 @@
 {
   "name": "@docmd/plugin-llms",
-  "version": "0.8.8",
+  "version": "0.8.9",
   "description": "Generate llms.txt context files for AI agents from your docmd site.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "docmd": {
+    "key": "llms",
+    "kind": "plugin",
+    "displayName": "LLMs",
+    "tagline": "Generates llms.txt and llms-full.txt for LLM consumption.",
+    "capabilities": [
+      "post-build"
+    ]
+  },
   "scripts": {
     "build": "tsc"
   },
