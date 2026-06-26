@@ -28,7 +28,7 @@ const require = createRequire(import.meta.url);
 
 export const plugin: PluginDescriptor = {
   name: 'search',
-  version: '0.8.8',
+  version: '0.8.9',
   capabilities: ['post-build', 'head', 'body', 'assets', 'translations']
 };
 
@@ -42,20 +42,47 @@ const i18nDir = path.resolve(__dirname, '..', 'i18n');
  * Returns the importable path (file:// URL) or null if not found.
  */
 function resolveDocmdSearch(): string | null {
+  const searchPaths = [
+    process.cwd(),
+    __dirname,
+    path.resolve(__dirname, '../../..'),  // monorepo root
+    path.resolve(__dirname, '../../../..'), // parent of monorepo
+  ];
+
+  // First, locate the package via its `./package.json` subpath export.
+  // This works regardless of the main `exports` conditions because the
+  // subpath is explicitly declared in the package manifest.
+  let pkgDir: string | null = null;
   try {
-    // Try require.resolve for package.json (works for both CJS and ESM packages)
-    // Search in: cwd, __dirname, monorepo root (../../..), and global node_modules
-    const searchPaths = [
-      process.cwd(),
-      __dirname,
-      path.resolve(__dirname, '../../..'),  // monorepo root
-      path.resolve(__dirname, '../../../..'), // parent of monorepo
-    ];
     const pkgPath = require.resolve('docmd-search/package.json', { paths: searchPaths });
-    const pkgDir = path.dirname(pkgPath);
-    // Read package.json to find the main entry point
-    const pkg = JSON.parse(nativeFs.readFileSync(pkgPath, 'utf8'));
-    const mainEntry = pkg.exports?.['.']?.import || pkg.main || 'dist/index.js';
+    pkgDir = path.dirname(pkgPath);
+  } catch {
+    // Fallback: walk the search paths manually. This is a defensive
+    // backstop in case the `./package.json` subpath export is ever
+    // removed or the package is installed in a layout require.resolve
+    // does not understand (e.g. pnpm's isolated node_modules).
+    for (const root of searchPaths) {
+      const candidate = path.join(root, 'node_modules', 'docmd-search', 'package.json');
+      if (nativeFs.existsSync(candidate)) {
+        pkgDir = path.dirname(candidate);
+        break;
+      }
+    }
+  }
+
+  if (!pkgDir) return null;
+
+  try {
+    // Read package.json to find the main entry point. We accept the
+    // first present condition of `exports["."]` in this order: `import`,
+    // `default`, `require`, then fall back to `main`. This keeps us
+    // working even if the package declares only `import` (ESM-only).
+    const pkg = JSON.parse(nativeFs.readFileSync(path.join(pkgDir, 'package.json'), 'utf8'));
+    const exp = pkg.exports?.['.'];
+    const mainEntry =
+      (exp && (exp.import || exp.default || exp.require)) ||
+      pkg.main ||
+      'dist/index.js';
     const entryPath = path.join(pkgDir, mainEntry);
     // Return as file:// URL for ESM dynamic import
     return `file://${entryPath}`;

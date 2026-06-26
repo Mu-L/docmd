@@ -57,7 +57,11 @@
       const item = navTrigger.closest('li.collapsible');
       const isChevron = navTrigger.classList.contains('collapse-icon-wrapper');
       const isDummySpan = navTrigger.tagName !== 'A';
-      if ((isChevron || isDummySpan) && item) {
+      const isOffline = location.protocol === 'file:';
+      const matchedParentLi = navTrigger.tagName === 'LI';
+      const shouldToggle = (isChevron || isDummySpan) && item && !(isOffline && matchedParentLi);
+
+      if (shouldToggle) {
         e.preventDefault();
         const isExpanded = item.classList.contains('expanded');
         item.classList.toggle('expanded', !isExpanded);
