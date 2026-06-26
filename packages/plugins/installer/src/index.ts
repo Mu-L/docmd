@@ -27,7 +27,31 @@ import {
 import { isCorePlugin } from '@docmd/api';
 
 const require = createRequire(import.meta.url);
-const pluginsRegistry = require('../registry/plugins.json');
+
+// Plugin registry resolution. As of 0.8.9 the canonical registry is
+// generated into @docmd/api/registry/plugins.generated.json by
+// scripts/build-plugin-registry.mjs (single source of truth across the
+// docmd monorepo). The bundled registry/plugins.json in this package is
+// retained as a fallback for users who install @docmd/plugin-installer
+// without @docmd/api, but the generated file is preferred.
+//
+// The bundled registry/plugins.json is DEPRECATED and will be removed in
+// 0.9.0. The auto-install workflow and `docmd add <plugin>` both fall
+// through to the new generated registry transparently.
+let pluginsRegistry: any = {};
+try {
+  const generatedPath = require.resolve('@docmd/api/registry/plugins.generated.json', {
+    paths: [process.cwd(), require('path').dirname(require.resolve('@docmd/api/package.json', { paths: [process.cwd()] }))]
+  });
+  pluginsRegistry = require(generatedPath);
+} catch {
+  // Fallback: bundled registry (DEPRECATED, removed in 0.9.0).
+  try {
+    pluginsRegistry = require('../registry/plugins.json');
+  } catch {
+    pluginsRegistry = {};
+  }
+}
 
 /**
  *
