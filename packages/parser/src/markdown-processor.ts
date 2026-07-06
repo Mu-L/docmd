@@ -21,6 +21,7 @@ import {
   normaliseContainers,
   type NormaliserWarning
 } from './utils/container-normaliser.js';
+import { fixHtmlLinks } from './html-renderer.js';
 
 // URL schemes that can execute code or exfiltrate data when clicked.
 // Phase 1.B (T-S4 fix, defense in depth): markdown-it 14 already rejects these
@@ -445,6 +446,18 @@ async function processContentAsync(rawString: string, mdInstance: any, config: a
 
   let htmlContent = mdInstance.render(markdownContent, env);
 
+  // #167 (permanent fix): in offline mode, rewrite every internal href in
+  // the rendered markdown so the output works in file://, HTTP servers, and
+  // custom domains identically. The button container (`:::`) already goes
+  // through `fixHtmlLinks` via the template helper, but the markdown-rendered
+  // HTML never did — that's why `<a href="/destination/">` survived into the
+  // offline HTML and broke `file://` navigation. The post-process pass uses
+  // the same `fixHtmlLinks` logic so the two paths stay aligned. Non-offline
+  // builds are unchanged (clean URLs preserved).
+  if (env && env.isOfflineMode === true) {
+    htmlContent = rewriteInternalHrefsForOffline(htmlContent, env.relativePathToRoot || './', env.config?.base || '/');
+  }
+
   if (hooks && hooks.onAfterParse) {
     for (const fn of hooks.onAfterParse) {
       htmlContent = await fn(htmlContent, frontmatter, env.filePath);
@@ -463,6 +476,48 @@ async function processContentAsync(rawString: string, mdInstance: any, config: a
   }
 
   return { frontmatter, htmlContent, headings, searchData };
+}
+
+/**
+ * Walk every `<a href="...">` and `<img src="...">` in a piece of rendered
+ * HTML and rewrite internal links for offline mode. External URLs (http,
+ * https, mailto, tel, javascript, etc.), hash-only anchors, and asset paths
+ * are passed through unchanged.
+ *
+ * The function is intentionally permissive on the regex: it tolerates
+ * attribute ordering, single or double quotes, and surrounding whitespace.
+ * The result is intentionally not run through a full HTML parser because
+ * the document we're rewriting is the markdown-rendered fragment, not a
+ * full HTML page, and we don't want to introduce a new dependency.
+ */
+function rewriteInternalHrefsForOffline(html: string, relativePathToRoot: string, base: string): string {
+  // `<a href="...">` rewriting — covers markdown link `[text](url)`.
+  html = html.replace(
+    /<a\s+([^>]*?)\bhref\s*=\s*("([^"]*)"|'([^']*)')([^>]*)>/gi,
+    (full, _pre, quoted, dq, sq, _post) => {
+      const href = dq !== undefined ? dq : sq;
+      const fixed = fixHtmlLinks(href, relativePathToRoot, true, base);
+      if (fixed === href) return full;
+      const originalQuote = quoted.charAt(0);
+      return full.replace(quoted, originalQuote + fixed + originalQuote);
+    }
+  );
+  // `<img src="...">` rewriting — covers markdown image `![alt](src)`.
+  // The button template goes through `fixLink`, but markdown-it emits
+  // `<img>` directly without any template helper. Without this pass the
+  // offline HTML keeps `<img src="/assets/img.png">` which `file://`
+  // cannot resolve (it's an absolute path with no host).
+  html = html.replace(
+    /<img\s+([^>]*?)\bsrc\s*=\s*("([^"]*)"|'([^']*)')([^>]*)>/gi,
+    (full, _pre, quoted, dq, sq, _post) => {
+      const src = dq !== undefined ? dq : sq;
+      const fixed = fixHtmlLinks(src, relativePathToRoot, true, base);
+      if (fixed === src) return full;
+      const originalQuote = quoted.charAt(0);
+      return full.replace(quoted, originalQuote + fixed + originalQuote);
+    }
+  );
+  return html;
 }
 
 export { createMarkdownProcessor, processContent, processContentAsync };
