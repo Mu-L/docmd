@@ -215,7 +215,20 @@ function validateProjects(projects: ProjectEntry[]): void {
   }
 
   if (!hasRoot) {
-    throw new Error('Workspace configuration must have a root project with prefix "/"');
+    throw new Error(
+      'Workspace configuration must include a root project with prefix "/".\n' +
+      'Each workspace needs one project that owns the site root, with the others mounted under their own prefixes.\n' +
+      'Example:\n' +
+      '  {\n' +
+      '    "workspace": {\n' +
+      '      "projects": [\n' +
+      '        { "name": "main", "src": "./docs",     "prefix": "/" },\n' +
+      '        { "name": "api",  "src": "./api-docs", "prefix": "/api/" }\n' +
+      '      ]\n' +
+      '    }\n' +
+      '  }\n' +
+      'See https://docs.docmd.io/configuration/workspaces/ for the full layout guide.'
+    );
   }
 
   // Check for potential conflicts

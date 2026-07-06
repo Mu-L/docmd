@@ -472,7 +472,12 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
     });
   }
 
-  process.on('SIGINT', async () => {
+  // M-11: extracted graceful-shutdown logic so both SIGINT and SIGTERM
+  // run the same cleanup. Previously SIGTERM called process.exit(0)
+  // directly, which bypassed the watchers / wss / server / workerPool
+  // shutdown path and could leave child processes or live sockets
+  // hanging.
+  async function gracefulShutdown() {
     if (isShuttingDown) return;
     isShuttingDown = true;
 
@@ -499,9 +504,8 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
     } catch {
       process.exit(0);
     }
-  });
+  }
 
-  process.on('SIGTERM', () => {
-    process.exit(0);
-  });
+  process.on('SIGINT', gracefulShutdown);
+  process.on('SIGTERM', gracefulShutdown);
 }

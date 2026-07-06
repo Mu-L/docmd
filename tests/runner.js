@@ -83,6 +83,21 @@ addInProcess(
   'Validate rewrite + workspace errors + init example (F8, F9, M-1)',
   await import('./cli-contracts/validate-workspace.test.js')
 );
+addInProcess(
+  'deploy',
+  'Deploy --force honours overwrite (N-2)',
+  await import('./cli-contracts/deploy.test.js')
+);
+addInProcess(
+  'stop',
+  'Stop sends SIGTERM and waits for graceful exit (M-11)',
+  await import('./cli-contracts/stop.test.js')
+);
+addInProcess(
+  'migrate',
+  'Migrate --dry-run is non-destructive (N-3)',
+  await import('./cli-contracts/migrate.test.js')
+);
 
 // --- Section 2: Container parser (Phase 2 PR 1+2+3) ----------------------
 addExternal(
