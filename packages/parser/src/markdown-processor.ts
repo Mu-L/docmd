@@ -435,7 +435,24 @@ async function processContentAsync(rawString: string, mdInstance: any, config: a
 
   if (hooks && hooks.onBeforeParse) {
     for (const fn of hooks.onBeforeParse) {
-      markdownContent = await fn(markdownContent, frontmatter, env.filePath);
+      // D-H7: previously a throw from any plugin's onBeforeParse would
+      // either propagate up (abort the file) or, after the safeCall
+      // wrapper landed, leave `markdownContent` set to `undefined` and
+      // crash the next iteration. We now catch each plugin's throw
+      // locally, log it via TUI, and keep walking the chain so plugins
+      // B, C, ... still see input (even if A's contribution is lost).
+      try {
+        const next = await fn(markdownContent, frontmatter, env.filePath);
+        // Only adopt the plugin's output if it returned a string.
+        // Plugins that want to "skip" should return undefined (we keep
+        // the previous markdown) rather than returning null.
+        if (typeof next === 'string') {
+          markdownContent = next;
+        }
+      } catch (err: any) {
+        const msg = err && err.message ? err.message : String(err);
+        console.error(`[parser] onBeforeParse plugin threw: ${msg}`);
+      }
     }
   }
 

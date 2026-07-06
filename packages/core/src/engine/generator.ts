@@ -117,7 +117,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
   // Load Translations for the active locale
   const localeId = config._activeLocale?.id || null;
   const pluginTranslations = hooks.translations
-    ? hooks.translations.reduce((acc: any, fn: any) => ({ ...acc, ...fn(localeId) }), {})
+    ? await hooks.translations.reduce(async (accP: any, fn: any) => ({ ...(await accP), ...(await fn(localeId)) }), {})
     : {};
 
   // Merge: system translations → plugin translations → user-provided locale translations
