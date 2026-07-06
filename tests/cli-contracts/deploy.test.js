@@ -89,6 +89,23 @@ export const test = runTestFile({
       execSync(`node ${DOCMD} deploy --docker`, { cwd: dir, stdio: 'pipe' });
       assert(fs.existsSync(path.join(dir, 'Dockerfile')), 'N-2: without --force and no existing file, Dockerfile is created');
     }
+
+    // T-Z9 — generated `netlify.toml` must NOT contain a SPA catch-all
+    // redirect with `from = "/*" status = 200`. That pattern soft-404s
+    // every missing route by serving the home page with HTTP 200, which
+    // hides errors and hurts SEO. docmd generates real HTML per route,
+    // so the redirect is unnecessary — Netlify serves the bundled
+    // 404.html with 404 status for any path that doesn't have a file.
+    {
+      const dir = setup('deploy-29-tz9-no-soft-404');
+      writeFile(dir, 'docs/index.md', '# Hi\n');
+      writeFile(dir, 'docmd.config.json', JSON.stringify({ title: 'TZ9', src: './docs', out: './site', layout: { spa: true } }, null, 2) + '\n');
+
+      execSync(`node ${DOCMD} deploy --netlify`, { cwd: dir, stdio: 'pipe' });
+      const toml = fs.readFileSync(path.join(dir, 'netlify.toml'), 'utf8');
+      assert(!/\[\[redirects\]\]/.test(toml), 'T-Z9: no [[redirects]] block in generated netlify.toml');
+      assert(!/from\s*=\s*"\/\*"\s*\n\s*to\s*=\s*"\/index\.html"/m.test(toml), 'T-Z9: no catch-all redirect to /index.html');
+    }
   }
 });
 
