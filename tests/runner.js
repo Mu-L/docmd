@@ -108,6 +108,11 @@ addInProcess(
   'Plugin contract + public API fixes (Slice C.1 + C.2)',
   await import('./cli-contracts/plugin-contract.test.js')
 );
+addInProcess(
+  'source-tools',
+  'Source tools + page shape consistency (Slice C.3)',
+  await import('./cli-contracts/source-tools.test.js')
+);
 
 // --- Section 2: Container parser (Phase 2 PR 1+2+3) ----------------------
 addExternal(
