@@ -103,6 +103,11 @@ addInProcess(
   'Offline-mode internal links work in every hosting shape (#167)',
   await import('./cli-contracts/offline-links.test.js')
 );
+addInProcess(
+  'plugin-contract',
+  'Plugin contract + public API fixes (Slice C.1 + C.2)',
+  await import('./cli-contracts/plugin-contract.test.js')
+);
 
 // --- Section 2: Container parser (Phase 2 PR 1+2+3) ----------------------
 addExternal(
