@@ -20,6 +20,7 @@ import {
   exitCodeOf,
   runTestFile
 } from '../shared.js';
+import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -113,6 +114,43 @@ export const test = runTestFile({
       // `[View the docs →](https://docmd.io){.docmd-button}` instead.
       assert(!/button "View Documentation"/.test(initSrc), 'F9: bundled init no longer contains broken `::: button ... :::` trap');
       assert(/\{\.docmd-button\}/.test(initSrc), 'F9: bundled init uses `{.docmd-button}` styled link');
+    }
+
+    // M-2 — workspace config without a root project must show an
+    // actionable error message: explains the requirement, shows a
+    // valid example, and points at the docs. The old message was
+    // a single bare sentence with no example.
+    {
+      const dir = setup('validate-workspace-28-m2-workspace-no-root-message');
+      // The source dirs must exist so the per-project existence check
+      // does not fire first and mask the "no root project" failure.
+      writeFile(dir, 'docs/index.md', '# Root\n');
+      writeFile(dir, 'docmd.config.json', JSON.stringify({
+        title: 'M2',
+        src: './docs',
+        out: './site',
+        workspace: {
+          projects: [
+            { src: './docs', prefix: '/api/' },
+            { src: './docs', prefix: '/blog/' }
+          ]
+        }
+      }));
+      let captured = '';
+      let code = -1;
+      try {
+        execSync(`node ${DOCMD} build`, { cwd: dir, stdio: 'pipe', encoding: 'utf8' });
+      } catch (e) {
+        code = e.status == null ? -1 : e.status;
+        const stderr = typeof e.stderr === 'string' ? e.stderr : (e.stderr ? e.stderr.toString() : '');
+        const stdout = typeof e.stdout === 'string' ? e.stdout : (e.stdout ? e.stdout.toString() : '');
+        captured = stderr + stdout;
+      }
+      assert(code === 1, 'M-2: workspace with no root project exits 1');
+      assert(/root project with prefix "\/"/.test(captured), 'M-2: error message states the root prefix requirement');
+      assert(/Example:/.test(captured), 'M-2: error message includes an Example block');
+      assert(/"prefix": "\/"/.test(captured), 'M-2: error message example shows prefix "/"');
+      assert(/docs\.docmd\.io/.test(captured), 'M-2: error message links to the workspace guide');
     }
   }
 });

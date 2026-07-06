@@ -38,7 +38,16 @@ export interface DeployOpts {
   force?: boolean;
 }
 
-async function write(filePath: string, content: string, label: string) {
+async function write(filePath: string, content: string, label: string, force?: boolean) {
+  // N-2: when --force is not set, do not overwrite an existing file.
+  // The deploy command was silently clobbering existing Docker / nginx /
+  // vercel / etc. configs on every run. The fix: skip with a clear
+  // TUI line and the existing content is preserved. Pass --force to
+  // overwrite. This makes the existing `--force` flag meaningful.
+  if (await fileExists(filePath) && !force) {
+    TUI.step(`${label} (already exists, skipped — use --force to overwrite)`, 'SKIP', TUI.yellow);
+    return;
+  }
   await fs.writeFile(filePath, content, 'utf8');
   TUI.step(label, 'DONE');
 }
@@ -49,6 +58,7 @@ async function fileExists(filePath: string): Promise<boolean> {
 
 export async function generateDeployConfigs(ctx: DeployContext, opts: DeployOpts): Promise<void> {
   const cwd = process.cwd();
+  const force = opts.force === true;
 
   TUI.section('Deployment Context');
   TUI.item('Project', ctx.title);
@@ -62,28 +72,28 @@ export async function generateDeployConfigs(ctx: DeployContext, opts: DeployOpts
     const df = hasNginxConf
       ? dockerfile.replace('FROM nginx:alpine', 'FROM nginx:alpine\nCOPY nginx.conf /etc/nginx/conf.d/default.conf')
       : dockerfile;
-    await write(resolve(cwd, 'Dockerfile'), df, 'Dockerfile');
-    await write(resolve(cwd, '.dockerignore'), dockerignore, '.dockerignore');
+    await write(resolve(cwd, 'Dockerfile'), df, 'Dockerfile', force);
+    await write(resolve(cwd, '.dockerignore'), dockerignore, '.dockerignore', force);
   }
 
   if (opts.nginx) {
-    await write(resolve(cwd, 'nginx.conf'), generateNginx(ctx), 'nginx.conf');
+    await write(resolve(cwd, 'nginx.conf'), generateNginx(ctx), 'nginx.conf', force);
   }
 
   if (opts.caddy) {
-    await write(resolve(cwd, 'Caddyfile'), generateCaddy(ctx), 'Caddyfile');
+    await write(resolve(cwd, 'Caddyfile'), generateCaddy(ctx), 'Caddyfile', force);
   }
 
   if (opts.githubPages) {
     await fs.mkdir(resolve(cwd, '.github', 'workflows'), { recursive: true });
-    await write(resolve(cwd, '.github', 'workflows', 'deploy.yml'), generateGithubPages(ctx), '.github/workflows/deploy.yml');
+    await write(resolve(cwd, '.github', 'workflows', 'deploy.yml'), generateGithubPages(ctx), '.github/workflows/deploy.yml', force);
   }
 
   if (opts.vercel) {
-    await write(resolve(cwd, 'vercel.json'), generateVercel(ctx), 'vercel.json');
+    await write(resolve(cwd, 'vercel.json'), generateVercel(ctx), 'vercel.json', force);
   }
 
   if (opts.netlify) {
-    await write(resolve(cwd, 'netlify.toml'), generateNetlify(ctx), 'netlify.toml');
+    await write(resolve(cwd, 'netlify.toml'), generateNetlify(ctx), 'netlify.toml', force);
   }
 }

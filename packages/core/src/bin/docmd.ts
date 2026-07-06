@@ -166,6 +166,7 @@ if (command === 'init') {
     vitepress: { type: 'boolean' },
     starlight: { type: 'boolean' },
     upgrade: { type: 'boolean' },
+    'dry-run': { type: 'boolean' },
     help: { type: 'boolean', short: 'h' }
   } as const;
 
@@ -210,12 +211,13 @@ if (command === 'init') {
     process.exit(1);
   }
 
-  migrateProject({ 
-    docusaurus: mv.docusaurus, 
-    mkdocs: mv.mkdocs, 
-    vitepress: mv.vitepress, 
+  migrateProject({
+    docusaurus: mv.docusaurus,
+    mkdocs: mv.mkdocs,
+    vitepress: mv.vitepress,
     starlight: mv.starlight,
-    upgrade: mv.upgrade
+    upgrade: mv.upgrade,
+    dryRun: mv['dry-run'] === true
   }).catch((e) => {
     console.error(e);
     process.exit(1);
