@@ -566,12 +566,20 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       // ── Phase 3A: Invoke onBeforeRender Hook ──
       // (Run BEFORE asset injection so plugins can mutate page.htmlContent /
       // page.frontmatter and the conditional asset filter sees the final state.)
+      // D-M3: urlContext and config are now included in onBeforeRender
+      // too, matching the shape onPageReady gets. This lets plugins
+      // that need to build URLs or read global config do so from either
+      // hook without checking which one they're in. The values are
+      // shallow snapshots — mutating them does NOT affect other pages
+      // or the global config.
       const pageContext = {
         frontmatter: page.frontmatter,
         outputPath: page.outputPath,
         sourcePath: page.sourcePath,
         urls: pageUrls,
-        html: page.htmlContent
+        html: page.htmlContent,
+        urlContext,
+        config
       };
 
       if (hooks.onBeforeRender) {

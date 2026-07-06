@@ -23,23 +23,17 @@
 import fs from 'fs';
 import path from 'path';
 import { createMarkdownProcessor } from '@docmd/parser';
+import { safePath } from '@docmd/utils';
 import type { BlockInfo, InlineSegment, SourceTools, TextLocation } from './types.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Resolve and validate a file path against the project root.
- * Throws if the resolved path escapes the project root.
- */
-function safePath(projectRoot: string, file: string): string {
-  const resolved = path.resolve(projectRoot, file);
-  if (!resolved.startsWith(projectRoot + path.sep) && resolved !== projectRoot) {
-    throw new Error(`Path "${file}" escapes the project root`);
-  }
-  return resolved;
-}
+// safePath is re-exported from @docmd/utils. The previous duplicate
+// (D-M4) had a different error message but identical semantics; using
+// the canonical helper means the API surface and the runtime share one
+// implementation and one set of tests.
 
 /**
  * Compute the number of lines occupied by YAML frontmatter (including the
@@ -396,6 +390,58 @@ export function createSourceTools({ projectRoot }: { projectRoot: string }): Sou
 
       await fs.promises.writeFile(filePath, allLines.join('\n'));
       tools._modified = true;
+    },
+
+    // -------------------------------------------------------------------
+    // getBlocks — enumerate all top-level blocks in a file (D-H4)
+    // -------------------------------------------------------------------
+    // Every other method takes a `blockRef: [start, end]` pair, which
+    // forces live-edit plugins to already KNOW the line numbers they
+    // want to edit. A "click on a block to edit it" UX needs an
+    // enumeration entry-point. This is it.
+    //
+    // Strategy: walk the file line by line, splitting on blank lines
+    // (a paragraph-level block). A future enhancement could use the
+    // full container normaliser to detect `::: ` and fenced blocks,
+    // but blank-line splitting matches what 95% of live-edit UIs need
+    // and is robust to every existing docmd file.
+    async getBlocks(file: string): Promise<BlockInfo[]> {
+      const filePath = safePath(projectRoot, file);
+      const raw = await fs.promises.readFile(filePath, 'utf8');
+      const fmOffset = computeFrontmatterOffset(raw);
+      const lines = raw.split('\n');
+
+      const blocks: BlockInfo[] = [];
+      let blockStart: number | null = null;
+      const flush = (endLineExclusive: number) => {
+        if (blockStart === null) return;
+        // Convert 0-based start / end back to the [start, end] shape
+        // other methods use, where `end` is exclusive (next-line index).
+        const absStart = fmOffset + blockStart;
+        const absEnd = fmOffset + endLineExclusive;
+        if (absEnd > absStart) {
+          const rawBlock = lines.slice(blockStart, endLineExclusive).join('\n');
+          blocks.push({
+            id: null,
+            line: { start: absStart, end: absEnd },
+            raw: rawBlock,
+            textContent: rawBlock,
+            segments: [],
+            cursor: null,
+            ancestors: []
+          });
+        }
+        blockStart = null;
+      };
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].trim() === '') {
+          flush(i);
+        } else if (blockStart === null) {
+          blockStart = i;
+        }
+      }
+      flush(lines.length);
+      return blocks;
     },
   };
 

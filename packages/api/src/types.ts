@@ -110,6 +110,15 @@ export interface SourceTools {
   replaceBlock(file: string, blockRef: [number, number], content: string): Promise<void>;
   /** Remove a block's source lines. */
   removeBlock(file: string, blockRef: [number, number]): Promise<void>;
+  /**
+   * Enumerate every top-level block in a file (D-H4). Returns
+   * `BlockInfo[]` with `line.start` and `line.end` populated — the
+   * other methods can then be called with the returned blockRef.
+   * Blocks are delimited by blank lines (a paragraph-level split
+   * that handles the common case of editing a single paragraph or
+   * list at a time).
+   */
+  getBlocks(file: string): Promise<BlockInfo[]>;
 }
 
 /** Information about a block in the markdown source. */
