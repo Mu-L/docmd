@@ -98,6 +98,11 @@ addInProcess(
   'Migrate --dry-run is non-destructive (N-3)',
   await import('./cli-contracts/migrate.test.js')
 );
+addInProcess(
+  'offline-links',
+  'Offline-mode internal links work in every hosting shape (#167)',
+  await import('./cli-contracts/offline-links.test.js')
+);
 
 // --- Section 2: Container parser (Phase 2 PR 1+2+3) ----------------------
 addExternal(
