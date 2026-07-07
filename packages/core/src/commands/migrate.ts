@@ -31,9 +31,13 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
     const backupName = path.basename(backupDir);
     const files = await nativeFs.promises.readdir(CWD);
     for (const file of files) {
-      if (file === 'node_modules' || file === '.git' || file === backupName || file === 'docmd.config.js') {
-        continue;
-      }
+      // N-10: keep lockfiles and package manifests in place — moving them
+      // into the backup dir means `npm install` and `pnpm install`
+      // would re-resolve from scratch on a recovery. Lockfiles and
+      // package.json are part of the user's repo state, not migration
+      // input.
+      if (file === 'node_modules' || file === '.git' || file === backupName || file === 'docmd.config.js') continue;
+      if (file === 'package.json' || file === 'package-lock.json' || file === 'yarn.lock' || file === 'pnpm-lock.yaml' || file === 'bun.lockb' || file === 'bun.lock') continue;
       const oldPath = path.resolve(CWD, file);
       const newPath = path.resolve(backupDir, file);
       await nativeFs.promises.rename(oldPath, newPath);
@@ -47,7 +51,18 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
    */
   const planBackupMoves = async (backupName: string): Promise<string[]> => {
     const files = await nativeFs.promises.readdir(CWD);
-    return files.filter((f) => f !== 'node_modules' && f !== '.git' && f !== backupName && f !== 'docmd.config.js');
+    return files.filter((f) =>
+      f !== 'node_modules' &&
+      f !== '.git' &&
+      f !== backupName &&
+      f !== 'docmd.config.js' &&
+      f !== 'package.json' &&
+      f !== 'package-lock.json' &&
+      f !== 'yarn.lock' &&
+      f !== 'pnpm-lock.yaml' &&
+      f !== 'bun.lockb' &&
+      f !== 'bun.lock'
+    );
   };
 
   /**
@@ -67,6 +82,62 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
     TUI.item('Config', JSON.stringify(docmdConfig));
     TUI.footer();
     TUI.info('No changes made. Re-run without --dry-run to apply.');
+  };
+
+  /**
+   * N-9: best-effort MkDocs `nav:` parser. MkDocs nav is a YAML
+   * nested list; we use a tiny line-by-line YAML-aware scanner
+   * (no `yaml` dependency) that handles the common shape:
+   *
+   *   nav:
+   *     - Home: index.md
+   *     - Guide:
+   *       - Getting Started: start.md
+   *       - Reference: ref.md
+   *
+   * Sections without an explicit file (`- Guide:` with no value) are
+   * kept as parents; their children are nested under `children`.
+   * Anything fancier (external links, multi-line strings, anchors)
+   * is left to the runtime auto-router.
+   */
+  const parseMkDocsNav = (rawYaml: string): any[] | null => {
+    const lines = rawYaml.split('\n');
+    const navIdx = lines.findIndex((l) => /^nav\s*:\s*$/.test(l));
+    if (navIdx === -1) return null;
+
+    const root: any[] = [];
+    const stack: { indent: number; items: any[] }[] = [{ indent: -1, items: root }];
+    for (let i = navIdx + 1; i < lines.length; i++) {
+      const line = lines[i];
+      // `- Title: file.md` (most common) OR `- Title:` (section header).
+      // The colon + value are optional. The title capture is non-greedy
+      // so it stops at the colon, and we strip a trailing `:` from the
+      // captured title (which happens when the line is `- Title:` with
+      // no file).
+      const m = line.match(/^(\s*)-\s+(.+?)(?::\s*(.+?))?\s*$/);
+      if (!m) continue;
+      const indent = m[1].length;
+      // Strip a trailing `:` from the title (which happens when the
+      // line is `- Title:` with no file value, the section-header
+      // shape in MkDocs).
+      const title = m[2].trim().replace(/:\s*$/, '');
+      const file = (m[3] || '').trim();
+      const item: any = file
+        ? { title, path: file.replace(/\.(md|markdown)$/i, '/') }
+        : { title };
+      while (stack.length > 1 && stack[stack.length - 1].indent >= indent) stack.pop();
+      const top = stack[stack.length - 1];
+      top.items.push(item);
+      if (i + 1 < lines.length) {
+        const next = lines[i + 1];
+        const nm = next.match(/^(\s+)-/);
+        if (nm && nm[1].length > indent) {
+          item.children = [];
+          stack.push({ indent, items: item.children });
+        }
+      }
+    }
+    return root.length > 0 ? root : null;
   };
 
   if (options.docusaurus) {
@@ -90,7 +161,15 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
     const titleMatch = rawConfig.match(/title:\s*['"]([^'"]+)['"]/);
     if (titleMatch) title = titleMatch[1];
 
-    const docmdConfig = { title, src: 'docs', out: 'dist', theme: { appearance: 'system' } };
+    // N-22: preserve the original Docusaurus staticDir if set (default
+    // is `static`). Falling back to `dist` only when the user hasn't
+    // overridden it — overwriting a `site/` directory because we
+    // hardcoded `dist` is the most common silent-clobber pattern.
+    let out = 'dist';
+    const staticDirMatch = rawConfig.match(/staticDir\s*:\s*['"]([^'"]+)['"]/);
+    if (staticDirMatch) out = staticDirMatch[1].replace(/^\.\//, '').replace(/\/$/, '') || 'static';
+
+    const docmdConfig = { title, src: 'docs', out, theme: { appearance: 'system' } };
     // N-3: dry-run must run BEFORE any side effects (ensureDir, rename).
     if (dryRun) {
       await printAndExitDryRun('Docusaurus', 'docusaurus-backup', docmdConfig);
@@ -136,7 +215,18 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
     const titleMatch = rawConfig.match(/^site_name:\s*['"]?([^'"\n]+)['"]?/m);
     if (titleMatch) title = titleMatch[1].trim();
 
-    const docmdConfig = { title, src: 'docs', out: 'dist', theme: { appearance: 'system' } };
+    // N-22: preserve the original `site_dir` (MkDocs default is `site`).
+    // N-9 (partial): also build a basic nav tree from MkDocs `nav:`.
+    let out = 'site';
+    const siteDirMatch = rawConfig.match(/^site_dir\s*:\s*['"]?([^'"\n]+)['"]?/m);
+    if (siteDirMatch) out = siteDirMatch[1].trim();
+    // N-9: parse a simple top-level nav. This is a best-effort translation;
+    // complex MkDocs nav trees (multi-level, with external links) fall
+    // back to auto-generated nav at runtime.
+    const nav = parseMkDocsNav(rawConfig);
+
+    const docmdConfig: any = { title, src: 'docs', out, theme: { appearance: 'system' } };
+    if (nav && nav.length > 0) docmdConfig.navigation = nav;
     // N-3: dry-run must run BEFORE any side effects (ensureDir, rename).
     if (dryRun) {
       await printAndExitDryRun('MkDocs', 'mkdocs-backup', docmdConfig);

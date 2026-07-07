@@ -123,6 +123,11 @@ addInProcess(
   'llms.txt sanitisation + TUI banner options (Slice F — T-Z10, T-Z11, N-13, N-16)',
   await import('./cli-contracts/llms-and-tui.test.js')
 );
+addInProcess(
+  'migrate-fix',
+  'Migration polish (Slice E — N-9, N-10, N-22)',
+  await import('./cli-contracts/migrate-fix.test.js')
+);
 
 // --- Section 2: Container parser (Phase 2 PR 1+2+3) ----------------------
 addExternal(
