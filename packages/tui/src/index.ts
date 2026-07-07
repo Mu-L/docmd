@@ -135,6 +135,13 @@ export const TUI = {
 
   banner: (logo: string = LOGO, version: string = PKG_VERSION) => {
     commitState();
+    // N-13 + N-16: respect both the NO_COLOR convention (de-facto
+    // standard for CLIs) and the explicit `DOCMD_NO_BANNER` env
+    // (lets users silence the ASCII art while keeping the version line
+    // if they prefer). The DOCMD_NO_BANNER check is a docmd-specific
+    // escape hatch since NO_COLOR is a colour convention, not a
+    // banner convention.
+    if (process.env.NO_COLOR || process.env.DOCMD_NO_BANNER) return;
     console.log(`\n${chalk.blue(logo)}`);
     console.log(`${chalk.dim(` v${version}`)}\n`);
   },
