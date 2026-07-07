@@ -23,6 +23,12 @@ import { normalizeNavPaths } from '@docmd/parser';
 /**
  * Filter out "ghost" versions - configured versions whose source directories
  * don't actually exist on disk. Mutates `config.versions.all` in place.
+ *
+ * T-Z6: if the *current* version's directory is missing, that's a hard
+ * error (not just a warning) — the current version is what users see
+ * by default, so a missing directory silently produces a 0-page build
+ * with no actionable message. The build aborts with a clear pointer
+ * to the missing directory and the version id.
  */
 export async function filterGhostVersions(config: any, CWD: string, isDev: boolean) {
   if (!config.versions?.all) return;
@@ -33,6 +39,17 @@ export async function filterGhostVersions(config: any, CWD: string, isDev: boole
     if (await fs.exists(vSrcDir)) {
       validVersions.push(v);
     } else {
+      // T-Z6: missing current version directory is a hard error.
+      // Old (non-current) versions are still soft-warns.
+      const isCurrent = v.id === config.versions.current;
+      if (isCurrent) {
+        throw new Error(
+          `Current version directory missing: ${vSrcDir} (version: ${v.id}). ` +
+          `The "current" version is what users see by default; the build cannot ` +
+          `continue without it. Either create the directory or point "current" ` +
+          `at a version that exists.`
+        );
+      }
       if (!isDev) TUI.warn(`Skipping missing version: ${v.id} (${v.dir})`);
     }
   }

@@ -113,6 +113,11 @@ addInProcess(
   'Source tools + page shape consistency (Slice C.3)',
   await import('./cli-contracts/source-tools.test.js')
 );
+addInProcess(
+  'i18n',
+  'i18n + workspace schema fixes (Slice D — M-6, T-Z6)',
+  await import('./cli-contracts/i18n.test.js')
+);
 
 // --- Section 2: Container parser (Phase 2 PR 1+2+3) ----------------------
 addExternal(

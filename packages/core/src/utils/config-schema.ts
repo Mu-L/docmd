@@ -295,6 +295,16 @@ export function normalizeConfig(userConfig: any) {
     config.plugins = config.plugins || {};
 
     // --- 6. Versioning Engine ---
+    // M-6: accept `config.versions.list` as an alias for `config.versions.all`.
+    // The original audit reported "i18n + explicit versions: 0 pages (silent)"
+    // — turns out the actual cause was a typo: users wrote `list` (a
+    // common shape for "list of versions") but the schema only accepted
+    // `all`, so the config branch was never entered and zero pages got
+    // built. Aliasing `list` to `all` here restores the user's config
+    // without changing the canonical key.
+    if (config.versions && Array.isArray(config.versions.list) && !Array.isArray(config.versions.all)) {
+        config.versions.all = config.versions.list;
+    }
     if (config.versions && Array.isArray(config.versions.all)) {
         if (!config.versions.current) {
             config.versions.current = config.versions.all[0]?.id || 'main';
