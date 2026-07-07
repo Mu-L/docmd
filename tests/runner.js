@@ -118,6 +118,11 @@ addInProcess(
   'i18n + workspace schema fixes (Slice D — M-6, T-Z6)',
   await import('./cli-contracts/i18n.test.js')
 );
+addInProcess(
+  'llms-and-tui',
+  'llms.txt sanitisation + TUI banner options (Slice F — T-Z10, T-Z11, N-13, N-16)',
+  await import('./cli-contracts/llms-and-tui.test.js')
+);
 
 // --- Section 2: Container parser (Phase 2 PR 1+2+3) ----------------------
 addExternal(
