@@ -34,10 +34,7 @@
       if (root === '') root = './';
       window.DOCMD_ROOT = root;
 
-      var siteRoot = "<%= siteRoot %>";
-      if (siteRoot && !siteRoot.endsWith('/')) siteRoot += '/';
-      if (siteRoot === '') siteRoot = './';
-      window.DOCMD_SITE_ROOT = siteRoot;
+      window.DOCMD_SITE_ROOT = "<%= siteRootAbs %>";
 
       window.DOCMD_APPEARANCE = "<%= appearance %>";
       window.DOCMD_VERSION_ROOT = "<%= versionRoot || '/' %>";
@@ -48,6 +45,8 @@
     <title>
       <%= pageTitle %><% if (siteTitle && pageTitle !== siteTitle && !(frontmatter && frontmatter.titleAppend === false)) { %> : <%= siteTitle %><% } %>
     </title>
+
+    <base href="<%= siteRootAbs %>">
     <%- faviconLinkHtml || '' %>
     <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-main.css?v=<%= buildHash %>">
     <% if (config.theme?.codeHighlight !==false) { const isDarkDefault=appearance==='dark' ; %>
