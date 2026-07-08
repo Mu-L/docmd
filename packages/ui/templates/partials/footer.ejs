@@ -25,10 +25,10 @@
           <div class="footer-columns">
             <% footerConfig.columns.forEach(col => { %>
               <div class="footer-column">
-                <span class="footer-column-title"><%= col.title %></span>
+                <span class="footer-column-title"><%= typeof t === 'function' ? t(col.title) : col.title %></span>
                 <ul>
                   <% col.links.forEach(link => { %>
-                    <li><a href="<%= link.external ? link.url : buildRelativeUrl(link.url) %>" <%= link.external ? 'target="_blank" rel="noopener"' : '' %>><%= link.text %></a></li>
+                    <li><a href="<%= link.external ? link.url : buildRelativeUrl(link.url) %>" <%= link.external ? 'target="_blank" rel="noopener"' : '' %>><%= typeof t === 'function' ? t(link.text) : link.text %></a></li>
                   <% }) %>
                 </ul>
               </div>
