@@ -735,3 +735,80 @@ test('edge case: warnings preserve insertion order across severity', () => {
   assert.equal(r.warnings[1].line, 5);
   assert.equal(r.warnings[2].line, 7);
 });
+
+// ─────────────────────────────────────────────────────────────────────
+// 8. Fenced code block tracking (F6 — normaliser must not interpret
+//    `:::` lines that appear inside a ``` or ~~~ fence)
+// ─────────────────────────────────────────────────────────────────────
+
+test('F6: ::: lines inside a ``` fence are not classified as opens/closes', () => {
+  // The docs site has pages that show `::: card ... :::` examples inside
+  // markdown code fences. Without fence tracking the normaliser treats the
+  // fenced `::: card` as a real open, pushes it on the stack, and reports
+  // a spurious "Unclosed <card>" error when EOF arrives.
+  const src = [
+    '# Buttons',                        // 1
+    '',                                  // 2
+    '```markdown',                       // 3: fence open
+    '::: card "Setup"',                 // 4: literal text in fence
+    '    ::: button "Begin" ../../x',   // 5: literal text in fence
+    ':::',                              // 6: literal text in fence
+    '```',                              // 7: fence close
+    '',                                  // 8
+    '::: callout',                      // 9: real open
+    'body',                             // 10
+    ':::'                               // 11: real close
+  ].join('\n') + '\n';
+  const r = normaliseContainers(src);
+  // No warnings: the fenced ::: lines are not counted, the real callout
+  // at L9–L11 is balanced.
+  assert.equal(r.warnings.length, 0);
+  // Output is unchanged — the fence contents pass through verbatim.
+  assert.equal(r.source, src);
+});
+
+test('F6: ~~~ fences are also tracked', () => {
+  // CommonMark allows ~~~ as an alternative fence marker.
+  const src = [
+    '~~~markdown',                      // 1: fence open
+    '::: card "x"',                     // 2: literal
+    ':::',                              // 3: literal
+    '~~~',                              // 4: fence close
+    '::: callout',                      // 5: real open
+    ':::'                               // 6: real close
+  ].join('\n') + '\n';
+  const r = normaliseContainers(src);
+  assert.equal(r.warnings.length, 0);
+  assert.equal(r.source, src);
+});
+
+test('F6: a real ::: card outside a fence still reports the unclosed error', () => {
+  // Regression guard: fence tracking must not swallow real container errors
+  // that occur outside any fence.
+  const src = [
+    '```markdown',                      // 1: fence open
+    '::: card "fenced"',                // 2: literal
+    '```',                              // 3: fence close
+    '::: card "real"',                  // 4: real open, never closed
+    'body'                              // 5
+  ].join('\n') + '\n';
+  const r = normaliseContainers(src);
+  const errors = r.warnings.filter((w) => w.severity === 'error');
+  assert.equal(errors.length, 1);
+  assert.match(errors[0].message, /Unclosed.*card/);
+  assert.equal(errors[0].line, 4);
+});
+
+test('F6: mismatched fence markers (``` open vs ~~~ close) do not close the fence', () => {
+  // CommonMark says a fence closes only on the same marker that opened it.
+  const src = [
+    '```markdown',                      // 1: ``` fence open
+    '::: card "x"',                     // 2: literal
+    '~~~',                              // 3: NOT a close (different marker)
+    '::: card "y"',                     // 4: literal (still inside fence)
+    '```'                               // 5: real close
+  ].join('\n') + '\n';
+  const r = normaliseContainers(src);
+  assert.equal(r.warnings.length, 0);
+  assert.equal(r.source, src);
+});
