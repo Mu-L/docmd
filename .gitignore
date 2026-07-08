@@ -24,6 +24,7 @@ _backup/
 _documentation/
 temp-*/
 .cache/
+.vscode/
 
 # Environment
 .env*
