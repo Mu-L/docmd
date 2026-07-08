@@ -133,6 +133,11 @@ addInProcess(
   'Plugin asset pipeline (PAA-1, PAA-2, PAA-3 — async/await + capability)',
   await import('./cli-contracts/plugin-assets-pipeline.test.js')
 );
+addInProcess(
+  'asset-base-url',
+  'Asset base-URL + engine-key (URL-1, URL-2 — <base> + KNOWN_KEYS)',
+  await import('./cli-contracts/asset-base-url.test.js')
+);
 
 // --- Section 2: Container parser (Phase 2 PR 1+2+3) ----------------------
 addExternal(

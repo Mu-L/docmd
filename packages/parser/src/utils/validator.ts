@@ -20,6 +20,8 @@ const KNOWN_KEYS = [
   // V3 Modern Labels
   'title', 'url', 'src', 'out', 'base', 'layout',
   'versions', 'redirects', 'notFound', 'projects',
+  // Engine selection (e.g. "rust" for the rust preview engine)
+  'engine', 'engines',
 
   // V2 Legacy Labels
   'siteTitle', 'siteUrl', 'srcDir', 'outputDir',
