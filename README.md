@@ -187,9 +187,7 @@ docmd live           # browser-based Live Editor
 docmd init           # scaffold a new docmd.config.json in the current folder
 docmd stop           # stop any running `docmd dev` / `docmd live` servers
 docmd doctor         # pre-flight check: config + plugin install status
-docmd migrate        # import from Docusaurus, VitePress, MkDocs, or Starlight
-docmd migrate --upgrade  # translate a legacy docmd.config to the modern schema
-docmd migrate --dry-run  # preview a migration without writing anything
+docmd migrate        # migrate to docmd from Docusaurus, VitePress, MkDocs, or Starlight
 docmd deploy         # generate config for Docker, NGINX, Caddy, Vercel, Netlify
 docmd validate       # check all internal links
 docmd mcp            # run as an MCP server over stdio
@@ -208,9 +206,9 @@ Core functionality is powered by a robust plugin system. The essentials are incl
 | `git` | ✅ Core | Git commit history and last-updated dates |
 | `analytics` | ✅ Core | Lightweight analytics integration |
 | `llms` | ✅ Core | AI context generation (`llms.txt` / `llms-full.txt`) |
+| `okf` | ✅ Core | Open Knowledge Format bundles for AI agents (per-locale) |
 | `mermaid` | ✅ Core | Mermaid diagram support |
 | `openapi` | ✅ Core | Build-time OpenAPI 3.x spec renderer |
-| `okf` | ✅ Core | Open Knowledge Format bundles for AI agents (per-locale) |
 | `pwa` | ➕ Optional | Progressive Web App — offline navigation |
 | `threads` | ➕ Optional | Inline discussion threads *(by @svallory)* |
 | `math` | ➕ Optional | KaTeX / LaTeX math rendering |
