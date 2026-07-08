@@ -128,6 +128,11 @@ addInProcess(
   'Migration polish (Slice E — N-9, N-10, N-22)',
   await import('./cli-contracts/migrate-fix.test.js')
 );
+addInProcess(
+  'plugin-assets-pipeline',
+  'Plugin asset pipeline (PAA-1, PAA-2, PAA-3 — async/await + capability)',
+  await import('./cli-contracts/plugin-assets-pipeline.test.js')
+);
 
 // --- Section 2: Container parser (Phase 2 PR 1+2+3) ----------------------
 addExternal(
