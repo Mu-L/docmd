@@ -772,11 +772,6 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
         currentPagePath: navPath,
         outputPrefix,
         siteRootAbs: (() => {
-          // Absolute site root, e.g. '/' for the default project or
-          // '/search/' for a workspace sub-site. Always ends in '/'.
-          // Templates use this for <base href="..."> and
-          // window.DOCMD_SITE_ROOT so that relative URL resolution is
-          // stable whether the document URL ends in '/' or not.
           let root = '/';
           if (config._activePrefix && config._activePrefix !== '/') {
             root = config._activePrefix;
