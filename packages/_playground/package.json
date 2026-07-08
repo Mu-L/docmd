@@ -1,11 +1,13 @@
 {
   "name": "@docmd/playground",
-  "version": "0.8.9",
+  "version": "0.8.10",
   "private": true,
   "dependencies": {
     "@docmd/core": "workspace:*",
     "@docmd/plugin-math": "workspace:*",
-    "@docmd/template-summer": "workspace:*"
+    "@docmd/template-summer": "workspace:*",
+    "@huggingface/transformers": "^4.2.0",
+    "onnxruntime-node": "^1.26.0"
   },
   "scripts": {
     "dev": "node ../core/dist/bin/docmd.js dev",
