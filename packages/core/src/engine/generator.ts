@@ -227,7 +227,13 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
   // Plugin Assets
   if (hooks.assets) {
     for (const getAssetsFn of hooks.assets) {
-      const assets = getAssetsFn();
+      // hooks.assets entries are async wrappers; missing the await here
+      // would make `assets` a Promise and silently skip the whole tag
+      // generation loop (Array.isArray(Promise) === false). The
+      // user-visible symptom is "plugin <script>/<link> tags never appear
+      // in rendered HTML" — search modal can't open, git commit history
+      // widget never initialises, mermaid/math never hydrate.
+      const assets = await getAssetsFn();
       if (Array.isArray(assets)) {
         for (const asset of assets) {
           let tagGen;

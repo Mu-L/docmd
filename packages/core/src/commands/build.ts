@@ -146,7 +146,12 @@ export async function buildSite(configPath: string, opts: any = {}) {
       await prepareTemplateAssets(config, targetOutDir);
       if (hooks.assets) {
         for (const getAssetsFn of hooks.assets) {
-          const assets = getAssetsFn();
+          // hooks.assets entries are async wrappers; missing the await here
+          // would make `assets` a Promise and silently skip the whole copy
+          // loop (Array.isArray(Promise) === false). The user-visible symptom
+          // is "plugin assets never land in site/" — search, git, mermaid,
+          // math, openapi CSS/JS all missing, search modal does not open.
+          const assets = await getAssetsFn();
           if (Array.isArray(assets)) {
             for (const asset of assets) {
               // Backwards-compat: legacy assets used `src`/`dest` and
