@@ -198,18 +198,18 @@ La fonctionnalité principale repose sur un système de plugins robuste. L'essen
 
 | Plugin | Statut | Description |
 | :--- | :---: | :--- |
-| `search` | ✅ Cœur | Recherche full-text hors ligne avec correspondance approximative |
-| `seo` | ✅ Cœur | Balises SEO et métadonnées Open Graph |
-| `sitemap` | ✅ Cœur | Génère `sitemap.xml` |
-| `git` | ✅ Cœur | Historique des commits Git et dates de dernière mise à jour |
-| `analytics` | ✅ Cœur | Intégration légère d'analytics |
-| `llms` | ✅ Cœur | Génération du contexte IA (`llms.txt` / `llms-full.txt`) |
-| `mermaid` | ✅ Cœur | Support des diagrammes Mermaid |
-| `openapi` | ✅ Cœur | Rendu de spécification OpenAPI 3.x au build |
-| `okf` | ✅ Core | Bundles Open Knowledge Format pour agents IA (par locale) |
-| `pwa` | ➕ Optionnel | Progressive Web App — navigation hors ligne |
-| `threads` | ➕ Optionnel | Fils de discussion inline *(par @svallory)* |
-| `math` | ➕ Optionnel | Rendu mathématique KaTeX / LaTeX |
+| `search` | Cœur | Recherche full-text hors ligne avec correspondance approximative |
+| `seo` | Cœur | Balises SEO et métadonnées Open Graph |
+| `sitemap` | Cœur | Génère `sitemap.xml` |
+| `git` | Cœur | Historique des commits Git et dates de dernière mise à jour |
+| `analytics` | Cœur | Intégration légère d'analytics |
+| `llms` | Cœur | Génération du contexte IA (`llms.txt` / `llms-full.txt`) |
+| `mermaid` | Cœur | Support des diagrammes Mermaid |
+| `openapi` | Cœur | Rendu de spécification OpenAPI 3.x au build |
+| `okf` | Core | Bundles Open Knowledge Format pour agents IA (par locale) |
+| `pwa` | Optionnel | Progressive Web App — navigation hors ligne |
+| `threads` | Optionnel | Fils de discussion inline *(par @svallory)* |
+| `math` | Optionnel | Rendu mathématique KaTeX / LaTeX |
 
 Installer des plugins optionnels :
 
