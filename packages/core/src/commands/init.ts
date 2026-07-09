@@ -241,7 +241,6 @@ The CLI is idempotent — running it again updates the skills to latest:
 npx docmd-skills <dir>          # updates all three
 npx docmd-skills remove <dir>   # deletes all three
 \`\`\`
-
 `;
 
 const defaultPackageJson = {
