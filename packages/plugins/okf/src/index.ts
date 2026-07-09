@@ -87,7 +87,7 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
 
   const siteUrl = (config.url || '').replace(/\/$/, '');
   const warnings: string[] = [];
-  // 0.8.8: count per-page "missing type" so the TUI shows ONE summary
+  // Count per-page "missing type" so the TUI shows ONE summary
   // line instead of N per-page `SKIP` lines. The lint-report.txt still
   // lists every page so detail isn't lost.
   let missingTypeCount = 0;
