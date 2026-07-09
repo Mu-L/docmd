@@ -448,12 +448,11 @@ describe('brute: 12. versioning + i18n', () => {
     ];
     await flushPages(s.srcDir, pages);
 
-    // CASE A: localeStrategy='folders' (explicit, was the old default
-    // before 0.8.8) + versionStrategy='latest-only' (still default).
+    // CASE A: localeStrategy='folders' (explicit opt-in) +
+    // versionStrategy='latest-only' (default).
     // → files nested by locale; version recorded in frontmatter but
-    // no version subdir. 0.8.8 made 'default-only' the new default
-    // for localeStrategy, so this case now requires the explicit
-    // `folders` opt-in.
+    // no version subdir. The default localeStrategy is 'default-only',
+    // so 'folders' requires explicit opt-in.
     const ctxA = buildCtx({
       config: {
         title: 'I18N', url: 'https://example.com',
@@ -479,7 +478,7 @@ describe('brute: 12. versioning + i18n', () => {
     await onPostBuild(ctxA);
 
     const rootA = path.join(s.bundleDir, 'a', 'okf');
-    // 0.8.8: default-locale (en) files sit at the bundle root
+    // Default-locale (en) files sit at the bundle root
     // (no `en/` subfolder). Non-default locales (hi, zh) are nested
     // under `<locale>/`. No version subfolders (default
     // `versionStrategy: 'latest-only'`).
@@ -518,7 +517,7 @@ describe('brute: 12. versioning + i18n', () => {
     const hipage = await fs.readFile(path.join(rootA, 'hi/concepts/hi-page.md'), 'utf8');
     assert.match(hipage, /locale: hi/);
 
-    // CASE A2: default `localeStrategy: 'default-only'` (the 0.8.8 default)
+    // CASE A2: default `localeStrategy: 'default-only'`
     // → only the default-locale pages make it into the bundle; the bundle
     // sits at the root (no `<locale>/` subfolder).
     const ctxA2 = buildCtx({
