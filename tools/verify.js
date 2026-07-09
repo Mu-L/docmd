@@ -45,7 +45,7 @@ if (!isCI) {
 }
 
 // 2. Run the categorised test suite (tests/runner.js replaced the
-// legacy scripts/failsafe.mjs after the tests/scripts split in 0.8.8).
+// legacy scripts/failsafe.mjs after the tests/scripts split).
 // Forwarding arguments so --skip-setup / future flags reach the runner.
 const failsafeArgs = args.filter(a => a !== '--link' && a !== '--skip-header').join(' ');
 run(`node tests/runner.js ${failsafeArgs}`, false);

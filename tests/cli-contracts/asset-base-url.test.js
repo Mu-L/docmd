@@ -5,7 +5,7 @@
  * Asset base-URL + engine-key regression tests
  *
  * Two related issues that broke sub-project (workspace) sites after
- * the 0.8.7 / 0.8.8 layout changes:
+ * the layout changes (relativePathToRoot + base href):
  *
  *   URL-1  `relativePathToRoot` is computed as `./` for a directory
  *          page (e.g. `/search/index.html`) but the document can

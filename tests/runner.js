@@ -183,21 +183,21 @@ addExternal(
   ['tests/feature-integration.test.js']
 );
 
-// --- Section 6: OKF plugin (0.8.8) ---------------------------------------
+// --- Section 6: OKF plugin ------------------------------------------------
 addExternal(
   'okf-plugin',
-  'OKF plugin (Open Knowledge Format — 0.8.8)',
+  'OKF plugin (Open Knowledge Format bundle generator)',
   'pnpm',
   ['--filter', '@docmd/plugin-okf', 'test']
 );
 
-// --- Section 7: LLMS plugin (0.8.8) ---------------------------------------
+// --- Section 7: LLMS plugin -----------------------------------------------
 // The LLMS plugin doesn't have a `pnpm test` script yet, so the runner
-// invokes the test runner directly. New 0.8.8 default-locale + i18n
-// opt-in tests live at packages/plugins/llms/tests/llms.test.js.
+// invokes the test runner directly. Default-locale + i18n opt-in tests
+// live at packages/plugins/llms/tests/llms.test.js.
 addExternal(
   'llms-plugin',
-  'LLMS plugin (llms.txt / llms-full.txt / llms.json — 0.8.8 default-locale + i18n opt-in)',
+  'LLMS plugin (llms.txt / llms-full.txt / llms.json — default-locale + i18n opt-in)',
   'node',
   ['--test', 'packages/plugins/llms/tests/llms.test.js']
 );
