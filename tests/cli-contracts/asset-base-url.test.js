@@ -199,6 +199,70 @@ export const test = runTestFile({
       assert(!/Unknown property "engines"/.test(result.output),
         'URL-2b: no "Unknown property engines" warning');
     }
+
+    // URL-3: project switcher must emit a directory-form href (with
+    // trailing slash) for workspace sub-sites. A previous version of
+    // project-switcher.ejs used a manual `replace(/\/+$/, '')` that
+    // stripped the trailing slash, producing /search (file URL)
+    // instead of /search/ (dir URL). That broke the <base href>
+    // relative resolution on hosts that serve the directory index
+    // without redirecting to the slash form.
+    {
+      const layoutPath = path.resolve(import.meta.dirname, '..', '..', 'packages', 'ui', 'templates', 'partials', 'project-switcher.ejs');
+      const source = fs.readFileSync(layoutPath, 'utf8');
+      // Source must NOT contain the old `replace(/\/+$/, '')` pattern
+      // that was stripping the trailing slash.
+      const oldPattern = "replace(/\\\\/+$/, ''";
+      assert(!source.includes(oldPattern),
+        'URL-3: project-switcher.ejs no longer uses replace(/\\/+$/, "") that strips trailing slash');
+    }
+
+    // URL-3b: end-to-end check that the switcher emits the correct
+    // href for a workspace sub-site.
+    {
+      const proj = setup('asset-base-url-project-switcher-href');
+      fs.mkdirSync(path.join(proj, 'docs-main'), { recursive: true });
+      writeFile(proj, 'docs-main/index.md', '# Main\n');
+      writeFile(proj, 'docmd-main/docmd.config.json', JSON.stringify({
+        title: 'URL-3b Main', src: '.', out: '../site'
+      }, null, 2) + '\n');
+      fs.mkdirSync(path.join(proj, 'docs-search'), { recursive: true });
+      writeFile(proj, 'docs-search/index.md', '# Search\n');
+      writeFile(proj, 'docmd-search/docmd.config.json', JSON.stringify({
+        title: 'URL-3b Search', src: '.', out: '../site'
+      }, null, 2) + '\n');
+      writeFile(proj, 'docmd.config.json', JSON.stringify({
+        workspace: {
+          projects: [
+            { title: 'main', prefix: '/', src: './docs-main' },
+            { title: 'search', prefix: '/search', src: './docs-search' }
+          ]
+        }
+      }, null, 2) + '\n');
+
+      const result = build(proj);
+      assert(result.ok, 'URL-3b: workspace build for switcher test succeeds');
+      const mainHtml = fs.readFileSync(path.join(proj, 'site/index.html'), 'utf8');
+      // Find every project-switcher-item link and capture { href, title }.
+      // The href is protocol-relative (//search/) because buildAbsoluteUrl
+      // normalises the empty base to '/', which combines with /search to
+      // //search. Browsers treat // as the same-scheme prefix, so this is
+      // equivalent to /search/ in absolute terms.
+      const switcherHrefs = Array.from(mainHtml.matchAll(/<a\s+href="([^"]+)"\s+class="project-switcher-item[^"]*"[^>]*>([\s\S]*?)<\/a>/g))
+        .map(m => ({ href: m[1], title: (m[2].match(/<span class="project-title">([^<]+)<\/span>/) || [])[1] }));
+      const searchHref = switcherHrefs.find(h => h.title === 'search');
+      assert(searchHref, 'URL-3b: project switcher has a link to "search" sub-site');
+      // The previous bug emitted /search (no slash) which made the
+      // browser treat the URL as a file when npx serve served the
+      // directory index. The fix keeps the trailing slash.
+      assert(searchHref && /\/search\/$/.test(searchHref.href),
+        `URL-3b: project switcher link to /search sub-site ends with /search/ (got: ${searchHref?.href})`);
+      // The root project link should be "/" (no extra trailing slash
+      // for the root). buildAbsoluteUrl collapses the // form to //.
+      const mainHref = switcherHrefs.find(h => h.title === 'main');
+      assert(mainHref && /^\/+$/.test(mainHref.href),
+        `URL-3b: project switcher link to root project is "/" (got: ${mainHref?.href})`);
+    }
   }
 });
 
