@@ -176,8 +176,6 @@ docmd is built for the way documentation is read and used today:
 - Plugin system for extending core behaviour (per-hook return-type validation, async-friendly)
 - Full theming support, built-in templates, custom CSS/JS, light/dark mode
 
-> **New in 0.8.10** — `docmd doctor` pre-flight check, `docmd init`/`docmd stop` lifecycle, `migrate --dry-run`/`--upgrade`, semantic search via `docmd-search`, OKF bundles, `NO_COLOR` and `DOCMD_NO_BANNER` env flags. See the [release notes](https://github.com/docmd-io/docmd/releases/tag/v0.8.10) for the full list.
-
 ## CLI
 
 ```bash
