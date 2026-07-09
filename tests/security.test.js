@@ -452,7 +452,7 @@ console.log('\n🔒 Test S11: ws-origin-guard unit checks (Phase 1.D, N-S1)');
   assert('LAN allowlist still rejects 10.0.0.1', lanReject === false);
 })();
 
-// ─── TEST S12: init makes NO network calls (Phase 1.D revised, T-S5) ─────
+// ─── TEST S12: init makes NO network calls and writes no SKILL.md (Phase 1.D revised, T-S5) ─
 console.log('\n🔒 Test S12: init makes no network calls (Phase 1.D revised, T-S5)');
 (async () => {
   // Snapshot network calls by intercepting global fetch.
@@ -468,16 +468,23 @@ console.log('\n🔒 Test S12: init makes no network calls (Phase 1.D revised, T-
 
   try {
     // Run init in-process via the compiled CLI.
-    // T-S5 revised (0.8.8): docmd-skills is now an npm package; init never
-    // fetches SKILL.md from GitHub. Verify the absolute zero-network property.
+    // T-S5 revised (0.8.10): docmd-skills is now an npm package; init
+    // no longer writes a local SKILL.md (the full skill set is installed
+    // separately via `npx docmd-skills`). The security property under
+    // test is the absolute zero-network invariant — init must never
+    // touch the network, regardless of what files it does or doesn't write.
     const { initProject } = await import(path.resolve(import.meta.dirname, '../packages/core/dist/commands/init.js'));
     process.chdir(dir);
     await initProject({ force: true });
     assert('init makes zero network calls', fetchCalls === 0, `fetchCalls=${fetchCalls}`);
-    assert('SKILL.md was written from bundled content', fs.existsSync(path.join(dir, 'SKILL.md')));
-    const skillContent = fs.readFileSync(path.join(dir, 'SKILL.md'), 'utf8');
-    assert('SKILL.md does not mention raw.githubusercontent.com', !/raw\.githubusercontent\.com/.test(skillContent));
-    assert('SKILL.md mentions npx docmd-skills as separate install path', /npx docmd-skills/.test(skillContent));
+    // The local SKILL.md is no longer scaffolded. Users get the full
+    // skill set by running `npx docmd-skills <dir>` separately. The dim
+    // hint in init points them to that command, but the file is not
+    // touched at init time.
+    assert('Use `npx docmd-skills` to install SKILL.md for docmd', !fs.existsSync(path.join(dir, 'SKILL.md')));
+    // The core scaffold (config, index.md, skills.md) is still written.
+    assert('docs/index.md was written', fs.existsSync(path.join(dir, 'docs/index.md')));
+    assert('docs/skills.md was written', fs.existsSync(path.join(dir, 'docs/skills.md')));
   } finally {
     globalThis.fetch = originalFetch;
   }
