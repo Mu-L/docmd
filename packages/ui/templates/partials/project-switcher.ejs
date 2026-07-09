@@ -51,9 +51,7 @@ if (locals.workspace && workspace.projects && workspace.projects.length > 0) {
         : normalizedBase;
 
       const projectPfx = project.prefix.startsWith('/') ? project.prefix : '/' + project.prefix;
-      let absoluteHref = (typeof buildAbsoluteUrl === 'function')
-        ? buildAbsoluteUrl(workspaceBase, '', '', projectPfx)
-        : (workspaceBase + projectPfx) || '/';
+      let absoluteHref = (workspaceBase + projectPfx).replace(/\/{2,}/g, '/') || '/';
       if (project.prefix !== '/' && !absoluteHref.endsWith('/')) {
         absoluteHref += '/';
       }
