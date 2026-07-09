@@ -198,18 +198,18 @@ Die Kern-Funktionalität wird von einem robusten Plugin-System bereitgestellt. D
 
 | Plugin | Status | Beschreibung |
 | :--- | :---: | :--- |
-| `search` | ✅ Kern | Offline-Volltextsuche mit Fuzzy-Matching |
-| `seo` | ✅ Kern | SEO-Tags und Open-Graph-Metadaten |
-| `sitemap` | ✅ Kern | Generiert `sitemap.xml` |
-| `git` | ✅ Kern | Git-Commit-Historie und letzte Aktualisierungsdaten |
-| `analytics` | ✅ Kern | Schlanke Analytics-Integration |
-| `llms` | ✅ Kern | AI-Kontext-Generierung (`llms.txt` / `llms-full.txt`) |
-| `mermaid` | ✅ Kern | Mermaid-Diagramm-Unterstützung |
-| `openapi` | ✅ Kern | Build-Time-OpenAPI-3.x-Spec-Renderer |
-| `okf` | ✅ Core | Open Knowledge Format Bundles für KI-Agenten (pro Locale) |
-| `pwa` | ➕ Optional | Progressive Web App — Offline-Navigation |
-| `threads` | ➕ Optional | Inline-Diskussions-Threads *(von @svallory)* |
-| `math` | ➕ Optional | KaTeX / LaTeX-Mathematik-Rendering |
+| `search` | Kern | Offline-Volltextsuche mit Fuzzy-Matching |
+| `seo` | Kern | SEO-Tags und Open-Graph-Metadaten |
+| `sitemap` | Kern | Generiert `sitemap.xml` |
+| `git` | Kern | Git-Commit-Historie und letzte Aktualisierungsdaten |
+| `analytics` | Kern | Schlanke Analytics-Integration |
+| `llms` | Kern | AI-Kontext-Generierung (`llms.txt` / `llms-full.txt`) |
+| `mermaid` | Kern | Mermaid-Diagramm-Unterstützung |
+| `openapi` | Kern | Build-Time-OpenAPI-3.x-Spec-Renderer |
+| `okf` | Core | Open Knowledge Format Bundles für KI-Agenten (pro Locale) |
+| `pwa` | Optional | Progressive Web App — Offline-Navigation |
+| `threads` | Optional | Inline-Diskussions-Threads *(von @svallory)* |
+| `math` | Optional | KaTeX / LaTeX-Mathematik-Rendering |
 
 Optionale Plugins installieren:
 
