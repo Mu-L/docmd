@@ -4,7 +4,7 @@
  *
  * LLMS plugin — i18n opt-in tests
  *
- * The 0.8.8 default writes `llms.txt` / `llms-full.txt` / `llms.json`
+ * The default behaviour writes `llms.txt` / `llms-full.txt` / `llms.json`
  * for the **default locale only**. Multi-locale output is opt-in via
  * `plugins.llms.i18n: true`, which writes per-locale files
  * (`llms.<locale>.txt`, etc.).
@@ -32,7 +32,7 @@ describe('plugin descriptor', () => {
   });
 });
 
-describe('onPostBuild — 0.8.8 default behaviour', () => {
+describe('onPostBuild — default behaviour (default locale only)', () => {
   let tmpDir;
   before(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'llms-test-'));
