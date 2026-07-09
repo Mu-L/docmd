@@ -48,6 +48,18 @@ const only = (() => {
   return flag.slice('--only='.length).split(',').filter(Boolean);
 })();
 
+// `tools/verify.js` forwards `--skip-setup` to the runner in CI
+// (the install + build steps run before verify). The runner does
+// not need any setup work itself, so this is a no-op — we just
+// drop it from the arg list so it does not leak into test files
+// or show up as an unrecognised flag. Add other verify-only flags
+// here as the verify script grows.
+const _SKIP_FLAGS = new Set(['--skip-setup']);
+for (const f of _SKIP_FLAGS) {
+  const i = args.indexOf(f);
+  if (i !== -1) args.splice(i, 1);
+}
+
 // ---------------------------------------------------------------------------
 // Test file registry — order matters.
 //   - For in-process tests, the entry is the imported module.
