@@ -198,18 +198,18 @@ Core functionality is powered by a robust plugin system. The essentials are incl
 
 | Plugin | Status | Description |
 | :--- | :---: | :--- |
-| `search` | ✅ Core | Offline full-text search (keyword + optional semantic via `docmd-search`) |
-| `seo` | ✅ Core | SEO tags and Open Graph metadata |
-| `sitemap` | ✅ Core | Generates `sitemap.xml` |
-| `git` | ✅ Core | Git commit history and last-updated dates |
-| `analytics` | ✅ Core | Lightweight analytics integration |
-| `llms` | ✅ Core | AI context generation (`llms.txt` / `llms-full.txt`) |
-| `okf` | ✅ Core | Open Knowledge Format bundles for AI agents (per-locale) |
-| `mermaid` | ✅ Core | Mermaid diagram support |
-| `openapi` | ✅ Core | Build-time OpenAPI 3.x spec renderer |
-| `pwa` | ➕ Optional | Progressive Web App — offline navigation |
-| `threads` | ➕ Optional | Inline discussion threads *(by @svallory)* |
-| `math` | ➕ Optional | KaTeX / LaTeX math rendering |
+| `search` | Core | Offline full-text search (keyword + optional semantic via `docmd-search`) |
+| `seo` | Core | SEO tags and Open Graph metadata |
+| `sitemap` | Core | Generates `sitemap.xml` |
+| `git` | Core | Git commit history and last-updated dates |
+| `analytics` | Core | Lightweight analytics integration |
+| `llms` | Core | AI context generation (`llms.txt` / `llms-full.txt`) |
+| `okf` | Core | Open Knowledge Format bundles for AI agents (per-locale) |
+| `mermaid` | Core | Mermaid diagram support |
+| `openapi` | Core | Build-time OpenAPI 3.x spec renderer |
+| `pwa` | Optional | Progressive Web App — offline navigation |
+| `threads` | Optional | Inline discussion threads *(by @svallory)* |
+| `math` | Optional | KaTeX / LaTeX math rendering |
 
 Install optional plugins:
 
