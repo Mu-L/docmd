@@ -57,6 +57,18 @@
       const item = navTrigger.closest('li.collapsible');
       const isChevron = navTrigger.classList.contains('collapse-icon-wrapper');
       const isDummySpan = navTrigger.tagName !== 'A';
+
+      // Offline-mode safety (issue #164): under file:// the SPA click handler
+      // is not registered (initializeSPA short-circuits at line 581), so this
+      // is the only click handler that runs. closest('.nav-group') can walk
+      // past an empty-class nested <a> and match the parent <li class="nav-group">;
+      // navTrigger.tagName then equals 'LI', isDummySpan is true, and the
+      // preventDefault below would swallow the click and block the default
+      // <a href> navigation. Skip the toggle in that exact case so the click
+      // reaches the inner link's default behaviour. Non-offline builds keep
+      // their existing SPA-fall-through path unchanged — the gate only fires
+      // when location.protocol === 'file:' AND the matched element is an LI
+      // (never an A, span.nav-group, or chevron).
       const isOffline = location.protocol === 'file:';
       const matchedParentLi = navTrigger.tagName === 'LI';
       const shouldToggle = (isChevron || isDummySpan) && item && !(isOffline && matchedParentLi);

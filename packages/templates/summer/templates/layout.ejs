@@ -32,6 +32,8 @@
   <meta name="theme-color" content="#13110d" media="(prefers-color-scheme: dark)">
   <title><%= pageTitle %><% if (siteTitle && pageTitle !== siteTitle) { %> · <%= siteTitle %><% } %></title>
 
+  <base href="<%= siteRootAbs %>">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
@@ -45,6 +47,7 @@
   <script>
     window.DOCMD_TEMPLATE = 'summer';
     window.DOCMD_ROOT = "<%= relativePathToRoot %>" || './';
+    window.DOCMD_SITE_ROOT = "<%= siteRootAbs %>";
     window.DOCMD_APPEARANCE = "<%= appearance %>";
     window.DOCMD_VERSION_ROOT = "<%= locals.versionRoot || '/' %>";
     window.DOCMD_BASE = "<%= config.base || '/' %>";

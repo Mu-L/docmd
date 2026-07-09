@@ -461,7 +461,18 @@ async function installPlugin(pluginInput: string, opts: { verbose?: boolean } = 
       TUI.step(isTemplate ? 'Template already configured' : 'Plugin already configured', 'SKIP', TUI.blue);
     }
     TUI.footer();
-    TUI.success(isTemplate ? 'Template successfully installed and activated.' : 'Plugin successfully installed and activated.');
+    // M-14: the final success message must reflect what actually happened.
+    // When the plugin was already configured, the config was untouched —
+    // calling that "successfully installed" is misleading. Branch on the
+    // `injected` flag from the config editor and emit one of three
+    // messages: new install, already configured, or core-plugin (which
+    // is handled above with a hard error so we never reach this line
+    // for that case).
+    if (injected) {
+      TUI.success(isTemplate ? 'Template successfully installed and activated.' : 'Plugin successfully installed and activated.');
+    } else {
+      TUI.info(isTemplate ? 'Template was already configured. Nothing changed.' : 'Plugin was already configured. Nothing changed.');
+    }
 
   } catch (err: any) {
     TUI.step(packageName, 'FAIL');

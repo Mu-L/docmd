@@ -18,6 +18,7 @@ import fs from 'fs/promises';
 import { fileURLToPath } from 'node:url';
 import { build } from './build.js';
 import { TUI } from '@docmd/tui';
+import { safePath as canonicalSafePath } from '@docmd/api';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -65,7 +66,23 @@ async function start() {
     let safePath = path.normalize(req.url!).replace(/^(\.\.[\/\\])+/, '').split('?')[0].split('#')[0];
     if (safePath === '/' || safePath === '\\') safePath = 'index.html';
 
-    let filePath = path.join(publicDir, safePath);
+    // D-H6: use the canonical safePath from @docmd/api to resolve the
+    // requested path against the public dir, instead of relying on
+    // path.join + the ad-hoc `../` stripper. The ad-hoc stripper
+    // happened to be safe for `..` and absolute paths, but the canonical
+    // helper has explicit tests for both and throws with a clear
+    // message instead of returning a wrong-path silently. This
+    // change keeps the existing behaviour for in-bounds paths and
+    // upgrades the security check to the one the rest of the project
+    // uses.
+    let filePath: string;
+    try {
+      filePath = canonicalSafePath(publicDir, safePath);
+    } catch (e) {
+      res.writeHead(403, { 'Content-Type': 'text/plain' });
+      res.end('Forbidden');
+      return;
+    }
 
     // Dynamic routing for project-local user assets (bypassing the precompiled bundle)
     if (safePath.startsWith('assets/')) {

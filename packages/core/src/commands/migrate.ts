@@ -23,20 +23,121 @@ function serializeConfig(obj: any) {
   return `export default ${cleanJs};\n`;
 }
 
-export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: boolean; vitepress?: boolean; starlight?: boolean; upgrade?: boolean }) {
+export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: boolean; vitepress?: boolean; starlight?: boolean; upgrade?: boolean; dryRun?: boolean }) {
   const CWD = process.cwd();
+  const dryRun = options.dryRun === true;
 
   const moveFilesToBackup = async (backupDir: string) => {
     const backupName = path.basename(backupDir);
     const files = await nativeFs.promises.readdir(CWD);
     for (const file of files) {
-      if (file === 'node_modules' || file === '.git' || file === backupName || file === 'docmd.config.js') {
-        continue;
-      }
+      // N-10: keep lockfiles and package manifests in place — moving them
+      // into the backup dir means `npm install` and `pnpm install`
+      // would re-resolve from scratch on a recovery. Lockfiles and
+      // package.json are part of the user's repo state, not migration
+      // input.
+      if (file === 'node_modules' || file === '.git' || file === backupName || file === 'docmd.config.js') continue;
+      if (file === 'package.json' || file === 'package-lock.json' || file === 'yarn.lock' || file === 'pnpm-lock.yaml' || file === 'bun.lockb' || file === 'bun.lock') continue;
       const oldPath = path.resolve(CWD, file);
       const newPath = path.resolve(backupDir, file);
       await nativeFs.promises.rename(oldPath, newPath);
     }
+  };
+
+  /**
+   * Build the list of files that `moveFilesToBackup` would move. Used
+   * by `--dry-run` to show the user what would change without writing.
+   * Returns filenames (relative to CWD).
+   */
+  const planBackupMoves = async (backupName: string): Promise<string[]> => {
+    const files = await nativeFs.promises.readdir(CWD);
+    return files.filter((f) =>
+      f !== 'node_modules' &&
+      f !== '.git' &&
+      f !== backupName &&
+      f !== 'docmd.config.js' &&
+      f !== 'package.json' &&
+      f !== 'package-lock.json' &&
+      f !== 'yarn.lock' &&
+      f !== 'pnpm-lock.yaml' &&
+      f !== 'bun.lockb' &&
+      f !== 'bun.lock'
+    );
+  };
+
+  /**
+   * Pretty-print a dry-run plan for a source-migration path and exit 0.
+   */
+  const printAndExitDryRun = async (sourceName: string, backupName: string, docmdConfig: object): Promise<void> => {
+    const moves = await planBackupMoves(backupName);
+    TUI.section(`Dry run: ${sourceName} migration`);
+    TUI.item('Would move', `${moves.length} file${moves.length === 1 ? '' : 's'} → ${backupName}/`);
+    if (moves.length > 0 && moves.length <= 12) {
+      for (const f of moves) TUI.item(' ', f);
+    } else if (moves.length > 12) {
+      for (const f of moves.slice(0, 10)) TUI.item(' ', f);
+      TUI.item(' ', `… and ${moves.length - 10} more`);
+    }
+    TUI.item('Would write', 'docmd.config.js');
+    TUI.item('Config', JSON.stringify(docmdConfig));
+    TUI.footer();
+    TUI.info('No changes made. Re-run without --dry-run to apply.');
+  };
+
+  /**
+   * N-9: best-effort MkDocs `nav:` parser. MkDocs nav is a YAML
+   * nested list; we use a tiny line-by-line YAML-aware scanner
+   * (no `yaml` dependency) that handles the common shape:
+   *
+   *   nav:
+   *     - Home: index.md
+   *     - Guide:
+   *       - Getting Started: start.md
+   *       - Reference: ref.md
+   *
+   * Sections without an explicit file (`- Guide:` with no value) are
+   * kept as parents; their children are nested under `children`.
+   * Anything fancier (external links, multi-line strings, anchors)
+   * is left to the runtime auto-router.
+   */
+  const parseMkDocsNav = (rawYaml: string): any[] | null => {
+    const lines = rawYaml.split('\n');
+    const navIdx = lines.findIndex((l) => /^nav\s*:\s*$/.test(l));
+    if (navIdx === -1) return null;
+
+    const root: any[] = [];
+    const stack: { indent: number; items: any[] }[] = [{ indent: -1, items: root }];
+    for (let i = navIdx + 1; i < lines.length; i++) {
+      const line = lines[i];
+      // `- Title: file.md` (most common) OR `- Title:` (section header).
+      // The colon + value are optional. The title capture is non-greedy
+      // so it stops at the colon, and we strip a trailing `:` from the
+      // captured title (which happens when the line is `- Title:` with
+      // no file).
+      const m = line.match(/^(\s*)-\s+(.+?)(?::\s*(.+?))?\s*$/);
+      if (!m) continue;
+      const indent = m[1].length;
+      // Strip a trailing `:` from the title (which happens when the
+      // line is `- Title:` with no file value, the section-header
+      // shape in MkDocs).
+      const title = m[2].trim().replace(/:\s*$/, '');
+      const file = (m[3] || '').trim();
+      const item: any = file
+        ? { title, path: file.replace(/\.(md|markdown)$/i, '/') }
+        : { title };
+      while (stack.length > 1 && stack[stack.length - 1].indent >= indent) stack.pop();
+      const top = stack[stack.length - 1];
+      top.items.push(item);
+      if (i + 1 < lines.length) {
+        const next = lines[i + 1];
+        const nm = next.match(/^(\s+)-/);
+        if (nm && nm[1].length > indent) {
+          item.children = [];
+          stack.push({ indent, items: item.children });
+        }
+      }
+    }
+    return root.length > 0 ? root : null;
   };
 
   if (options.docusaurus) {
@@ -54,13 +155,28 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
     }
 
     const backupDir = path.resolve(CWD, 'docusaurus-backup');
-    await fs.ensureDir(backupDir);
 
     const rawConfig = await nativeFs.promises.readFile(activeConfigPath, 'utf8');
     let title = 'Docmd Site';
     const titleMatch = rawConfig.match(/title:\s*['"]([^'"]+)['"]/);
     if (titleMatch) title = titleMatch[1];
 
+    // N-22: preserve the original Docusaurus staticDir if set (default
+    // is `static`). Falling back to `dist` only when the user hasn't
+    // overridden it — overwriting a `site/` directory because we
+    // hardcoded `dist` is the most common silent-clobber pattern.
+    let out = 'dist';
+    const staticDirMatch = rawConfig.match(/staticDir\s*:\s*['"]([^'"]+)['"]/);
+    if (staticDirMatch) out = staticDirMatch[1].replace(/^\.\//, '').replace(/\/$/, '') || 'static';
+
+    const docmdConfig = { title, src: 'docs', out, theme: { appearance: 'system' } };
+    // N-3: dry-run must run BEFORE any side effects (ensureDir, rename).
+    if (dryRun) {
+      await printAndExitDryRun('Docusaurus', 'docusaurus-backup', docmdConfig);
+      return;
+    }
+
+    await fs.ensureDir(backupDir);
     await moveFilesToBackup(backupDir);
     TUI.step('Created backup directory', 'DONE');
 
@@ -74,7 +190,6 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
       TUI.step('Created new docs directory', 'DONE');
     }
 
-    const docmdConfig = { title, src: 'docs', out: 'dist', theme: { appearance: 'system' } };
     await nativeFs.promises.writeFile(path.resolve(CWD, 'docmd.config.js'), serializeConfig(docmdConfig));
     TUI.step('Generated docmd.config.js', 'DONE');
 
@@ -94,13 +209,31 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
     }
 
     const backupDir = path.resolve(CWD, 'mkdocs-backup');
-    await fs.ensureDir(backupDir);
 
     const rawConfig = await nativeFs.promises.readFile(configPath, 'utf8');
     let title = 'Docmd Site';
     const titleMatch = rawConfig.match(/^site_name:\s*['"]?([^'"\n]+)['"]?/m);
     if (titleMatch) title = titleMatch[1].trim();
 
+    // N-22: preserve the original `site_dir` (MkDocs default is `site`).
+    // N-9 (partial): also build a basic nav tree from MkDocs `nav:`.
+    let out = 'site';
+    const siteDirMatch = rawConfig.match(/^site_dir\s*:\s*['"]?([^'"\n]+)['"]?/m);
+    if (siteDirMatch) out = siteDirMatch[1].trim();
+    // N-9: parse a simple top-level nav. This is a best-effort translation;
+    // complex MkDocs nav trees (multi-level, with external links) fall
+    // back to auto-generated nav at runtime.
+    const nav = parseMkDocsNav(rawConfig);
+
+    const docmdConfig: any = { title, src: 'docs', out, theme: { appearance: 'system' } };
+    if (nav && nav.length > 0) docmdConfig.navigation = nav;
+    // N-3: dry-run must run BEFORE any side effects (ensureDir, rename).
+    if (dryRun) {
+      await printAndExitDryRun('MkDocs', 'mkdocs-backup', docmdConfig);
+      return;
+    }
+
+    await fs.ensureDir(backupDir);
     await moveFilesToBackup(backupDir);
     TUI.step('Created backup directory', 'DONE');
 
@@ -114,7 +247,6 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
       TUI.step('Created new docs directory', 'DONE');
     }
 
-    const docmdConfig = { title, src: 'docs', out: 'dist', theme: { appearance: 'system' } };
     await nativeFs.promises.writeFile(path.resolve(CWD, 'docmd.config.js'), serializeConfig(docmdConfig));
     TUI.step('Generated docmd.config.js', 'DONE');
 
@@ -150,13 +282,20 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
     }
 
     const backupDir = path.resolve(CWD, 'vitepress-backup');
-    await fs.ensureDir(backupDir);
 
     const rawConfig = await nativeFs.promises.readFile(activeConfigPath, 'utf8');
     let title = 'Docmd Site';
     const titleMatch = rawConfig.match(/title:\s*['"]([^'"]+)['"]/);
     if (titleMatch) title = titleMatch[1];
 
+    const docmdConfig = { title, src: 'docs', out: 'dist', theme: { appearance: 'system' } };
+    // N-3: dry-run must run BEFORE any side effects.
+    if (dryRun) {
+      await printAndExitDryRun('VitePress', 'vitepress-backup', docmdConfig);
+      return;
+    }
+
+    await fs.ensureDir(backupDir);
     await moveFilesToBackup(backupDir);
     TUI.step('Created backup directory', 'DONE');
 
@@ -181,7 +320,6 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
       }
     }
 
-    const docmdConfig = { title, src: 'docs', out: 'dist', theme: { appearance: 'system' } };
     await nativeFs.promises.writeFile(path.resolve(CWD, 'docmd.config.js'), serializeConfig(docmdConfig));
     TUI.step('Generated docmd.config.js', 'DONE');
 
@@ -205,13 +343,20 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
     }
 
     const backupDir = path.resolve(CWD, 'starlight-backup');
-    await fs.ensureDir(backupDir);
 
     const rawConfig = await nativeFs.promises.readFile(activeConfigPath, 'utf8');
     let title = 'Docmd Site';
     const titleMatch = rawConfig.match(/title:\s*['"]([^'"]+)['"]/);
     if (titleMatch) title = titleMatch[1];
 
+    const docmdConfig = { title, src: 'docs', out: 'dist', theme: { appearance: 'system' } };
+    // N-3: dry-run must run BEFORE any side effects.
+    if (dryRun) {
+      await printAndExitDryRun('Starlight', 'starlight-backup', docmdConfig);
+      return;
+    }
+
+    await fs.ensureDir(backupDir);
     await moveFilesToBackup(backupDir);
     TUI.step('Created backup directory', 'DONE');
 
@@ -226,7 +371,6 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
       TUI.step('Created new docs directory', 'DONE');
     }
 
-    const docmdConfig = { title, src: 'docs', out: 'dist', theme: { appearance: 'system' } };
     await nativeFs.promises.writeFile(path.resolve(CWD, 'docmd.config.js'), serializeConfig(docmdConfig));
     TUI.step('Generated docmd.config.js', 'DONE');
 
@@ -337,9 +481,94 @@ export async function migrateProject(options: { docusaurus?: boolean; mkdocs?: b
         TUI.step('Upgraded "defaultLocale" to "i18n.default".', 'DONE');
       }
 
+      // N-4: extend the legacy-key map with the remaining common keys.
+      // The previous upgrade covered siteTitle/siteUrl/baseUrl/srcDir/
+      // outputDir/defaultLocale/projects but left several documented
+      // legacy keys untouched. These are the keys the build-time
+      // loader used in 0.7.x and earlier.
+
+      // 7. 'source' (older alias for 'src')
+      if (configObj.source && !configObj.src) {
+        configObj.src = configObj.source;
+        delete configObj.source;
+        isUpgraded = true;
+        TUI.step('Upgraded "source" to "src".', 'DONE');
+      }
+
+      // 8. 'outDir' (older alias for 'out')
+      if (configObj.outDir && !configObj.out) {
+        configObj.out = configObj.outDir;
+        delete configObj.outDir;
+        isUpgraded = true;
+        TUI.step('Upgraded "outDir" to "out".', 'DONE');
+      }
+
+      // 9. 'nav' (legacy sidebar structure) → 'navigation'
+      if (configObj.nav && !configObj.navigation) {
+        configObj.navigation = configObj.nav;
+        delete configObj.nav;
+        isUpgraded = true;
+        TUI.step('Upgraded "nav" to "navigation".', 'DONE');
+      }
+
+      // 10. Top-level 'search' boolean → 'plugins.search'
+      if (typeof configObj.search === 'boolean' && !configObj.plugins?.search) {
+        configObj.plugins = configObj.plugins || {};
+        configObj.plugins.search = configObj.search === true ? {} : { enabled: false };
+        delete configObj.search;
+        isUpgraded = true;
+        TUI.step('Upgraded top-level "search" to "plugins.search".', 'DONE');
+      }
+
+      // 11. Top-level 'sidebar' → 'layout.sidebar'
+      if (configObj.sidebar && !configObj.layout?.sidebar) {
+        configObj.layout = configObj.layout || {};
+        configObj.layout.sidebar = configObj.sidebar;
+        delete configObj.sidebar;
+        isUpgraded = true;
+        TUI.step('Upgraded top-level "sidebar" to "layout.sidebar".', 'DONE');
+      }
+
+      // 12. 'theme.enableModeToggle' → 'optionsMenu.components.themeSwitch'
+      if (configObj.theme?.enableModeToggle !== undefined) {
+        configObj.optionsMenu = configObj.optionsMenu || {};
+        configObj.optionsMenu.components = configObj.optionsMenu.components || {};
+        configObj.optionsMenu.components.themeSwitch = configObj.theme.enableModeToggle !== false;
+        delete configObj.theme.enableModeToggle;
+        isUpgraded = true;
+        TUI.step('Upgraded "theme.enableModeToggle" to "optionsMenu.components.themeSwitch".', 'DONE');
+      }
+
+      // 13. 'theme.positionMode' → 'optionsMenu.position'
+      if (configObj.theme?.positionMode && !configObj.optionsMenu?.position) {
+        configObj.optionsMenu = configObj.optionsMenu || {};
+        configObj.optionsMenu.position = configObj.theme.positionMode === 'bottom' ? 'sidebar-bottom' : 'sidebar-top';
+        delete configObj.theme.positionMode;
+        isUpgraded = true;
+        TUI.step('Upgraded "theme.positionMode" to "optionsMenu.position".', 'DONE');
+      }
+
+      // 14. 'theme.defaultMode' → 'theme.appearance'
+      if (configObj.theme?.defaultMode && !configObj.theme?.appearance) {
+        configObj.theme.appearance = configObj.theme.defaultMode;
+        delete configObj.theme.defaultMode;
+        isUpgraded = true;
+        TUI.step('Upgraded "theme.defaultMode" to "theme.appearance".', 'DONE');
+      }
+
       if (!isUpgraded) {
         TUI.footer();
         TUI.success('Configuration is already up to date with the latest schema.');
+        return;
+      }
+
+      // N-3: dry-run prints the upgraded config and exits 0 without writing.
+      if (dryRun) {
+        TUI.section('Dry run: config upgrade');
+        TUI.item('Config path', activePath);
+        TUI.item('Upgraded config', JSON.stringify(configObj, null, 2));
+        TUI.footer();
+        TUI.info('No changes made. Re-run without --dry-run to apply.');
         return;
       }
 

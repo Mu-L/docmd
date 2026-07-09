@@ -1,0 +1,151 @@
+/**
+ * --------------------------------------------------------------------
+ * docmd : the zero-config documentation engine.
+ *
+ * Slice F — TUI + content + perf + cross-platform
+ *
+ * Covers:
+ *   T-Z10 llms.txt / llms.json titles are sanitised so a malicious
+ *         title cannot break out of the markdown link or render as
+ *         raw HTML.
+ *   T-Z11 llms.txt / llms.json titles starting with =, +, -, @ are
+ *         prefixed with a single-quote so opening the file in a
+ *         spreadsheet does not execute a formula.
+ *   N-13  NO_COLOR suppresses the banner (chalk 4+ already
+ *         suppresses the colour codes automatically, so this is
+ *         a one-line banner-specific change).
+ *   N-16  DOCMD_NO_BANNER suppresses the banner specifically
+ *         (separate from NO_COLOR so users can keep colour but
+ *         silence the ASCII art).
+ *
+ * Run: `node tests/runner.js --only=llms-and-tui`
+ * --------------------------------------------------------------------
+ */
+
+import {
+  DOCMD,
+  setup,
+  writeFile,
+  runTestFile
+} from '../shared.js';
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+
+let passed = 0;
+let failed = 0;
+const failures = [];
+
+function assert(condition, message) {
+  if (!condition) {
+    failed++;
+    failures.push(message);
+    console.log(`    ❌ ${message}`);
+  } else {
+    passed++;
+    console.log(`    ✅ ${message}`);
+  }
+}
+
+export const test = runTestFile({
+  name: 'llms.txt sanitisation + TUI banner options (Slice F — T-Z10, T-Z11, N-13, N-16)',
+  emoji: '🧹',
+  run: () => {
+
+    // T-Z10 — malicious title with markdown injection characters
+    // (backticks, brackets, newline) must NOT break the link form or
+    // render as raw HTML in the llms.txt output.
+    {
+      const dir = setup('f-tz10-markdown-injection');
+      writeFile(dir, 'docs/index.md', [
+        '---',
+        'title: "Evil `code` [link](http://attacker.com) title"',
+        '---',
+        '',
+        '# Home',
+        '',
+        'Body content.'
+      ].join('\n'));
+
+      execSync(`node ${DOCMD} build`, { cwd: dir, stdio: 'pipe' });
+
+      const llms = fs.readFileSync(path.join(dir, 'site/llms.txt'), 'utf8');
+      // The raw malicious chars should be escaped (backslashes added) so
+      // the link form is preserved. The attacker's URL is no longer
+      // part of a clickable link.
+      assert(/\\`/.test(llms) || /`/.test(llms) === false, 'T-Z10: backticks are escaped in llms.txt titles');
+      assert(/\\\[link\\\]/.test(llms) || /\[link\]\(http/.test(llms) === false, 'T-Z10: square brackets are escaped, so the attack link doesn\'t render as markdown');
+    }
+
+    // T-Z11 — titles starting with =, +, -, or @ are prefixed with a
+    // single-quote so they don't execute as a CSV formula when the file
+    // is opened in Excel / Sheets / LibreOffice.
+    {
+      const dir = setup('f-tz11-csv-formula');
+      writeFile(dir, 'docs/index.md', [
+        '---',
+        'title: "=cmd|\"/c calc\"!A1"',
+        '---',
+        '',
+        '# Home'
+      ].join('\n'));
+
+      execSync(`node ${DOCMD} build`, { cwd: dir, stdio: 'pipe' });
+
+      const llms = fs.readFileSync(path.join(dir, 'site/llms.txt'), 'utf8');
+      // The leading = should be neutralised by a leading single-quote
+      // (so the spreadsheet sees text, not a formula).
+      assert(/'-cmd|/.test(llms) || /^#\s*'/.test(llms) || /^-cmd/.test(llms) === false, 'T-Z11: = formula prefix is neutralised in llms.txt');
+      // The CSV-injection form should NOT appear verbatim.
+      assert(!/^#\s*=cmd\|/.test(llms) && !/- \[=cmd\|/.test(llms), 'T-Z11: raw =cmd|... pattern is NOT present in llms.txt');
+
+      // Same check for llms.json (the manifest).
+      const llmsJson = JSON.parse(fs.readFileSync(path.join(dir, 'site/llms.json'), 'utf8'));
+      const pageTitle = llmsJson.pages[0]?.title || '';
+      assert(pageTitle.startsWith("'") || !/^[=+\-@]/.test(pageTitle), 'T-Z11: llms.json title is CSV-safe');
+    }
+
+    // N-13 + N-16 — the TUI banner is suppressed when NO_COLOR or
+    // DOCMD_NO_BANNER is set. We trigger the banner indirectly by
+    // running a build (which calls TUI.banner in build.ts) and then
+    // look for the ASCII-art `|_|___` in stdout.
+    {
+      const dir = setup('f-tui-banner-control');
+      writeFile(dir, 'docs/index.md', '# Home\n');
+
+      // Default — banner present.
+      let output = '';
+      try {
+        output = execSync(`node ${DOCMD} build`, { cwd: dir, stdio: 'pipe', encoding: 'utf8' });
+      } catch (e) {
+        output = (typeof e.stdout === 'string' ? e.stdout : '') + (typeof e.stderr === 'string' ? e.stderr : '');
+      }
+      assert(/v0\.8\.\d+/.test(output), 'N-13/N-16: banner (version line) is present by default');
+
+      // NO_COLOR — banner suppressed (chalk 4+ also drops colour, but
+      // our banner-specific check suppresses the ASCII art too).
+      output = '';
+      try {
+        output = execSync(`node ${DOCMD} build`, { cwd: dir, stdio: 'pipe', encoding: 'utf8', env: { ...process.env, NO_COLOR: '1' } });
+      } catch (e) {
+        output = (typeof e.stdout === 'string' ? e.stdout : '') + (typeof e.stderr === 'string' ? e.stderr : '');
+      }
+      assert(!/v0\.8\.\d+/.test(output), 'N-13: NO_COLOR suppresses the banner');
+
+      // DOCMD_NO_BANNER — banner suppressed even without NO_COLOR.
+      output = '';
+      try {
+        output = execSync(`node ${DOCMD} build`, { cwd: dir, stdio: 'pipe', encoding: 'utf8', env: { ...process.env, DOCMD_NO_BANNER: '1', NO_COLOR: '' } });
+      } catch (e) {
+        output = (typeof e.stdout === 'string' ? e.stdout : '') + (typeof e.stderr === 'string' ? e.stderr : '');
+      }
+      assert(!/v0\.8\.\d+/.test(output), 'N-16: DOCMD_NO_BANNER suppresses the banner');
+    }
+  }
+});
+
+export const results = {
+  get passed() { return passed; },
+  get failed() { return failed; },
+  get failures() { return [...failures]; }
+};

@@ -41,6 +41,13 @@ export async function buildSite(configPath: string, opts: any = {}) {
     onProgress: opts.onProgress || null,  // External progress callback
     targetFiles: opts.targetFiles || null, // Optional: only rebuild specific files
     verbose: opts.verbose === true || process.env.DOCMD_VERBOSE === 'true',
+    // D-H1: honour an explicit `cwd` override. Previously the build always
+    // used `process.cwd()`, so calling `buildSite('/abs/path/config.json')`
+    // from a different cwd would still look for `docs/` and `site/` next
+    // to the caller's cwd. The fix honours `opts.cwd` when supplied, and
+    // otherwise defaults to `path.dirname(configPath)` so the build
+    // naturally follows the config file's location.
+    cwd: opts.cwd || path.dirname(configPath) || process.cwd()
   };
 
   // Per-warning normaliser logging is opt-in via --verbose / DOCMD_VERBOSE
@@ -48,7 +55,7 @@ export async function buildSite(configPath: string, opts: any = {}) {
   // full breakdown of every container-normaliser issue.
   if (options.verbose) setNormaliserVerbose(true);
 
-  const CWD = process.cwd();
+  const CWD = options.cwd;
 
   // ── Multi-Project (Workspace) Detection ──────────────────────────
   // If we're NOT already inside a workspace build (no env var set),
@@ -85,7 +92,7 @@ export async function buildSite(configPath: string, opts: any = {}) {
 
   // 1. Load Config (Zero-Config aware)
   try {
-    const config = await loadConfig(configPath, { isDev: options.isDev, _globalDefaults: opts._globalDefaults });
+    const config = await loadConfig(configPath, { isDev: options.isDev, _globalDefaults: opts._globalDefaults, cwd: options.cwd });
     config._workspace = opts._workspace || null;
     config._activePrefix = opts._activePrefix || '/';
     config._globalDefaults = opts._globalDefaults || null;
@@ -139,7 +146,12 @@ export async function buildSite(configPath: string, opts: any = {}) {
       await prepareTemplateAssets(config, targetOutDir);
       if (hooks.assets) {
         for (const getAssetsFn of hooks.assets) {
-          const assets = getAssetsFn();
+          // hooks.assets entries are async wrappers; missing the await here
+          // would make `assets` a Promise and silently skip the whole copy
+          // loop (Array.isArray(Promise) === false). The user-visible symptom
+          // is "plugin assets never land in site/" — search, git, mermaid,
+          // math, openapi CSS/JS all missing, search modal does not open.
+          const assets = await getAssetsFn();
           if (Array.isArray(assets)) {
             for (const asset of assets) {
               // Backwards-compat: legacy assets used `src`/`dest` and

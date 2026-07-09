@@ -15,6 +15,36 @@
 import { execSync } from 'child_process';
 import { TUI } from '@docmd/api';
 
+// M-11: how long to wait after SIGTERM before escalating to SIGKILL.
+// Docmd's dev server installs a graceful-shutdown handler on SIGTERM
+// (closes watchers, the http server, the WebSocket server, and the
+// worker pool). `docmd stop` waits this long for the process to exit
+// on its own before sending the uncatchable SIGKILL.
+const SIGTERM_GRACE_MS = 5000;
+
+/**
+ * Poll `pid` until it has exited or `timeoutMs` has elapsed.
+ * Returns `true` if the process exited within the window, `false`
+ * if it was still alive at the timeout (caller should escalate to
+ * SIGKILL). Polls every 100ms to keep the perceived latency low.
+ */
+export async function waitForExit(pid: number, timeoutMs: number): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      // signal 0 = existence check; throws ESRCH if the pid is gone
+      process.kill(pid, 0);
+    } catch (err: any) {
+      if (err && err.code === 'ESRCH') return true;
+      // EPERM means the process exists but we can't signal it — treat
+      // as still alive and let the outer catch handle escalation.
+      return false;
+    }
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return false;
+}
+
 /**
  * find and kill running docmd processes
  * If port is provided, only kill the process listening on that port.
@@ -44,10 +74,24 @@ export async function stopServer(port: any, force: boolean = false) {
             }
             if (pid) {
                 TUI.step(`Found process ${pid} on port ${port}`, 'WAIT');
+                const pidNum = Number(pid);
+                // M-11: send SIGTERM first, wait up to SIGTERM_GRACE_MS for the
+                // process to exit on its own (the dev server installs a
+                // graceful shutdown handler), and only then escalate to SIGKILL.
                 try {
-                    process.kill(Number(pid), 'SIGTERM');
-                } catch {
-                    process.kill(Number(pid), 'SIGKILL');
+                    process.kill(pidNum, 'SIGTERM');
+                } catch (err: any) {
+                    TUI.step(`Failed to send SIGTERM to PID ${pid}: ${err.message}`, 'FAIL', TUI.red);
+                }
+                if (await waitForExit(pidNum, SIGTERM_GRACE_MS)) {
+                    TUI.footer();
+                    TUI.success(`Docmd instance on port ${port} stopped gracefully.`);
+                    return;
+                }
+                try {
+                    process.kill(pidNum, 'SIGKILL');
+                } catch (err: any) {
+                    TUI.step(`Failed to send SIGKILL to PID ${pid}: ${err.message}`, 'FAIL', TUI.red);
                 }
                 TUI.footer();
                 TUI.success(`Docmd instance on port ${port} has been stopped.`);
@@ -110,15 +154,22 @@ export async function stopServer(port: any, force: boolean = false) {
 
         for (const target of targets) {
             try {
-                TUI.step(`Killing ${target.type} PID ${target.pid}`, 'DONE');
+                TUI.step(`Stopping ${target.type} PID ${target.pid} (SIGTERM)`, 'WAIT');
                 process.kill(target.pid, 'SIGTERM');
             } catch {
-                // If SIGTERM fails, try SIGKILL
+                // If SIGTERM fails, skip the graceful wait
+            }
+            // M-11: give the graceful-shutdown handler time to run before
+            // escalating to SIGKILL.
+            if (!(await waitForExit(target.pid, SIGTERM_GRACE_MS))) {
                 try {
                     process.kill(target.pid, 'SIGKILL');
+                    TUI.step(`Killed ${target.type} PID ${target.pid} (SIGKILL after grace)`, 'DONE');
                 } catch (err2: any) {
                     TUI.step(`Failed to kill PID ${target.pid}: ${err2.message}`, 'FAIL', TUI.red);
                 }
+            } else {
+                TUI.step(`Stopped ${target.type} PID ${target.pid} gracefully`, 'DONE');
             }
         }
 

@@ -83,6 +83,61 @@ addInProcess(
   'Validate rewrite + workspace errors + init example (F8, F9, M-1)',
   await import('./cli-contracts/validate-workspace.test.js')
 );
+addInProcess(
+  'deploy',
+  'Deploy --force honours overwrite (N-2)',
+  await import('./cli-contracts/deploy.test.js')
+);
+addInProcess(
+  'stop',
+  'Stop sends SIGTERM and waits for graceful exit (M-11)',
+  await import('./cli-contracts/stop.test.js')
+);
+addInProcess(
+  'migrate',
+  'Migrate --dry-run is non-destructive (N-3)',
+  await import('./cli-contracts/migrate.test.js')
+);
+addInProcess(
+  'offline-links',
+  'Offline-mode internal links work in every hosting shape (#167)',
+  await import('./cli-contracts/offline-links.test.js')
+);
+addInProcess(
+  'plugin-contract',
+  'Plugin contract + public API fixes (Slice C.1 + C.2)',
+  await import('./cli-contracts/plugin-contract.test.js')
+);
+addInProcess(
+  'source-tools',
+  'Source tools + page shape consistency (Slice C.3)',
+  await import('./cli-contracts/source-tools.test.js')
+);
+addInProcess(
+  'i18n',
+  'i18n + workspace schema fixes (Slice D — M-6, T-Z6)',
+  await import('./cli-contracts/i18n.test.js')
+);
+addInProcess(
+  'llms-and-tui',
+  'llms.txt sanitisation + TUI banner options (Slice F — T-Z10, T-Z11, N-13, N-16)',
+  await import('./cli-contracts/llms-and-tui.test.js')
+);
+addInProcess(
+  'migrate-fix',
+  'Migration polish (Slice E — N-9, N-10, N-22)',
+  await import('./cli-contracts/migrate-fix.test.js')
+);
+addInProcess(
+  'plugin-assets-pipeline',
+  'Plugin asset pipeline (PAA-1, PAA-2, PAA-3 — async/await + capability)',
+  await import('./cli-contracts/plugin-assets-pipeline.test.js')
+);
+addInProcess(
+  'asset-base-url',
+  'Asset base-URL + engine-key (URL-1, URL-2 — <base> + KNOWN_KEYS)',
+  await import('./cli-contracts/asset-base-url.test.js')
+);
 
 // --- Section 2: Container parser (Phase 2 PR 1+2+3) ----------------------
 addExternal(

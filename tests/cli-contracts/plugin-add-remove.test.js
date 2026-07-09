@@ -168,6 +168,39 @@ export const test = runTestFile({
       const after = fs.readFileSync(`${dir}/docmd.config.json`, 'utf8');
       assert(/"okf"\s*:/.test(after), 'core plugin remove did not modify config');
     }
+
+    // M-14 — `docmd add` for an already-configured plugin must NOT
+    // claim "Plugin successfully installed and activated". The plugin
+    // is already there; nothing was installed. The final message must
+    // reflect what actually happened.
+    {
+      const dir = setup('plugin-add-remove-27-m14-already-installed-message');
+      writeFile(dir, 'docmd.config.json', JSON.stringify({ title: 'M14', plugins: { math: {} } }, null, 2) + '\n');
+      let output = '';
+      try {
+        output = execSync(`node ${DOCMD} add math`, { cwd: dir, stdio: 'pipe', encoding: 'utf8' });
+      } catch (e) {
+        output = (typeof e.stdout === 'string' ? e.stdout : (e.stdout ? e.stdout.toString() : '')) +
+                 (typeof e.stderr === 'string' ? e.stderr : (e.stderr ? e.stderr.toString() : ''));
+      }
+      assert(/already (configured|installed)/i.test(output), 'M-14: already-installed message appears');
+      assert(!/successfully installed and activated/i.test(output), 'M-14: no false "successfully installed and activated" message');
+    }
+
+    // M-14 — companion: first install of a fresh plugin still shows
+    // the success message (regression guard).
+    {
+      const dir = setup('plugin-add-remove-27-m14-fresh-install-message');
+      writeFile(dir, 'docmd.config.json', JSON.stringify({ title: 'M14 fresh', plugins: {} }, null, 2) + '\n');
+      let output = '';
+      try {
+        output = execSync(`node ${DOCMD} add math`, { cwd: dir, stdio: 'pipe', encoding: 'utf8' });
+      } catch (e) {
+        output = (typeof e.stdout === 'string' ? e.stdout : (e.stdout ? e.stdout.toString() : '')) +
+                 (typeof e.stderr === 'string' ? e.stderr : (e.stderr ? e.stderr.toString() : ''));
+      }
+      assert(/successfully installed and activated/i.test(output), 'M-14: fresh install still shows success message');
+    }
   }
 });
 

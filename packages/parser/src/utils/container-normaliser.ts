@@ -183,6 +183,10 @@ export function normaliseContainers(
   const stack: OpenFrame[] = [];
   const warnings: NormaliserWarning[] = [];
 
+  // Fenced code block tracking — see the in-loop comment below.
+  let inFence = false;
+  let fenceMarker: string | null = null;
+
   const recordWarning = (w: NormaliserWarning): void => {
     warnings.push(w);
     if (onWarning) onWarning(w);
@@ -192,6 +196,35 @@ export function normaliseContainers(
     const line = lines[i];
     const cls = classifyLine(line);
     const indent = indentOf(line);
+
+    // Fenced code block tracking. The normaliser must not interpret
+    // `:::` lines that appear inside a ``` fence as container opens or
+    // closes — they are literal text in a code listing. Without this
+    // check, any docs page that shows a `::: card ... :::` example
+    // inside a markdown code fence triggers a spurious "Unclosed
+    // <card>" error (the fence-opened line is classified as an open,
+    // pushed on the stack, and never matched because the matching :::
+    // is also inside the fence and would have been the close).
+    //
+    // We track the fence by its opening marker (``` or ~~~) and close
+    // on the same marker at the start of a later line. Tildes are
+    // included because CommonMark allows ~~~ as an alternative fence.
+    if (inFence) {
+      // Pass through verbatim; only check for the matching close marker.
+      if (/^\s*(```+|~~~+)/.test(line) && line.trimStart().startsWith(fenceMarker!)) {
+        inFence = false;
+        fenceMarker = null;
+      }
+      out.push(line);
+      continue;
+    }
+    const fenceMatch = line.match(/^\s*(`{3,}|~{3,})/);
+    if (fenceMatch) {
+      inFence = true;
+      fenceMarker = fenceMatch[1][0]; // '`' or '~'
+      out.push(line);
+      continue;
+    }
 
     if (cls.kind === 'open') {
       // The shim's classification only tells us the line LOOKS like an open;

@@ -217,7 +217,10 @@ async function buildZeroConfig(cwd: string, isDev = false, quiet = false, option
 }
 
 export async function loadConfig(configPath: string, options: any = {}) {
-  const cwd = process.cwd();
+  // D-H1: honour an explicit `cwd` option (used by build.ts when the
+  // caller passes --config <abs-path> from a foreign working dir). Falls
+  // back to `process.cwd()` so existing callers continue to work.
+  const cwd = options.cwd || process.cwd();
 
   let absoluteConfigPath = path.resolve(cwd, configPath);
 
