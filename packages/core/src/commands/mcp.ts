@@ -171,6 +171,15 @@ export async function runMcpServer() {
         return;
       }
 
+      // Handle Prompts Listing
+      // The prompts capability is declared in initialize for forward
+      // compatibility. docmd ships no built-in prompts yet, so return an
+      // empty list rather than leaving the client to hit an unhandled-method error.
+      if (method === "prompts/list") {
+        sendResponse(id, { prompts: [] });
+        return;
+      }
+
       // Handle Tools Listing
       if (method === "tools/list") {
         sendResponse(id, {
@@ -187,6 +196,16 @@ export async function runMcpServer() {
               }
             },
             {
+              name: "list_docs",
+              description: "List all documentation files in the project. Returns relative paths so the agent can navigate the docs structure before reading individual files.",
+              inputSchema: {
+                type: "object",
+                properties: {
+                  subdir: { type: "string", "description": "Optional subdirectory to scope the listing (e.g. 'en', 'v1', 'guides'). Defaults to the configured source directory root." }
+                }
+              }
+            },
+            {
               name: "read_doc",
               description: "Read the raw markdown content of a documentation file.",
               inputSchema: {
@@ -195,6 +214,14 @@ export async function runMcpServer() {
                   route: { type: "string", description: "Relative path to the markdown file from root (e.g. docs/getting-started.md)." }
                 },
                 required: ["route"]
+              }
+            },
+            {
+              name: "get_config",
+              description: "Retrieve the resolved docmd project configuration (docmd.config.json). Exposes the source directory, output directory, configured locales, versions, and enabled plugins so the agent understands the project structure.",
+              inputSchema: {
+                type: "object",
+                properties: {}
               }
             },
             {
@@ -381,6 +408,73 @@ export async function runMcpServer() {
             : `No matches found for query: "${query}"`;
 
           sendResponse(id, { content: [{ type: "text", text: textResult }] });
+          return;
+        }
+
+        if (name === "list_docs") {
+          const subdir = (args?.subdir || "").trim();
+          let listRoot = docsDir;
+          if (subdir) {
+            // CWE-22 guard: same safePath treatment as read_doc.
+            if (path.isAbsolute(subdir)) {
+              sendResponse(id, { content: [{ type: "text", text: `Error: Absolute paths are not allowed.` }] });
+              return;
+            }
+            try {
+              listRoot = safePath(docsDir, asUserPath(subdir));
+            } catch {
+              sendResponse(id, { content: [{ type: "text", text: `Error: Path "${subdir}" escapes the source directory.` }] });
+              return;
+            }
+          }
+          if (!fs.existsSync(listRoot)) {
+            sendResponse(id, { content: [{ type: "text", text: `Error: Directory "${path.relative(process.cwd(), listRoot)}" does not exist.` }] });
+            return;
+          }
+          const files = findMarkdownFiles(listRoot).map(f => path.relative(process.cwd(), f));
+          const sorted = files.sort();
+          const textResult = sorted.length > 0
+            ? `Documentation files (${sorted.length}):\n${sorted.join('\n')}`
+            : `No markdown files found under "${path.relative(process.cwd(), listRoot)}".`;
+          sendResponse(id, { content: [{ type: "text", text: textResult }] });
+          return;
+        }
+
+        if (name === "get_config") {
+          try {
+            const resolvedConfig = await loadConfig('docmd.config.js', { quiet: true });
+            // Surface only the structural keys an agent needs. Omit
+            // potentially sensitive values (API keys, analytics IDs) by
+            // reconstructing a safe summary from the resolved config.
+            const safeSummary: Record<string, any> = {
+              title: resolvedConfig.title || 'Untitled',
+              src: resolvedConfig.src || 'docs',
+              out: resolvedConfig.out || 'site',
+              url: resolvedConfig.url || null,
+              theme: resolvedConfig.theme?.name || 'default',
+              i18n: resolvedConfig.i18n
+                ? {
+                    default: resolvedConfig.i18n.default,
+                    locales: (resolvedConfig.i18n.locales || []).map((l: any) => ({ id: l.id, label: l.label, dir: l.dir }))
+                  }
+                : null,
+              versions: resolvedConfig.versions
+                ? {
+                    current: resolvedConfig.versions.current,
+                    all: (resolvedConfig.versions.all || []).map((v: any) => ({ id: v.id, dir: v.dir, label: v.label }))
+                  }
+                : null,
+              plugins: resolvedConfig.plugins
+                ? Object.keys(resolvedConfig.plugins).map(k => ({
+                    name: k,
+                    enabled: resolvedConfig.plugins[k] !== false
+                  }))
+                : []
+            };
+            sendResponse(id, { content: [{ type: "text", text: JSON.stringify(safeSummary, null, 2) }] });
+          } catch (err: any) {
+            sendResponse(id, { content: [{ type: "text", text: `Error loading config: ${err.message}\n\nThe project may be running in zero-config mode (source: ./docs, output: ./site).` }] });
+          }
           return;
         }
 
