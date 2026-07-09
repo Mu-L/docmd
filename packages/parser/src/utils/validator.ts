@@ -20,6 +20,7 @@ const KNOWN_KEYS = [
   // V3 Modern Labels
   'title', 'url', 'src', 'out', 'base', 'layout',
   'versions', 'redirects', 'notFound', 'projects',
+
   // Engine selection (e.g. "rust" for the rust preview engine)
   'engine', 'engines',
 
@@ -29,7 +30,10 @@ const KNOWN_KEYS = [
   // Shared Features
   'logo', 'sidebar', 'theme', 'customJs', 'autoTitleFromH1',
   'copyCode', 'plugins', 'navigation', 'footer', 'sponsor', 'favicon',
-  'search', 'minify', 'editLink', 'pageNavigation', 'i18n'
+  'search', 'minify', 'editLink', 'pageNavigation', 'i18n',
+
+  // Workspace
+  'workspace'
 ];
 
 // Common typos mapping
