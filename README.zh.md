@@ -176,8 +176,6 @@ docmd 的设计贴合文档在当今被阅读与使用的方式：
 - 用于扩展核心行为的插件体系
 - 完整的 Theming 支持、内置模板、自定义 CSS/JS，以及浅色 / 深色模式
 
-> **0.8.10 新功能** — `docmd doctor` 预检查、`docmd init`/`docmd stop` 生命周期、`migrate --dry-run`/`--upgrade`、通过 `docmd-search` 的语义搜索、OKF 包、`NO_COLOR` 和 `DOCMD_NO_BANNER` 环境变量。完整列表请参阅 [发布说明](https://github.com/docmd-io/docmd/releases/tag/v0.8.10)。
-
 ## CLI
 
 ```bash
@@ -188,8 +186,6 @@ docmd init           # 在当前目录生成新的 docmd.config.json
 docmd stop           # 停止正在运行的 `docmd dev` / `docmd live` 服务器
 docmd doctor         # 预检查: 配置 + 插件安装状态
 docmd migrate        # 从 Docusaurus / VitePress / MkDocs / Starlight 导入
-docmd migrate --upgrade  # 将旧版 docmd.config 转换为现代 schema
-docmd migrate --dry-run  # 预览迁移但不写入任何内容
 docmd deploy         # 生成 Docker / NGINX / Caddy / Vercel / Netlify 配置
 docmd validate       # 检查全部内部链接
 docmd mcp            # 以 MCP 服务器方式在 stdio 上运行
