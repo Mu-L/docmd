@@ -198,18 +198,18 @@ docmd add <name>     # プラグインまたはテンプレートをインスト
 
 | プラグイン | ステータス | 説明 |
 | :--- | :---: | :--- |
-| `search` | ✅ コア | あいまい一致対応のオフライン全文検索 |
-| `seo` | ✅ コア | SEO タグと Open Graph メタデータ |
-| `sitemap` | ✅ コア | `sitemap.xml` を生成 |
-| `git` | ✅ コア | Git のコミット履歴と最終更新日 |
-| `analytics` | ✅ コア | 軽量なアナリティクス連携 |
-| `llms` | ✅ コア | AI コンテキスト生成 (`llms.txt` / `llms-full.txt`) |
-| `mermaid` | ✅ コア | Mermaid 図対応 |
-| `openapi` | ✅ コア | ビルド時の OpenAPI 3.x スペックレンダラー |
-| `okf` | ✅ Core | AI エージェント向け Open Knowledge Format バンドル (ロケール別) |
-| `pwa` | ➕ オプション | Progressive Web App — オフラインナビゲーション |
-| `threads` | ➕ オプション | インラインディスカッションスレッド *(by @svallory)* |
-| `math` | ➕ オプション | KaTeX / LaTeX 数式レンダリング |
+| `search` | コア | あいまい一致対応のオフライン全文検索 |
+| `seo` | コア | SEO タグと Open Graph メタデータ |
+| `sitemap` | コア | `sitemap.xml` を生成 |
+| `git` | コア | Git のコミット履歴と最終更新日 |
+| `analytics` | コア | 軽量なアナリティクス連携 |
+| `llms` | コア | AI コンテキスト生成 (`llms.txt` / `llms-full.txt`) |
+| `mermaid` | コア | Mermaid 図対応 |
+| `openapi` | コア | ビルド時の OpenAPI 3.x スペックレンダラー |
+| `okf` | Core | AI エージェント向け Open Knowledge Format バンドル (ロケール別) |
+| `pwa` | オプション | Progressive Web App — オフラインナビゲーション |
+| `threads` | オプション | インラインディスカッションスレッド *(by @svallory)* |
+| `math` | オプション | KaTeX / LaTeX 数式レンダリング |
 
 オプショナルプラグインのインストール：
 
