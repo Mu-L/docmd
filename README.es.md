@@ -176,8 +176,6 @@ docmd está construido para la forma en que la documentación se lee y se usa ho
 - Sistema de plugins para extender el comportamiento del núcleo
 - Soporte completo de temas, plantillas integradas, CSS/JS personalizado, modo claro/oscuro
 
-> **Nuevo en 0.8.10** — `docmd doctor` verificación previa, `docmd init`/`docmd stop` ciclo de vida, `migrate --dry-run`/`--upgrade`, búsqueda semántica vía `docmd-search`, bundles OKF, env vars `NO_COLOR` y `DOCMD_NO_BANNER`. Consulta las [release notes](https://github.com/docmd-io/docmd/releases/tag/v0.8.10) para la lista completa.
-
 ## CLI
 
 ```bash
@@ -188,8 +186,6 @@ docmd init           # crear un nuevo docmd.config.json en la carpeta actual
 docmd stop           # detener servidores `docmd dev` / `docmd live` en ejecución
 docmd doctor         # verificación previa: config + estado de instalación de plugins
 docmd migrate        # importar desde Docusaurus, VitePress, MkDocs o Starlight
-docmd migrate --upgrade  # traducir un docmd.config antiguo al esquema moderno
-docmd migrate --dry-run  # previsualizar una migración sin escribir
 docmd deploy         # generar configuración para Docker, NGINX, Caddy, Vercel, Netlify
 docmd validate       # comprobar todos los enlaces internos
 docmd mcp            # ejecutar como servidor MCP sobre stdio
