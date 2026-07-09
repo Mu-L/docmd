@@ -198,18 +198,18 @@ La funcionalidad principal está impulsada por un sistema de plugins robusto. Lo
 
 | Plugin | Estado | Descripción |
 | :--- | :---: | :--- |
-| `search` | ✅ Núcleo | Búsqueda offline de texto completo con coincidencia difusa |
-| `seo` | ✅ Núcleo | Etiquetas SEO y metadatos Open Graph |
-| `sitemap` | ✅ Núcleo | Genera `sitemap.xml` |
-| `git` | ✅ Núcleo | Historial de commits de Git y fechas de última actualización |
-| `analytics` | ✅ Núcleo | Integración ligera de analytics |
-| `llms` | ✅ Núcleo | Generación de contexto IA (`llms.txt` / `llms-full.txt`) |
-| `mermaid` | ✅ Núcleo | Soporte de diagramas Mermaid |
-| `openapi` | ✅ Núcleo | Renderizador de especificación OpenAPI 3.x en tiempo de build |
-| `okf` | ✅ Core | Bundles Open Knowledge Format para agentes IA (por locale) |
-| `pwa` | ➕ Opcional | Progressive Web App — navegación offline |
-| `threads` | ➕ Opcional | Hilos de discusión inline *(por @svallory)* |
-| `math` | ➕ Opcional | Renderizado matemático KaTeX / LaTeX |
+| `search` | Núcleo | Búsqueda offline de texto completo con coincidencia difusa |
+| `seo` | Núcleo | Etiquetas SEO y metadatos Open Graph |
+| `sitemap` | Núcleo | Genera `sitemap.xml` |
+| `git` | Núcleo | Historial de commits de Git y fechas de última actualización |
+| `analytics` | Núcleo | Integración ligera de analytics |
+| `llms` | Núcleo | Generación de contexto IA (`llms.txt` / `llms-full.txt`) |
+| `mermaid` | Núcleo | Soporte de diagramas Mermaid |
+| `openapi` | Núcleo | Renderizador de especificación OpenAPI 3.x en tiempo de build |
+| `okf` | Core | Bundles Open Knowledge Format para agentes IA (por locale) |
+| `pwa` | Opcional | Progressive Web App — navegación offline |
+| `threads` | Opcional | Hilos de discusión inline *(por @svallory)* |
+| `math` | Opcional | Renderizado matemático KaTeX / LaTeX |
 
 Instalar plugins opcionales:
 
