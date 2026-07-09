@@ -82,7 +82,7 @@ async function init() {
   // 2. Re-hydrate UI strings for the markdown processor (for heading anchors, etc.)
   const localeId = config._activeLocale?.id || null;
   const pluginTranslations = hooks.translations
-    ? hooks.translations.reduce((acc: any, fn: any) => ({ ...acc, ...fn(localeId) }), {})
+    ? await hooks.translations.reduce(async (accP: any, fn: any) => ({ ...(await accP), ...(await fn(localeId)) }), {})
     : {};
   const userLocaleTranslations = config._activeLocale?.translations || {};
   const strings = ui.loadTranslations(localeId, { ...pluginTranslations, ...userLocaleTranslations });

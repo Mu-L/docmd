@@ -182,9 +182,23 @@ export function outputPathToCanonical(outputPath: string, siteUrl: string): stri
 export function buildContextualUrl(href: string, context: UrlContext): string {
   // Pass-through: empty, hash-only, external protocols, data URIs
   if (!href || href === '#') return href || '#';
+  // D-S2: strip the `external:` prefix defensively. Plugin callers may
+  // invoke this function directly without going through `resolveHref`
+  // first; previously `external:https://...` was treated as a literal
+  // path segment and got mangled into `./external:https://...`.
+  if (href.startsWith('external:')) {
+    href = href.slice('external:'.length);
+  }
   if (href.startsWith('http') || href.startsWith('//') || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('data:')) {
     return href;
   }
+  // Hash-only anchors pass through unchanged. Without this guard, a
+  // value like `#section` falls through to the path-combining branch
+  // and gets prepended with the page's `relativePathToRoot`, producing
+  // `./#section` — which a browser still resolves to the same anchor,
+  // but breaks expectations for callers that compare the output to the
+  // input hash verbatim.
+  if (href.startsWith('#')) return href;
 
   // Separate hash fragment
   let hash = '';

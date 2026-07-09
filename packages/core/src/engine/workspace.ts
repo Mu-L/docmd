@@ -215,7 +215,20 @@ function validateProjects(projects: ProjectEntry[]): void {
   }
 
   if (!hasRoot) {
-    throw new Error('Workspace configuration must have a root project with prefix "/"');
+    throw new Error(
+      'Workspace configuration must include a root project with prefix "/".\n' +
+      'Each workspace needs one project that owns the site root, with the others mounted under their own prefixes.\n' +
+      'Example:\n' +
+      '  {\n' +
+      '    "workspace": {\n' +
+      '      "projects": [\n' +
+      '        { "name": "main", "src": "./docs",     "prefix": "/" },\n' +
+      '        { "name": "api",  "src": "./api-docs", "prefix": "/api/" }\n' +
+      '      ]\n' +
+      '    }\n' +
+      '  }\n' +
+      'See https://docs.docmd.io/configuration/workspaces/ for the full layout guide.'
+    );
   }
 
   // Check for potential conflicts
@@ -241,7 +254,7 @@ function validateProjects(projects: ProjectEntry[]): void {
  */
 export async function buildWorkspace(
   workspaceConfig: WorkspaceRootConfig,
-  opts: { isDev?: boolean; offline?: boolean; quiet?: boolean } = {}
+  opts: { isDev?: boolean; offline?: boolean; quiet?: boolean; verbose?: boolean } = {}
 ): Promise<void> {
   const CWD = process.cwd();
   const rootOutDir = path.resolve(CWD, workspaceConfig.out || 'site');
@@ -352,6 +365,11 @@ export async function buildWorkspace(
         // indexing progress. Live-reload rebuilds always arrive with quiet:true
         // from buildWorkspaceProject, so they stay silent.
         quiet:   opts.quiet   || false,
+        // Forward --verbose so the per-project normaliser prints every
+        // container issue (unclosed ::: card, stray :::, etc.). Without
+        // this, `docmd build --verbose` on a workspace config silently
+        // drops the flag and only the aggregate error count is shown.
+        verbose: opts.verbose || false,
         _globalDefaults: globalDefaults,
         _workspace: workspace,
         _activePrefix: prefix
@@ -386,7 +404,7 @@ export async function buildWorkspace(
 async function buildWorkspaceProject(
   project: ProjectEntry,
   workspaceConfig: WorkspaceRootConfig,
-  opts: { isDev?: boolean; offline?: boolean; quiet?: boolean; targetFiles?: string[] } = {}
+  opts: { isDev?: boolean; offline?: boolean; quiet?: boolean; verbose?: boolean; targetFiles?: string[] } = {}
 ): Promise<void> {
   const CWD = process.cwd();
   const rootOutDir = path.resolve(CWD, workspaceConfig.out || 'site');
@@ -435,6 +453,9 @@ async function buildWorkspaceProject(
       isDev: opts.isDev || false,
       offline: opts.offline || false,
       quiet: true,
+      // Forward --verbose to the per-project build so container
+      // normaliser issues are listed per file in verbose mode.
+      verbose: opts.verbose || false,
       targetFiles: opts.targetFiles,
       _globalDefaults: globalDefaults,
       _workspace: workspace,

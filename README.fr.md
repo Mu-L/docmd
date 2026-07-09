@@ -176,13 +176,20 @@ docmd est conçu pour la façon dont la documentation est lue et utilisée aujou
 - Système de plugins pour étendre le comportement du cœur
 - Support complet du theming, modèles intégrés, CSS/JS personnalisé, mode clair/sombre
 
+> **Nouveau dans 0.8.10** — `docmd doctor` vérification préalable, cycle de vie `docmd init`/`docmd stop`, `migrate --dry-run`/`--upgrade`, recherche sémantique via `docmd-search`, bundles OKF, variables d'env `NO_COLOR` et `DOCMD_NO_BANNER`. Voir les [release notes](https://github.com/docmd-io/docmd/releases/tag/v0.8.10) pour la liste complète.
+
 ## CLI
 
 ```bash
 docmd dev            # serveur de développement local
 docmd build          # construire pour le déploiement
 docmd live           # éditeur en direct basé sur le navigateur
+docmd init           # générer un nouveau docmd.config.json dans le dossier courant
+docmd stop           # arrêter les serveurs `docmd dev` / `docmd live` en cours
+docmd doctor         # vérification préalable : config + statut d'installation des plugins
 docmd migrate        # importer depuis Docusaurus, VitePress, MkDocs ou Starlight
+docmd migrate --upgrade  # traduire un docmd.config hérité vers le schéma moderne
+docmd migrate --dry-run  # simuler une migration sans rien écrire
 docmd deploy         # générer la configuration pour Docker, NGINX, Caddy, Vercel, Netlify
 docmd validate       # vérifier tous les liens internes
 docmd mcp            # exécuter comme serveur MCP sur stdio
@@ -203,6 +210,7 @@ La fonctionnalité principale repose sur un système de plugins robuste. L'essen
 | `llms` | ✅ Cœur | Génération du contexte IA (`llms.txt` / `llms-full.txt`) |
 | `mermaid` | ✅ Cœur | Support des diagrammes Mermaid |
 | `openapi` | ✅ Cœur | Rendu de spécification OpenAPI 3.x au build |
+| `okf` | ✅ Core | Bundles Open Knowledge Format pour agents IA (par locale) |
 | `pwa` | ➕ Optionnel | Progressive Web App — navigation hors ligne |
 | `threads` | ➕ Optionnel | Fils de discussion inline *(par @svallory)* |
 | `math` | ➕ Optionnel | Rendu mathématique KaTeX / LaTeX |

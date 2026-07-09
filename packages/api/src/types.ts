@@ -110,6 +110,15 @@ export interface SourceTools {
   replaceBlock(file: string, blockRef: [number, number], content: string): Promise<void>;
   /** Remove a block's source lines. */
   removeBlock(file: string, blockRef: [number, number]): Promise<void>;
+  /**
+   * Enumerate every top-level block in a file (D-H4). Returns
+   * `BlockInfo[]` with `line.start` and `line.end` populated — the
+   * other methods can then be called with the returned blockRef.
+   * Blocks are delimited by blank lines (a paragraph-level split
+   * that handles the common case of editing a single paragraph or
+   * list at a time).
+   */
+  getBlocks(file: string): Promise<BlockInfo[]>;
 }
 
 /** Information about a block in the markdown source. */
@@ -240,10 +249,49 @@ export interface PageContext {
 // Build Contexts
 // ---------------------------------------------------------------------------
 
+/**
+ * D-M2: minimal canonical types for the build contexts. Previously both
+ * `config` and `pages` were `any`, which forced plugin authors to either
+ * reach for type assertions or write untyped code. Plugin authors who
+ * need richer shapes can still cast to a wider type — these are the
+ * structural minimums that every plugin can rely on.
+ *
+ * The full config shape lives in `@docmd/core`'s `normalizeConfig`
+ * output; exposing it here would create a circular import. Plugin
+ * authors who need the full shape can extend with intersection types.
+ */
+export interface DocConfigShape {
+  title: string;
+  url?: string;
+  base?: string;
+  src?: string;
+  out?: string;
+  theme?: Record<string, any>;
+  layout?: Record<string, any>;
+  i18n?: Record<string, any>;
+  versions?: Record<string, any>;
+  workspace?: Record<string, any>;
+  plugins?: Record<string, any>;
+  [key: string]: any;
+}
+
+export interface PageInfoShape {
+  sourcePath: string;
+  outputPath: string;
+  frontmatter: Record<string, any>;
+  htmlContent?: string;
+  rawMarkdown?: string;
+  headings?: Array<{ id: string; text: string; level: number }>;
+  urls?: Record<string, string>;
+  urlContext?: Record<string, any>;
+  config?: DocConfigShape;
+  [key: string]: any;
+}
+
 /** Context provided to onBeforeBuild hooks. */
 export interface BeforeBuildContext {
-  config: any;
-  pages: any[];
+  config: DocConfigShape;
+  pages: PageInfoShape[];
   tui: any; // @docmd/tui instance for progress bars and spinners
   options: any;
   /** Execute a generic function inside the multi-threaded worker pool. */
@@ -252,8 +300,8 @@ export interface BeforeBuildContext {
 
 /** Context provided to onPostBuild hooks. */
 export interface PostBuildContext {
-  config: any;
-  pages: any[];
+  config: DocConfigShape;
+  pages: PageInfoShape[];
   outputDir: string;
   tui: any; // @docmd/tui instance for progress bars and spinners
   log: (msg: string) => void;
@@ -273,8 +321,8 @@ export interface PluginHooks {
   injectBody: ((config: any, pageContext: any) => string | Promise<string>)[];
   onBeforeBuild: ((ctx: BeforeBuildContext) => Promise<void>)[];
   onPostBuild: ((ctx: PostBuildContext) => Promise<void>)[];
-  assets: (() => Asset[])[];
-  translations: ((localeId: string) => Record<string, string>)[];
+  assets: (() => Asset[] | Promise<Asset[]>)[];
+  translations: ((localeId: string) => Record<string, string> | Promise<Record<string, string>>)[];
   actions: Record<string, ActionHandler>;
   events: Record<string, EventHandler>;
 

@@ -131,13 +131,98 @@ function hasCapabilityForHook(descriptor: PluginDescriptor | null, hookName: str
 // Isolation wrapper (§2)
 // ---------------------------------------------------------------------------
 
-function safeCall<T>(hookName: string, pluginName: string, fn: (...args: any[]) => T, ...args: any[]): T | string | undefined {
+async function safeCall<T>(hookName: string, pluginName: string, fn: (...args: any[]) => T, ...args: any[]): Promise<T | string | undefined> {
   try {
-    return fn(...args);
+    const result = fn(...args);
+    // Plugins are allowed to return Promises (most `async` functions do).
+    // We must await them before downstream code inspects the shape,
+    // otherwise the dispatcher sees a Promise object (typeof 'object')
+    // and silently drops the value through the wrong branch of
+    // coerceStringPluginReturn / coerceGenerateScriptsReturn. This is a
+    // longstanding bug — string-return hooks used to "work" only when
+    // the plugin happened to be synchronous.
+    if (result && typeof result === 'object' && typeof (result as any).then === 'function') {
+      return await result;
+    }
+    return result;
   } catch (err: any) {
     TUI.error(`Plugin "${pluginName}" threw in ${hookName}`, err.message);
     return (hookName === 'injectHead' || hookName === 'injectBody') ? '' as any : undefined;
   }
+}
+
+// One-shot warning set so we don't spam the TUI on every page build when a
+// plugin has a wrong return type. The key is the plugin name + the hook
+// name; the message is logged at most once per build per plugin/hook pair.
+const _pluginReturnTypeWarnings = new Set<string>();
+
+function warnPluginReturnTypeOnce(pluginName: string, hookName: string, message: string): void {
+  const key = `${pluginName}::${hookName}`;
+  if (_pluginReturnTypeWarnings.has(key)) return;
+  _pluginReturnTypeWarnings.has(key);
+  _pluginReturnTypeWarnings.add(key);
+  TUI.warn(`  Plugin "${pluginName}" ${message}`);
+}
+
+// D-S4: enforce that the returned value from a string-return hook is
+// actually a string. Reject objects (previously rendered as
+// "[object Object]"), booleans, numbers, etc. Null/undefined/empty-string
+// pass through as `''` so the surrounding `|| ''` collapses cleanly.
+function coerceStringPluginReturn(value: any, hookName: string, pluginName: string): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string') return value;
+  warnPluginReturnTypeOnce(
+    pluginName,
+    hookName,
+    `returned a non-string value (${typeof value}); expected a string. Skipping.`
+  );
+  return null;
+}
+
+// D-S5: accept either a plain string (treated as the `target` slot, body
+// stays empty) or the canonical `{ headScriptsHtml, bodyScriptsHtml }`
+// object. Strings are silently dropped on the body side per the original
+// contract; this just makes the head side honour the same convention.
+function coerceGenerateScriptsReturn(value: any, target: 'head' | 'body', pluginName: string): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string') {
+    // D-S5: a string return is treated as head-only. Body targets get
+    // empty. This restores the head path that used to silently drop
+    // strings via `result?.bodyScriptsHtml` and never wrote them either.
+    return target === 'head' ? value : '';
+  }
+  if (typeof value === 'object') {
+    const key = target === 'head' ? 'headScriptsHtml' : 'bodyScriptsHtml';
+    const v = value[key];
+    return typeof v === 'string' ? v : null;
+  }
+  warnPluginReturnTypeOnce(
+    pluginName,
+    'generateScripts',
+    `returned a non-object, non-string value (${typeof value}); expected a string or { headScriptsHtml, bodyScriptsHtml }. Skipping.`
+  );
+  return null;
+}
+
+// D-M1: enforce that translations are a plain string-to-string map.
+// The previous behaviour silently spread a string return into the
+// translations object (`{ '0': 'c', '1': 'h', ... }`) which produced
+// garbage keys at runtime.
+function coerceTranslationsReturn(value: any, localeId: string, pluginName: string): Record<string, string> {
+  if (value === null || value === undefined) return {};
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    warnPluginReturnTypeOnce(
+      pluginName,
+      'translations',
+      `returned a non-object value for locale "${localeId}" (${typeof value}); expected Record<string, string>. Skipping.`
+    );
+    return {};
+  }
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(value)) {
+    if (typeof v === 'string') out[k] = v;
+  }
+  return out;
 }
 
 const pluginErrors: { plugin: string; hook: string; message: string; filePath?: string }[] = [];
@@ -732,9 +817,14 @@ function registerPlugin(
   if (typeof plugin.generateMetaTags === 'function') {
     if (hasCapabilityForHook(descriptor, 'generateMetaTags')) {
       const fn = plugin.generateMetaTags;
-      hooks.injectHead.push((config: any, pageContext: any, root: any) => {
+      hooks.injectHead.push(async (config: any, pageContext: any, root: any) => {
         if (!shouldExecute(pageContext)) return '';
-        return safeCall('generateMetaTags', name, fn, config, pageContext, root) || '';
+        const raw = await safeCall('generateMetaTags', name, fn, config, pageContext, root);
+        // D-S4: the contract is `string`. Object returns used to be
+        // stringified to "[object Object]" and injected into every page's
+        // <head>. We now reject the wrong shape, warn, and skip — same
+        // behaviour we use for missing/null returns.
+        return coerceStringPluginReturn(raw, 'generateMetaTags', name) || '';
       });
     } else {
       TUI.warn(`Plugin "${shortName}" exports generateMetaTags but didn't declare "head" capability - skipped`);
@@ -745,15 +835,22 @@ function registerPlugin(
   if (typeof plugin.generateScripts === 'function') {
     if (hasCapabilityForHook(descriptor, 'generateScripts')) {
       const fn = plugin.generateScripts;
-      hooks.injectHead.push((config: any, pageContext: any) => {
+      // D-H3: pass a `target` arg so plugins can render different content
+      // for head vs body without computing both. The arg is optional —
+      // existing plugins that only know `(config, options)` still work.
+      // D-S5: plain string returns are now treated as the head slot;
+      // body gets an empty string. Previously a string return was dropped
+      // on the body side (result?.bodyScriptsHtml was undefined), making
+      // the body capability effectively dead for the simple shape.
+      hooks.injectHead.push(async (config: any, pageContext: any) => {
         if (!shouldExecute(pageContext)) return '';
-        const result = safeCall('generateScripts', name, fn, config, options) as any;
-        return result?.headScriptsHtml || '';
+        const raw = await safeCall('generateScripts', name, fn, config, options, 'head') as any;
+        return coerceGenerateScriptsReturn(raw, 'head', name) || '';
       });
-      hooks.injectBody.push((config: any, pageContext: any) => {
+      hooks.injectBody.push(async (config: any, pageContext: any) => {
         if (!shouldExecute(pageContext)) return '';
-        const result = safeCall('generateScripts', name, fn, config, options) as any;
-        return result?.bodyScriptsHtml || '';
+        const raw = await safeCall('generateScripts', name, fn, config, options, 'body') as any;
+        return coerceGenerateScriptsReturn(raw, 'body', name) || '';
       });
     } else {
       TUI.warn(`Plugin "${shortName}" exports generateScripts but didn't declare "head"/"body" capability - skipped`);
@@ -785,7 +882,7 @@ function registerPlugin(
   if (typeof plugin.getAssets === 'function') {
     if (hasCapabilityForHook(descriptor, 'getAssets')) {
       const fn = plugin.getAssets;
-      hooks.assets.push(() => safeCall('getAssets', name, fn, options) as any[] || []);
+      hooks.assets.push(async () => (await safeCall('getAssets', name, fn, options)) as any[] || []);
     } else {
       TUI.warn(`Plugin "${shortName}" exports getAssets but didn't declare "assets" capability - skipped`);
     }
@@ -841,7 +938,13 @@ function registerPlugin(
   if (typeof plugin.translations === 'function') {
     if (hasCapabilityForHook(descriptor, 'translations')) {
       const fn = plugin.translations;
-      hooks.translations.push((localeId: string) => safeCall('translations', name, fn, localeId, options) as Record<string, string> || {});
+      hooks.translations.push(async (localeId: string) => {
+        // D-M1 + async-await fix: the callback is async because plugins
+        // are allowed to return Promises. `safeCall` itself awaits
+        // before returning, so `raw` is always a settled value here.
+        const raw = await safeCall('translations', name, fn, localeId, options);
+        return coerceTranslationsReturn(raw, localeId, name);
+      });
     } else {
       TUI.warn(`Plugin "${shortName}" exports translations but didn't declare "translations" capability - skipped`);
     }

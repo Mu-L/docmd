@@ -51,11 +51,14 @@ if (locals.workspace && workspace.projects && workspace.projects.length > 0) {
         : normalizedBase;
 
       const projectPfx = project.prefix.startsWith('/') ? project.prefix : '/' + project.prefix;
-      const absoluteHref = (workspaceBase + projectPfx).replace(/\/+$/, '') || '/';
+      let absoluteHref = (workspaceBase + projectPfx).replace(/\/{2,}/g, '/') || '/';
+      if (project.prefix !== '/' && !absoluteHref.endsWith('/')) {
+        absoluteHref += '/';
+      }
     %>
     <li>
-      <a href="<%= absoluteHref %>" 
-        class="project-switcher-item <%= isCurrentActive ? 'active' : '' %>" 
+      <a href="<%= absoluteHref %>"
+        class="project-switcher-item <%= isCurrentActive ? 'active' : '' %>"
         data-spa-ignore>
         <span class="project-title"><%= getProjectLabel(project) %></span>
         <% if (project.prefix !== '/') { %>

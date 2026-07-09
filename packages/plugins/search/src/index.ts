@@ -28,7 +28,7 @@ const require = createRequire(import.meta.url);
 
 export const plugin: PluginDescriptor = {
   name: 'search',
-  version: '0.8.9',
+  version: '0.8.10',
   capabilities: ['post-build', 'head', 'body', 'assets', 'translations']
 };
 
@@ -42,11 +42,18 @@ const i18nDir = path.resolve(__dirname, '..', 'i18n');
  * Returns the importable path (file:// URL) or null if not found.
  */
 function resolveDocmdSearch(): string | null {
+  // #163 (deeper fix): previously this walked `__dirname` and two parent
+  // directories, which let `docmd-search` resolve into the monorepo's
+  // own node_modules when the user runs the binary through a pnpm/npm
+  // symlink. The plugin then thought the user's project had it installed,
+  // silently skipped the peer-dep install, and fell back to keyword
+  // search with a misleading message. We now scope resolution to the
+  // user's project only — `process.cwd()/node_modules`. The monorepo's
+  // own dev workflow goes through the workspace test runner, which has
+  // its own module-resolution context.
   const searchPaths = [
     process.cwd(),
-    __dirname,
-    path.resolve(__dirname, '../../..'),  // monorepo root
-    path.resolve(__dirname, '../../../..'), // parent of monorepo
+    path.join(process.cwd(), 'node_modules')
   ];
 
   // First, locate the package via its `./package.json` subpath export.
@@ -125,18 +132,43 @@ async function getLatestDocmdSearchVersion(): Promise<string> {
 }
 
 /**
+ * docmd-search requires peer dependencies for embedding:
+ * - @huggingface/transformers: the ML model runtime
+ * - onnxruntime-node: ONNX backend for Node.js
+ */
+const PEER_DEPS = ['@huggingface/transformers@^4.0.0', 'onnxruntime-node@^1.20.0'];
+
+/**
+ * Build the install command for the current package manager. When
+ * `extraPackages` is non-empty, those are added alongside `peerDeps` so
+ * docmd-search can be installed together with its peers in one shot.
+ */
+function buildInstallCmd(cwd: string, pkgManager: string, extraPackages: string[] = []): string {
+  const all = [...extraPackages, ...PEER_DEPS];
+  switch (pkgManager) {
+    case 'pnpm': return `pnpm add ${all.join(' ')}`;
+    case 'yarn': return `yarn add ${all.join(' ')}`;
+    case 'bun':  return `bun add ${all.join(' ')}`;
+    default:
+      // --foreground-scripts ensures postinstall scripts (e.g. onnxruntime-node
+      // binary download) run even in CI environments where npm's allow-scripts
+      // security feature would otherwise block them.
+      return `npm install --foreground-scripts ${all.join(' ')}`;
+  }
+}
+
+/**
  * Auto-install docmd-search package along with its peer dependencies.
  * Installs the latest stable version from npm.
  */
 async function autoInstallDocmdSearch(tui: any, quiet: boolean): Promise<boolean> {
   const cwd = process.cwd();
   const pkgManager = detectPackageManager(cwd);
-  
-  // Get latest version (non-deprecated)
+
   if (!quiet && tui) {
     tui.step('Fetching latest docmd-search version', 'WAIT');
   }
-  
+
   const version = await getLatestDocmdSearchVersion();
   const versionedPackage = version === 'latest' ? 'docmd-search' : `docmd-search@${version}`;
 
@@ -144,51 +176,58 @@ async function autoInstallDocmdSearch(tui: any, quiet: boolean): Promise<boolean
     tui.step(`Installing ${versionedPackage} with peer dependencies`, 'WAIT');
   }
 
-  // docmd-search requires peer dependencies for embedding:
-  // - @huggingface/transformers: the ML model runtime
-  // - onnxruntime-node: ONNX backend for Node.js
-  const peerDeps = ['@huggingface/transformers@^4.0.0', 'onnxruntime-node@^1.20.0'];
-  
-  let installCmd = '';
-  switch (pkgManager) {
-    case 'pnpm': 
-      installCmd = `pnpm add ${versionedPackage} ${peerDeps.join(' ')}`; 
-      break;
-    case 'yarn': 
-      installCmd = `yarn add ${versionedPackage} ${peerDeps.join(' ')}`; 
-      break;
-    case 'bun': 
-      installCmd = `bun add ${versionedPackage} ${peerDeps.join(' ')}`; 
-      break;
-    default: 
-      // --foreground-scripts ensures postinstall scripts (e.g. onnxruntime-node
-      // binary download) run even in CI environments where npm's allow-scripts
-      // security feature would otherwise block them.
-      installCmd = `npm install --foreground-scripts ${versionedPackage} ${peerDeps.join(' ')}`; 
-      break;
+  return runInstall(tui, quiet, cwd, pkgManager, buildInstallCmd(cwd, pkgManager, [versionedPackage]),
+    'docmd-search installed successfully',
+    'Failed to install docmd-search',
+    'Could not auto-install docmd-search. Please install manually:\n' +
+    '  npm install docmd-search @huggingface/transformers onnxruntime-node\n' +
+    'Or disable semantic search: plugins: { search: { semantic: false } }'
+  );
+}
+
+/**
+ * Auto-install just the peer dependencies. Used when docmd-search is
+ * already present but `@huggingface/transformers` or `onnxruntime-node`
+ * is missing — previously the plugin only warned and fell back to
+ * keyword search (#163, partial fix).
+ */
+async function installPeerDeps(tui: any, quiet: boolean): Promise<boolean> {
+  const cwd = process.cwd();
+  const pkgManager = detectPackageManager(cwd);
+
+  if (!quiet && tui) {
+    tui.step('Installing missing peer dependencies', 'WAIT');
   }
 
+  return runInstall(tui, quiet, cwd, pkgManager, buildInstallCmd(cwd, pkgManager),
+    'Peer dependencies installed',
+    'Failed to install peer dependencies',
+    'Could not auto-install peer dependencies. Please install manually:\n' +
+    '  npm install @huggingface/transformers onnxruntime-node\n' +
+    'Or disable semantic search: plugins: { search: { semantic: false } }'
+  );
+}
+
+/**
+ * Run a package-manager install command. Centralised so the two
+ * auto-install paths (full docmd-search, peer-only) share error
+ * handling and timeout.
+ */
+async function runInstall(
+  tui: any, quiet: boolean, cwd: string, pkgManager: string,
+  cmd: string, successLabel: string, failLabel: string, manualHint: string
+): Promise<boolean> {
   try {
     const { execSync } = await import('node:child_process');
-    execSync(installCmd, { stdio: 'pipe', cwd, timeout: 180000 });
-    
-    if (!quiet && tui) {
-      tui.step(`docmd-search installed successfully`, 'DONE');
-    }
+    execSync(cmd, { stdio: 'pipe', cwd, timeout: 180000 });
+    if (!quiet && tui) tui.step(successLabel, 'DONE');
     return true;
   } catch (err: any) {
     if (!quiet && tui) {
-      tui.step(`Failed to install docmd-search`, 'FAIL');
-      tui.warn(
-        '  Could not auto-install docmd-search. Please install manually:\n' +
-        '    npm install docmd-search @huggingface/transformers onnxruntime-node\n' +
-        '  Or disable semantic search: plugins: { search: { semantic: false } }'
-      );
+      tui.step(failLabel, 'FAIL');
+      tui.warn(`  ${manualHint}`);
     } else {
-      console.warn(
-        '[plugin-search] Failed to auto-install docmd-search.\n' +
-        '  Run: npm install docmd-search @huggingface/transformers onnxruntime-node'
-      );
+      console.warn(`[plugin-search] ${manualHint}`);
     }
     return false;
   }
@@ -211,38 +250,48 @@ function findMissingPeerDep(resolvePaths: string[]): string | null {
 
 /**
  * Ensure docmd-search is installed when semantic: true is requested.
- * If missing, attempts to auto-install the latest version.
+ * If missing, attempts to auto-install the latest version. If peers are
+ * missing but docmd-search itself is present, auto-installs just the
+ * peers (#163 partial fix: previously it warned and fell back to keyword
+ * search, leaving the project in a broken state).
  *
  * Returns:
- *   { ready: true,  freshInstall: false } — already installed, proceed normally
- *   { ready: true,  freshInstall: true  } — just installed; caller must re-exec
- *                                           indexing in a child process because
- *                                           Node's module cache won't see the
- *                                           new packages in the current process.
- *   { ready: false, freshInstall: false } — install failed, fall back to keyword
+ *   { ready: true,  freshInstall: false, reason: 'present' }
+ *     — already installed (docmd-search + peers), proceed normally.
+ *   { ready: true,  freshInstall: true,  reason: 'docmd-search' | 'peers' }
+ *     — just installed; caller must re-exec indexing in a child process
+ *       because Node's module cache won't see the new packages.
+ *   { ready: false, freshInstall: false, reason: '<reason>' }
+ *     — install failed; caller falls back to keyword search and shows the
+ *       actual reason (e.g. 'docmd-search' or 'peers') in the message.
  */
-async function ensureDocmdSearch(tui: any, quiet: boolean): Promise<{ ready: boolean; freshInstall: boolean }> {
+async function ensureDocmdSearch(tui: any, quiet: boolean): Promise<{ ready: boolean; freshInstall: boolean; reason: string }> {
   const resolvePaths = [process.cwd(), path.join(process.cwd(), 'node_modules')];
 
   // Already installed — verify peers too.
   if (resolveDocmdSearch()) {
     const missingPeer = findMissingPeerDep(resolvePaths);
     if (missingPeer) {
-      const msg =
-        `Semantic search peer dependency missing: ${missingPeer}\n` +
-        '  Add it to your project:\n' +
-        '    npm install @huggingface/transformers onnxruntime-node\n' +
-        '  Or disable semantic search: plugins: { search: { semantic: false } }';
-      if (!quiet && tui) tui.warn(`  ${msg}`);
-      else console.warn(`[plugin-search] ${msg}`);
-      return { ready: false, freshInstall: false };
+      // Auto-install just the peers (was: just warn and give up).
+      const installed = await installPeerDeps(tui, quiet);
+      if (!installed) return { ready: false, freshInstall: false, reason: 'peers' };
+      // Verify peers resolved after install.
+      if (findMissingPeerDep(resolvePaths)) {
+        if (!quiet && tui) {
+          tui.warn('  Peer dependencies were installed but could not be resolved. Please restart the build.');
+        }
+        return { ready: false, freshInstall: false, reason: 'peers' };
+      }
+      // docmd-search itself was already installed; the new peers triggered
+      // a Node module-cache miss for them too. Re-exec in a child process.
+      return { ready: true, freshInstall: true, reason: 'peers' };
     }
-    return { ready: true, freshInstall: false };
+    return { ready: true, freshInstall: false, reason: 'present' };
   }
 
   // Attempt auto-install (installs docmd-search + peers together).
   const installed = await autoInstallDocmdSearch(tui, quiet);
-  if (!installed) return { ready: false, freshInstall: false };
+  if (!installed) return { ready: false, freshInstall: false, reason: 'docmd-search' };
 
   // Verify docmd-search resolved after install.
   const resolved = resolveDocmdSearch();
@@ -250,13 +299,13 @@ async function ensureDocmdSearch(tui: any, quiet: boolean): Promise<{ ready: boo
     if (!quiet && tui) {
       tui.warn('  docmd-search was installed but could not be resolved. Please restart the build.');
     }
-    return { ready: false, freshInstall: false };
+    return { ready: false, freshInstall: false, reason: 'docmd-search' };
   }
 
   // Signal to the caller that a fresh install just happened. The current Node
   // process has a stale module resolution cache and cannot import the newly
   // installed packages — the caller must spawn a child process for indexing.
-  return { ready: true, freshInstall: true };
+  return { ready: true, freshInstall: true, reason: 'docmd-search' };
 }
 
 /**
@@ -355,10 +404,18 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
       }
     }
 
-    const { ready, freshInstall } = await ensureDocmdSearch(tui, !showTui);
+    const { ready, freshInstall, reason } = await ensureDocmdSearch(tui, !showTui);
     if (!ready) {
-      // Graceful fallback: build keyword index instead
-      if (showTui) tui.warn('  Falling back to keyword search (docmd-search not installed)');
+      // Graceful fallback: build keyword index instead. The `reason` field
+      // tells the caller whether docmd-search itself or just its peers were
+      // missing so the message is accurate (#163 deeper fix: previously it
+      // always said "docmd-search not installed" even when only a peer
+      // was missing).
+      const why =
+        reason === 'peers'     ? 'semantic peer dependencies missing' :
+        reason === 'docmd-search' ? 'docmd-search not installed' :
+                                    'docmd-search not installed';
+      if (showTui) tui.warn(`  Falling back to keyword search (${why})`);
     } else if (freshInstall) {
       // docmd-search was just installed in this process. Node's module cache
       // won't see it, so spawn a child docmd build to do the indexing instead

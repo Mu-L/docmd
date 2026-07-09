@@ -1,6 +1,6 @@
 {
   "name": "@docmd/core",
-  "version": "0.8.9",
+  "version": "0.8.10",
   "description": "Build production-ready documentation from Markdown in seconds. No React, no bloat, just content.",
   "type": "module",
   "browser": false,
@@ -43,7 +43,7 @@
     "ws": "^8.21.0"
   },
   "devDependencies": {
-    "@types/node": "^24.13.2"
+    "@types/node": "^24.13.3"
   },
   "keywords": [
     "docmd",

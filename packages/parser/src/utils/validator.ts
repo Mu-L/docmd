@@ -20,6 +20,8 @@ const KNOWN_KEYS = [
   // V3 Modern Labels
   'title', 'url', 'src', 'out', 'base', 'layout',
   'versions', 'redirects', 'notFound', 'projects',
+  // Engine selection (e.g. "rust" for the rust preview engine)
+  'engine', 'engines',
 
   // V2 Legacy Labels
   'siteTitle', 'siteUrl', 'srcDir', 'outputDir',
@@ -75,6 +77,12 @@ function validateConfig(config) {
   }
 
   // 3. Typos and Unknown Keys (Top Level)
+  // T-Z3: previously completely-unknown keys were silently ignored. We
+  // now warn about every unrecognised top-level key (typo suggestions
+  // where applicable) so misconfigurations don't ship silently. Nested
+  // plugin config (`plugins.<name>.*`) is intentionally NOT checked —
+  // each plugin owns its own schema and is validated by the plugin
+  // loader.
   Object.keys(config).forEach(key => {
     // Skip checking internal keys (starting with _)
     if (key.startsWith('_')) return;
@@ -83,8 +91,7 @@ function validateConfig(config) {
       if (TYPO_MAPPING[key]) {
         warnings.push(`Found unknown property "${key}". Did you mean "${TYPO_MAPPING[key]}"?`);
       } else {
-        // Optional: Warn about completely unknown keys, or silent ignore to allow plugins
-        // warnings.push(`Unknown property "${key}".`);
+        warnings.push(`Unknown property "${key}" in config — ignored. (Top-level keys only; plugin-specific options belong under "plugins.<name>".)`);
       }
     }
   });

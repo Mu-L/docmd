@@ -1,6 +1,6 @@
 {
   "name": "@docmd/monorepo",
-  "version": "0.8.9",
+  "version": "0.8.10",
   "private": true,
   "description": "The minimalist, zero-config documentation generator monorepo.",
   "scripts": {
@@ -31,14 +31,14 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^24.13.2",
+    "@types/node": "^24.13.3",
     "chalk": "^4.1.2",
     "docmd-search": "^0.1.0",
     "esbuild": "^0.28.1",
-    "eslint": "^10.5.0",
+    "eslint": "^10.6.0",
     "globals": "^17.7.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.62.0"
+    "typescript-eslint": "^8.63.0"
   },
   "engines": {
     "node": ">=18"
