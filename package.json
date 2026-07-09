@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "pnpm docmd dev",
     "live": "pnpm docmd-live",
-    "build": "node tools/run-recursive-build.mjs",
+    "build": "pnpm -r run build",
     "doctor": "pnpm docmd doctor",
     "validate": "pnpm docmd validate",
     "migrate": "pnpm docmd migrate",
