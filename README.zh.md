@@ -198,18 +198,18 @@ docmd add <name>     # 安装插件或模板
 
 | 插件 | 状态 | 描述 |
 | :--- | :---: | :--- |
-| `search` | ✅ 核心 | 带模糊匹配的离线全文搜索 |
-| `seo` | ✅ 核心 | SEO 标签与 Open Graph 元数据 |
-| `sitemap` | ✅ 核心 | 生成 `sitemap.xml` |
-| `git` | ✅ 核心 | Git 提交历史与最后更新时间 |
-| `analytics` | ✅ 核心 | 轻量级分析集成 |
-| `llms` | ✅ 核心 | AI 上下文生成（`llms.txt` / `llms-full.txt`） |
-| `mermaid` | ✅ 核心 | Mermaid 图表支持 |
-| `openapi` | ✅ 核心 | 构建期 OpenAPI 3.x 规范渲染器 |
-| `okf` | ✅ Core | 面向 AI 代理的 Open Knowledge Format 包 (按 locale) |
-| `pwa` | ➕ 可选 | Progressive Web App —— 离线导航 |
-| `threads` | ➕ 可选 | 内联讨论串 *(by @svallory)* |
-| `math` | ➕ 可选 | KaTeX / LaTeX 数学公式渲染 |
+| `search` | 核心 | 带模糊匹配的离线全文搜索 |
+| `seo` | 核心 | SEO 标签与 Open Graph 元数据 |
+| `sitemap` | 核心 | 生成 `sitemap.xml` |
+| `git` | 核心 | Git 提交历史与最后更新时间 |
+| `analytics` | 核心 | 轻量级分析集成 |
+| `llms` | 核心 | AI 上下文生成（`llms.txt` / `llms-full.txt`） |
+| `mermaid` | 核心 | Mermaid 图表支持 |
+| `openapi` | 核心 | 构建期 OpenAPI 3.x 规范渲染器 |
+| `okf` | Core | 面向 AI 代理的 Open Knowledge Format 包 (按 locale) |
+| `pwa` | 可选 | Progressive Web App —— 离线导航 |
+| `threads` | 可选 | 内联讨论串 *(by @svallory)* |
+| `math` | 可选 | KaTeX / LaTeX 数学公式渲染 |
 
 安装可选插件：
 
