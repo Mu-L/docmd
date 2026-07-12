@@ -1,6 +1,6 @@
 {
   "name": "@docmd/core",
-  "version": "0.8.11",
+  "version": "0.8.12",
   "description": "Build production-ready documentation from Markdown in seconds. No React, no bloat, just content.",
   "type": "module",
   "browser": false,
@@ -31,7 +31,6 @@
     "@docmd/plugin-mermaid": "workspace:*",
     "@docmd/plugin-okf": "workspace:*",
     "@docmd/plugin-openapi": "workspace:*",
-    "@docmd/plugin-pwa": "workspace:*",
     "@docmd/plugin-search": "workspace:*",
     "@docmd/plugin-seo": "workspace:*",
     "@docmd/plugin-sitemap": "workspace:*",
