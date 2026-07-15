@@ -1,3 +1,0 @@
-# Guide
-
-Go back [Home](/).
