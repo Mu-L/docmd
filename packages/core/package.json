@@ -1,6 +1,6 @@
 {
   "name": "@docmd/core",
-  "version": "0.8.13",
+  "version": "0.8.14",
   "description": "Build production-ready documentation from Markdown in seconds. No React, no bloat, just content.",
   "type": "module",
   "browser": false,
@@ -39,7 +39,7 @@
     "@docmd/ui": "workspace:*",
     "@docmd/utils": "workspace:*",
     "esbuild": "^0.28.1",
-    "ws": "^8.21.0"
+    "ws": "^8.21.1"
   },
   "devDependencies": {
     "@types/node": "^24.13.3"
