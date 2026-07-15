@@ -52,6 +52,16 @@ if (fs.existsSync(binaryPath)) {
   process.exit(0);
 }
 
+// Copy local binary from sibling rust-binaries package if present (monorepo development fallback)
+const siblingBinPath = path.join(pkgDir, '..', 'rust-binaries', 'bin', binaryName);
+if (fs.existsSync(siblingBinPath)) {
+  console.log(`[@docmd/engine-rust] Copying local binary from sibling rust-binaries package…`);
+  fs.mkdirSync(binDir, { recursive: true });
+  fs.copyFileSync(siblingBinPath, binaryPath);
+  fs.chmodSync(binaryPath, 0o755);
+  process.exit(0);
+}
+
 // Download URLs with exact version (npm CDNs)
 const URLS = [
   // unpkg (npm CDN) - exact version

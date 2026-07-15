@@ -97,7 +97,9 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
 
   try {
     const workerScript = path.resolve(__dirname, '../engine/worker-parser.js');
-    workerPool = new WorkerPool(workerScript, { config, cwd: CWD });
+    const workerConfig = { ...config };
+    delete workerConfig._workerPool;
+    workerPool = new WorkerPool(workerScript, { config: workerConfig, cwd: CWD });
     // Clean output dir before initial build to remove stale files from previous builds.
     // Without this, files generated under old URL structures (e.g. from a different
     // auto-router behaviour) persist alongside new files and cause 404 on nav links.
@@ -172,7 +174,9 @@ export async function startDevServer(configPathOption: string, opts: any = {}) {
 
       if (workerPool) await workerPool.terminateAll();
       const workerScript = path.resolve(__dirname, '../engine/worker-parser.js');
-      workerPool = new WorkerPool(workerScript, { config, cwd: CWD });
+      const workerConfig = { ...config };
+      delete workerConfig._workerPool;
+      workerPool = new WorkerPool(workerScript, { config: workerConfig, cwd: CWD });
 
       // Full rebuild
       await buildSite(configPathOption, {

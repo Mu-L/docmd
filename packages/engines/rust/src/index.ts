@@ -129,10 +129,19 @@ export function createRustEngine(): Engine {
   
   return {
     name: 'rust',
-    version: '0.8.13',
+    version: '0.8.14',
     
-    supports(_taskType: string): boolean {
-      return true;
+    supports(taskType: string): boolean {
+      return [
+        'file:discover',
+        'file:read',
+        'file:readBatch',
+        'file:write',
+        'file:exists',
+        'git:log',
+        'git:status',
+        'search:index'
+      ].includes(taskType);
     },
     
     async run<T>(task: EngineTask): Promise<EngineResult<T>> {

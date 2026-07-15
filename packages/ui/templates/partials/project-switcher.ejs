@@ -51,9 +51,29 @@ if (locals.workspace && workspace.projects && workspace.projects.length > 0) {
         : normalizedBase;
 
       const projectPfx = project.prefix.startsWith('/') ? project.prefix : '/' + project.prefix;
-      let absoluteHref = (workspaceBase + projectPfx).replace(/\/{2,}/g, '/') || '/';
-      if (project.prefix !== '/' && !absoluteHref.endsWith('/')) {
-        absoluteHref += '/';
+
+      // Route the workspace-switcher link through the SAME bound URL helper
+      // that version/language switchers use (buildAbsoluteUrl). The generator
+      // binds it to the current page's UrlContext, so:
+      //   - non-offline builds: returns the clean absolute path (/search/)
+      //   - offline builds:     returns a file://-safe relative path (./search/index.html)
+      // This is the single source of truth — the template never branches on
+      // isOfflineMode and never computes URLs itself.
+      //
+      // The helper signature is (base, localePrefix, versionPrefix, pagePath).
+      // For workspace switching: base=workspaceBase, locale/version prefixes
+      // are empty (the switcher doesn't change locale or version), and
+      // pagePath is the project's prefix (e.g. 'search/' or '' for root).
+      const projectPagePath = project.prefix === '/' ? '' : projectPfx.replace(/^\//, '').replace(/\/?$/, '/') ;
+      let absoluteHref;
+      if (typeof buildAbsoluteUrl === 'function') {
+        absoluteHref = buildAbsoluteUrl(workspaceBase || '/', '', '', projectPagePath);
+      } else {
+        // Legacy fallback (e.g. when included outside the generator context).
+        absoluteHref = (workspaceBase + projectPfx).replace(/\/{2,}/g, '/') || '/';
+        if (project.prefix !== '/' && !absoluteHref.endsWith('/')) {
+          absoluteHref += '/';
+        }
       }
     %>
     <li>
