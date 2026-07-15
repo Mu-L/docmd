@@ -1,6 +1,6 @@
 {
   "name": "@docmd/core",
-  "version": "0.8.14",
+  "version": "0.8.15",
   "description": "Build production-ready documentation from Markdown in seconds. No React, no bloat, just content.",
   "type": "module",
   "browser": false,
@@ -43,6 +43,13 @@
   },
   "devDependencies": {
     "@types/node": "^24.13.3"
+  },
+  "allowScripts": {
+    "esbuild": true,
+    "@docmd/engine-rust": true,
+    "onnxruntime-node": true,
+    "protobufjs": true,
+    "sharp": true
   },
   "keywords": [
     "docmd",
