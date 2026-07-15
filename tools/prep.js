@@ -60,6 +60,21 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 
+process.env.DOCMD_TEST = 'true';
+
+const path = require('path');
+const monorepoRoot = path.resolve(__dirname, '..');
+const siblingDocmdSearch = path.resolve(monorepoRoot, '..', 'docmd-search');
+const testPaths = [
+  monorepoRoot,
+  path.join(monorepoRoot, 'node_modules')
+];
+if (fs.existsSync(siblingDocmdSearch)) {
+  testPaths.push(siblingDocmdSearch);
+  testPaths.push(path.join(siblingDocmdSearch, 'node_modules'));
+}
+process.env.DOCMD_TEST_SEARCH_PATH = testPaths.join(path.delimiter);
+
 const args = process.argv.slice(2);
 
 // --verbose / --full streams every step's raw output as it runs.

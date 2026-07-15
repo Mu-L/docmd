@@ -142,6 +142,90 @@ export const test = runTestFile({
       assert(hrefs.some((h) => h.includes('assets/img.png') && !h.startsWith('/assets/')), 'M-2: asset path is rewritten to relative (no leading /) for file://');
       assert(hrefs.includes('./destination/index.html'), 'M-2: internal href rewritten to relative .html');
     }
+
+    // #179 — root/home links must emit explicit index.html in offline mode.
+    // The #167 fix covered markdown content links but NOT system-generated
+    // links (sidebar title, logo, breadcrumbs, version/lang switcher). Those
+    // still emitted bare `./` directory URLs that show a file listing under
+    // file:// instead of loading the page. The fix routes every template link
+    // through the same URL engine (buildContextualUrl) so the offline
+    // index.html suffix applies universally.
+    {
+      const dir = setup('offline-links-32-179-root-home-link');
+      writeFile(dir, 'docs/index.md', '# Home\nWelcome.\n');
+      writeFile(dir, 'docs/destination.md', '# Destination\n');
+      writeFile(dir, 'docmd.config.json', JSON.stringify({
+        title: 'Root Link Test',
+        src: './docs',
+        navigation: [
+          { title: 'Home', path: '/', icon: 'home' },
+          { title: 'Destination', path: '/destination' }
+        ]
+      }) + '\n');
+
+      execSync(`node ${DOCMD} build --offline`, { cwd: dir, stdio: 'pipe' });
+      const html = fs.readFileSync(path.join(dir, 'site/index.html'), 'utf8');
+      const hrefs = extractHrefs(html);
+
+      // The sidebar "Home" link (path: '/') must resolve to ./index.html,
+      // NOT bare './'. Under file://, './' shows a directory listing.
+      assert(hrefs.includes('./index.html'), '#179: root/home nav link is ./index.html (not bare ./)');
+      assert(!hrefs.some((h) => h === './'), '#179: no bare "./" directory URL leaked into offline HTML');
+      assert(!hrefs.some((h) => h === '/' && !h.includes('canonical') && !h.includes('alternate')), '#179: no bare "/" root URL in navigation hrefs');
+
+      // The destination link must also be index.html-suffixed (already
+      // covered by #167, but re-check to confirm the consolidated engine
+      // didn't regress it).
+      assert(hrefs.includes('./destination/index.html'), '#179: destination nav link is ./destination/index.html');
+    }
+
+    // #179 — nested page: root/home link must climb to ../index.html.
+    // A page at site/api/index.html clicking "Home" must go up one level.
+    {
+      const dir = setup('offline-links-33-179-nested-home-link');
+      writeFile(dir, 'docs/api/index.md', '# API\n');
+      writeFile(dir, 'docs/index.md', '# Home\n');
+      writeFile(dir, 'docmd.config.json', JSON.stringify({
+        title: 'Nested Root Test',
+        src: './docs',
+        navigation: [
+          { title: 'Home', path: '/', icon: 'home' },
+          { title: 'API', path: '/api' }
+        ]
+      }) + '\n');
+
+      execSync(`node ${DOCMD} build --offline`, { cwd: dir, stdio: 'pipe' });
+      const html = fs.readFileSync(path.join(dir, 'site/api/index.html'), 'utf8');
+      const hrefs = extractHrefs(html);
+
+      // From site/api/index.html, the root link must be ../index.html.
+      assert(hrefs.includes('../index.html'), '#179: nested-page root link is ../index.html (not bare ../)');
+      assert(!hrefs.some((h) => h === '../'), '#179: no bare "../" directory URL on nested page');
+    }
+
+    // #179 — non-offline build must STILL use clean URLs (no .html suffix).
+    // This confirms the fix didn't regress HTTP-server deployments.
+    {
+      const dir = setup('offline-links-34-179-non-offline-clean');
+      writeFile(dir, 'docs/index.md', '# Home\n');
+      writeFile(dir, 'docs/destination.md', '# Destination\n');
+      writeFile(dir, 'docmd.config.json', JSON.stringify({
+        title: 'Clean URL Test',
+        src: './docs',
+        navigation: [
+          { title: 'Home', path: '/', icon: 'home' },
+          { title: 'Destination', path: '/destination' }
+        ]
+      }) + '\n');
+
+      execSync(`node ${DOCMD} build`, { cwd: dir, stdio: 'pipe' });
+      const html = fs.readFileSync(path.join(dir, 'site/index.html'), 'utf8');
+      const hrefs = extractHrefs(html);
+
+      // Non-offline: root link is './' (clean URL), NOT './index.html'.
+      assert(hrefs.some((h) => h === './' || h === '/'), '#179: non-offline root link is a clean URL (./ or /)');
+      assert(!hrefs.some((h) => h.endsWith('index.html') && !h.includes('#')), '#179: non-offline build has no .html suffix on internal nav hrefs');
+    }
   }
 });
 

@@ -26,8 +26,8 @@
   },
   "plugins": {
     "search": {
-      "semantic": true,
-      "showConfidence": true
+      "semantic": false,
+      "showConfidence": false
     },
     "seo": {},
     "sitemap": {},

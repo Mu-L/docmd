@@ -341,6 +341,53 @@ export function installRuntimeDep(packageName: string): Promise<boolean> {
   });
 }
 
+/**
+ * Safe non-shell install of any list of packages.
+ * Replaces execSync(cmd) shell executions in plugins (e.g. search plugin).
+ */
+export function installPackages(packages: string[], cwd: string = process.cwd()): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (!Array.isArray(packages) || packages.length === 0) {
+      return resolve(true);
+    }
+    // Strict defense: ensure each package name only contains characters safe for CLI arguments
+    const SAFE_PKG_RE = /^[a-z0-9@/.\-^_*]+$/i;
+    for (const pkg of packages) {
+      if (!SAFE_PKG_RE.test(pkg)) {
+        TUI.warn(`Refusing to install unsafe package: ${pkg}`);
+        return resolve(false);
+      }
+    }
+
+    const pm = detectPackageManager(cwd);
+    const args = buildInstallArgs(packages[0], pm);
+    for (let i = 1; i < packages.length; i++) {
+      args.push(packages[i]);
+    }
+    
+    // Add --foreground-scripts when using npm to make sure postinstalls run
+    if (pm === 'npm') {
+      args.splice(1, 0, '--foreground-scripts');
+    }
+
+    let stderr = '';
+    let stdout = '';
+    const useShell = process.platform === 'win32';
+    const child = spawn(pm, args, { cwd, shell: useShell, timeout: 180_000 });
+
+    child.stdout.on('data', (chunk) => { stdout += chunk.toString(); });
+    child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
+
+    child.on('error', (err) => {
+      resolve(false);
+    });
+
+    child.on('close', (code) => {
+      resolve(code === 0);
+    });
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Helpers consumed by hooks.ts and engine.ts
 // ---------------------------------------------------------------------------
@@ -362,7 +409,7 @@ export function shortKey(packageName: string): string | null {
  *
  * Returns the absolute path to the entry JS file, or null if not found.
  */
-function manualResolvePackageEntry(packageName: string, startDir: string): string | null {
+export function manualResolvePackageEntry(packageName: string, startDir: string): string | null {
   const pkgSubPath = path.join('node_modules', packageName);
   let dir = path.resolve(startDir);
   // Walk up the directory tree looking for node_modules/<pkg>

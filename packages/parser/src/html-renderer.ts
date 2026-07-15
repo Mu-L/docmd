@@ -17,18 +17,24 @@ import { renderIcon } from './utils/icon-renderer.js';
 
 /**
  * Renders an EJS template string with provided data.
- * 
- * Injects docmd-specific context helpers (renderIcon, fixLink).
- * Utilizes lite-template natively, while passing a preprocessor hook 
- * to automatically strip YAML frontmatter out of any recursive file includes.
+ *
+ * This module is purely a template renderer — it contains NO URL logic.
+ * Every URL transformation goes through the single source of truth in
+ * `utils/url-utils.ts` (buildContextualUrl, buildRootRelativeUrl,
+ * rewriteHtmlLinks). The generator binds those functions to the current
+ * page's UrlContext and passes them in as `buildRelativeUrl` /
+ * `buildAbsoluteUrl` template helpers.
+ *
+ * Uses lite-template natively, with a preprocessor hook to automatically
+ * strip YAML frontmatter out of any recursive file includes.
  */
 async function renderTemplateAsync(templateString, data, options: any = {}) {
-  // Inject core helpers into every template
+  // Inject only the icon helper. URL helpers (buildRelativeUrl,
+  // buildAbsoluteUrl) are provided by the generator via `data` — this
+  // module never computes URLs itself.
   const fullData: any = {
     ...data,
     renderIcon,
-    // Helper to fix links relative to root
-    fixLink: (url) => fixHtmlLinks(url, data.relativePathToRoot, data.isOfflineMode, data.config?.base)
   };
 
   try {
@@ -47,38 +53,11 @@ async function renderTemplateAsync(templateString, data, options: any = {}) {
         return content;
       }
     };
-    
+
     return await tpl.render(templateString, fullData, finalOptions);
   } catch (e) {
     throw new Error(`Template Render Error: ${e.message}`);
   }
 }
 
-function fixHtmlLinks(url, root = './', isOffline = false, base = '/') {
-  if (!url || url.startsWith('http') || url.startsWith('#') || url.startsWith('mailto:')) return url;
-
-  let final = url;
-
-  // Strip base if present
-  if (base !== '/' && url.startsWith(base)) {
-    final = '/' + url.substring(base.length);
-  }
-
-  // Make relative
-  if (final.startsWith('/')) {
-    final = root + final.substring(1);
-  }
-
-  // Offline adjustments
-  if (isOffline) {
-    if (!final.includes('.') && !final.endsWith('/')) final += '/index.html';
-    else if (final.endsWith('/')) final += 'index.html';
-  } else {
-    // Clean URLs
-    if (final.endsWith('/index.html')) final = final.substring(0, final.length - 10);
-  }
-
-  return final;
-}
-
-export { renderTemplateAsync, fixHtmlLinks };
+export { renderTemplateAsync };

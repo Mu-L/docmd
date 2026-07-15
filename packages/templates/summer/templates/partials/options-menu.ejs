@@ -14,13 +14,13 @@
 
     <% if (locals.workspace && workspace.switcher.enabled && workspace.switcher.position === 'options-menu') { %>
       <div class="summer-options-menu__item">
-        <%- await include('project-switcher', { workspace, config, renderIcon, compact: true }) %>
+        <%- await include('project-switcher', { workspace, config, renderIcon, compact: true, buildAbsoluteUrl }) %>
       </div>
     <% } %>
 
     <% if (locals.allLocales && allLocales && allLocales.length > 1 && locals.config && config.i18n && config.i18n.position === 'options-menu') { %>
       <div class="summer-options-menu__item">
-        <%- await include('language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: true, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
+        <%- await include('language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: true, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix, buildAbsoluteUrl }) %>
       </div>
     <% } %>
 

@@ -99,7 +99,9 @@ export async function buildSite(configPath: string, opts: any = {}) {
     
     // Initialize global WorkerPool (or use provided one)
     const workerScript = path.resolve(__dirname, '../engine/worker-parser.js');
-    const workerPool = opts.workerPool || new WorkerPool(workerScript, { config, cwd: process.cwd() });
+    const workerConfig = { ...config };
+    delete workerConfig._workerPool;
+    const workerPool = opts.workerPool || new WorkerPool(workerScript, { config: workerConfig, cwd: process.cwd() });
     config._workerPool = workerPool;
 
     const hooks = await loadPlugins(config, { resolvePaths: [__dirname] });

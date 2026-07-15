@@ -20,7 +20,12 @@ import MarkdownIt from 'markdown-it';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 import type { PluginDescriptor } from '@docmd/api';
-import { outputPathToSlug, sanitizeUrl } from '@docmd/api';
+import {
+  outputPathToSlug,
+  sanitizeUrl,
+  installPackages,
+  manualResolvePackageEntry
+} from '@docmd/api';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,7 +33,7 @@ const require = createRequire(import.meta.url);
 
 export const plugin: PluginDescriptor = {
   name: 'search',
-  version: '0.8.13',
+  version: '0.8.14',
   // `init` lets onConfigResolved run at config-parse time — that's where we
   // compute the single `searchConfig` object. The build pipeline reads
   // it from `config._searchConfig` everywhere else, so there's exactly
@@ -151,6 +156,11 @@ function resolveDocmdSearch(): string | null {
     path.join(process.cwd(), 'node_modules')
   ];
 
+  if (process.env.DOCMD_TEST === 'true' && process.env.DOCMD_TEST_SEARCH_PATH) {
+    const extraPaths = process.env.DOCMD_TEST_SEARCH_PATH.split(path.delimiter);
+    searchPaths.push(...extraPaths);
+  }
+
   // First, locate the package via its `./package.json` subpath export.
   // This works regardless of the main `exports` conditions because the
   // subpath is explicitly declared in the package manifest.
@@ -194,21 +204,6 @@ function resolveDocmdSearch(): string | null {
 }
 
 /**
- * Detect the package manager used in the current project.
- */
-function detectPackageManager(cwd: string): 'pnpm' | 'yarn' | 'bun' | 'npm' {
-  let dir = cwd;
-  while (dir !== path.parse(dir).root) {
-    if (nativeFs.existsSync(path.join(dir, 'pnpm-lock.yaml'))) return 'pnpm';
-    if (nativeFs.existsSync(path.join(dir, 'yarn.lock'))) return 'yarn';
-    if (nativeFs.existsSync(path.join(dir, 'bun.lockb'))) return 'bun';
-    if (nativeFs.existsSync(path.join(dir, 'package-lock.json'))) return 'npm';
-    dir = path.dirname(dir);
-  }
-  return 'npm';
-}
-
-/**
  * Get the latest non-deprecated version of docmd-search from npm.
  * Falls back to 'latest' tag if fetch fails.
  */
@@ -234,31 +229,11 @@ async function getLatestDocmdSearchVersion(): Promise<string> {
 const PEER_DEPS = ['@huggingface/transformers@^4.0.0', 'onnxruntime-node@^1.20.0'];
 
 /**
- * Build the install command for the current package manager. When
- * `extraPackages` is non-empty, those are added alongside `peerDeps` so
- * docmd-search can be installed together with its peers in one shot.
- */
-function buildInstallCmd(cwd: string, pkgManager: string, extraPackages: string[] = []): string {
-  const all = [...extraPackages, ...PEER_DEPS];
-  switch (pkgManager) {
-    case 'pnpm': return `pnpm add ${all.join(' ')}`;
-    case 'yarn': return `yarn add ${all.join(' ')}`;
-    case 'bun':  return `bun add ${all.join(' ')}`;
-    default:
-      // --foreground-scripts ensures postinstall scripts (e.g. onnxruntime-node
-      // binary download) run even in CI environments where npm's allow-scripts
-      // security feature would otherwise block them.
-      return `npm install --foreground-scripts ${all.join(' ')}`;
-  }
-}
-
-/**
  * Auto-install docmd-search package along with its peer dependencies.
  * Installs the latest stable version from npm.
  */
 async function autoInstallDocmdSearch(tui: any, quiet: boolean): Promise<boolean> {
   const cwd = process.cwd();
-  const pkgManager = detectPackageManager(cwd);
 
   if (!quiet && tui) {
     tui.step('Fetching latest docmd-search version', 'WAIT');
@@ -271,13 +246,24 @@ async function autoInstallDocmdSearch(tui: any, quiet: boolean): Promise<boolean
     tui.step(`Installing ${versionedPackage} with peer dependencies`, 'WAIT');
   }
 
-  return runInstall(tui, quiet, cwd, pkgManager, buildInstallCmd(cwd, pkgManager, [versionedPackage]),
-    'docmd-search installed successfully',
-    'Failed to install docmd-search',
-    'Could not auto-install docmd-search. Please install manually:\n' +
-    '  npm install docmd-search @huggingface/transformers onnxruntime-node\n' +
-    'Or disable semantic search: plugins: { search: { semantic: false } }'
-  );
+  const packages = [versionedPackage, ...PEER_DEPS];
+  const success = await installPackages(packages, cwd);
+
+  if (success) {
+    if (!quiet && tui) tui.step('docmd-search installed successfully', 'DONE');
+    return true;
+  } else {
+    const manualHint = 'Could not auto-install docmd-search. Please install manually:\n' +
+      '  npm install docmd-search @huggingface/transformers onnxruntime-node\n' +
+      'Or disable semantic search: plugins: { search: { semantic: false } }';
+    if (!quiet && tui) {
+      tui.step('Failed to install docmd-search', 'FAIL');
+      tui.warn(`  ${manualHint}`);
+    } else {
+      console.warn(`[plugin-search] ${manualHint}`);
+    }
+    return false;
+  }
 }
 
 /**
@@ -288,38 +274,22 @@ async function autoInstallDocmdSearch(tui: any, quiet: boolean): Promise<boolean
  */
 async function installPeerDeps(tui: any, quiet: boolean): Promise<boolean> {
   const cwd = process.cwd();
-  const pkgManager = detectPackageManager(cwd);
 
   if (!quiet && tui) {
     tui.step('Installing missing peer dependencies', 'WAIT');
   }
 
-  return runInstall(tui, quiet, cwd, pkgManager, buildInstallCmd(cwd, pkgManager),
-    'Peer dependencies installed',
-    'Failed to install peer dependencies',
-    'Could not auto-install peer dependencies. Please install manually:\n' +
-    '  npm install @huggingface/transformers onnxruntime-node\n' +
-    'Or disable semantic search: plugins: { search: { semantic: false } }'
-  );
-}
+  const success = await installPackages(PEER_DEPS, cwd);
 
-/**
- * Run a package-manager install command. Centralised so the two
- * auto-install paths (full docmd-search, peer-only) share error
- * handling and timeout.
- */
-async function runInstall(
-  tui: any, quiet: boolean, cwd: string, pkgManager: string,
-  cmd: string, successLabel: string, failLabel: string, manualHint: string
-): Promise<boolean> {
-  try {
-    const { execSync } = await import('node:child_process');
-    execSync(cmd, { stdio: 'pipe', cwd, timeout: 180000 });
-    if (!quiet && tui) tui.step(successLabel, 'DONE');
+  if (success) {
+    if (!quiet && tui) tui.step('Peer dependencies installed', 'DONE');
     return true;
-  } catch (err: any) {
+  } else {
+    const manualHint = 'Could not auto-install peer dependencies. Please install manually:\n' +
+      '  npm install @huggingface/transformers onnxruntime-node\n' +
+      'Or disable semantic search: plugins: { search: { semantic: false } }';
     if (!quiet && tui) {
-      tui.step(failLabel, 'FAIL');
+      tui.step('Failed to install peer dependencies', 'FAIL');
       tui.warn(`  ${manualHint}`);
     } else {
       console.warn(`[plugin-search] ${manualHint}`);
@@ -333,12 +303,29 @@ async function runInstall(
  * Returns the first missing package name, or null if all present.
  */
 function findMissingPeerDep(resolvePaths: string[]): string | null {
+  const paths = (process.env.DOCMD_TEST === 'true' && process.env.DOCMD_TEST_SEARCH_PATH)
+    ? [
+        ...resolvePaths,
+        ...process.env.DOCMD_TEST_SEARCH_PATH.split(path.delimiter)
+      ]
+    : resolvePaths;
+
   for (const pkg of ['@huggingface/transformers', 'onnxruntime-node']) {
     try {
-      require.resolve(pkg, { paths: resolvePaths });
+      require.resolve(pkg, { paths });
+      continue;
     } catch {
-      return pkg;
+      // Check next path or fallback resolution
     }
+
+    let found = false;
+    for (const startDir of paths) {
+      if (manualResolvePackageEntry(pkg, startDir)) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) return pkg;
   }
   return null;
 }
@@ -651,17 +638,18 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
           const mergedExclude = [...builtinExcludes, ...(pluginOptions.exclude || [])];
 
           for (const ver of versions) {
-            const tmpOut = path.join(tmpBase, ver.id);
+            const versionIndexDir = path.join(ver.dir, '.docmd-search');
             try {
               await docmdSearch.indexDirectory(
                 {
                   rootDir: ver.dir,
-                  outDir: tmpOut,
+                  outDir: versionIndexDir,
                   model: pluginOptions.model,
                   include: pluginOptions.include,
                   exclude: mergedExclude,
                   chunkSize: pluginOptions.chunkSize,
                   chunkOverlap: pluginOptions.chunkOverlap,
+                  keepModelLoaded: true,
                 },
                 (progress: any) => {
                   if (showTui && progress.message) {
@@ -674,8 +662,8 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
               continue;
             }
 
-            // Read all batches from this version's tmp index and re-save with prefixed file paths
-            const tmpBatchesDir = path.join(tmpOut, 'batches');
+            // Read all batches from this version's index and re-save with prefixed file paths
+            const tmpBatchesDir = path.join(versionIndexDir, 'batches');
             if (nativeFs.existsSync(tmpBatchesDir)) {
               const batchFiles = nativeFs.readdirSync(tmpBatchesDir)
                 .filter(f => f.endsWith('.json'))
@@ -744,15 +732,17 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
           ...builtinExcludes,
           ...(pluginOptions.exclude || []),
         ];
+        const sourceIndexDir = path.join(docsDir, '.docmd-search');
         await docmdSearch.indexDirectory(
           {
             rootDir: docsDir,
-            outDir: semanticOutDir,
+            outDir: sourceIndexDir,
             model: pluginOptions.model,           // undefined → uses global/default
             include: pluginOptions.include,
             exclude: mergedExclude,
             chunkSize: pluginOptions.chunkSize,
             chunkOverlap: pluginOptions.chunkOverlap,
+            keepModelLoaded: true,
           },
           (progress: any) => {
             if (showTui && progress.message) {
@@ -761,6 +751,11 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
             }
           }
         );
+
+        // Clean output directory before copying to remove stale files from prior builds
+        await fs.rm(semanticOutDir, { recursive: true, force: true }).catch(() => {});
+        // Copy built index from source directory to output directory
+        await fs.cp(sourceIndexDir, semanticOutDir, { recursive: true, force: true });
 
         // No versioning — write an empty versions.json so the client knows
         await fs.writeFile(path.join(semanticOutDir, 'versions.json'), '[]');
