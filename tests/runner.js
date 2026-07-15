@@ -35,6 +35,20 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
+process.env.DOCMD_TEST = 'true';
+
+const monorepoRoot = path.resolve(import.meta.dirname, '..');
+const siblingDocmdSearch = path.resolve(monorepoRoot, '..', 'docmd-search');
+const testPaths = [
+  monorepoRoot,
+  path.join(monorepoRoot, 'node_modules')
+];
+if (fs.existsSync(siblingDocmdSearch)) {
+  testPaths.push(siblingDocmdSearch);
+  testPaths.push(path.join(siblingDocmdSearch, 'node_modules'));
+}
+process.env.DOCMD_TEST_SEARCH_PATH = testPaths.join(path.delimiter);
+
 const CYAN = (s) => `\x1b[36m${s}\x1b[0m`;
 const GREEN = (s) => `\x1b[32m${s}\x1b[0m`;
 const RED = (s) => `\x1b[31m${s}\x1b[0m`;
