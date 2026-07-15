@@ -33,7 +33,7 @@ const require = createRequire(import.meta.url);
 
 export const plugin: PluginDescriptor = {
   name: 'search',
-  version: '0.8.14',
+  version: '0.8.15',
   // `init` lets onConfigResolved run at config-parse time — that's where we
   // compute the single `searchConfig` object. The build pipeline reads
   // it from `config._searchConfig` everywhere else, so there's exactly
@@ -1001,6 +1001,43 @@ export function getAssets(options: any) {
   const semanticRequested = sc?.semanticRequested ?? (options || {}).semantic === true;
   const isSemantic = semanticRequested;
 
+  // Resolve the MiniSearch UMD bundle at build time instead of loading it
+  // from a CDN at runtime. Copying it locally (assets/js/vendor/) makes
+  // keyword search work in air-gapped, offline, and CDN-blocked
+  // environments, and removes an external runtime dependency.
+  //
+  // The installed version is read dynamically from the resolved package
+  // directory, so the CDN fallback URL (used only if local resolution
+  // fails) stays in sync with whatever `minisearch` version the user has
+  // installed — no hardcoded version to maintain.
+  //
+  // minisearch's `exports` map exposes only `.` and `./SearchableMap`, so
+  // `require.resolve('minisearch/package.json')` is blocked. We resolve the
+  // package's main entry instead (`dist/umd/index.js` — the browser UMD
+  // build the client expects as a global `MiniSearch`) and derive the
+  // package dir from it.
+  let miniSearchAsset: any;
+  try {
+    const msEntry = require.resolve('minisearch');
+    const msPkgDir = path.resolve(path.dirname(msEntry), '..', '..'); // dist/umd/index.js → package root
+    const msUmd = path.join(msPkgDir, 'dist', 'umd', 'index.js');
+    if (nativeFs.existsSync(msUmd)) {
+      miniSearchAsset = { src: msUmd, dest: 'assets/js/vendor/minisearch.js', type: 'js', location: 'body' };
+    }
+  } catch { /* minisearch not resolvable */ }
+  if (!miniSearchAsset) {
+    // CDN fallback — version read at build time from the installed copy so
+    // it never goes stale. If minisearch itself is unresolvable (truly
+    // broken install) the user has bigger problems than a stale version.
+    let msVer = '7.2.0';
+    try {
+      const msEntry = require.resolve('minisearch');
+      const msPkgDir = path.resolve(path.dirname(msEntry), '..', '..');
+      msVer = JSON.parse(nativeFs.readFileSync(path.join(msPkgDir, 'package.json'), 'utf8')).version || msVer;
+    } catch { /* keep default */ }
+    miniSearchAsset = { url: `https://cdn.jsdelivr.net/npm/minisearch@${msVer}/dist/umd/index.min.js`, type: 'js', location: 'body' };
+  }
+
   if (isSemantic) {
     // Semantic mode: serve the docmd-search client bundle at a known path
     // so the search client can dynamically import it at runtime.
@@ -1021,7 +1058,7 @@ export function getAssets(options: any) {
 
     const assets: any[] = [
       // Always include MiniSearch + keyword client as fallback
-      { url: 'https://cdn.jsdelivr.net/npm/minisearch@7.2.0/dist/umd/index.min.js', type: 'js', location: 'body' },
+      miniSearchAsset,
       { src: path.join(__dirname, 'docmd-search.js'), dest: 'assets/js/docmd-search.js', type: 'js', location: 'body' },
     ];
 
@@ -1041,7 +1078,7 @@ export function getAssets(options: any) {
 
   // Default: keyword search via MiniSearch
   return [
-    { url: 'https://cdn.jsdelivr.net/npm/minisearch@7.2.0/dist/umd/index.min.js', type: 'js', location: 'body' },
+    miniSearchAsset,
     { src: path.join(__dirname, 'docmd-search.js'), dest: 'assets/js/docmd-search.js', type: 'js', location: 'body' }
   ];
 }

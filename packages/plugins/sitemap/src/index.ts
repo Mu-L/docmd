@@ -19,7 +19,7 @@ import { outputPathToPathname, sanitizeUrl } from '@docmd/api';
 
 export const plugin: PluginDescriptor = {
   name: 'sitemap',
-  version: '0.8.14',
+  version: '0.8.15',
   capabilities: ['post-build']
 };
 

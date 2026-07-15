@@ -14,7 +14,7 @@
 
 import path from 'path';
 import fs from 'fs';
-import { validateConfig } from '@docmd/parser';
+import { validateConfig, normalizeNavPaths } from '@docmd/parser';
 import { normalizeConfig } from './config-schema.js';
 import { buildAutoNav } from './auto-router.js';
 import { pathToFileURL } from 'url';
@@ -390,6 +390,13 @@ export async function loadConfig(configPath: string, options: any = {}) {
       if (fs.existsSync(localNavPath)) {
         try {
           normalized.navigation = JSON.parse(fs.readFileSync(localNavPath, 'utf-8'));
+          // Normalise local navigation.json here. The inherited config nav
+          // was already normalised by normalizeConfig() above, and auto-nav
+          // self-normalises via normalizeInternalHref, so this is the only
+          // nav source that previously bypassed trailing-slash / external
+          // detection — which leaked slash-less paths into the sidebar and
+          // prev/next while markdown content kept its slash (#181).
+          normalizeNavPaths(normalized.navigation);
         } catch (e: any) {
           TUI.error('Navigation Error', `Failed to parse ${localNavPath}: ${e.message}`);
         }

@@ -47,6 +47,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import process from 'node:process';
 import { spawn } from 'node:child_process';
+import { isMainThread } from 'node:worker_threads';
 import { TUI } from '@docmd/tui';
 
 const require = createRequire(import.meta.url);
@@ -261,8 +262,20 @@ function buildInstallArgs(packageName: string, pm: 'pnpm' | 'yarn' | 'bun' | 'np
  * Returns true on a clean exit code from the package manager, false
  * otherwise. Caller decides whether a fail should be fatal.
  */
+// Module-level dedup flag for the missing-package.json hint. Without it,
+// every missing plugin re-prints the same one-liner from the main thread.
+let _noPackageJsonWarned = false;
+
 export function installRuntimeDep(packageName: string): Promise<boolean> {
   return new Promise((resolve) => {
+    // Worker threads never attempt auto-install. Only the main thread has
+    // write access to node_modules and the user's terminal. Without this
+    // guard, the worker pool (one thread per core) each spawn npm install
+    // for the same missing plugin, printing the same failure N times
+    // and racing on the same node_modules dir. Workers skip silently and
+    // let the main thread's loadPlugins() handle the install once.
+    if (!isMainThread) return resolve(false);
+
     if (!isValidRuntimeDepName(packageName)) {
       TUI.warn(`Refusing to install non-runtime dep: ${packageName}`);
       return resolve(false);
@@ -277,6 +290,23 @@ export function installRuntimeDep(packageName: string): Promise<boolean> {
     }
 
     const cwd = process.cwd();
+
+    // No package.json means there's no project to install into — every
+    // package manager refuses with an unhelpful error. Skip the spawn
+    // entirely and print one actionable hint (deduped across all missing
+    // plugins in the same run) so the user knows how to get full
+    // functionality instead of seeing N "unknown error" failures.
+    if (!nativeFs.existsSync(path.join(cwd, 'package.json'))) {
+      if (!_noPackageJsonWarned) {
+        _noPackageJsonWarned = true;
+        TUI.warn(
+          `No package.json found in ${cwd}. docmd will run with limited ` +
+          `functionality (plugins unavailable). For the full setup, run:\n` +
+          `  npx @docmd/core init`
+        );
+      }
+      return resolve(false);
+    }
     const pm = detectPackageManager(cwd);
     const version = getDocmdVersion();
     const versionedPackage =

@@ -511,31 +511,11 @@ export function buildAbsoluteContextualUrl(
  * @returns          - The HTML with the canonical `<base>` (or none) in place
  */
 export function normaliseBaseTag(html: string, isOffline: boolean, siteRootAbs: string): string {
-  // Step 1: strip every existing <base> tag (self-closing or with close, any attribute order)
+  // strip every existing <base> tag (self-closing or with close, any attribute order)
   const BASE_TAG_RE = /<base\b[^>]*\/?>/gi;
   const cleaned = html.replace(BASE_TAG_RE, '');
 
-  // Step 2: decide whether to emit a canonical one
-  if (isOffline) return cleaned;
-  if (!siteRootAbs || siteRootAbs === '/') return cleaned;
-
-  // Inject right after <title>...</title>. If no <title> exists, inject before </head>.
-  const canonical = `<base href="${escapeHtmlAttr(siteRootAbs)}">`;
-
-  const titleClose = cleaned.match(/<\/title>/i);
-  if (titleClose && typeof titleClose.index === 'number') {
-    return cleaned.slice(0, titleClose.index + titleClose[0].length)
-         + canonical
-         + cleaned.slice(titleClose.index + titleClose[0].length);
-  }
-  const headClose = cleaned.match(/<\/head>/i);
-  if (headClose && typeof headClose.index === 'number') {
-    return cleaned.slice(0, headClose.index)
-         + canonical
-         + cleaned.slice(headClose.index);
-  }
-  // Final fallback: prepend (shouldn't happen for valid HTML)
-  return canonical + cleaned;
+  return cleaned;
 }
 
 /** Minimal attribute-value escaper for the canonical <base href="...">. */

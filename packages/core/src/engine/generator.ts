@@ -553,6 +553,10 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       }
       if (siteRootAbs !== '/' && !siteRootAbs.endsWith('/')) siteRootAbs += '/';
 
+      if (!options.offline && siteRootAbs !== '/') {
+        relativePathToRoot = siteRootAbs;
+      }
+
       // Navigation Context
       let navPath = '/' + page.outputPath.replace(/\\/g, '/').replace(/\/index\.html$/, '').replace(/^index\.html$/, '');
       if (navPath === '/.') navPath = '/';

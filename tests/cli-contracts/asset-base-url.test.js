@@ -132,11 +132,12 @@ export const test = runTestFile({
         'URL-1d: root deploy default template does NOT emit <base href="/">');
     }
 
-    // URL-1e: the workspace sub-site case — a /search project must
-    // have <base href="/search/"> and DOCMD_SITE_ROOT = "/search/".
-    // Without this, the search sub-site at `/search` (no slash) would
-    // resolve `./assets/template/summer.css` to `/assets/...` (root)
-    // instead of `/search/assets/...` (correct).
+    // URL-1e: the workspace sub-site case — a /search project uses
+    // root-relative asset paths (/search/assets/...) with NO <base> tag.
+    // As of 0.8.15, docmd stopped emitting <base> tags for non-offline
+    // builds: root-relative URLs handle subpath rooting at any page
+    // depth without one, which also fixes #175 (the <base> tag was
+    // breaking nested-page asset resolution on GH Pages subpath deploys).
     {
       const proj = setup('asset-base-url-workspace-summer');
       fs.mkdirSync(path.join(proj, 'docs-main'), { recursive: true });
@@ -163,15 +164,19 @@ export const test = runTestFile({
       const result = build(proj);
       assert(result.ok, 'URL-1e: workspace build with summer sub-site succeeds');
       const searchHtml = fs.readFileSync(path.join(proj, 'site/search/index.html'), 'utf8');
-      assert(/<base\s+href="\/search\/"\s*>/.test(searchHtml),
-        'URL-1e: /search/ sub-site has <base href="/search/"> (absolute, not relative)');
+      assert(!/<base\s+href=/.test(searchHtml),
+        'URL-1e: /search/ sub-site emits NO <base> tag (root-relative paths instead)');
       assert(/window\.DOCMD_SITE_ROOT\s*=\s*"\/search\/"/.test(searchHtml),
         'URL-1e: /search/ sub-site has window.DOCMD_SITE_ROOT = "/search/"');
+      assert(/href="\/search\/assets\//.test(searchHtml),
+        'URL-1e: /search/ sub-site uses root-relative /search/assets/ paths');
     }
 
     // URL-1f: issue #175 — GitHub Pages project site (url has subpath,
-    // no explicit base). base must be auto-derived to the subpath and
-    // <base href> must point at it so assets resolve correctly.
+    // no explicit base). As of 0.8.15, docmd uses root-relative asset
+    // paths (/some-project/assets/...) with NO <base> tag. This fixes
+    // the #175 regression where the <base> tag + depth-relative paths
+    // broke nested-page asset resolution on subpath deploys.
     {
       const proj = setup('asset-base-url-gh-pages-subpath');
       writeFile(proj, 'docs/index.md', '# Home\n');
@@ -185,10 +190,10 @@ export const test = runTestFile({
       const result = build(proj);
       assert(result.ok, 'URL-1f: GH Pages subpath build succeeds');
       const html = fs.readFileSync(path.join(proj, 'site/index.html'), 'utf8');
-      assert(/<base\s+href="\/some-project\/"\s*>/.test(html),
-        'URL-1f: GH Pages subpath emits <base href="/some-project/"> (fixes #175)');
-      assert(/href="\.\/assets\/css\/docmd-main\.css/.test(html),
-        'URL-1f: CSS link is relative (resolves via base)');
+      assert(!/<base\s+href=/.test(html),
+        'URL-1f: GH Pages subpath emits NO <base> tag (root-relative paths fix #175)');
+      assert(/href="\/some-project\/assets\/css\/docmd-main\.css/.test(html),
+        'URL-1f: CSS link is root-relative (/some-project/assets/...)');
     }
 
     // URL-1g: issue #177 — --offline mode must NOT emit a <base> tag.

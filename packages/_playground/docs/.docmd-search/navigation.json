@@ -1,0 +1,28 @@
+{
+  "tree": [
+    {
+      "title": "En",
+      "path": "en",
+      "children": [
+        {
+          "title": "Index",
+          "path": "en/index.md"
+        },
+        {
+          "title": "Mermaid Icon Test",
+          "path": "en/mermaid-icon-test.md"
+        }
+      ]
+    },
+    {
+      "title": "Hi",
+      "path": "hi",
+      "children": [
+        {
+          "title": "Index",
+          "path": "hi/index.md"
+        }
+      ]
+    }
+  ]
+}

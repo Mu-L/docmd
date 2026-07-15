@@ -114,9 +114,11 @@ export const test = runTestFile({
       assert(fs.existsSync(htmlPath), 'PAA-2: site/index.html generated');
       const html = fs.readFileSync(htmlPath, 'utf8');
 
-      // search: MiniSearch CDN + local docmd-search.js
-      assert(/<script[^>]+src="https:\/\/cdn\.jsdelivr\.net\/npm\/minisearch/.test(html),
-        'PAA-2: search plugin CDN (MiniSearch) <script> tag emitted');
+      // search: MiniSearch is now bundled locally (assets/js/vendor/)
+      // instead of loaded from a CDN, so keyword search works in
+      // air-gapped / CDN-blocked environments.
+      assert(/<script[^>]+src="[^"]*assets\/js\/vendor\/minisearch\.js/.test(html),
+        'PAA-2: search plugin local MiniSearch <script> tag emitted');
       assert(/<script[^>]+src="\.\/assets\/js\/docmd-search\.js/.test(html),
         'PAA-2: search plugin local-copy <script src="./assets/js/docmd-search.js"> tag emitted');
 
