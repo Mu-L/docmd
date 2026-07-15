@@ -38,6 +38,18 @@
 
   <%- themeInitScript %>
 
+  <%
+    let _summerVersionRoot = '/';
+    const _summerLocPfx = (typeof localePrefix !== 'undefined' && localePrefix) ? localePrefix : '';
+    if (config.versions?.current && config._activeVersion?.id) {
+      const _summerIsSub = config.versions.current !== config._activeVersion.id;
+      _summerVersionRoot = '/' + _summerLocPfx + (_summerIsSub ? config._activeVersion.id + '/' : '');
+    } else if (_summerLocPfx) {
+      _summerVersionRoot = '/' + _summerLocPfx;
+    }
+    if (locals.isOfflineMode) { _summerVersionRoot = ''; }
+  %>
+
   <% if (locals.localePagesJson) { %>
     <script id="docmd-locale-pages" type="application/json"><%- locals.localePagesJson %></script>
   <% } %>
@@ -47,7 +59,7 @@
     window.DOCMD_ROOT = "<%= relativePathToRoot %>" || './';
     window.DOCMD_SITE_ROOT = "<%= siteRootAbs %>";
     window.DOCMD_APPEARANCE = "<%= appearance %>";
-    window.DOCMD_VERSION_ROOT = "<%= locals.versionRoot || '/' %>";
+    window.DOCMD_VERSION_ROOT = "<%= _summerVersionRoot || '/' %>";
     window.DOCMD_BASE = "<%= config.base || '/' %>";
     window.DOCMD_LOCALE = "<%= (locals.activeLocale && locals.activeLocale.id) ? locals.activeLocale.id : '' %>";
     window.DOCMD_DEFAULT_LOCALE = "<%= locals.defaultLocale || '' %>";
