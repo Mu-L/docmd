@@ -127,12 +127,12 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
         </button>
         <% if (logo && (logo.light || logo.dark)) { %>
-          <a href="<%= logo.href || relativePathToRoot %>" class="summer-logo" aria-label="<%= logo.alt || siteTitle %> — home">
+          <a href="<%= logo.href ? buildRelativeUrl(logo.href) : buildRelativeUrl('/') %>" class="summer-logo" aria-label="<%= logo.alt || siteTitle %> — home">
             <% if (logo.light) { %><img src="<%= relativePathToRoot %><%= logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>" alt="<%= logo.alt || siteTitle %>" class="summer-logo__light" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>><% } %>
             <% if (logo.dark) { %><img src="<%= relativePathToRoot %><%= logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>" alt="<%= logo.alt || siteTitle %>" class="summer-logo__dark" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>><% } %>
           </a>
         <% } else { %>
-          <a href="<%= relativePathToRoot %>" class="summer-logo summer-logo--text">
+          <a href="<%= buildRelativeUrl('/') %>" class="summer-logo summer-logo--text">
             <span class="summer-logo__icon"><%= (siteTitle || 'D').charAt(0).toUpperCase() %></span>
             <span><%= siteTitle %></span>
           </a>
@@ -164,7 +164,7 @@
 
         <% if (locals.allLocales && allLocales && allLocales.length > 1 && (!config.i18n || config.i18n.position === 'header' || config.i18n.position === 'options-menu' || config.i18n.position === 'topbar')) { %>
           <div class="summer-options-menu__item">
-            <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: true, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
+            <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: true, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix, buildAbsoluteUrl }) %>
           </div>
         <% } %>
 
@@ -189,13 +189,13 @@
 
         <% if (config.versions && config.versions.position === 'header') { %>
           <div class="summer-options-menu__item">
-            <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion: config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config }) %>
+            <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion: config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config, buildAbsoluteUrl }) %>
           </div>
         <% } %>
 
         <% if (locals.workspace && workspace.switcher.enabled && workspace.switcher.position === 'header') { %>
           <div class="summer-options-menu__item">
-            <%- await include('partials/project-switcher', { workspace, config, renderIcon, compact: true }) %>
+            <%- await include('partials/project-switcher', { workspace, config, renderIcon, compact: true, buildAbsoluteUrl }) %>
           </div>
         <% } %>
       </div>
@@ -306,17 +306,17 @@
         <div class="summer-sidebar__top">
           <% if (locals.workspace && workspace.switcher.enabled && workspace.switcher.position === 'sidebar-top') { %>
             <div class="summer-sidebar-widget">
-              <%- await include('partials/project-switcher', { workspace, config, renderIcon, compact: false }) %>
+              <%- await include('partials/project-switcher', { workspace, config, renderIcon, compact: false, buildAbsoluteUrl }) %>
             </div>
           <% } %>
           <% if (config.versions && config.versions.position === 'sidebar-top') { %>
             <div class="summer-sidebar-widget">
-              <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion: config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config }) %>
+              <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion: config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config, buildAbsoluteUrl }) %>
             </div>
           <% } %>
           <% if (locals.allLocales && allLocales && allLocales.length > 1 && config.i18n && config.i18n.position === 'sidebar-top') { %>
             <div class="summer-sidebar-widget">
-              <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: false, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
+              <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: false, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix, buildAbsoluteUrl }) %>
             </div>
           <% } %>
         </div>
@@ -326,17 +326,17 @@
         <div class="summer-sidebar__bottom">
           <% if (config.versions && config.versions.position === 'sidebar-bottom') { %>
             <div class="summer-sidebar-widget">
-              <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion: config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config }) %>
+              <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion: config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config, buildAbsoluteUrl }) %>
             </div>
           <% } %>
           <% if (locals.allLocales && allLocales && allLocales.length > 1 && config.i18n && config.i18n.position === 'sidebar-bottom') { %>
             <div class="summer-sidebar-widget">
-              <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: false, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix }) %>
+              <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: false, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix, buildAbsoluteUrl }) %>
             </div>
           <% } %>
           <% if (locals.workspace && workspace.switcher.enabled && workspace.switcher.position === 'sidebar-bottom') { %>
             <div class="summer-sidebar-widget">
-              <%- await include('partials/project-switcher', { workspace, config, renderIcon, compact: false }) %>
+              <%- await include('partials/project-switcher', { workspace, config, renderIcon, compact: false, buildAbsoluteUrl }) %>
             </div>
           <% } %>
           <% if (locals.optionsMenu && optionsMenu.position === 'sidebar-bottom') { %>
@@ -362,7 +362,7 @@
                     <% breadcrumbs.forEach((crumb, index) => { %>
                       <li class="summer-breadcrumbs__item <%= index === breadcrumbs.length - 1 ? 'is-current' : '' %>" <%= index === breadcrumbs.length - 1 ? 'aria-current="page"' : '' %>>
                         <% if (crumb.path && index < breadcrumbs.length - 1) { %>
-                          <a href="<%= relativePathToRoot %><%= _bcPrefix %><%= crumb.path.startsWith('/') ? crumb.path.substring(1) : crumb.path %>" class="summer-breadcrumbs__link"><%= crumb.title %></a>
+                          <a href="<%= buildRelativeUrl(crumb.path) %>" class="summer-breadcrumbs__link"><%= crumb.title %></a>
                         <% } else { %>
                           <span class="summer-breadcrumbs__current"><%= crumb.title %></span>
                         <% } %>
@@ -533,7 +533,7 @@
         <div class="summer-footer__brand">
           <div class="summer-footer__brand-logo">
             <% if (logo && (logo.light || logo.dark)) { %>
-              <a href="<%= logo.href || relativePathToRoot %>" aria-label="<%= logo.alt || siteTitle %>">
+              <a href="<%= logo.href ? buildRelativeUrl(logo.href) : buildRelativeUrl('/') %>" aria-label="<%= logo.alt || siteTitle %>">
                 <% if (logo.light) { %><img src="<%= relativePathToRoot %><%= logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>" alt="<%= logo.alt || siteTitle %>" class="summer-logo__light"><% } %>
                 <% if (logo.dark)  { %><img src="<%= relativePathToRoot %><%= logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>"  alt="<%= logo.alt || siteTitle %>" class="summer-logo__dark"><% } %>
               </a>

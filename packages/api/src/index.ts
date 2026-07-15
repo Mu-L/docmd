@@ -25,6 +25,8 @@ export {
   tryLoadAfterInstall,
   shortKey as shortRuntimeDepKey,
   getBuildStatusReporter,
+  installPackages,
+  manualResolvePackageEntry,
 } from './runtime-deps.js';
 
 // RPC action/event dispatcher
@@ -49,6 +51,10 @@ export {
   outputPathToPathname,
   outputPathToCanonical,
   buildContextualUrl,
+  buildRootRelativeUrl,
+  buildAbsoluteContextualUrl,
+  stripDefaultLocalePrefixFromHtml,
+  rewriteHtmlLinks,
   createUrlContext,
   computePageUrls,
   buildAbsoluteUrl,

@@ -21,7 +21,7 @@ import { attrEsc } from '@docmd/utils';
 
 export const plugin: PluginDescriptor = {
   name: 'seo',
-  version: '0.8.13',
+  version: '0.8.14',
   capabilities: ['head', 'post-build']
 };
 
@@ -75,10 +75,12 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
   // Use centralised URL utility for consistent URL generation.
   const siteUrl = config.url ? config.url.replace(/\/$/, '') : '';
   const pathname = outputPathToPathname(outputPath);
-  const pageUrl = sanitizeUrl(siteUrl + pathname);
+  const pageUrl = siteUrl ? sanitizeUrl(siteUrl + pathname) : '';
+
+  const isOffline = !!pageData.urlContext?.offline;
 
   const canonical = seo.canonicalUrl || frontmatter.canonicalUrl || pageUrl;
-  if (canonical) {
+  if (canonical && (!isOffline || canonical.startsWith('http'))) {
     html += `<link rel="canonical" href="${attrEsc(canonical)}">\n`;
   }
 
@@ -88,7 +90,9 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
 
   html += `<meta property="og:title" content="${attrEsc(fullTitle)}">\n`;
   html += `<meta property="og:description" content="${attrEsc(description)}">\n`;
-  html += `<meta property="og:url" content="${attrEsc(pageUrl)}">\n`;
+  if (pageUrl && (!isOffline || pageUrl.startsWith('http'))) {
+    html += `<meta property="og:url" content="${attrEsc(pageUrl)}">\n`;
+  }
   html += `<meta property="og:type" content="${attrEsc(seo.ogType || frontmatter.ogType || 'website')}">\n`;
 
   // Image Logic
@@ -96,9 +100,11 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
   if (image) {
     if (!image.startsWith('http')) {
       // Resolve relative image path to absolute URL
-      image = `${siteUrl}/${image.replace(/^\.?\//, '')}`;
+      image = siteUrl ? `${siteUrl}/${image.replace(/^\.?\//, '')}` : '';
     }
-    html += `<meta property="og:image" content="${attrEsc(image)}">\n`;
+    if (image && (!isOffline || image.startsWith('http'))) {
+      html += `<meta property="og:image" content="${attrEsc(image)}">\n`;
+    }
   }
 
   // 5. Twitter
@@ -111,7 +117,7 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
 
   html += `<meta name="twitter:title" content="${attrEsc(fullTitle)}">\n`;
   html += `<meta name="twitter:description" content="${attrEsc(description)}">\n`;
-  if (image) {
+  if (image && (!isOffline || image.startsWith('http'))) {
     html += `<meta name="twitter:image" content="${attrEsc(image)}">\n`;
   }
 

@@ -21,7 +21,7 @@ import {
   normaliseContainers,
   type NormaliserWarning
 } from './utils/container-normaliser.js';
-import { fixHtmlLinks } from './html-renderer.js';
+import { rewriteHtmlLinks, createUrlContext } from './utils/url-utils.js';
 
 // URL schemes that can execute code or exfiltrate data when clicked.
 // Phase 1.B (T-S4 fix, defense in depth): markdown-it 14 already rejects these
@@ -463,16 +463,23 @@ async function processContentAsync(rawString: string, mdInstance: any, config: a
 
   let htmlContent = mdInstance.render(markdownContent, env);
   if (env) {
-    htmlContent = stripDefaultLocalePrefix(htmlContent, env.defaultLocale, env.allLocales, env.relativePathToRoot || './');
-    if (env.isOfflineMode === true) {
-      htmlContent = rewriteInternalHrefsForOffline(htmlContent, env.relativePathToRoot || './', env.config?.base || '/');
-    } else {
-      // M-5 also affects online builds: `fr/index.html` linking to
-      // `/en/` is a 404 on HTTP servers too, not just file://. Run the
-      // same fixHtmlLinks pass (without the offline-specific `index.html`
-      // suffix) so cross-locale paths stay clean and correct.
-      htmlContent = fixHtmlLinks(htmlContent, env.relativePathToRoot || './', env.config?.base || '/');
-    }
+    // Single canonical HTML-link rewrite pass. All URL rules — offline
+    // index.html suffixing, clean-URL collapsing, external pass-through,
+    // hash preservation, base-path stripping, and default-locale prefix
+    // stripping — live in exactly one place: url-utils.ts via
+    // buildRootRelativeUrl. This replaces the former parallel pipelines
+    // (fixHtmlLinks + rewriteInternalHrefsForOffline + stripDefaultLocalePrefix).
+    const urlContext = createUrlContext({
+      relativePathToRoot: env.relativePathToRoot || './',
+      outputPrefix: '',
+      offline: env.isOfflineMode === true,
+      base: env.config?.base || '/',
+      siteUrl: '',
+    });
+    htmlContent = rewriteHtmlLinks(htmlContent, urlContext, {
+      defaultLocale: env.defaultLocale || null,
+      allLocales: env.allLocales,
+    });
   }
 
   if (hooks && hooks.onAfterParse) {
@@ -493,75 +500,6 @@ async function processContentAsync(rawString: string, mdInstance: any, config: a
   }
 
   return { frontmatter, htmlContent, headings, searchData };
-}
-
-/**
- * M-5: strip the default-locale prefix from absolute hrefs in the rendered
- * HTML. The default locale lives at root, not under its own prefix, so a
- * link like `/en/foo` from a non-default-locale page is a 404 unless the
- * prefix is dropped. We only run this when the source page is in a
- * non-default locale (which is when the default-locale prefix could
- * actually appear in author-written links).
- *
- * The function only touches absolute paths under root, only when the
- * first segment matches the default locale id, and never touches
- * external URLs / anchors / mailto.
- */
-function stripDefaultLocalePrefix(html: string, defaultLocale: string | null, allLocales: string[] | undefined, _relativePathToRoot: string): string {
-  if (!defaultLocale || !allLocales || allLocales.length < 2) return html;
-  // Escape regex special chars in the locale id (e.g. "en-us" with hyphen).
-  const escaped = defaultLocale.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  // Match `<a href="/xx/...">` and `<a href='/xx/...'>` where xx is the
-  // default locale. We do NOT touch `src=` (img) because images are
-  // typically under /assets/ and never locale-prefixed. We do NOT touch
-  // bare `/xx` at end of attribute (rare author pattern) — that case is
-  // ambiguous and the user can write `/` instead.
-  const re = new RegExp(`(<a\\s+[^>]*?\\bhref\\s*=\\s*)(["'])(\\/${escaped}\\/)([^"'#]*)\\2`, 'gi');
-  return html.replace(re, (_full, prefix, quote, _stripped, rest) => {
-    return `${prefix}${quote}/${rest}${quote}`;
-  });
-}
-
-/**
- * Walk every `<a href="...">` and `<img src="...">` in a piece of rendered
- * HTML and rewrite internal links for offline mode. External URLs (http,
- * https, mailto, tel, javascript, etc.), hash-only anchors, and asset paths
- * are passed through unchanged.
- *
- * The function is intentionally permissive on the regex: it tolerates
- * attribute ordering, single or double quotes, and surrounding whitespace.
- * The result is intentionally not run through a full HTML parser because
- * the document we're rewriting is the markdown-rendered fragment, not a
- * full HTML page, and we don't want to introduce a new dependency.
- */
-function rewriteInternalHrefsForOffline(html: string, relativePathToRoot: string, base: string): string {
-  // `<a href="...">` rewriting — covers markdown link `[text](url)`.
-  html = html.replace(
-    /<a\s+([^>]*?)\bhref\s*=\s*("([^"]*)"|'([^']*)')([^>]*)>/gi,
-    (full, _pre, quoted, dq, sq, _post) => {
-      const href = dq !== undefined ? dq : sq;
-      const fixed = fixHtmlLinks(href, relativePathToRoot, true, base);
-      if (fixed === href) return full;
-      const originalQuote = quoted.charAt(0);
-      return full.replace(quoted, originalQuote + fixed + originalQuote);
-    }
-  );
-  // `<img src="...">` rewriting — covers markdown image `![alt](src)`.
-  // The button template goes through `fixLink`, but markdown-it emits
-  // `<img>` directly without any template helper. Without this pass the
-  // offline HTML keeps `<img src="/assets/img.png">` which `file://`
-  // cannot resolve (it's an absolute path with no host).
-  html = html.replace(
-    /<img\s+([^>]*?)\bsrc\s*=\s*("([^"]*)"|'([^']*)')([^>]*)>/gi,
-    (full, _pre, quoted, dq, sq, _post) => {
-      const src = dq !== undefined ? dq : sq;
-      const fixed = fixHtmlLinks(src, relativePathToRoot, true, base);
-      if (fixed === src) return full;
-      const originalQuote = quoted.charAt(0);
-      return full.replace(quoted, originalQuote + fixed + originalQuote);
-    }
-  );
-  return html;
 }
 
 export { createMarkdownProcessor, processContent, processContentAsync };

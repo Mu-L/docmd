@@ -1,6 +1,6 @@
 # V0.5.0 Overview
 
-This is the documentation for version 0.5.0 of docmd. This version introduces several new features for developers.
+This is the documentation for version 0.5.0 of docmd. This version introduces several new features for developers and authors.
 
 ## Features
 

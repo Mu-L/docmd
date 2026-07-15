@@ -74,7 +74,7 @@
       <aside class="sidebar">
         <div class="sidebar-header">
           <% if (logo && logo.light && logo.dark) { %>
-            <a href="<%= logo.href || relativePathToRoot %>" class="logo-link">
+<a href="<%= logo.href ? buildRelativeUrl(logo.href) : buildRelativeUrl('/') %>" class="logo-link">
               <img
                 src="<%= relativePathToRoot %><%= logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>"
                 alt="<%= logo.alt || siteTitle %>" class="logo-light" <% if (logo.height) { %>style="height: <%=
@@ -85,7 +85,7 @@
                 logo.height %>;"<% } %>>
             </a>
           <% } else { %>
-            <h1><a href="<%= relativePathToRoot %>">
+<h1><a href="<%= buildRelativeUrl('/') %>">
                 <%= siteTitle %>
               </a></h1>
           <% } %>
@@ -96,7 +96,7 @@
         <div class="sidebar-top-group">
           <% if (locals.workspace && workspace.switcher.enabled && workspace.switcher.position === 'sidebar-top') { %>
             <div class="sidebar-project-switcher-wrapper">
-              <%- await include('partials/project-switcher', { workspace, config, renderIcon, compact: false, t: typeof t === 'function' ? t : null }) %>
+                <%- await include('partials/project-switcher', { workspace, config, renderIcon, compact: false, buildAbsoluteUrl, t: typeof t === 'function' ? t : null }) %>
             </div>
           <% } %>
           <% if (locals.optionsMenu && optionsMenu.position==='sidebar-top' ) { %>
@@ -107,12 +107,12 @@
           <% if (config.versions && config.versions.position==='sidebar-top' ) { %>
             <div class="sidebar-version-wrapper">
               <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion:
-                config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config, t: typeof t === 'function' ? t : null }) %>
+                config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config, buildAbsoluteUrl, t: typeof t === 'function' ? t : null }) %>
             </div>
           <% } %>
           <% if (locals.allLocales && allLocales && allLocales.length > 1 && config.i18n && config.i18n.position === 'sidebar-top') { %>
             <div class="sidebar-language-wrapper">
-              <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: false, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix, t: typeof t === 'function' ? t : null }) %>
+              <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: false, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix, buildAbsoluteUrl, t: typeof t === 'function' ? t : null }) %>
             </div>
           <% } %>
         </div>
@@ -121,17 +121,17 @@
           <% if (config.versions && config.versions.position==='sidebar-bottom' ) { %>
             <div class="sidebar-version-wrapper">
               <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion:
-                config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config, t: typeof t === 'function' ? t : null }) %>
+                config._activeVersion, relativePathToRoot, localePrefix: locals.localePrefix, config, buildAbsoluteUrl, t: typeof t === 'function' ? t : null }) %>
             </div>
           <% } %>
           <% if (locals.allLocales && allLocales && allLocales.length > 1 && config.i18n && config.i18n.position === 'sidebar-bottom') { %>
             <div class="sidebar-language-wrapper">
-              <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: false, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix, t: typeof t === 'function' ? t : null }) %>
+              <%- await include('partials/language-switcher', { allLocales, activeLocale: locals.activeLocale, defaultLocale: locals.defaultLocale, config, renderIcon, compact: false, currentPagePath: locals.currentPagePath, localePrefix: locals.localePrefix, buildAbsoluteUrl, t: typeof t === 'function' ? t : null }) %>
             </div>
           <% } %>
           <% if (locals.workspace && workspace.switcher.enabled && workspace.switcher.position === 'sidebar-bottom') { %>
             <div class="sidebar-project-switcher-wrapper">
-              <%- await include('partials/project-switcher', { workspace, config, renderIcon, compact: false, t: typeof t === 'function' ? t : null }) %>
+              <%- await include('partials/project-switcher', { workspace, config, renderIcon, compact: false, buildAbsoluteUrl, t: typeof t === 'function' ? t : null }) %>
             </div>
           <% } %>
           <% if (locals.optionsMenu && optionsMenu.position==='sidebar-bottom' ) { %>
@@ -186,7 +186,7 @@
                         <% breadcrumbs.forEach((crumb, index) => { %>
                           <li class="breadcrumb-item <%= index === breadcrumbs.length - 1 ? 'active' : '' %>" <%= index === breadcrumbs.length - 1 ? 'aria-current="page"' : '' %>>
                             <% if (crumb.path && index < breadcrumbs.length - 1) { %>
-                              <a href="<%= relativePathToRoot %><%= _bcPrefix %><%= crumb.path.startsWith('/') ? crumb.path.substring(1) : crumb.path %>"><%= crumb.title %></a>
+                              <a href="<%= buildRelativeUrl(crumb.path) %>"><%= crumb.title %></a>
                             <% } else { %>
                               <span><%= crumb.title %></span>
                             <% } %>

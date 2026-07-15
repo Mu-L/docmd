@@ -96,7 +96,7 @@
     <% if (sidebarConfig?.enabled !== false) { %>
       <aside class="sidebar">
         <div class="sidebar-header">
-          <h1><a href="<%= relativePathToRoot %>"><%= siteTitle %></a></h1>
+          <h1><a href="<%= buildRelativeUrl('/') %>"><%= siteTitle %></a></h1>
           <span class="mobile-view sidebar-menu-button float-right">
             <%- renderIcon("menu") %>
           </span>

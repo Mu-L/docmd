@@ -46,7 +46,7 @@ import nativeFs from 'fs';
 const _require = createRequire(import.meta.url);
 import * as parser from '@docmd/parser';
 import { TUI } from '@docmd/tui';
-import { findPageNeighbors, findBreadcrumbs, normalizeNavPaths, createUrlContext, buildContextualUrl, computePageUrls, buildAbsoluteUrl, sanitizeUrl, normaliseBaseTag } from '@docmd/parser';
+import { findPageNeighbors, findBreadcrumbs, normalizeNavPaths, createUrlContext, buildContextualUrl, buildAbsoluteContextualUrl, computePageUrls, sanitizeUrl, normaliseBaseTag } from '@docmd/parser';
 import * as ui from '@docmd/ui';
 
 
@@ -582,6 +582,19 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
 
       const buildRelativeUrl = (href: string) => buildContextualUrl(href, urlContext);
 
+      // bind buildAbsoluteUrl to the current page context so version /
+      // language / project switchers emit file://-safe relative URLs in
+      // offline builds. In non-offline builds the bound helper is a no-op
+      // pass-through to buildAbsoluteUrl (clean URLs preserved for SEO and
+      // HTTP servers). Templates keep calling `buildAbsoluteUrl(...)` and
+      // get correct behaviour automatically.
+      const buildAbsoluteUrlContextual = (
+        base: string,
+        localePrefix: string,
+        versionPrefix: string,
+        pagePath: string
+      ) => buildAbsoluteContextualUrl(base, localePrefix, versionPrefix, pagePath, urlContext);
+
       // Fix Neighbor Links
       const fixNeighbor = (node: any) => {
         if (!node) return null;
@@ -792,7 +805,10 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
         outputPrefix,
         siteRootAbs,
         t,
-        buildAbsoluteUrl,
+        // the bound contextual variant produces file://-safe relative
+        // URLs in offline mode (so version/language/project switcher links
+        // resolve correctly from disk), and clean absolute URLs otherwise.
+        buildAbsoluteUrl: buildAbsoluteUrlContextual,
         sanitizeUrl,
         workspace: config._workspace,
         themeCssLinkHtml: '',
