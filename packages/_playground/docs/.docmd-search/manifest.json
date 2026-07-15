@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "model": "Xenova/all-MiniLM-L6-v2",
+  "dimensions": 384,
+  "status": "complete",
+  "totalFiles": 3,
+  "indexedFiles": 3,
+  "totalChunks": 20,
+  "batchCount": 1,
+  "files": {
+    "en/index.md": {
+      "mtime": 1782054479978.7366,
+      "size": 3056,
+      "batches": []
+    },
+    "en/mermaid-icon-test.md": {
+      "mtime": 1778500933770.7527,
+      "size": 510,
+      "batches": []
+    },
+    "hi/index.md": {
+      "mtime": 1777897814668.348,
+      "size": 819,
+      "batches": []
+    }
+  }
+}
