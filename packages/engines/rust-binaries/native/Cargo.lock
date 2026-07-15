@@ -50,7 +50,7 @@ dependencies = [
 
 [[package]]
 name = "docmd-engine"
-version = "0.8.13"
+version = "0.8.14"
 dependencies = [
  "napi",
  "napi-build",

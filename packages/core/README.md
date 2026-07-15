@@ -1,4 +1,3 @@
-
 <div align="center">
 
   <a href="https://docmd.io">
@@ -165,10 +164,10 @@ docmd is built for the way documentation is read and used today:
 - **Copy as Markdown / Copy Context** — one-click buttons in the browser, optimised for pasting into AI chat.
 
 ### Built to scale
-- Internationalisation with multi-locale builds
-- Versioning for multiple doc releases
+- Internationalisation with multi-locale builds (per-locale search index, llms, okf, hreflang)
+- Versioning for multiple doc releases (with auto-detection of the current version)
 - Workspaces for monorepos and multi-project setups
-- Plugin system for extending core behaviour
+- Plugin system for extending core behaviour (per-hook return-type validation, async-friendly)
 - Full theming support, built-in templates, custom CSS/JS, light/dark mode
 
 ## CLI
@@ -177,7 +176,10 @@ docmd is built for the way documentation is read and used today:
 docmd dev            # local development server
 docmd build          # build for deployment
 docmd live           # browser-based Live Editor
-docmd migrate        # import from Docusaurus, VitePress, MkDocs, or Starlight
+docmd init           # scaffold a new docmd.config.json in the current folder
+docmd stop           # stop any running `docmd dev` / `docmd live` servers
+docmd doctor         # pre-flight check: config + plugin install status
+docmd migrate        # migrate to docmd from Docusaurus, VitePress, MkDocs, or Starlight
 docmd deploy         # generate config for Docker, NGINX, Caddy, Vercel, Netlify
 docmd validate       # check all internal links
 docmd mcp            # run as an MCP server over stdio
@@ -190,17 +192,18 @@ Core functionality is powered by a robust plugin system. The essentials are incl
 
 | Plugin | Status | Description |
 | :--- | :---: | :--- |
-| `search` | ✅ Core | Offline full-text search with fuzzy matching |
-| `seo` | ✅ Core | SEO tags and Open Graph metadata |
-| `sitemap` | ✅ Core | Generates `sitemap.xml` |
-| `git` | ✅ Core | Git commit history and last-updated dates |
-| `analytics` | ✅ Core | Lightweight analytics integration |
-| `llms` | ✅ Core | AI context generation (`llms.txt` / `llms-full.txt`) |
-| `mermaid` | ✅ Core | Mermaid diagram support |
-| `openapi` | ✅ Core | Build-time OpenAPI 3.x spec renderer |
-| `pwa` | ➕ Optional | Progressive Web App — offline navigation |
-| `threads` | ➕ Optional | Inline discussion threads *(by @svallory)* |
-| `math` | ➕ Optional | KaTeX / LaTeX math rendering |
+| `search` | Core | Offline full-text search (keyword + optional semantic via `docmd-search`) |
+| `seo` | Core | SEO tags and Open Graph metadata |
+| `sitemap` | Core | Generates `sitemap.xml` |
+| `git` | Core | Git commit history and last-updated dates |
+| `analytics` | Core | Lightweight analytics integration |
+| `llms` | Core | AI context generation (`llms.txt` / `llms-full.txt`) |
+| `okf` | Core | Open Knowledge Format bundles for AI agents (per-locale) |
+| `mermaid` | Core | Mermaid diagram support |
+| `openapi` | Core | Build-time OpenAPI 3.x spec renderer |
+| `pwa` | Optional | Progressive Web App — offline navigation |
+| `threads` | Optional | Inline discussion threads *(by @svallory)* |
+| `math` | Optional | KaTeX / LaTeX math rendering |
 
 Install optional plugins:
 

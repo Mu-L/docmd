@@ -349,7 +349,10 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[] 
   // node_modules. (Search plugin already scopes itself to
   // process.cwd()/node_modules; this applies the same principle to
   // the generic plugin/template loader.)
-  const isMonorepoContext = process.cwd().startsWith(__monorepoRoot + path.sep) || process.cwd() === __monorepoRoot;
+  const isMonorepoContext =
+    process.env.DOCMD_TEST === 'true' ||
+    process.cwd().startsWith(__monorepoRoot + path.sep) ||
+    process.cwd() === __monorepoRoot;
 
   // 1. Resolution paths for plugin imports.
   //

@@ -217,16 +217,128 @@ export function buildContextualUrl(href: string, context: UrlContext): string {
     ? (cleanPath ? prefixStr + '/' + cleanPath : prefixStr + '/')
     : cleanPath;
 
-  // Offline mode: append /index.html for file:// browsing
-  if (context.offline && combinedPath !== '' && !combinedPath.endsWith('.html') && !combinedPath.endsWith('/')) {
-    combinedPath = combinedPath + '/index.html';
-  } else if (context.offline && combinedPath !== '' && combinedPath.endsWith('/')) {
-    combinedPath = combinedPath + 'index.html';
+  // Offline mode: append /index.html for file:// browsing. Without this
+  // every directory-style URL (`./`, `./guide/`, `./en/`) resolves to a
+  // filesystem directory under file:// instead of an index.html file,
+  // producing a directory listing instead of the rendered page (#179).
+  // The empty `combinedPath` case is the root/home link — previously
+  // skipped here, which leaked bare `./` hrefs into offline builds.
+  if (context.offline) {
+    if (combinedPath === '' || combinedPath.endsWith('/')) {
+      combinedPath = combinedPath + 'index.html';
+    } else if (!combinedPath.endsWith('.html')) {
+      combinedPath = combinedPath + '/index.html';
+    }
   }
 
   // Build final relative URL
   const result = context.relativePathToRoot + combinedPath + hash;
   return sanitizeUrl(result);
+}
+
+/**
+ * Build a **root-relative** URL from a clean href, ignoring the current
+ * locale/version `outputPrefix`.
+ *
+ * This is the user-content counterpart to `buildContextualUrl`. Markdown
+ * authors write links like `[link](/guide/)` meaning the site root, not
+ * the current locale section. `buildContextualUrl` would prepend the
+ * locale prefix (correct for system nav, wrong for author intent); this
+ * function deliberately drops `outputPrefix` so the link resolves to the
+ * same place regardless of which locale the page lives under.
+ *
+ * Shares the exact same offline / clean-URL / external / hash logic as
+ * `buildContextualUrl` — there is exactly one implementation of each rule.
+ *
+ * @param href    - A clean href, e.g. `guide/`, `/guide/`, `#section`, `https://...`
+ * @param context - The UrlContext for the current page (outputPrefix is ignored)
+ * @returns A file://-safe relative URL rooted at the site root
+ */
+export function buildRootRelativeUrl(href: string, context: UrlContext): string {
+  // Re-use the canonical implementation but force outputPrefix to '' so
+  // the locale/version segment is never prepended. This keeps every URL
+  // rule (offline index.html, external pass-through, hash handling) in
+  // exactly one place: buildContextualUrl.
+  const rootContext: UrlContext = Object.freeze({
+    ...context,
+    outputPrefix: '',
+  });
+  return buildContextualUrl(href, rootContext);
+}
+
+/**
+ * Strip the default-locale prefix from absolute `<a href>` URLs in a
+ * rendered HTML fragment.
+ *
+ * When the default locale lives at root (e.g. `en/` → `/`), an author
+ * writing `[link](/en/foo)` from a `fr/` page would produce a 404 because
+ * `/en/foo` doesn't exist — the default locale is at `/foo`. This rewrites
+ * `/en/foo` → `/foo` for every `<a href>` whose first segment matches the
+ * default locale id.
+ *
+ * Only `<a href>` is touched (never `<img src>` — assets are never
+ * locale-prefixed). External URLs, anchors, and non-locale absolute paths
+ * are passed through unchanged.
+ *
+ * @param html          - The rendered HTML fragment to post-process
+ * @param defaultLocale - The default locale id, e.g. `en`
+ * @returns The HTML with default-locale prefixes stripped from absolute hrefs
+ */
+export function stripDefaultLocalePrefixFromHtml(html: string, defaultLocale: string): string {
+  if (!defaultLocale) return html;
+  const escaped = defaultLocale.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`(<a\\s+[^>]*?\\bhref\\s*=\\s*)(["'])(\\/${escaped}\\/)([^"'#]*)\\2`, 'gi');
+  return html.replace(re, (_full, prefix, quote, _stripped, rest) => {
+    return `${prefix}${quote}/${rest}${quote}`;
+  });
+}
+
+/**
+ * Walk every `<a href="...">` and `<img src="...">` in a rendered HTML
+ * fragment and route each internal URL through `buildRootRelativeUrl`.
+ *
+ * This is the **single HTML post-processor** for user-authored content
+ * (markdown bodies, button containers). It replaces the former parallel
+ * implementations: `fixHtmlLinks` (html-renderer.ts) and
+ * `rewriteInternalHrefsForOffline` (markdown-processor.ts). All URL
+ * rules — offline `index.html` suffixing, clean-URL collapsing, external
+ * pass-through, hash preservation, base-path stripping — live in exactly
+ * one place: `buildContextualUrl` via `buildRootRelativeUrl`.
+ *
+ * When `opts.defaultLocale` and `opts.allLocales` are supplied, the
+ * default-locale prefix is stripped from absolute hrefs first (see
+ * `stripDefaultLocalePrefixFromHtml`).
+ *
+ * @param html    - The rendered HTML fragment
+ * @param context - The UrlContext for the current page
+ * @param opts    - Optional locale info for default-locale prefix stripping
+ * @returns The HTML with all internal links rewritten for the current context
+ */
+export function rewriteHtmlLinks(
+  html: string,
+  context: UrlContext,
+  opts?: { defaultLocale?: string | null; allLocales?: readonly string[] }
+): string {
+  // 1. Strip default-locale prefix from absolute hrefs (only when the
+  //    build has more than one locale and we're on a non-default page).
+  if (opts?.defaultLocale && opts?.allLocales && opts.allLocales.length >= 2) {
+    html = stripDefaultLocalePrefixFromHtml(html, opts.defaultLocale);
+  }
+
+  // 2. Walk every <a href="..."> and <img src="..."> and route through the
+  //    canonical root-relative URL builder. One regex, one rule set.
+  html = html.replace(
+    /<(a|img)\s+([^>]*?)\b(href|src)\s*=\s*("([^"]*)"|'([^']*)')([^>]*)>/gi,
+    (full, _tag, _pre, _attr, quoted, dq, sq) => {
+      const url = dq !== undefined ? dq : sq;
+      const fixed = buildRootRelativeUrl(url, context);
+      if (fixed === url) return full;
+      const q = quoted.charAt(0);
+      return full.replace(quoted, q + fixed + q);
+    }
+  );
+
+  return html;
 }
 
 /**
@@ -291,6 +403,79 @@ export function buildAbsoluteUrl(
   const normalizedBase = base.endsWith('/') ? base : base + '/';
   const result = normalizedBase + localePrefix + versionPrefix + pagePath;
   return sanitizeUrl(result);
+}
+
+/**
+ * Context-aware variant of `buildAbsoluteUrl` for cross-locale/version
+ * navigation links (version dropdown, language switcher, project switcher).
+ *
+ * When the current render context is NOT offline, this is identical to
+ * `buildAbsoluteUrl` — it returns a clean absolute path (`/de/v1/guide/`).
+ *
+ * When the context IS offline, it returns a **relative** URL rooted at the
+ * current page's `relativePathToRoot`, with `index.html` appended for every
+ * directory-style segment. Without this, version/language switcher links in
+ * `--offline` builds emitted bare `/de/` hrefs that resolved to filesystem
+ * directories instead of index.html files under `file://` (#179).
+ *
+ * The base path is stripped from the computed absolute path before being
+ * re-rooted so that custom sub-path deploys (`base: '/docs/'`) still work.
+ *
+ * @param base          - config.base, e.g. `/docs/` or `/`
+ * @param localePrefix  - e.g. `de/` or `` for default locale
+ * @param versionPrefix - e.g. `v1/` or ``
+ * @param pagePath      - e.g. `guide/` or `` (root of the target prefix)
+ * @param context       - The UrlContext for the current page render
+ * @returns Either the absolute path (non-offline) or a relative file://-safe path (offline)
+ *
+ * @example
+ *   // Non-offline build:
+ *   buildAbsoluteContextualUrl('/', 'de/', '', 'guide/', ctx)
+ *   // → '/de/guide/'
+ *
+ *   // Offline build, page at /en/api/index.html (relativePathToRoot = '../../'):
+ *   buildAbsoluteContextualUrl('/', 'de/', '', 'guide/', ctx)
+ *   // → '../../de/guide/index.html'
+ *
+ *   // Offline build, switching to the root of the site:
+ *   buildAbsoluteContextualUrl('/', '', '', '', ctx)
+ *   // → './index.html'
+ */
+export function buildAbsoluteContextualUrl(
+  base: string,
+  localePrefix: string = '',
+  versionPrefix: string = '',
+  pagePath: string = '',
+  context?: UrlContext
+): string {
+  // No context = legacy behaviour: just build the absolute URL.
+  if (!context) {
+    return buildAbsoluteUrl(base, localePrefix, versionPrefix, pagePath);
+  }
+
+  // Non-offline builds keep clean absolute URLs (HTTP servers and SEO).
+  if (!context.offline) {
+    return buildAbsoluteUrl(base, localePrefix, versionPrefix, pagePath);
+  }
+
+  // Offline build: produce a file://-safe relative URL. We re-use
+  // `buildContextualUrl` so the trailing-/index.html logic stays in
+  // exactly one place. The base path is stripped so sub-path deploys
+  // don't double-prefix the relative URL.
+  const normalizedBase = base.endsWith('/') ? base : base + '/';
+  const absoluteTarget = normalizedBase + localePrefix + versionPrefix + pagePath;
+
+  // Strip the base prefix from the absolute target if it's there. The
+  // relative URL is rooted at the current page via context, so we only
+  // want the path *below* the base.
+  let cleanPath = absoluteTarget;
+  if (context.base && context.base !== '/' && cleanPath.startsWith(context.base)) {
+    cleanPath = cleanPath.substring(context.base.length);
+  }
+
+  // Delegate the offline index.html / relativePathToRoot work to the
+  // canonical function so behaviour stays consistent across paths.
+  return buildContextualUrl(cleanPath, context);
 }
 
 /**
