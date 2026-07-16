@@ -82,6 +82,16 @@ const args = process.argv.slice(2);
 // one line and a final Issues section appears only if something failed.
 const verbose = args.includes('--verbose') || args.includes('--full');
 
+// --expand prints the per-section detail lines (test runner's own
+// progress, lint per-file output, build per-package, etc.). Default
+// shows only one summary line per step.
+const expand = args.includes('--expand');
+
+// --skip-tests short-circuits the slow test runner + per-package unit
+// tests. Useful when you just need lint + build + docker check before
+// opening a PR (the test pipeline takes 60+ seconds on a warm cache).
+const skipTests = args.includes('--skip-tests') || args.includes('--fast');
+
 // Issue accumulator — populated by every section so a single trailing
 // "Issues" block can show the operator everything that needs fixing.
 const issues = [];
@@ -247,9 +257,11 @@ function runLint() {
 function runTestStep(label, cmd, statLabel = label) {
     const s = startStep(label);
 
-    // Verbose mode: stream the raw output as before. The finish line
-    // rewrites with [DONE] / [FAIL] depending on the exit code.
-    if (verbose) {
+    // --expand / --verbose / --full: stream the raw output as before.
+    // The finish line rewrites with [DONE] / [FAIL] depending on the
+    // exit code. This is the only mode where the operator sees the
+    // runner's own per-section TUI.
+    if (verbose || expand) {
         const result = run(cmd, { silent: false });
         if (result.ok) finishStep(s);
         else {
@@ -260,35 +272,43 @@ function runTestStep(label, cmd, statLabel = label) {
         return;
     }
 
-    // Default (collapsed) mode: STREAM LIVE so the operator sees the
-    // runner's own per-section TUI (each `┌─ <name>` is a new section
-    // starting, each `[ PASS ]` / `[ FAIL ]` is a section finishing).
-    // Previously this branch captured stdout into a buffer and printed a
-    // single summary line at the end — useful for clean logs but useless
-    // when a multi-minute test suite looks completely silent. Inheriting
-    // stdio lets the runner talk to the operator directly; the runner's
-    // own `Test summary: N passed, M failed across K files` line (printed
-    // inline at the end of its run) is now the canonical counts source.
-    // The cursor is no longer on the WAIT line after streaming, so we use
-    // writeVerdictLine() to print a fresh verdict line BELOW the streamed
-    // content instead of trying to rewrite the WAIT line in place.
+    // Default (collapsed) mode: CAPTURE everything. The operator sees
+    // only one summary line per step plus the trailing Summary block.
+    // If the test failed, the failed-test output is replayed to the
+    // operator at the end so they can debug without re-running with
+    // --expand. This is the fast, quiet mode most operators want.
     let exitCode = 0;
+    let result;
     try {
-        execSync(cmd, { stdio: 'inherit', maxBuffer: 64 * 1024 * 1024 });
+        result = execSync(cmd, {
+            stdio: ['ignore', 'pipe', 'pipe'],
+            maxBuffer: 64 * 1024 * 1024,
+        });
     } catch (e) {
         exitCode = e.status ?? 1;
+        result = e;
     }
+    const stdout = (result && result.stdout && result.stdout.toString) ? result.stdout.toString() : '';
+    const stderr = (result && result.stderr && result.stderr.toString) ? result.stderr.toString() : '';
 
     if (exitCode === 0) {
-        writeVerdictLine(s, 'done', 'all sections passed — see runner summary above');
-        addStat(statLabel, 'passed (see runner output for counts)', 'ok');
+        // Extract the runner's own "Test summary" line if present, for
+        // a richer one-liner. Falls back to generic passed.
+        const m = stdout.match(/Test summary:\s*([^\n]+)/);
+        const summary = m ? m[1].trim() : 'passed';
+        writeVerdictLine(s, 'done', summary);
+        addStat(statLabel, summary, 'ok');
     } else {
         const statusLine = `runner exited with status ${exitCode}`;
         writeVerdictLine(s, 'fail', statusLine);
         addStat(statLabel, `failed (exit ${exitCode})`, 'fail');
         addIssue('error', label, 'test command failed', [
             statusLine,
-            're-run with --verbose to see the full failure output inline',
+            're-run with --expand to see the full failure output inline',
+            '--- last 30 lines of captured stdout ---',
+            ...stdout.split('\n').slice(-30),
+            '--- last 30 lines of captured stderr ---',
+            ...stderr.split('\n').slice(-30),
         ]);
     }
 }
@@ -464,18 +484,27 @@ if (args.includes('--skip-tests')) {
     // in `tests/failsafe.test.mjs`. The old failsafe was removed because
     // it duplicated Setup / Build work that `pnpm prep` already does.
     // runTestStep() collapses to a one-line summary by default; pass
-    // --verbose to stream the full output.
-    // The shortLabel is what shows in the Summary block; the longer
-    // stepLabel stays in the per-step line.
-    runTestStep('Categorised test suite (tests/runner.js)',
-        'node tests/runner.js' + runnerArgs, 'Tests · runner.js');
+    // --expand (or --verbose) to stream the full output. --skip-tests
+    // short-circuits both test steps for a fast "does it build?" check
+    // before opening a PR.
+    if (skipTests) {
+        const s = startStep('Categorised test suite (tests/runner.js)');
+        finishStep(s, 'done', 'skipped (--skip-tests)');
+        addStat('Tests · runner.js', 'skipped (--skip-tests)', 'ok');
+        const s2 = startStep('Per-package unit tests (pnpm -r run test)');
+        finishStep(s2, 'done', 'skipped (--skip-tests)');
+        addStat('Tests · per-package units', 'skipped (--skip-tests)', 'ok');
+    } else {
+        runTestStep('Categorised test suite (tests/runner.js)',
+            'node tests/runner.js' + runnerArgs, 'Tests · runner.js');
 
-    // Per-package unit tests (parser, utils, mermaid, okf). Packages
-    // without a `test` script are skipped by `--if-present`. Wired in
-    // here so a regression in any plugin's local suite fails the
-    // release pipeline just like a regression in tests/runner.js.
-    runTestStep('Per-package unit tests (pnpm -r run test)',
-        'pnpm -r run test --if-present', 'Tests · per-package units');
+        // Per-package unit tests (parser, utils, mermaid, okf). Packages
+        // without a `test` script are skipped by `--if-present`. Wired in
+        // here so a regression in any plugin's local suite fails the
+        // release pipeline just like a regression in tests/runner.js.
+        runTestStep('Per-package unit tests (pnpm -r run test)',
+            'pnpm -r run test --if-present', 'Tests · per-package units');
+    }
 }
 footer(C.blue);
 
