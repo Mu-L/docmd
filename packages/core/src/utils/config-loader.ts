@@ -20,6 +20,38 @@ import { buildAutoNav } from './auto-router.js';
 import { pathToFileURL } from 'url';
 import { TUI } from '@docmd/api';
 
+/**
+ * Read the GitHub-style pathname from the project's git remote, if any.
+ * Walks up to find .git/config (handles sub-project checkouts). Returns
+ * the pathname component (e.g. "owner/repo") or null. Non-GitHub remotes
+ * return null and the warning is skipped.
+ */
+function readGitHubRemotePathname(startDir: string): string | null {
+  try {
+    let dir = startDir;
+    while (dir !== path.parse(dir).root) {
+      const cfg = path.join(dir, '.git', 'config');
+      if (fs.existsSync(cfg)) {
+        const text = fs.readFileSync(cfg, 'utf8');
+        const urlMatch = text.match(/\[remote\s+"origin"\][^[]*?url\s*=\s*(.+)/);
+        const url = urlMatch?.[1]?.trim().replace(/^["']|["']$/g, '');
+        if (!url) return null;
+        // SSH form: git@github.com:owner/repo.git
+        const ssh = url.match(/git@[^:]+:(.+?)(?:\.git)?$/);
+        if (ssh) return ssh[1];
+        // HTTPS form: https://github.com/owner/repo.git
+        const https = url.match(/^https?:\/\/[^/]+\/(.+?)(?:\.git)?$/);
+        if (https) return https[1];
+        // Already a plain pathname
+        if (/^[\w.-]+\/[\w.-]+$/.test(url)) return url;
+        return null;
+      }
+      dir = path.dirname(dir);
+    }
+  } catch { /* ignore — no warning emitted */ }
+  return null;
+}
+
 function hasMarkdownFiles(dir: string, maxDepth = 2, currentDepth = 0): boolean {
   if (currentDepth > maxDepth) return false;
   try {
@@ -386,6 +418,31 @@ export async function loadConfig(configPath: string, options: any = {}) {
 
       if (normalized._baseAutoDerived) {
         TUI.info(`${TUI.dim('base auto-derived from url:')} ${TUI.cyan(normalized._baseAutoDerived)}`);
+      }
+
+      // Cross-check `url` against the actual git remote. When a user renames a
+      // GitHub Pages repo (gh-sub-parent → beta-test), the URL field often
+      // goes stale, which silently breaks sitemap, canonical, og:url, AND
+      // auto-derived asset paths — they keep pointing at the old pathname.
+      // Warn loudly at build time so the user notices before deploying.
+      // Only the last pathname segment matters: the URL doesn't encode the
+      // owner (that's fixed by the host), so the repo name is what must match.
+      if (!options.quiet && normalized.url) {
+        const remotePath = readGitHubRemotePathname(cwd);
+        if (remotePath) {
+          try {
+            const urlPath = new URL(normalized.url).pathname.replace(/\/+$/, '');
+            const urlRepo = urlPath.split('/').filter(Boolean).pop();
+            const remoteRepo = remotePath.split('/').filter(Boolean).pop();
+            if (urlRepo && remoteRepo && urlRepo !== remoteRepo) {
+              TUI.warn(
+                `config.url points at "${normalized.url}" but the git remote is "${remotePath}". ` +
+                `Asset paths, sitemap, canonical, and og:url all use the stale repo name. ` +
+                `Update \`url\` in docmd.config.json to match the current repo.`,
+              );
+            }
+          } catch { /* malformed url — already caught elsewhere */ }
+        }
       }
 
       // Navigation Handling: Prioritize local navigation.json in the project folder
