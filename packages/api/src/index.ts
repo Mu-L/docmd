@@ -22,6 +22,7 @@ export {
   getDocmdVersion,
   isValidRuntimeDepName,
   installRuntimeDep,
+  resetInstallState,
   tryLoadAfterInstall,
   shortKey as shortRuntimeDepKey,
   getBuildStatusReporter,

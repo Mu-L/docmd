@@ -266,45 +266,104 @@ function buildInstallArgs(packageName: string, pm: 'pnpm' | 'yarn' | 'bun' | 'np
 // every missing plugin re-prints the same one-liner from the main thread.
 let _noPackageJsonWarned = false;
 
-export function installRuntimeDep(packageName: string): Promise<boolean> {
+// Tracks packages whose install already failed in this process so the
+// error block prints exactly once per package, not once per rebuild.
+// Dev server rebuilds call loadPlugins again, but a persistent failure
+// (e.g. version not on npmjs yet) won't fix itself between rebuilds, so
+// re-printing just floods the TUI. Call resetInstallState() to clear.
+const _failedInstalls = new Set<string>();
+
+/**
+ * Clear the install-attempt dedup state. Intended for explicit user
+ * actions (e.g. a `docmd init` re-run) where re-trying is meaningful.
+ * Dev server rebuilds do NOT call this — they rely on the dedup.
+ */
+export function resetInstallState(): void {
+  _failedInstalls.clear();
+  _noPackageJsonWarned = false;
+}
+
+/**
+ * Fetch the latest version of a package published on npm. Returns null
+ * on any error (offline, private registry, malformed response). Used
+ * as a fallback when the locally-pinned version doesn't exist on the
+ * registry yet, e.g. during a release where core is bumped before the
+ * plugins are published.
+ */
+async function fetchLatestNpmVersion(packageName: string): Promise<string | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(`https://registry.npmjs.org/${encodeURIComponent(packageName)}/latest`, {
+      signal: controller.signal,
+      headers: { 'accept': 'application/json' },
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    const data: any = await res.json();
+    return typeof data?.version === 'string' ? data.version : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function installRuntimeDep(packageName: string): Promise<boolean> {
+  // Worker threads never attempt auto-install. Only the main thread has
+  // write access to node_modules and the user's terminal. Without this
+  // guard, the worker pool (one thread per core) each spawn npm install
+  // for the same missing plugin, printing the same failure N times
+  // and racing on the same node_modules dir. Workers skip silently and
+  // let the main thread's loadPlugins() handle the install once.
+  if (!isMainThread) return false;
+
+  if (!isValidRuntimeDepName(packageName)) {
+    TUI.warn(`Refusing to install non-runtime dep: ${packageName}`);
+    return false;
+  }
+  const shortName = shortNameOf(packageName);
+  if (!shortName) return false;
+
+  // Dedup: if this package already failed to install in this process,
+  // skip silently. Dev server rebuilds hit loadPlugins again, and a
+  // persistent failure (e.g. version not on npmjs yet) won't fix
+  // itself between rebuilds. Re-printing floods the TUI.
+  if (_failedInstalls.has(packageName)) return false;
+
+  const registry = loadRuntimeRegistry();
+  if (!registry[shortName]) {
+    TUI.warn(`Runtime dep "${shortName}" not found in official registry`);
+    _failedInstalls.add(packageName);
+    return false;
+  }
+
+  const cwd = process.cwd();
+
+  // NOTE: we deliberately do NOT pre-check for package.json here. Package
+  // managers (npm/pnpm/yarn/bun) walk up the tree to find the nearest
+  // project root themselves, so a missing local package.json in a
+  // workspace sub-project (e.g. docs/docmd-search/ when docs/package.json
+  // exists one level up) is NOT a failure case. The spawn must be
+  // attempted. If the install genuinely fails because there's no project
+  // anywhere up the tree, the `error` / `close` handlers below detect
+  // that and surface the helpful hint exactly once per run.
+
+  const pm = detectPackageManager(cwd);
+  const version = getDocmdVersion();
+  // Don't pin when running a pre-release local build (e.g. 0.8.16 dev
+  // tar installed locally while npmjs only has 0.8.15). Pinning would
+  // cause every auto-install to fail with ETARGET. Query the registry
+  // for the actually-published latest version and use that instead.
+  let resolvedVersion = version;
+  if (version !== 'latest') {
+    const npmLatest = await fetchLatestNpmVersion(packageName);
+    if (npmLatest && npmLatest !== version) {
+      resolvedVersion = npmLatest;
+    }
+  }
+  const versionedPackage =
+    resolvedVersion === 'latest' ? packageName : `${packageName}@${resolvedVersion}`;
+
   return new Promise((resolve) => {
-    // Worker threads never attempt auto-install. Only the main thread has
-    // write access to node_modules and the user's terminal. Without this
-    // guard, the worker pool (one thread per core) each spawn npm install
-    // for the same missing plugin, printing the same failure N times
-    // and racing on the same node_modules dir. Workers skip silently and
-    // let the main thread's loadPlugins() handle the install once.
-    if (!isMainThread) return resolve(false);
-
-    if (!isValidRuntimeDepName(packageName)) {
-      TUI.warn(`Refusing to install non-runtime dep: ${packageName}`);
-      return resolve(false);
-    }
-    const shortName = shortNameOf(packageName);
-    if (!shortName) return resolve(false);
-
-    const registry = loadRuntimeRegistry();
-    if (!registry[shortName]) {
-      TUI.warn(`Runtime dep "${shortName}" not found in official registry`);
-      return resolve(false);
-    }
-
-    const cwd = process.cwd();
-
-    // NOTE: we deliberately do NOT pre-check for package.json here. Package
-    // managers (npm/pnpm/yarn/bun) walk up the tree to find the nearest
-    // project root themselves, so a missing local package.json in a
-    // workspace sub-project (e.g. docs/docmd-search/ when docs/package.json
-    // exists one level up) is NOT a failure case. The spawn must be
-    // attempted. If the install genuinely fails because there's no project
-    // anywhere up the tree, the `error` / `close` handlers below detect
-    // that and surface the helpful hint exactly once per run.
-
-    const pm = detectPackageManager(cwd);
-    const version = getDocmdVersion();
-    const versionedPackage =
-      version === 'latest' ? packageName : `${packageName}@${version}`;
-
     const reporter = getBuildStatusReporter();
     reporter.begin(shortName);
 
@@ -360,6 +419,7 @@ export function installRuntimeDep(packageName: string): Promise<boolean> {
       TUI.warn(
         `Auto-install of ${packageName} failed: ${surface}\n  > ${hint}`,
       );
+      _failedInstalls.add(packageName);
       resolve(false);
     });
 
@@ -402,6 +462,7 @@ export function installRuntimeDep(packageName: string): Promise<boolean> {
       TUI.warn(
         `Auto-install of ${packageName} failed (exit ${code}): ${surface || 'unknown error'}\n  > ${hint}`,
       );
+      _failedInstalls.add(packageName);
       resolve(false);
     });
   });
