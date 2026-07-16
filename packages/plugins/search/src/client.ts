@@ -59,26 +59,23 @@ declare const MiniSearch: any;
         if (!ROOT_PATH.endsWith('/')) ROOT_PATH += '/';
 
         // Determine the locale-specific search index path.
-        // The index lives alongside the locale's HTML files:
-        //   default locale: /search-index.json
-        //   non-default:    /hi/search-index.json
-        // Since ROOT_PATH already resolves to the correct locale root
-        // (e.g. https://docs.example.com/ or https://docs.example.com/hi/),
-        // we can simply append search-index.json to it.
-        // However, we need to detect our locale prefix from the current URL
-        // and build the fetch path relative to the site base.
+        // All search data lives under .docmd-search/ at the site base:
+        //   default locale: /.docmd-search/search-index.json
+        //   non-default:    /.docmd-search/<locale>/search-index.json
+        // We detect the locale prefix from the current URL and build the
+        // fetch path relative to the site base.
         const siteBase = (window.DOCMD_SITE_ROOT || window.DOCMD_ROOT || '/').replace(/\/$/, '') + '/';
         const currentPath = window.location.pathname;
         
-        // Extract locale prefix from current URL path
-        // If URL is /hi/content/steps and base is /, locale prefix is "hi/"
+        // Extract locale prefix from current URL path.
+        // If URL is /hi/content/steps and base is /, locale prefix is "hi/".
         const pathAfterBase = currentPath.startsWith(siteBase) 
             ? currentPath.slice(siteBase.length) 
             : currentPath.replace(/^\//, '');
         const firstSegment = pathAfterBase.split('/')[0];
         
         // Check if the first segment looks like a locale (2-3 letter code)
-        // by checking the meta tag that the engine injects
+        // by checking the meta tag that the engine injects.
         const hreflangLinks = document.querySelectorAll('link[hreflang]');
         const knownLocales = new Set<string>();
         hreflangLinks.forEach(link => {
@@ -88,7 +85,7 @@ declare const MiniSearch: any;
         
         const localePrefix = knownLocales.has(firstSegment) ? firstSegment + '/' : '';
         const baseUrl = new URL(siteBase, window.location.href).href;
-        const searchIndexUrl = baseUrl + localePrefix + 'search-index.json';
+        const searchIndexUrl = baseUrl + '.docmd-search/' + localePrefix + 'search-index.json';
 
         function escapeHtml(str: any): string {
             const s = typeof str === 'string' ? str : String(str || '');
@@ -192,23 +189,14 @@ declare const MiniSearch: any;
                 return;
             }
 
-            // Auto-detect semantic search at runtime. We check BOTH:
-            //   - The build-time hint (data-semantic="true") — set when the
-            //     build pipeline knew semantic was available at render time.
-            //   - A runtime probe (HEAD request to manifest.json) — catches
-            //     the first-build case where deps were installed in onPostBuild
-            //     (after generateScripts already rendered the page without
-            //     data-semantic). The probe is a single network round-trip
-            //     that only runs once per page load, so there's no perf cost.
-            const hasBuildHint = searchModal.dataset.semantic === 'true';
-            let useSemantic = hasBuildHint;
-
-            if (!useSemantic) {
-                try {
-                    const probe = await fetch(`${siteBase}.docmd-search/manifest.json`, { method: 'HEAD' });
-                    if (probe.ok) useSemantic = true;
-                } catch { /* no index → keyword */ }
-            }
+            // Semantic search is active when the build-time flag is set.
+            // The build pipeline computes semanticUsable at config time and
+            // stamps data-semantic="true" on the modal. We no longer run a
+            // runtime HEAD probe: it caused a 404 on every keyword-only page
+            // load, and the only case it covered (semantic deps installed
+            // mid-build after pages were rendered) resolves on the next rebuild,
+            // which dev mode triggers automatically.
+            const useSemantic = searchModal.dataset.semantic === 'true';
 
             try {
                 if (useSemantic) {

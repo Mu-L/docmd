@@ -493,8 +493,8 @@ console.log('\n🔍 Test 15: Search index generation');
   writeFile(dir, 'docs/guide.md', '# Guide\nMore searchable content.');
   const r = build(dir);
   assert('builds with search', r.ok);
-  assert('search-index.json exists', siteExists(dir, 'search-index.json'));
-  const idx = readSite(dir, 'search-index.json');
+  assert('search-index.json exists under .docmd-search/', siteExists(dir, '.docmd-search/search-index.json'));
+  const idx = readSite(dir, '.docmd-search/search-index.json');
   assert('search index has content', idx && JSON.parse(idx).documentCount >= 2);
 }
 
@@ -699,7 +699,7 @@ console.log('\n🔍 Test 27: Search Index URL Format');
   const r = build(dir);
   assert('builds with search', r.ok);
   
-  const searchIdx = readSite(dir, 'search-index.json');
+  const searchIdx = readSite(dir, '.docmd-search/search-index.json');
   const parsed = JSON.parse(searchIdx);
   const storedFields = parsed.storedFields || {};
   const ids = Object.values(storedFields).map((f) => f.id);

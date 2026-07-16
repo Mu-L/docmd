@@ -369,6 +369,18 @@ export async function loadConfig(configPath: string, options: any = {}) {
 
       const normalized = normalizeConfig(mergedConfig);
 
+      // Dev server always serves the output dir at root ('/'), regardless of
+      // where the production site will live. If base was auto-derived from url
+      // (e.g. '/my-repo/' for a GitHub Pages project site), every asset URL in
+      // the generated HTML would point at '/my-repo/assets/...' while the dev
+      // server only has '/assets/...', causing a 404 storm on localhost.
+      // Neutralise any subpath base in dev so links match the dev server.
+      // An explicit DOCMD_PROJECT_PREFIX env still wins (workspace dev uses it).
+      if (options.isDev && normalized._baseAutoDerived && !process.env.DOCMD_PROJECT_PREFIX) {
+        normalized.base = '/';
+        delete normalized._baseAutoDerived;
+      }
+
       if (normalized._baseAutoDerived) {
         TUI.info(`${TUI.dim('base auto-derived from url:')} ${TUI.cyan(normalized._baseAutoDerived)}`);
       }

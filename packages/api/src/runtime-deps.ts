@@ -291,22 +291,15 @@ export function installRuntimeDep(packageName: string): Promise<boolean> {
 
     const cwd = process.cwd();
 
-    // No package.json means there's no project to install into — every
-    // package manager refuses with an unhelpful error. Skip the spawn
-    // entirely and print one actionable hint (deduped across all missing
-    // plugins in the same run) so the user knows how to get full
-    // functionality instead of seeing N "unknown error" failures.
-    if (!nativeFs.existsSync(path.join(cwd, 'package.json'))) {
-      if (!_noPackageJsonWarned) {
-        _noPackageJsonWarned = true;
-        TUI.warn(
-          `No package.json found in ${cwd}. docmd will run with limited ` +
-          `functionality (plugins unavailable). For the full setup, run:\n` +
-          `  npx @docmd/core init`
-        );
-      }
-      return resolve(false);
-    }
+    // NOTE: we deliberately do NOT pre-check for package.json here. Package
+    // managers (npm/pnpm/yarn/bun) walk up the tree to find the nearest
+    // project root themselves, so a missing local package.json in a
+    // workspace sub-project (e.g. docs/docmd-search/ when docs/package.json
+    // exists one level up) is NOT a failure case. The spawn must be
+    // attempted. If the install genuinely fails because there's no project
+    // anywhere up the tree, the `error` / `close` handlers below detect
+    // that and surface the helpful hint exactly once per run.
+
     const pm = detectPackageManager(cwd);
     const version = getDocmdVersion();
     const versionedPackage =
@@ -337,6 +330,29 @@ export function installRuntimeDep(packageName: string): Promise<boolean> {
         .filter(Boolean)
         .slice(0, 3)
         .join(' | ');
+      // If the install failed AND there is no package.json in any ancestor,
+      // it's the genuine "docmd run in a bare directory" case. Print the
+      // friendly hint once per run. Otherwise show the package manager's
+      // real error so the user can debug.
+      const hasProject = (() => {
+        let dir = cwd;
+        while (dir !== path.parse(dir).root) {
+          if (nativeFs.existsSync(path.join(dir, 'package.json'))) return true;
+          dir = path.dirname(dir);
+        }
+        return false;
+      })();
+      if (!hasProject && !_noPackageJsonWarned) {
+        _noPackageJsonWarned = true;
+        TUI.warn(
+          `No package.json found in ${cwd} (or any parent directory). ` +
+          `docmd will run with limited functionality (plugins/templates unavailable). ` +
+          `For the full setup, run:\n` +
+          `  npx @docmd/core init`
+        );
+        resolve(false);
+        return;
+      }
       const isTemplate = packageName.startsWith('@docmd/template-');
       const hint = isTemplate
         ? `Add "${packageName}" to your package.json dependencies, then run your normal install step.`
@@ -359,6 +375,26 @@ export function installRuntimeDep(packageName: string): Promise<boolean> {
         .filter(Boolean)
         .slice(0, 3)
         .join(' | ');
+      // Same bare-directory detection as the `error` handler above.
+      const hasProject = (() => {
+        let dir = cwd;
+        while (dir !== path.parse(dir).root) {
+          if (nativeFs.existsSync(path.join(dir, 'package.json'))) return true;
+          dir = path.dirname(dir);
+        }
+        return false;
+      })();
+      if (!hasProject && !_noPackageJsonWarned) {
+        _noPackageJsonWarned = true;
+        TUI.warn(
+          `No package.json found in ${cwd} (or any parent directory). ` +
+          `docmd will run with limited functionality (plugins/templates unavailable). ` +
+          `For the full setup, run:\n` +
+          `  npx @docmd/core init`
+        );
+        resolve(false);
+        return;
+      }
       const isTemplate = packageName.startsWith('@docmd/template-');
       const hint = isTemplate
         ? `Add "${packageName}" to your package.json dependencies, then run your normal install step.`
