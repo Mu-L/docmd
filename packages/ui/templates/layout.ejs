@@ -45,16 +45,23 @@
     <title>
       <%= pageTitle %><% if (siteTitle && pageTitle !== siteTitle && !(frontmatter && frontmatter.titleAppend === false)) { %> : <%= siteTitle %><% } %>
     </title>
+    <% if (emitBaseTag) { %>
+      <base href="<%= assetBaseUrl %>">
+    <% } %>
+    <%# The generator's normaliseBaseTag() canonicaliser strips any <base> tag the template emits
+        and replaces it with a single canonical one matched to the deploy location. Templates may
+        still emit one locally for editor previews, but the final build output uses exactly one
+        tag placed by the canonicaliser. %>
 
     <%- faviconLinkHtml || '' %>
-    <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-main.css?v=<%= buildHash %>">
+    <link rel="stylesheet" href="<%= assetBaseUrl %>assets/css/docmd-main.css?v=<%= buildHash %>">
     <% if (config.theme?.codeHighlight !==false) { const isDarkDefault=appearance==='dark' ; %>
-    <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-light.css?v=<%= buildHash %>" id="hljs-light" <%=isDarkDefault ? 'disabled' : '' %>>
-    <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-dark.css?v=<%= buildHash %>" id="hljs-dark" <%=isDarkDefault ? '' : 'disabled' %>>
+    <link rel="stylesheet" href="<%= assetBaseUrl %>assets/css/docmd-highlight-light.css?v=<%= buildHash %>" id="hljs-light" <%=isDarkDefault ? 'disabled' : '' %>>
+    <link rel="stylesheet" href="<%= assetBaseUrl %>assets/css/docmd-highlight-dark.css?v=<%= buildHash %>" id="hljs-dark" <%=isDarkDefault ? '' : 'disabled' %>>
     <% } %>
     <%- pluginHeadScriptsHtml || '' %>
     <% (customCssFiles || []).forEach(cssFile=> { %>
-      <link rel="stylesheet" href="<%= relativePathToRoot %><%= cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
+      <link rel="stylesheet" href="<%= assetBaseUrl %><%= cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
     <% }); %>
     <%- themeInitScript %>
   </head>
@@ -67,7 +74,7 @@
 
     <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position !=='header' ) { %>
       <%- await include('partials/menubar', {
-        menubarConfig, relativePathToRoot, renderIcon, optionsMenu: locals.optionsMenu, t: typeof t === 'function' ? t : null
+        menubarConfig, relativePathToRoot, assetBaseUrl, renderIcon, optionsMenu: locals.optionsMenu, t: typeof t === 'function' ? t : null
       }) %>
     <% } %>
     <% if (sidebarConfig?.enabled !==false) { %>
@@ -76,11 +83,11 @@
           <% if (logo && logo.light && logo.dark) { %>
 <a href="<%= logo.href ? buildRelativeUrl(logo.href) : buildRelativeUrl('/') %>" class="logo-link">
               <img
-                src="<%= relativePathToRoot %><%= logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>"
+                src="<%= assetBaseUrl %><%= logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>"
                 alt="<%= logo.alt || siteTitle %>" class="logo-light" <% if (logo.height) { %>style="height: <%=
                 logo.height %>;"<% } %>>
               <img
-                src="<%= relativePathToRoot %><%= logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>"
+                src="<%= assetBaseUrl %><%= logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>"
                 alt="<%= logo.alt || siteTitle %>" class="logo-dark" <% if (logo.height) { %>style="height: <%=
                 logo.height %>;"<% } %>>
             </a>
@@ -144,11 +151,11 @@
       <% } %>
       <%# Site-wide announcement banner (new in 0.8.7). Sits above the menubar. %>
       <% if (locals.config && config.layout && config.layout.banner) { %>
-        <%- await include('partials/banner', { config, relativePathToRoot, renderIcon, t: typeof t === 'function' ? t : null }) %>
+        <%- await include('partials/banner', { config, relativePathToRoot, assetBaseUrl, renderIcon, t: typeof t === 'function' ? t : null }) %>
       <% } %>
       <div class="main-content-wrapper">
         <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position==='header' ) { %>
-          <%- await include('partials/menubar', { menubarConfig, relativePathToRoot, renderIcon, optionsMenu:
+          <%- await include('partials/menubar', { menubarConfig, relativePathToRoot, assetBaseUrl, renderIcon, optionsMenu:
             locals.optionsMenu, t: typeof t === 'function' ? t : null }) %>
         <% } %>
         <% if (headerConfig?.enabled !==false) { %>
@@ -301,26 +308,26 @@
               <% } %>
             </div>
           </main>
-          <%- await include('partials/footer', { footerConfig, config, relativePathToRoot, logo, siteTitle,
+          <%- await include('partials/footer', { footerConfig, config, relativePathToRoot, assetBaseUrl, logo, siteTitle,
             footerHtml, t: typeof t === 'function' ? t : null }) %>
         </div>
       </div>
       <% if (locals.allLocales && allLocales && allLocales.length > 1) { %>
-      <script src="<%= relativePathToRoot %>assets/js/docmd-i18n-manifest.js?v=<%= buildHash %>"></script>
+      <script src="<%= assetBaseUrl %>assets/js/docmd-i18n-manifest.js?v=<%= buildHash %>"></script>
       <% } %>
-      <script src="<%= relativePathToRoot %>assets/js/docmd-main.js?v=<%= buildHash %>"></script>
+      <script src="<%= assetBaseUrl %>assets/js/docmd-main.js?v=<%= buildHash %>"></script>
       <%# Git Plugin core JS (injected directly since git is a core plugin) %>
-      <script src="<%= relativePathToRoot %>assets/js/docmd-git.js?v=<%= buildHash %>"></script>
+      <script src="<%= assetBaseUrl %>assets/js/docmd-git.js?v=<%= buildHash %>"></script>
       <%- pluginBodyScriptsHtml || '' %>
       <% (customJsFiles || []).forEach(jsFile=> {
         if (jsFile && jsFile.trim() !== '') { %>
         <script
-          src="<%= relativePathToRoot %><%= jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>?v=<%= buildHash %>"></script>
+          src="<%= assetBaseUrl %><%= jsFile.startsWith('/') ? jsFile.substring(1) : jsFile %>?v=<%= buildHash %>"></script>
         <% }
       }); %>
       <%# Cookie consent dialog (new in 0.8.7). Rendered only when config.cookie is set. %>
       <% if (locals.config && config.cookie && config.cookie.enabled !== false) { %>
-        <%- await include('partials/cookie-consent', { config, relativePathToRoot, renderIcon, t: typeof t === 'function' ? t : null }) %>
+        <%- await include('partials/cookie-consent', { config, relativePathToRoot, assetBaseUrl, renderIcon, t: typeof t === 'function' ? t : null }) %>
       <% } %>
   </body>
 </html>

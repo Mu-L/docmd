@@ -581,6 +581,14 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
         siteUrl: config.url || '',
       });
 
+      // Front the URL context with simple-relative asset + root-prefixed nav
+      // helpers for build mode where <base> is emitted. In dev/offline these
+      // fall back to page-depth-aware and empty so the same template renders
+      // correctly across all three modes.
+      const emitBaseTag = urlContext.emitBase;
+      const assetBaseUrl = urlContext.assetBaseUrl;
+      const navRootPrefix = emitBaseTag ? urlContext.base : '';
+
       // Pre-compute page URLs for plugin consumption
       const pageUrls = computePageUrls(page.outputPath, config.url || '');
 
@@ -661,7 +669,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       const renderAssetList = (entries: AssetEntry[]) =>
         entries
           .filter(e => matchesCondition(e.condition))
-          .map(e => e.gen(relativePathToRoot))
+          .map(e => e.gen(assetBaseUrl))
           .join('\n');
 
       const assetHeadHtml = renderAssetList(assetTags.head);
@@ -772,6 +780,9 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
         relativePathToRoot,
         isOfflineMode: options.offline,
         buildRelativeUrl,
+        assetBaseUrl,
+        emitBaseTag,
+        navRootPrefix,
         navigationHtml,
         prevPage: fixNeighbor(prevPage),
         nextPage: fixNeighbor(nextPage),
@@ -790,7 +801,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
         pluginHeadScriptsHtml: fullHeadHtml,
         pluginBodyScriptsHtml: fullBodyHtml,
 
-        faviconLinkHtml: config.favicon ? `<link id="site-favicon" rel="icon" href="${relativePathToRoot}${config.favicon.replace(/^\//, '')}?v=${buildHash}">` : '',
+        faviconLinkHtml: config.favicon ? `<link id="site-favicon" rel="icon" href="${assetBaseUrl}${config.favicon.replace(/^\//, '')}?v=${buildHash}">` : '',
         themeInitScript,
         footerHtml,
         isActivePage: page.htmlContent && page.htmlContent.trim().length > 0,
