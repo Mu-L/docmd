@@ -369,14 +369,17 @@ export function createUrlContext(options: {
   const base = options.base || '/';
   const offline = options.offline || false;
   // Emit a <base href> tag whenever the site is served from a non-root
-  // subpath AND we're not generating for file:// browsing. With the tag,
-  // every simple-relative asset path ("assets/main.css") resolves against
-  // the base URL, so the same output works in any repo / folder / host
-  // without re-encoding the subpath into every URL.
+  // subpath AND we're not generating for file:// browsing. We also emit
+  // root-relative asset hrefs (e.g. /beta-test/assets/main.css) rather than
+  // simple-relative — Chrome's HTML preloader fetches resources before the
+  // document's <base> is in effect, so simple-relative paths get resolved
+  // against the page URL and 404 on nested pages. Root-relative paths
+  // resolve correctly through every layer (preloader, browser, SPA).
   const emitBase = base !== '/' && !offline;
-  // When emitBase is true, asset paths use simple-relative ("assets/x").
-  // When false, they fall back to page-depth-aware paths via relativePathToRoot.
-  const assetBaseUrl = emitBase ? '' : relativePathToRoot;
+  // When emitBase is true, asset paths use root-relative with the deploy
+  // prefix (e.g. '/beta-test/assets/x'). When false, fall back to page-
+  // depth-aware paths via relativePathToRoot (dev/offline).
+  const assetBaseUrl = emitBase ? base : relativePathToRoot;
   return Object.freeze({
     relativePathToRoot,
     outputPrefix: options.outputPrefix || '',
