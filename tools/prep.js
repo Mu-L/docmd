@@ -272,45 +272,77 @@ function runTestStep(label, cmd, statLabel = label) {
         return;
     }
 
-    // Default (collapsed) mode: CAPTURE everything. The operator sees
-    // only one summary line per step plus the trailing Summary block.
-    // If the test failed, the failed-test output is replayed to the
-    // operator at the end so they can debug without re-running with
-    // --expand. This is the fast, quiet mode most operators want.
-    let exitCode = 0;
-    let result;
-    try {
-        result = execSync(cmd, {
-            stdio: ['ignore', 'pipe', 'pipe'],
-            maxBuffer: 64 * 1024 * 1024,
-        });
-    } catch (e) {
-        exitCode = e.status ?? 1;
-        result = e;
-    }
-    const stdout = (result && result.stdout && result.stdout.toString) ? result.stdout.toString() : '';
-    const stderr = (result && result.stderr && result.stderr.toString) ? result.stderr.toString() : '';
+    // Default (collapsed) mode: CAPTURE the stream, but extract progress
+    // markers (each test file's section header) as the runner emits
+    // them. The operator sees one line per test file as it starts —
+    // enough to know the pipeline is alive and which file is currently
+    // running — without the noise of every individual test case. On
+    // completion, the trailing Summary block already shows the pass/fail
+    // count extracted from the runner's own "Test summary:" line.
+    const { spawn } = require('child_process');
+    const child = spawn(cmd, { shell: true, stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdoutBuf = '';
+    let stderrBuf = '';
+    let lineBuf = '';
+    // Print progress markers line-by-line as the runner emits them.
+    // We listen on stdout for `┌─ <name>` headers and surface those as
+    // small markers under the step's WAIT line, without scrolling or
+    // hiding the eventual verdict. The whole line buffer is preserved
+    // for the failure-tail replay below.
+    const onChunk = (chunk, isErr) => {
+        const buf = (isErr ? stderrBuf : stdoutBuf);
+        const target = isErr ? 'stderr' : 'stdout';
+        // Append to both the chunk stream and the line buffer.
+        const text = chunk.toString();
+        if (isErr) stderrBuf += text; else stdoutBuf += text;
+        lineBuf += text;
+        // Drain complete lines and surface only the section headers.
+        let nl;
+        while ((nl = lineBuf.indexOf('\n')) !== -1) {
+            const line = lineBuf.slice(0, nl);
+            lineBuf = lineBuf.slice(nl + 1);
+            // Strip ANSI color codes before matching — the runner wraps every
+            // section header in CYAN(...) so the literal output begins with
+            // an escape sequence, not whitespace or the box-drawing char.
+            const stripped = line.replace(/\x1b\[[0-9;]*m/g, '');
+            const m = stripped.match(/^\s*┌─\s+(.+?)\s*$/);
+            if (m) {
+                // Print as a small progress marker under the WAIT line.
+                // Use a subtle "next" arrow so the operator knows it's
+                // progress, not a new step.
+                process.stdout.write(
+                    `${C.dim}│   ${C.cyan}→${C.reset} ${C.dim}${m[1].trim()}${C.reset}\n`
+                );
+            }
+        }
+    };
+    child.stdout.on('data', (c) => onChunk(c, false));
+    child.stderr.on('data', (c) => onChunk(c, true));
 
-    if (exitCode === 0) {
-        // Extract the runner's own "Test summary" line if present, for
-        // a richer one-liner. Falls back to generic passed.
-        const m = stdout.match(/Test summary:\s*([^\n]+)/);
-        const summary = m ? m[1].trim() : 'passed';
-        writeVerdictLine(s, 'done', summary);
-        addStat(statLabel, summary, 'ok');
-    } else {
-        const statusLine = `runner exited with status ${exitCode}`;
-        writeVerdictLine(s, 'fail', statusLine);
-        addStat(statLabel, `failed (exit ${exitCode})`, 'fail');
-        addIssue('error', label, 'test command failed', [
-            statusLine,
-            're-run with --expand to see the full failure output inline',
-            '--- last 30 lines of captured stdout ---',
-            ...stdout.split('\n').slice(-30),
-            '--- last 30 lines of captured stderr ---',
-            ...stderr.split('\n').slice(-30),
-        ]);
-    }
+    return new Promise((resolve) => {
+        child.on('close', (exitCode) => {
+            exitCode = exitCode ?? 0;
+            if (exitCode === 0) {
+                const m = stdoutBuf.match(/Test summary:\s*([^\n]+)/);
+                const summary = m ? m[1].trim() : 'passed';
+                writeVerdictLine(s, 'done', summary);
+                addStat(statLabel, summary, 'ok');
+            } else {
+                const statusLine = `runner exited with status ${exitCode}`;
+                writeVerdictLine(s, 'fail', statusLine);
+                addStat(statLabel, `failed (exit ${exitCode})`, 'fail');
+                addIssue('error', label, 'test command failed', [
+                    statusLine,
+                    're-run with --expand to see the full failure output inline',
+                    '--- last 30 lines of captured stdout ---',
+                    ...stdoutBuf.split('\n').slice(-30),
+                    '--- last 30 lines of captured stderr ---',
+                    ...stderrBuf.split('\n').slice(-30),
+                ]);
+            }
+            resolve();
+        });
+    });
 }
 
 // ── Final Summary / Issues section ───────────────────────────────────
@@ -471,22 +503,12 @@ runDockerCheck();
 footer(C.blue);
 
 // Section 5: Tests
-section('Tests', C.blue);
-if (args.includes('--skip-tests')) {
-    const s = startStep('Skipping test suite (--skip-tests)');
-    finishStep(s, 'done');
-    addStat('Tests', 'skipped by user request', 'ok');
-} else {
-    const only = args.find((a) => a.startsWith('--only='));
-    const runnerArgs = only ? ' ' + only : '';
-    // The categorised runner now includes the Mega Integration Test
-    // (workspaces + i18n + versioning + plugins), which used to live
-    // in `tests/failsafe.test.mjs`. The old failsafe was removed because
-    // it duplicated Setup / Build work that `pnpm prep` already does.
-    // runTestStep() collapses to a one-line summary by default; pass
-    // --expand (or --verbose) to stream the full output. --skip-tests
-    // short-circuits both test steps for a fast "does it build?" check
-    // before opening a PR.
+// runTestStep is now async (it streams stdout and surfaces progress
+// markers as the runner emits section headers). We can't use top-level
+// await in CommonJS, so the whole main pipeline is wrapped in an async
+// IIFE that awaits each test step.
+(async () => {
+    section('Tests', C.blue);
     if (skipTests) {
         const s = startStep('Categorised test suite (tests/runner.js)');
         finishStep(s, 'done', 'skipped (--skip-tests)');
@@ -495,18 +517,33 @@ if (args.includes('--skip-tests')) {
         finishStep(s2, 'done', 'skipped (--skip-tests)');
         addStat('Tests · per-package units', 'skipped (--skip-tests)', 'ok');
     } else {
-        runTestStep('Categorised test suite (tests/runner.js)',
+        const only = args.find((a) => a.startsWith('--only='));
+        const runnerArgs = only ? ' ' + only : '';
+        // The categorised runner now includes the Mega Integration Test
+        // (workspaces + i18n + versioning + plugins), which used to live
+        // in `tests/failsafe.test.mjs`. The old failsafe was removed because
+        // it duplicated Setup / Build work that `pnpm prep` already does.
+        // runTestStep() collapses to a one-line summary by default; pass
+        // --expand (or --verbose) to stream the full output.
+        await runTestStep('Categorised test suite (tests/runner.js)',
             'node tests/runner.js' + runnerArgs, 'Tests · runner.js');
 
         // Per-package unit tests (parser, utils, mermaid, okf). Packages
         // without a `test` script are skipped by `--if-present`. Wired in
         // here so a regression in any plugin's local suite fails the
         // release pipeline just like a regression in tests/runner.js.
-        runTestStep('Per-package unit tests (pnpm -r run test)',
+        await runTestStep('Per-package unit tests (pnpm -r run test)',
             'pnpm -r run test --if-present', 'Tests · per-package units');
     }
-}
-footer(C.blue);
+    footer(C.blue);
+    // Continue the rest of the pipeline now that the async test step
+    // has resolved. Sections 6+ still run inside this async IIFE.
+    runPostTestsSections();
+})();
+
+// Async continuation of the pipeline. Section 6+ run inside the
+// async IIFE started above so they execute after the test step.
+async function runPostTestsSections() {
 
 // Section 6: Link (optional)
 if (args.includes('--link')) {
@@ -535,3 +572,4 @@ printSummary();
 // pipeline green so the operator can decide whether to act on them.
 const hasErrors = issues.some(i => i.severity === 'error');
 if (hasErrors) process.exit(1);
+}
