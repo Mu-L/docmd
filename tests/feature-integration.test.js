@@ -918,7 +918,7 @@ console.log('\n🏷️ Test 29: Hreflang Tags Consistency');
   assert('mega: v1 guide absent',
     !fs.existsSync(path.join(dir, 'site/v1/guide/index.html')));
   assert('mega: search-index generated',
-    fs.existsSync(path.join(dir, 'site/search-index.json')));
+    fs.existsSync(path.join(dir, 'site/.docmd-search/search-index.json')));
   assert('mega: sitemap generated',
     fs.existsSync(path.join(dir, 'site/sitemap.xml')));
   assert('mega: llms.txt generated',
