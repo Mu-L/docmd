@@ -126,6 +126,10 @@ export function normalizeConfig(userConfig: any) {
     if (config.pageNavigation === undefined) config.pageNavigation = true;
     if (config.copyCode === undefined) config.copyCode = true;
     if (config.autoTitleFromH1 === undefined) config.autoTitleFromH1 = true;
+    // autoNav: when true (default), docmd auto-generates navigation from the
+    // source tree if the user provides no navigation, an empty navigation
+    // array, or no navigation.json. Set false to keep navigation empty.
+    if (config.autoNav === undefined) config.autoNav = true;
 
     // --- 1.5 Security defaults (Phase 0.D, new in v0.8.8) ---
     // Controls how the markdown parser handles raw HTML in user content.

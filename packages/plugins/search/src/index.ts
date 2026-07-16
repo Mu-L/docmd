@@ -611,10 +611,16 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
         const cwd = process.cwd();
         // Detect the docmd binary from the same node_modules that just got updated
         const docmdBin = path.join(cwd, 'node_modules', '.bin', 'docmd');
+        // Pass dev context through so the child build applies the same
+        // base override (base=/) as the parent dev server. Without this,
+        // the subprocess runs a plain `build` which auto-derives the
+        // production subpath and the TUI shows the wrong base message.
+        const childEnv = { ...process.env };
+        if (options?.isDev) childEnv.DOCMD_DEV = 'true';
         const cmd = nativeFs.existsSync(docmdBin)
           ? `"${docmdBin}" build`
           : `node -e "import('docmd-search').then(m => m.indexDirectory({ rootDir: '${cwd}', outDir: '${path.join(outputDir, '.docmd-search')}' }))"`;
-        execSync(cmd, { stdio: 'inherit', cwd, timeout: 300000 });
+        execSync(cmd, { stdio: 'inherit', cwd, timeout: 300000, env: childEnv });
         if (showTui) tui.step('Semantic search index built', 'DONE');
       } catch (err: any) {
         if (showTui) tui.warn('  Subprocess indexing failed — semantic search unavailable this build.');

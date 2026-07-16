@@ -376,7 +376,10 @@ export async function loadConfig(configPath: string, options: any = {}) {
       // server only has '/assets/...', causing a 404 storm on localhost.
       // Neutralise any subpath base in dev so links match the dev server.
       // An explicit DOCMD_PROJECT_PREFIX env still wins (workspace dev uses it).
-      if (options.isDev && normalized._baseAutoDerived && !process.env.DOCMD_PROJECT_PREFIX) {
+      // The DOCMD_DEV env is set by the semantic-search subprocess re-run so
+      // child builds spawned from dev also get the override.
+      const isDevContext = options.isDev || process.env.DOCMD_DEV === 'true';
+      if (isDevContext && normalized._baseAutoDerived && !process.env.DOCMD_PROJECT_PREFIX) {
         normalized.base = '/';
         delete normalized._baseAutoDerived;
       }
@@ -413,9 +416,15 @@ export async function loadConfig(configPath: string, options: any = {}) {
           TUI.error('Navigation Error', `Failed to parse ${localNavPath}: ${e.message}`);
         }
       } 
-      // Otherwise, if we still don't have any navigation (not from global, not from config, not from JSON), 
-      // check for localized/versioned nav or fallback to auto-nav
-      else if (!normalized.navigation || (normalized.navigation.length === 0 && !hasExplicitNav)) {
+      // Otherwise, if we still don't have any navigation (not from global,
+      // not from config, not from JSON), or the user explicitly set an
+      // empty array (signalling "I have no nav, please auto-generate"),
+      // check for localized/versioned nav or fallback to auto-nav.
+      // Users can opt out of auto-nav entirely by setting `autoNav: false`.
+      else if (normalized.autoNav === false) {
+        // User explicitly disabled auto-nav; leave navigation as-is.
+      }
+      else if (!normalized.navigation || normalized.navigation.length === 0) {
         let hasNavInSubdirs = false;
 
         if (normalized.i18n?.default) {
