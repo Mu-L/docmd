@@ -33,7 +33,7 @@ const require = createRequire(import.meta.url);
 
 export const plugin: PluginDescriptor = {
   name: 'search',
-  version: '0.8.15',
+  version: '0.8.16',
   // `init` lets onConfigResolved run at config-parse time — that's where we
   // compute the single `searchConfig` object. The build pipeline reads
   // it from `config._searchConfig` everywhere else, so there's exactly
@@ -484,6 +484,49 @@ export function translations(localeId: string): Record<string, string> {
  * When options.semantic is false (default):
  *   - Generates per-locale MiniSearch indexes (existing behaviour).
  */
+
+/**
+ * Stamp data-semantic="true" on the search modal in every built HTML page.
+ *
+ * The modal attribute is computed at render time from `searchConfig.semanticUsable`,
+ * which checks whether docmd-search is resolvable. On a fresh project where deps
+ * install in onPostBuild (after pages are rendered), the flag is stale. This
+ * pass corrects it after the semantic index is actually built.
+ */
+async function stampSemanticFlag(outputDir: string) {
+  const htmlFiles = await findHtmlFiles(outputDir);
+  const FLAG = 'data-semantic="true"';
+  const MODAL_MARKER = 'id="docmd-search-modal"';
+  await Promise.all(htmlFiles.map(async (file) => {
+    try {
+      const src = await fs.readFile(file, 'utf8');
+      if (!src.includes(MODAL_MARKER) || src.includes(FLAG)) return;
+      // Insert the flag right after the modal id attribute.
+      const updated = src.replace(
+        /(id="docmd-search-modal"[^>]*?)(\s)/,
+        `$1 ${FLAG}$2`
+      );
+      if (updated !== src) await fs.writeFile(file, updated, 'utf8');
+    } catch { /* non-critical: best-effort flag stamping */ }
+  }));
+}
+
+// Recursively collect all .html files under a directory.
+async function findHtmlFiles(dir: string): Promise<string[]> {
+  const entries = await fs.readdir(dir, { withFileTypes: true });
+  const results: string[] = [];
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === '.docmd-search' || entry.name === 'node_modules') continue;
+      results.push(...await findHtmlFiles(full));
+    } else if (entry.name.endsWith('.html')) {
+      results.push(full);
+    }
+  }
+  return results;
+}
+
 export async function onPostBuild({ config, pages, outputDir, tui, options, runWorkerTask }: any) {
   // Plugin-specific config is in config.plugins.search
   const pluginOptions = (config.plugins && config.plugins.search) || {};
@@ -491,6 +534,10 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
   if (!isEnabled) return;
 
   const showTui = tui && !options?.quiet;
+
+  // Tracks whether semantic indexing succeeded so the keyword path below
+  // knows to suppress its own TUI messages (it still runs as a fallback).
+  let semanticBuilt = false;
 
   // ── Semantic search path ────────────────────────────────────────────────
   if (pluginOptions.semantic === true) {
@@ -720,6 +767,8 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
           try { await fs.rm(tmpBase, { recursive: true, force: true }); } catch { /* ok */ }
 
           if (showTui) tui.step('Building semantic search index (multi-version)', 'DONE');
+          // Pages were rendered before deps installed; stamp the flag now.
+          await stampSemanticFlag(outputDir);
           return;
         }
 
@@ -761,8 +810,14 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
         await fs.writeFile(path.join(semanticOutDir, 'versions.json'), '[]');
 
         if (showTui) tui.step('Building semantic search index', 'DONE');
-        // Semantic index built — skip MiniSearch index below
-        return;
+        // Pages were rendered before deps installed; stamp the flag now.
+        await stampSemanticFlag(outputDir);
+        // Semantic index built — fall through to also generate the keyword
+        // index as a fallback. The client may need it if the build-time
+        // data-semantic flag wasn't set on the modal (e.g. deps installed
+        // in onPostBuild after pages were already rendered without the flag).
+        // The keyword index is tiny and doubles as a runtime safety net.
+        semanticBuilt = true;
       } catch (err: any) {
         if (showTui) {
           tui.step('Building semantic search index', 'FAIL');
@@ -776,7 +831,9 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
   }
 
   // ── Keyword search path (default / fallback) ────────────────────────────
-  if (showTui) tui.step('Generating search index', 'WAIT');
+  // Always runs, even after a successful semantic build, so the client has
+  // a keyword index to fall back on if data-semantic wasn't set at render time.
+  if (showTui && !semanticBuilt) tui.step('Generating search index', 'WAIT');
 
   // Try to offload to worker thread for better main-thread responsiveness
   if (runWorkerTask) {
@@ -795,7 +852,7 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
       const workerModulePath = path.resolve(__dirname, 'worker.js');
       await runWorkerTask(workerModulePath, 'buildSearchIndex', [workerConfig, serializablePages, outputDir]);
 
-      if (showTui) tui.step('Generating search index', 'DONE');
+      if (showTui && !semanticBuilt) tui.step('Generating search index', 'DONE');
       return;
     } catch {
       // Worker failed — fall through to main-thread processing
@@ -805,7 +862,7 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
   // Main-thread fallback (or when WorkerPool isn't available)
   await buildSearchIndexInline(config, pages, outputDir);
 
-  if (showTui) tui.step('Generating search index', 'DONE');
+  if (showTui && !semanticBuilt) tui.step('Generating search index', 'DONE');
 }
 
 /**
