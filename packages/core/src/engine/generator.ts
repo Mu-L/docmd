@@ -801,7 +801,9 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
         pluginHeadScriptsHtml: fullHeadHtml,
         pluginBodyScriptsHtml: fullBodyHtml,
 
-        faviconLinkHtml: config.favicon ? `<link id="site-favicon" rel="icon" href="${assetBaseUrl}${config.favicon.replace(/^\//, '')}?v=${buildHash}">` : '',
+        faviconLinkHtml: config.favicon 
+          ? `<link id="site-favicon" rel="icon" href="${assetBaseUrl}${config.favicon.replace(/^\//, '')}?v=${buildHash}">`
+          : `<link id="site-favicon" rel="icon" href="${assetBaseUrl}assets/favicon.ico?v=${buildHash}">`,
         themeInitScript,
         footerHtml,
         isActivePage: page.htmlContent && page.htmlContent.trim().length > 0,
