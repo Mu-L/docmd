@@ -42,4 +42,5 @@ packages/engines/rust-binaries/native/target/
 # _playground
 _playground/local-tars/
 _playground/node_modules/
+_playground/package-lock.json
 _playground/site/
