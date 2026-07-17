@@ -304,6 +304,7 @@ function runTestStep(label, cmd, statLabel = label) {
             // Strip ANSI color codes before matching — the runner wraps every
             // section header in CYAN(...) so the literal output begins with
             // an escape sequence, not whitespace or the box-drawing char.
+            // eslint-disable-next-line no-control-regex
             const stripped = line.replace(/\x1b\[[0-9;]*m/g, '');
             const m = stripped.match(/^\s*┌─\s+(.+?)\s*$/);
             if (m) {
