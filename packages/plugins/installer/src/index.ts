@@ -158,13 +158,15 @@ function resolvePackageManagerBin(name: string): string {
  * Defaults to 'npm' if no lockfile is found.
  */
 function getPackageManager(cwd) {
-  let dir = cwd;
-  while (dir !== path.parse(dir).root) {
+  let dir = path.resolve(cwd);
+  while (true) {
     if (fs.existsSync(path.join(dir, 'pnpm-lock.yaml'))) return 'pnpm';
     if (fs.existsSync(path.join(dir, 'yarn.lock'))) return 'yarn';
     if (fs.existsSync(path.join(dir, 'bun.lockb'))) return 'bun';
     if (fs.existsSync(path.join(dir, 'package-lock.json'))) return 'npm';
-    dir = path.dirname(dir);
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
   }
   return 'npm';
 }

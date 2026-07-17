@@ -68,6 +68,15 @@ export interface UrlContext {
   readonly base: string;
   /** The full site URL from config, e.g. `https://docmd.io` (no trailing slash) */
   readonly siteUrl: string;
+  /**
+   * Path prefix for emitting asset URLs. Empty string when a `<base href>` tag
+   * is being emitted (assets resolve against base via simple-relative paths),
+   * otherwise equals relativePathToRoot so assets use page-depth-aware paths
+   * (used by dev and --offline where no <base> is emitted).
+   */
+  readonly assetBaseUrl: string;
+  /** Whether the renderer is emitting a `<base href>` tag for this page. */
+  readonly emitBase: boolean;
 }
 
 /**
@@ -226,8 +235,14 @@ export function buildContextualUrl(href: string, context: UrlContext): string {
   if (context.offline) {
     if (combinedPath === '' || combinedPath.endsWith('/')) {
       combinedPath = combinedPath + 'index.html';
-    } else if (!combinedPath.endsWith('.html')) {
-      combinedPath = combinedPath + '/index.html';
+    } else if (!combinedPath.endsWith('.html') && !combinedPath.endsWith('.htm')) {
+      const lastSlash = combinedPath.lastIndexOf('/');
+      const filename = lastSlash >= 0 ? combinedPath.substring(lastSlash + 1) : combinedPath;
+      const lastDot = filename.lastIndexOf('.');
+      const hasUnmodifiedExtension = lastDot > 0 && lastDot < filename.length - 1;
+      if (!hasUnmodifiedExtension) {
+        combinedPath = combinedPath + '/index.html';
+      }
     }
   }
 
@@ -356,12 +371,29 @@ export function createUrlContext(options: {
   base?: string;
   siteUrl?: string;
 }): UrlContext {
+  const relativePathToRoot = options.relativePathToRoot || './';
+  const base = options.base || '/';
+  const offline = options.offline || false;
+  // Emit a <base href> tag whenever the site is served from a non-root
+  // subpath AND we're not generating for file:// browsing. We also emit
+  // root-relative asset hrefs (e.g. /beta-test/assets/main.css) rather than
+  // simple-relative — Chrome's HTML preloader fetches resources before the
+  // document's <base> is in effect, so simple-relative paths get resolved
+  // against the page URL and 404 on nested pages. Root-relative paths
+  // resolve correctly through every layer (preloader, browser, SPA).
+  const emitBase = base !== '/' && !offline;
+  // When emitBase is true, asset paths use root-relative with the deploy
+  // prefix (e.g. '/beta-test/assets/x'). When false, fall back to page-
+  // depth-aware paths via relativePathToRoot (dev/offline).
+  const assetBaseUrl = emitBase ? base : relativePathToRoot;
   return Object.freeze({
-    relativePathToRoot: options.relativePathToRoot || './',
+    relativePathToRoot,
     outputPrefix: options.outputPrefix || '',
-    offline: options.offline || false,
-    base: options.base || '/',
+    offline,
+    base,
     siteUrl: (options.siteUrl || '').replace(/\/+$/, ''),
+    assetBaseUrl,
+    emitBase,
   });
 }
 
@@ -511,10 +543,24 @@ export function buildAbsoluteContextualUrl(
  * @returns          - The HTML with the canonical `<base>` (or none) in place
  */
 export function normaliseBaseTag(html: string, isOffline: boolean, siteRootAbs: string): string {
-  // strip every existing <base> tag (self-closing or with close, any attribute order)
-  const BASE_TAG_RE = /<base\b[^>]*\/?>/gi;
+  // Strip every existing <base> tag (self-closing or with close, any attribute order)
+  // so the canonical decision below is the only one that survives.
+  const BASE_TAG_RE = /<base\b[^>]*\/?>\s*/gi;
   const cleaned = html.replace(BASE_TAG_RE, '');
 
+  // offline mode or root deploy → no <base> tag at all
+  if (isOffline || siteRootAbs === '/' || siteRootAbs === '') return cleaned;
+
+  // Insert the canonical <base> right after the closing </title> tag so
+  // it applies to every subsequent <link>/<script>/asset reference in
+  // the head. Falls back to right after <head> if no <title> is present.
+  const canonicalBase = `<base href="${escapeHtmlAttr(siteRootAbs)}">`;
+  if (cleaned.includes('</title>')) {
+    return cleaned.replace('</title>', `</title>\n    ${canonicalBase}`);
+  }
+  if (cleaned.includes('<head>')) {
+    return cleaned.replace('<head>', `<head>\n    ${canonicalBase}`);
+  }
   return cleaned;
 }
 

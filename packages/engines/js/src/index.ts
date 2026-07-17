@@ -275,7 +275,7 @@ const handlers: Record<string, TaskHandler> = {
 export function createJsEngine(): Engine {
   return {
     name: 'js',
-    version: '0.8.15',
+    version: '0.8.16',
 
     supports(taskType: string): boolean {
       return taskType in handlers;

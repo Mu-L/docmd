@@ -26,8 +26,14 @@ import { createActionDispatcher, loadPlugins, hooks } from '@docmd/api';
 import {
   formatPathForDisplay, getNetworkIp, serveStatic, findAvailablePort, openBrowser,
 } from '../utils/dev-utils.js';
+import { fileURLToPath } from 'node:url';
 
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
+// `path.dirname(new URL(import.meta.url).pathname)` returns `/C:/...` on
+// Windows (URL.pathname keeps the leading slash and the drive letter),
+// which then breaks every subsequent fs.existsSync that derives from it.
+// `fileURLToPath` decodes the URL correctly per-platform.
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const require = createRequire(import.meta.url);
 
 // Main Dev Function

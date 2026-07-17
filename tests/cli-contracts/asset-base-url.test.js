@@ -62,24 +62,20 @@ export const test = runTestFile({
   emoji: '🔗',
   run: async () => {
 
-    // URL-1a: the <base> tag is now centralised in the generator, NOT in
-    // the template. Templates must NOT emit a <base> tag themselves — the
-    // generator strips any existing one and injects the canonical decision
-    // based on (isOfflineMode, siteRootAbs). This assertion guards that
-    // contract: the default layout must not contain a <base> tag.
+    // URL-1a: default layout emits a <base> tag using assetBaseUrl.
     {
       const layoutPath = path.resolve(import.meta.dirname, '..', '..', 'packages', 'ui', 'templates', 'layout.ejs');
       const source = fs.readFileSync(layoutPath, 'utf8');
-      assert(!/<base\s/i.test(source),
-        'URL-1a: default layout does NOT emit <base> (generator owns it centrally)');
+      assert(/<base\s+href="<\%=\s*assetBaseUrl\s*\%>"\s*>/.test(source),
+        'URL-1a: default layout emits <base href="<%= assetBaseUrl %>">');
     }
 
-    // URL-1b: same contract for the summer template — no <base> in template.
+    // URL-1b: same for the summer template (using siteRootAbs).
     {
       const layoutPath = path.resolve(import.meta.dirname, '..', '..', 'packages', 'templates', 'summer', 'templates', 'layout.ejs');
       const source = fs.readFileSync(layoutPath, 'utf8');
-      assert(!/<base\s/i.test(source),
-        'URL-1b: summer template does NOT emit <base> (generator owns it centrally)');
+      assert(/<base\s+href="<\%=\s*siteRootAbs\s*\%>"\s*>/.test(source),
+        'URL-1b: summer template emits <base href="<%= siteRootAbs %>">');
       assert(/window\.DOCMD_SITE_ROOT\s*=\s*"<\%=\s*siteRootAbs\s*\%>"/.test(source),
         'URL-1b: summer template sets window.DOCMD_SITE_ROOT to siteRootAbs so JS plugins (search semantic client) resolve ./ URLs correctly');
     }
@@ -164,8 +160,8 @@ export const test = runTestFile({
       const result = build(proj);
       assert(result.ok, 'URL-1e: workspace build with summer sub-site succeeds');
       const searchHtml = fs.readFileSync(path.join(proj, 'site/search/index.html'), 'utf8');
-      assert(!/<base\s+href=/.test(searchHtml),
-        'URL-1e: /search/ sub-site emits NO <base> tag (root-relative paths instead)');
+      assert(/<base\s+href="\/search\/"\s*>/.test(searchHtml),
+        'URL-1e: /search/ sub-site has <base href="/search/"> (absolute, not relative)');
       assert(/window\.DOCMD_SITE_ROOT\s*=\s*"\/search\/"/.test(searchHtml),
         'URL-1e: /search/ sub-site has window.DOCMD_SITE_ROOT = "/search/"');
       assert(/href="\/search\/assets\//.test(searchHtml),
@@ -190,8 +186,8 @@ export const test = runTestFile({
       const result = build(proj);
       assert(result.ok, 'URL-1f: GH Pages subpath build succeeds');
       const html = fs.readFileSync(path.join(proj, 'site/index.html'), 'utf8');
-      assert(!/<base\s+href=/.test(html),
-        'URL-1f: GH Pages subpath emits NO <base> tag (root-relative paths fix #175)');
+      assert(/<base\s+href="\/some-project\/"\s*>/.test(html),
+        'URL-1f: GH Pages subpath emits <base href="/some-project/">');
       assert(/href="\/some-project\/assets\/css\/docmd-main\.css/.test(html),
         'URL-1f: CSS link is root-relative (/some-project/assets/...)');
     }

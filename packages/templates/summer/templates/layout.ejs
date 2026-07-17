@@ -69,17 +69,21 @@
     }
   </script>
 
+  <% if (emitBaseTag) { %>
+  <base href="<%= siteRootAbs %>">
+  <% } %>
+
   <%- typeof faviconLinkHtml !== 'undefined' ? faviconLinkHtml : '' %>
 
   <%# ── Highlight.js themes — light + dark, toggled by theme-init ── %>
   <% if (config.theme?.codeHighlight !== false) { const isDarkDefault = appearance === 'dark'; %>
-  <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-light.css?v=<%= buildHash %>" id="hljs-light" <%= isDarkDefault ? 'disabled' : '' %>>
-  <link rel="stylesheet" href="<%= relativePathToRoot %>assets/css/docmd-highlight-dark.css?v=<%= buildHash %>" id="hljs-dark" <%= isDarkDefault ? '' : 'disabled' %>>
+  <link rel="stylesheet" href="<%= assetBaseUrl %>assets/css/docmd-highlight-light.css?v=<%= buildHash %>" id="hljs-light" <%= isDarkDefault ? 'disabled' : '' %>>
+  <link rel="stylesheet" href="<%= assetBaseUrl %>assets/css/docmd-highlight-dark.css?v=<%= buildHash %>" id="hljs-dark" <%= isDarkDefault ? '' : 'disabled' %>">
   <% } %>
 
   <%- pluginHeadScriptsHtml || '' %>
   <% (customCssFiles || []).forEach(cssFile => { %>
-    <link rel="stylesheet" href="<%= relativePathToRoot %><%= cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
+    <link rel="stylesheet" href="<%= assetBaseUrl %><%= cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
   <% }); %>
 
   <%
@@ -140,8 +144,8 @@
         </button>
         <% if (logo && (logo.light || logo.dark)) { %>
           <a href="<%= logo.href ? buildRelativeUrl(logo.href) : buildRelativeUrl('/') %>" class="summer-logo" aria-label="<%= logo.alt || siteTitle %> — home">
-            <% if (logo.light) { %><img src="<%= relativePathToRoot %><%= logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>" alt="<%= logo.alt || siteTitle %>" class="summer-logo__light" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>><% } %>
-            <% if (logo.dark) { %><img src="<%= relativePathToRoot %><%= logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>" alt="<%= logo.alt || siteTitle %>" class="summer-logo__dark" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>><% } %>
+            <% if (logo.light) { %><img src="<%= assetBaseUrl %><%= logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>" alt="<%= logo.alt || siteTitle %>" class="summer-logo__light" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>><% } %>
+            <% if (logo.dark) { %><img src="<%= assetBaseUrl %><%= logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>" alt="<%= logo.alt || siteTitle %>" class="summer-logo__dark" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>><% } %>
           </a>
         <% } else { %>
           <a href="<%= buildRelativeUrl('/') %>" class="summer-logo summer-logo--text">

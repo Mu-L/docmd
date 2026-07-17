@@ -36,6 +36,7 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { tryHit, store as cacheStore } from './_lib/build-cache.mjs';
 
 const DOCMD = path.resolve(import.meta.dirname, '../packages/core/dist/bin/docmd.js');
 const TEST_ROOT = '/tmp/docmd-brute-tests';
@@ -54,10 +55,40 @@ function setup(name) {
 }
 
 function build(dir, expectFail = false) {
+  // Cache check: if the test's source files + config match a previous
+  // successful build, reuse the cached `site/` directory instead of running
+  // a fresh `docmd build`. This collapses second-run prep time when nothing
+  // in the test fixtures changed. Cache miss / failure fall back to the
+  // original execSync path so the test behaves identically on the first
+  // run. To bypass the cache entirely, set DOCMD_TEST_CACHE_OFF=1.
+  const configPath = path.join(dir, 'docmd.config.js');
+  if (!expectFail) {
+    const hit = tryHit(dir, configPath);
+    if (hit && hit.ok) {
+      // Copy (or hardlink) the cached site into the test dir so the rest
+      // of the test sees the same paths it always did. Hardlink saves
+      // disk for large sites; cp as fallback.
+      const cachedSite = hit.siteDir;
+      const targetSite = path.join(dir, 'site');
+      fs.rmSync(targetSite, { recursive: true, force: true });
+      try {
+        fs.cpSync(cachedSite, targetSite, { recursive: true, dereference: false });
+      } catch {
+        fs.rmSync(targetSite, { recursive: true, force: true });
+        fs.mkdirSync(targetSite, { recursive: true });
+      }
+      return { ok: true, output: hit.output, cached: true };
+    }
+  }
   try {
     const out = execSync(`node ${DOCMD} build`, { cwd: dir, stdio: 'pipe', encoding: 'utf8' });
     if (expectFail) return { ok: false, output: out };
-    return { ok: true, output: out };
+    // Store successful builds so the next run can skip the rebuild.
+    const siteDir = path.join(dir, 'site');
+    if (!expectFail && fs.existsSync(siteDir)) {
+      try { cacheStore(dir, configPath, siteDir, true, out); } catch { /* cache best-effort */ }
+    }
+    return { ok: true, output: out, cached: false };
   } catch (e) {
     if (expectFail) return { ok: true, output: e.stderr || e.stdout || '' };
     return { ok: false, output: e.stderr || e.stdout || '' };
@@ -493,8 +524,8 @@ console.log('\n🔍 Test 15: Search index generation');
   writeFile(dir, 'docs/guide.md', '# Guide\nMore searchable content.');
   const r = build(dir);
   assert('builds with search', r.ok);
-  assert('search-index.json exists', siteExists(dir, 'search-index.json'));
-  const idx = readSite(dir, 'search-index.json');
+  assert('search-index.json exists under .docmd-search/', siteExists(dir, '.docmd-search/search-index.json'));
+  const idx = readSite(dir, '.docmd-search/search-index.json');
   assert('search index has content', idx && JSON.parse(idx).documentCount >= 2);
 }
 
@@ -699,7 +730,7 @@ console.log('\n🔍 Test 27: Search Index URL Format');
   const r = build(dir);
   assert('builds with search', r.ok);
   
-  const searchIdx = readSite(dir, 'search-index.json');
+  const searchIdx = readSite(dir, '.docmd-search/search-index.json');
   const parsed = JSON.parse(searchIdx);
   const storedFields = parsed.storedFields || {};
   const ids = Object.values(storedFields).map((f) => f.id);
@@ -918,7 +949,7 @@ console.log('\n🏷️ Test 29: Hreflang Tags Consistency');
   assert('mega: v1 guide absent',
     !fs.existsSync(path.join(dir, 'site/v1/guide/index.html')));
   assert('mega: search-index generated',
-    fs.existsSync(path.join(dir, 'site/search-index.json')));
+    fs.existsSync(path.join(dir, 'site/.docmd-search/search-index.json')));
   assert('mega: sitemap generated',
     fs.existsSync(path.join(dir, 'site/sitemap.xml')));
   assert('mega: llms.txt generated',

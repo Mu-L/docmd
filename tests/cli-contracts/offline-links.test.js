@@ -50,7 +50,10 @@ function extractHrefs(html) {
   const re = /<a\s+[^>]*?\bhref\s*=\s*("([^"]*)"|'([^']*)')|<img\s+[^>]*?\bsrc\s*=\s*("([^"]*)"|'([^']*)')/gi;
   let m;
   while ((m = re.exec(html)) !== null) {
-    out.push(m[2] !== undefined ? m[2] : (m[3] !== undefined ? m[3] : (m[4] !== undefined ? m[4] : m[5])));
+    if (m[2] !== undefined) out.push(m[2]);
+    else if (m[3] !== undefined) out.push(m[3]);
+    else if (m[5] !== undefined) out.push(m[5]);
+    else if (m[6] !== undefined) out.push(m[6]);
   }
   return out;
 }
@@ -225,6 +228,28 @@ export const test = runTestFile({
       // Non-offline: root link is './' (clean URL), NOT './index.html'.
       assert(hrefs.some((h) => h === './' || h === '/'), '#179: non-offline root link is a clean URL (./ or /)');
       assert(!hrefs.some((h) => h.endsWith('index.html') && !h.includes('#')), '#179: non-offline build has no .html suffix on internal nav hrefs');
+    }
+
+    // Custom file/asset extensions test (prevent appending /index.html to image/asset files)
+    {
+      const dir = setup('offline-links-35-custom-assets');
+      writeFile(dir, 'docs/index.md', [
+        '# Home',
+        '',
+        '![img](./photo.png)',
+        '[pdf](../docs/manual.pdf)',
+        '[zip](/downloads/archive.tar.gz)',
+        '[config](config.json)'
+      ].join('\n'));
+
+      execSync(`node ${DOCMD} build --offline`, { cwd: dir, stdio: 'pipe' });
+      const html = fs.readFileSync(path.join(dir, 'site/index.html'), 'utf8');
+      const hrefs = extractHrefs(html);
+
+      assert(hrefs.includes('./photo.png'), 'custom assets: ./photo.png is unmodified (no trailing slash or /index.html)');
+      assert(hrefs.includes('./../docs/manual.pdf'), 'custom assets: ../docs/manual.pdf is unmodified');
+      assert(hrefs.includes('./downloads/archive.tar.gz'), 'custom assets: /downloads/archive.tar.gz is rewritten to relative ./downloads/archive.tar.gz (no trailing slash)');
+      assert(hrefs.includes('./config.json'), 'custom assets: config.json is rewritten to ./config.json');
     }
   }
 });
