@@ -28,8 +28,8 @@ import { TUI } from '@docmd/api';
  */
 function readGitHubRemotePathname(startDir: string): string | null {
   try {
-    let dir = startDir;
-    while (dir !== path.parse(dir).root) {
+    let dir = path.resolve(startDir);
+    while (true) {
       const cfg = path.join(dir, '.git', 'config');
       if (fs.existsSync(cfg)) {
         const text = fs.readFileSync(cfg, 'utf8');
@@ -46,7 +46,9 @@ function readGitHubRemotePathname(startDir: string): string | null {
         if (/^[\w.-]+\/[\w.-]+$/.test(url)) return url;
         return null;
       }
-      dir = path.dirname(dir);
+      const parent = path.dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
     }
   } catch { /* ignore — no warning emitted */ }
   return null;

@@ -34,6 +34,7 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { setInterval, clearInterval } from 'node:timers';
 
 process.env.DOCMD_TEST = 'true';
 

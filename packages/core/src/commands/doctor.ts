@@ -244,7 +244,7 @@ function resolveCorePackage(): { name: string; version: string; status: 'ok' | '
   } catch { /* fall through */ }
 
   // Strategy 2: walk up from cwd looking for node_modules/@docmd/core/package.json.
-  for (let dir = process.cwd(); dir !== path.parse(dir).root; dir = path.dirname(dir)) {
+  for (let dir = path.resolve(process.cwd()); ; ) {
     const candidate = path.join(dir, 'node_modules', '@docmd', 'core', 'package.json');
     if (fs.existsSync(candidate)) {
       try {
@@ -254,14 +254,17 @@ function resolveCorePackage(): { name: string; version: string; status: 'ok' | '
         }
       } catch { /* try next ancestor */ }
     }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
   }
 
   // Strategy 3: walk up from the doctor file's location looking for an
   // in-tree package.json whose name is @docmd/core. This is the monorepo
   // dev case where the dist files are run directly without being installed
   // into a node_modules tree.
-  let dir = __dirname;
-  while (dir !== path.parse(dir).root) {
+  let dir = path.resolve(__dirname);
+  while (true) {
     const candidate = path.join(dir, 'package.json');
     if (fs.existsSync(candidate)) {
       try {
@@ -271,7 +274,9 @@ function resolveCorePackage(): { name: string; version: string; status: 'ok' | '
         }
       } catch { /* try next ancestor */ }
     }
-    dir = path.dirname(dir);
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
   }
 
   return FAIL;
@@ -290,40 +295,47 @@ function tryReadPackage(name: string): { name: string; version: string } | null 
   } catch { /* fall through */ }
 
   // Strategy 2: walk up from cwd.
-  for (let dir = process.cwd(); dir !== path.parse(dir).root; dir = path.dirname(dir)) {
+  for (let dir = path.resolve(process.cwd()); ; ) {
     const candidate = path.join(dir, 'node_modules', ...name.split('/'), 'package.json');
     if (fs.existsSync(candidate)) {
       try {
         return JSON.parse(fs.readFileSync(candidate, 'utf8'));
       } catch { /* try next ancestor */ }
     }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
   }
 
   // Strategy 3: walk up from the doctor file's location.
-  let dir = __dirname;
-  while (dir !== path.parse(dir).root) {
+  let dir = path.resolve(__dirname);
+  while (true) {
     const candidate = path.join(dir, 'node_modules', ...name.split('/'), 'package.json');
     if (fs.existsSync(candidate)) {
       try {
         return JSON.parse(fs.readFileSync(candidate, 'utf8'));
       } catch { /* try next ancestor */ }
     }
-    dir = path.dirname(dir);
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
   }
 
   return null;
 }
 
 function detectPackageManager(cwd: string): 'pnpm' | 'yarn' | 'bun' | 'npm' {
-  let dir = cwd;
+  let dir = require('node:path').resolve(cwd);
   const { existsSync } = require('node:fs') as typeof import('node:fs');
   const { join } = require('node:path') as typeof import('node:path');
-  while (dir !== require('node:path').parse(dir).root) {
+  while (true) {
     if (existsSync(join(dir, 'pnpm-lock.yaml'))) return 'pnpm';
     if (existsSync(join(dir, 'yarn.lock'))) return 'yarn';
     if (existsSync(join(dir, 'bun.lockb'))) return 'bun';
     if (existsSync(join(dir, 'package-lock.json'))) return 'npm';
-    dir = require('node:path').dirname(dir);
+    const parent = require('node:path').dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
   }
   return 'npm';
 }

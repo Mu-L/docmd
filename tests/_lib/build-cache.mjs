@@ -100,16 +100,11 @@ export function store(dir, configPath, siteDir, ok, output) {
     const snap = snapshot(dir, configPath);
     const key = hash(snap);
     const target = cacheDirFor(key);
-    fs.mkdirSync(target, { recursive: true });
-    // Move (rename) the freshly-built site into the cache. If the caller
-    // already wrote to a path inside the build cache, that's fine — the
-    // rename across filesystems falls back to copy + unlink.
+    const targetSite = path.join(target, 'site');
+    fs.rmSync(targetSite, { recursive: true, force: true });
     try {
-        fs.renameSync(siteDir, path.join(target, 'site'));
-    } catch {
-        fs.rmSync(path.join(target, 'site'), { recursive: true, force: true });
-        fs.cpSync(siteDir, path.join(target, 'site'), { recursive: true });
-    }
+        fs.cpSync(siteDir, targetSite, { recursive: true });
+    } catch { /* cache best-effort */ }
     fs.writeFileSync(
         path.join(target, 'output.json'),
         JSON.stringify({ ok, output })

@@ -120,13 +120,15 @@ export function _resetRuntimeRegistryCache(): void {
  * Walks upward until a known lockfile is found; defaults to `npm`.
  */
 export function detectPackageManager(cwd: string): 'pnpm' | 'yarn' | 'bun' | 'npm' {
-  let dir = cwd;
-  while (dir !== path.parse(dir).root) {
+  let dir = path.resolve(cwd);
+  while (true) {
     if (nativeFs.existsSync(path.join(dir, 'pnpm-lock.yaml'))) return 'pnpm';
     if (nativeFs.existsSync(path.join(dir, 'yarn.lock'))) return 'yarn';
     if (nativeFs.existsSync(path.join(dir, 'bun.lockb'))) return 'bun';
     if (nativeFs.existsSync(path.join(dir, 'package-lock.json'))) return 'npm';
-    dir = path.dirname(dir);
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
   }
   return 'npm';
 }
@@ -394,10 +396,12 @@ export async function installRuntimeDep(packageName: string): Promise<boolean> {
       // friendly hint once per run. Otherwise show the package manager's
       // real error so the user can debug.
       const hasProject = (() => {
-        let dir = cwd;
-        while (dir !== path.parse(dir).root) {
+        let dir = path.resolve(cwd);
+        while (true) {
           if (nativeFs.existsSync(path.join(dir, 'package.json'))) return true;
-          dir = path.dirname(dir);
+          const parent = path.dirname(dir);
+          if (parent === dir) break;
+          dir = parent;
         }
         return false;
       })();
@@ -437,10 +441,12 @@ export async function installRuntimeDep(packageName: string): Promise<boolean> {
         .join(' | ');
       // Same bare-directory detection as the `error` handler above.
       const hasProject = (() => {
-        let dir = cwd;
-        while (dir !== path.parse(dir).root) {
+        let dir = path.resolve(cwd);
+        while (true) {
           if (nativeFs.existsSync(path.join(dir, 'package.json'))) return true;
-          dir = path.dirname(dir);
+          const parent = path.dirname(dir);
+          if (parent === dir) break;
+          dir = parent;
         }
         return false;
       })();
