@@ -572,7 +572,7 @@ if (skipTests) {
     const s = startStep('Regenerating tarballs (sim.mjs --regen-tars)');
     const r = run('node tools/sim.mjs --source _playground --regen-tars --skip-monorepo-build');
     if (r.ok) {
-        finishStep(s, 'done', '\ntars written to _playground/local-tars/');
+        finishStep(s, 'done', 'tars written to _playground/local-tars/');
         addStat('Consumer Sim', 'tarballs regenerated', 'ok');
     } else {
         finishStep(s, 'fail', `exit ${r.status}`);
