@@ -497,10 +497,8 @@ section('Build', C.cyan);
 addStat('Build', 'built all packages', 'ok');
 footer(C.cyan);
 
-// Section 4: Docker (optional)
-section('Docker', C.blue);
-runDockerCheck();
-footer(C.blue);
+// Section 4 was an unconditional Docker availability check. Moved into
+// runPostTestsSections() so it only runs when --docker is passed.
 
 // Section 5: Tests
 // runTestStep is now async (it streams stdout and surfaces progress
@@ -545,7 +543,38 @@ footer(C.blue);
 // async IIFE started above so they execute after the test step.
 async function runPostTestsSections() {
 
-// Section 6: Link (optional)
+// Section 6: Consumer Simulation — regenerate the playground tarballs.
+// Skipped when --skip-tests is set so we never publish tars from a
+// state we haven't validated. Tests already passed at this point.
+// sim.mjs --skip-monorepo-build reuses the dist/ this prep run produced.
+section('Consumer Simulation', C.cyan);
+if (skipTests) {
+    const s = startStep('Regenerating _playground tarballs (sim.mjs --regen-tars)');
+    finishStep(s, 'done', 'skipped (--skip-tests)');
+    addStat('Consumer Sim', 'skipped (--skip-tests)', 'ok');
+} else {
+    const s = startStep('Regenerating _playground tarballs (sim.mjs --regen-tars)');
+    const r = run('node tools/sim.mjs --source _playground --regen-tars --skip-monorepo-build');
+    if (r.ok) {
+        finishStep(s, 'done', 'tars written to _playground/local-tars/');
+        addStat('Consumer Sim', 'tarballs regenerated', 'ok');
+    } else {
+        finishStep(s, 'fail', `exit ${r.status}`);
+        addIssue('error', 'Consumer Sim', `sim.mjs --regen-tars failed (exit ${r.status})`, []);
+    }
+}
+footer(C.cyan);
+
+// Section 7: Docker (opt-in via --docker). Default skips it because
+// most developers do not have a running Docker daemon and the check
+// adds startup latency without test value. Pass --docker to include it.
+if (args.includes('--docker')) {
+    section('Docker', C.blue);
+    runDockerCheck();
+    footer(C.blue);
+}
+
+// Section 8: Link (optional)
 if (args.includes('--link')) {
     section('Link', C.blue);
     const s = startStep('Linking @docmd/core globally');

@@ -31,7 +31,7 @@
  * --------------------------------------------------------------------
  */
 
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -225,6 +225,74 @@ addExternal(
 // Runner — execute each entry, print TUI section, aggregate results.
 // ---------------------------------------------------------------------------
 
+// Subprocess progress animation. Used only for external test entries (the
+// long ones — pnpm-filtered plugin unit tests + the brute-test fixtures).
+// In-process tests print their own assertions inline and don't need it.
+const PROGRESS_FRAMES = ['█░░░░░░░░░', '▓█░░░░░░░░', '░▓█░░░░░░░', '░░▓█░░░░░░', '░░░▓█░░░░░', '░░░░▓█░░░░', '░░░░░▓█░░░', '░░░░░░▓█░░'];
+const PROGRESS_INTERVAL_MS = 150;
+
+function renderProgressBar(elapsedMs) {
+  const idx = Math.floor(elapsedMs / 300) % PROGRESS_FRAMES.length;
+  const sec = (elapsedMs / 1000).toFixed(1);
+  return `${PROGRESS_FRAMES[idx]} ${sec}s`;
+}
+
+// Streams subprocess output live to the terminal while buffering it for
+// assertion-count parsing and failure-tail replay. Updates a per-section
+// progress line on stdout that we clear on completion.
+function runExternalWithProgress({ command, args }) {
+  return new Promise((resolve) => {
+    const startMs = Date.now();
+    let outBuf = '';
+    let progressLineActive = false;
+
+    // The progress line lives one row under the section header. We write it
+    // once, then keep rewriting it in place via \r + clear-line until the
+    // child closes. On close, clear it so the section verdict (PASS / FAIL)
+    // can claim that visual slot without leaving a stale frame behind.
+    const tick = setInterval(() => {
+      const bar = renderProgressBar(Date.now() - startMs);
+      process.stdout.write(`\r\x1b[2K${CYAN('│')}  ${DIM(bar)}`);
+      progressLineActive = true;
+    }, PROGRESS_INTERVAL_MS);
+
+    const child = spawn(command, args, {
+      cwd: path.resolve(import.meta.dirname, '..'),
+      stdio: ['ignore', 'pipe', 'pipe'],
+      encoding: 'utf8'
+    });
+
+    const onChunk = (chunk) => {
+      const text = chunk.toString();
+      outBuf += text;
+      // Live stream to the terminal so the operator sees output as it
+      // arrives. If a progress line is currently rendered, drop down
+      // one line, print the chunk, then redraw the progress line.
+      if (progressLineActive) {
+        process.stdout.write(`\x1b[1E\x1b[2K`);
+        process.stdout.write(text.replace(/\n(?!$)/g, '\n\x1b[2K'));
+        process.stdout.write(`\x1b[1A`);
+      } else {
+        process.stdout.write(text);
+      }
+    };
+    child.stdout.on('data', onChunk);
+    child.stderr.on('data', onChunk);
+
+    child.on('close', (code) => {
+      clearInterval(tick);
+      // Clear the progress line so the verdict can claim that row.
+      if (progressLineActive) process.stdout.write(`\r\x1b[2K`);
+      resolve({ status: code ?? 0, output: outBuf });
+    });
+    child.on('error', (err) => {
+      clearInterval(tick);
+      if (progressLineActive) process.stdout.write(`\r\x1b[2K`);
+      resolve({ status: 1, output: outBuf + '\n' + (err.stack || err.message) });
+    });
+  });
+}
+
 let totalPassed = 0;
 let totalFailed = 0;
 const allFailures = [];
@@ -235,36 +303,19 @@ console.log(CYAN(BOLD('Categorised test suite')));
 console.log(DIM(`  ${testFiles.length} test file${testFiles.length === 1 ? '' : 's'} • ${new Date().toISOString().slice(0, 10)}`));
 console.log('');
 
+(async function main() {
 for (const { id, name, module } of testFiles) {
   const sectionStart = Date.now();
   console.log(CYAN(`┌─ ${name}`));
 
   if (module.external) {
-    // Subprocess runner. Forward stdout, capture exit code.
-    const result = spawnSync(module.command, module.args, {
-      cwd: path.resolve(import.meta.dirname, '..'),
-      stdio: ['ignore', 'pipe', 'pipe'],
-      encoding: 'utf8'
-    });
-    const out = (result.stdout || '') + (result.stderr || '');
-    const lines = out.split('\n');
-    // Show last 60 lines of subprocess output so the TUI stays
-    // readable but the developer can see which assertions ran.
-    const tail = lines.slice(-60).join('\n');
-    for (const line of tail.split('\n')) {
-      if (!line.trim()) continue;
-      console.log(CYAN('│') + '  ' + line);
-    }
+    const result = await runExternalWithProgress(module);
+    const out = result.output;
     if (result.status === 0) {
       // Parse the assertion count. Two output formats are supported:
       //   1. `tests/feature-integration.test.js` style: "X passed,
       //      Y failed out of Z"
       //   2. `node:test` TAP-style:    "pass N" / "fail N" (one per line)
-      //      The `node:test` runner prints lines like:
-      //        ℹ tests 60
-      //        ℹ pass 60
-      //        ℹ fail 0
-      // We try the brute-test pattern first, then the node:test pattern.
       let passed = 0;
       let failed = 0;
       const bruteMatch = out.match(/(\d+)\s+passed,\s+(\d+)\s+failed/);
@@ -346,3 +397,4 @@ console.log(CYAN('└' + '─'.repeat(55)));
 console.log('');
 
 process.exit(totalFailed > 0 ? 1 : 0);
+})();
