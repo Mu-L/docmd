@@ -1,9 +1,20 @@
 /**
  * --------------------------------------------------------------------
  * docmd : Monorepo Security Audit
- * 
+ *
  * Scans the codebase for high-risk patterns that could lead to
  * XSS, RCE, or directory traversal vulnerabilities.
+ *
+ * This is a static-analysis companion to tests/security.test.js, which
+ * exercises the runtime policy path (security.html: escape | allow | strip,
+ * safePath enforcement, XSS escapes via scriptLiteral / jsonInject). The
+ * audit catches patterns the runtime tests can't see: dev-time mistakes in
+ * source (e.g. a raw `innerHTML =` assignment in a UI helper, an unguarded
+ * `exec()` call in a build script). It does not replace the runtime tests;
+ * keep both.
+ *
+ * Run:  node tools/security-audit.mjs
+ *        node tools/security-audit.mjs --skip-header   (in a TUI section)
  * --------------------------------------------------------------------
  */
 

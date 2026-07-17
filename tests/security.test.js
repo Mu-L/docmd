@@ -13,6 +13,7 @@
 import { execSync, spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { tryHit, store as cacheStore } from './_lib/build-cache.mjs';
 
 const DOCMD = path.resolve(import.meta.dirname, '../packages/core/dist/bin/docmd.js');
 const TEST_ROOT = '/tmp/docmd-brute-security';
@@ -31,6 +32,22 @@ function setup(name) {
 }
 
 function build(dir) {
+  // Cache check: if the test's source files + config match a previous
+  // successful build, reuse the cached `site/` directory instead of running
+  // a fresh `docmd build`. Collapses second-run prep time when fixtures
+  // haven't changed. Bypass with DOCMD_TEST_CACHE_OFF=1.
+  const configPath = path.join(dir, 'docmd.config.json');
+  const hit = tryHit(dir, configPath);
+  if (hit && hit.ok) {
+    const targetSite = path.join(dir, 'site');
+    fs.rmSync(targetSite, { recursive: true, force: true });
+    try {
+      fs.cpSync(hit.siteDir, targetSite, { recursive: true, dereference: false });
+    } catch {
+      fs.mkdirSync(targetSite, { recursive: true });
+    }
+    return { ok: true, output: hit.output, stderr: '', cached: true };
+  }
   // Use spawnSync so we can capture both stdout AND stderr on success too
   // (execSync discards stderr on success). Plugins use console.error to
   // surface validation warnings (e.g. S-4 analytics, S-5 PWA).
@@ -39,11 +56,18 @@ function build(dir) {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe']
   });
-  return {
+  const result = {
     ok: r.status === 0,
     output: r.stdout || '',
     stderr: r.stderr || ''
   };
+  if (result.ok) {
+    const siteDir = path.join(dir, 'site');
+    if (fs.existsSync(siteDir)) {
+      try { cacheStore(dir, configPath, siteDir, true, result.output); } catch { /* best-effort */ }
+    }
+  }
+  return result;
 }
 
 function writeFile(dir, filePath, content) {

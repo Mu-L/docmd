@@ -16,17 +16,3 @@ if [ -f "$RUST_BIN_PKG" ]; then
   "
   echo "[docker-prebuild] Stubbed rust-binaries build script"
 fi
-
-# _playground: runs a full docmd site build — a dev sandbox, not part of the
-# production image. Skip it to avoid unnecessary work and potential failures.
-PLAYGROUND_PKG="packages/_playground/package.json"
-if [ -f "$PLAYGROUND_PKG" ]; then
-  node -e "
-    const fs = require('fs');
-    const pkg = JSON.parse(fs.readFileSync('$PLAYGROUND_PKG', 'utf8'));
-    pkg.scripts = pkg.scripts || {};
-    pkg.scripts.build = 'echo [docker] skipped playground build';
-    fs.writeFileSync('$PLAYGROUND_PKG', JSON.stringify(pkg, null, 2));
-  "
-  echo "[docker-prebuild] Stubbed _playground build script"
-fi

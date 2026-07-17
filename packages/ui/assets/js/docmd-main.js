@@ -599,11 +599,15 @@
 
     // Convert all initial relative assets in head to absolute URLs to prevent
     // dynamic base resolution issues during SPA pushState / popstate updates.
+    // Use the DOM `href` property (already resolved against any <base href>) —
+    // NOT getAttribute('href') which returns the raw unresolved string and
+    // would re-resolve against window.location.href, dropping the deploy path
+    // for nested pages (e.g. /beta-test/guide/ → strips /beta-test/ prefix).
     const assetSelectors = 'link[rel="stylesheet"], link[rel="icon"], link[rel="shortcut icon"]';
     document.querySelectorAll(assetSelectors).forEach(asset => {
-      const href = asset.getAttribute('href');
-      if (href) {
-        asset.setAttribute('href', new URL(href, window.location.href).href);
+      const resolved = asset.href;
+      if (resolved && resolved !== asset.getAttribute('href')) {
+        asset.setAttribute('href', resolved);
       }
     });
 
@@ -720,16 +724,20 @@
         currentPath = new URL(finalUrl).pathname;
         document.title = doc.title;
 
-        // Sync Assets (CSS/Icons) - use absolute URLs to prevent jank when relative paths change
+        // Sync Assets (CSS/Icons). The new page's <base href> already
+        // resolved each new asset's URL when the browser parsed the fetched
+        // HTML, so `newAsset.href` is already an absolute URL we can clone
+        // verbatim. Re-resolving against finalUrl would strip the deploy
+        // base path on nested pages.
         const assetSelectors = 'link[rel="stylesheet"], link[rel="icon"], link[rel="shortcut icon"]';
-        const oldAssets = Array.from(document.head.querySelectorAll(assetSelectors));
         const newAssets = Array.from(doc.head.querySelectorAll(assetSelectors));
 
         newAssets.forEach((newAsset) => {
-          const newHref = new URL(newAsset.getAttribute('href'), data.finalUrl).href;
-          // Check if this absolute URL is already present in the head
+          // `newAsset.href` returns the already-resolved absolute URL because
+          // the browser applied the source document's <base href>.
+          const newHref = newAsset.href;
           const alreadyPresent = Array.from(document.head.querySelectorAll(assetSelectors)).some(oldAsset => {
-            return new URL(oldAsset.getAttribute('href'), window.location.href).href === newHref;
+            return oldAsset.href === newHref;
           });
 
           if (!alreadyPresent) {

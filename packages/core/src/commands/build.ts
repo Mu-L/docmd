@@ -172,7 +172,20 @@ export async function buildSite(configPath: string, opts: any = {}) {
               if (src && dest) {
                 const destPath = path.join(targetOutDir, dest);
                 await fs.ensureDir(path.dirname(destPath));
-                await fs.copy(src, destPath);
+                // Strip sourceMappingURL comments from copied JS so the
+                // browser doesn't 404 looking for .map files we don't ship.
+                // vendored libs (minisearch etc.) leave these behind.
+                if (dest.endsWith('.js')) {
+                  try {
+                    const content = await fs.readFile(src, 'utf8');
+                    const stripped = content.replace(/\n?\/\/# sourceMappingURL=\S+\s*$/, '');
+                    await fs.writeFile(destPath, stripped);
+                  } catch {
+                    await fs.copy(src, destPath);
+                  }
+                } else {
+                  await fs.copy(src, destPath);
+                }
               }
             }
           }
@@ -318,7 +331,9 @@ export async function buildSite(configPath: string, opts: any = {}) {
       theme: config.theme,
       customCssFiles: config.theme.customCss || [],
 
-      faviconLinkHtml: config.favicon ? `<link rel="icon" href="${absoluteRoot}${config.favicon.replace(/^\//, '')}">` : '',
+      faviconLinkHtml: config.favicon 
+        ? `<link rel="icon" href="${absoluteRoot}${config.favicon.replace(/^\//, '')}">`
+        : `<link rel="icon" href="${absoluteRoot}assets/favicon.ico">`,
       themeInitScript
     });
 
