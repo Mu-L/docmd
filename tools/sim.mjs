@@ -68,9 +68,10 @@ const SOURCE_DIR = SOURCE_FLAG
 
 const REGEN_TARS = args.includes('--regen-tars');
 const DO_DEV = args.includes('--dev');
+const DO_DOCTOR = args.includes('--doctor');
 const EXPLICIT_BUILD = args.includes('--build');
 // Default to --build when no mode specified, so `pnpm sim` does the obvious thing.
-const DO_BUILD = EXPLICIT_BUILD || (!DO_DEV && !REGEN_TARS);
+const DO_BUILD = EXPLICIT_BUILD || (!DO_DEV && !DO_DOCTOR && !REGEN_TARS);
 
 const SKIP_MONOREPO_BUILD = args.includes('--skip-monorepo-build') || args.includes('--skip-build');
 const VERBOSE = args.includes('--verbose') || args.includes('--v');
@@ -106,7 +107,11 @@ function step(label, fn) {
 }
 
 function run(cmd, opts = {}) {
-  return execSync(cmd, { encoding: 'utf8', stdio: VERBOSE ? 'inherit' : 'pipe', timeout: 180000, ...opts });
+  const env = { ...process.env, ...opts.env };
+  delete env.npm_config_npm_globalconfig;
+  delete env.npm_config_verify_deps_before_run;
+  delete env.npm_config__jsr_registry;
+  return execSync(cmd, { encoding: 'utf8', stdio: VERBOSE ? 'inherit' : 'pipe', timeout: 180000, ...opts, env });
 }
 
 function rmrf(p) {
@@ -239,7 +244,11 @@ function npmInstall() {
 function runDocmd(command) {
   return new Promise((resolve, reject) => {
     process.stdout.write(`  ${DIM('WAIT')} docmd ${command} (source)...`);
-    const child = spawn('npx', ['docmd', command], { cwd: SOURCE_DIR, stdio: 'inherit' });
+    const env = { ...process.env };
+    delete env.npm_config_npm_globalconfig;
+    delete env.npm_config_verify_deps_before_run;
+    delete env.npm_config__jsr_registry;
+    const child = spawn('npx', ['docmd', command], { cwd: SOURCE_DIR, stdio: 'inherit', env });
     child.on('exit', (code) => {
       const tag = code === 0 ? `${GREEN('DONE')}` : `${RED('FAIL')}`;
       process.stdout.write(`\r  ${tag} docmd ${command} (source)               \n`);
@@ -261,9 +270,9 @@ function runDocmd(command) {
     fail(`${LOCAL_TARS} not found. Run with --regen-tars first to generate tarballs.`, 2);
   }
 
-  const modeLabel = REGEN_TARS && (DO_BUILD || DO_DEV)
-    ? 'regen-tars + ' + (DO_DEV ? 'dev' : 'build')
-    : REGEN_TARS ? 'regen-tars' : DO_DEV ? 'dev' : 'build';
+  const modeLabel = REGEN_TARS && (DO_BUILD || DO_DEV || DO_DOCTOR)
+    ? 'regen-tars + ' + (DO_DEV ? 'dev' : DO_DOCTOR ? 'doctor' : 'build')
+    : REGEN_TARS ? 'regen-tars' : DO_DEV ? 'dev' : DO_DOCTOR ? 'doctor' : 'build';
 
   console.log();
   console.log(`  ${BOLD('docmd sim')} ${DIM('— consumer simulator')}`);
@@ -280,10 +289,10 @@ function runDocmd(command) {
 
   if (REGEN_TARS) packAndShip();
 
-  if (DO_BUILD || DO_DEV) {
+  if (DO_BUILD || DO_DEV || DO_DOCTOR) {
     wipeSource();
     npmInstall();
-    await runDocmd(DO_DEV ? 'dev' : 'build');
+    await runDocmd(DO_DEV ? 'dev' : DO_DOCTOR ? 'doctor' : 'build');
   }
 
   if (REGEN_TARS && !DO_BUILD && !DO_DEV) {

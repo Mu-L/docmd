@@ -331,7 +331,9 @@ export async function buildSite(configPath: string, opts: any = {}) {
       theme: config.theme,
       customCssFiles: config.theme.customCss || [],
 
-      faviconLinkHtml: config.favicon ? `<link rel="icon" href="${absoluteRoot}${config.favicon.replace(/^\//, '')}">` : '',
+      faviconLinkHtml: config.favicon 
+        ? `<link rel="icon" href="${absoluteRoot}${config.favicon.replace(/^\//, '')}">`
+        : `<link rel="icon" href="${absoluteRoot}assets/favicon.ico">`,
       themeInitScript
     });
 

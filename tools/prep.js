@@ -61,6 +61,7 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 
 process.env.DOCMD_TEST = 'true';
+const pipelineStartMs = Date.now();
 
 const path = require('path');
 const monorepoRoot = path.resolve(__dirname, '..');
@@ -158,19 +159,7 @@ function finishStep(s, status, summary) {
     );
 }
 
-// Same shape as finishStep() but prints a FRESH line below the streamed
-// content instead of rewriting the [WAIT] line via cursor-up. Use this
-// for steps whose child process has written lines of its own between
-// startStep() and now, because the cursor is no longer on the WAIT
-// line — finishStep()'s `\x1b[1A` would clobber an unrelated output line.
-function writeVerdictLine(s, status, summary) {
-    const ms = Date.now() - s.startMs;
-    const t = ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
-    const tag = status === 'done'
-        ? `${C.green}[ DONE ]${C.reset}`
-        : `${C.red}[ FAIL ]${C.reset}`;
-    console.log(`${s.bar}  ${s.text.padEnd(52)}${tag} ${C.dim}${t}${C.reset}  ${C.dim}${summary}${C.reset}`);
-}
+
 
 function run(cmd, opts = {}) {
     // opts.silent   — when true (default), suppress output unless cmd failed.
@@ -272,18 +261,12 @@ function runTestStep(label, cmd, statLabel = label) {
         return;
     }
 
-    // Default (collapsed) mode: CAPTURE the stream, but extract progress
-    // markers (each test file's section header) as the runner emits
-    // them. The operator sees one line per test file as it starts —
-    // enough to know the pipeline is alive and which file is currently
-    // running — without the noise of every individual test case. On
-    // completion, the trailing Summary block already shows the pass/fail
-    // count extracted from the runner's own "Test summary:" line.
     const { spawn } = require('child_process');
     const child = spawn(cmd, { shell: true, stdio: ['ignore', 'pipe', 'pipe'] });
     let stdoutBuf = '';
     let stderrBuf = '';
     let lineBuf = '';
+    let numProgressLines = 0;
     // Print progress markers line-by-line as the runner emits them.
     // We listen on stdout for `┌─ <name>` headers and surface those as
     // small markers under the step's WAIT line, without scrolling or
@@ -314,6 +297,7 @@ function runTestStep(label, cmd, statLabel = label) {
                 process.stdout.write(
                     `${C.dim}│   ${C.cyan}→${C.reset} ${C.dim}${m[1].trim()}${C.reset}\n`
                 );
+                numProgressLines++;
             }
         }
     };
@@ -323,23 +307,37 @@ function runTestStep(label, cmd, statLabel = label) {
     return new Promise((resolve) => {
         child.on('close', (exitCode) => {
             exitCode = exitCode ?? 0;
+            const ms = Date.now() - s.startMs;
+            const t = ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)}s`;
+            const tag = exitCode === 0
+                ? `${C.green}[ DONE ]${C.reset}`
+                : `${C.red}[ FAIL ]${C.reset}`;
+
+            let summary = '';
             if (exitCode === 0) {
                 const m = stdoutBuf.match(/Test summary:\s*([^\n]+)/);
-                const summary = m ? m[1].trim() : 'passed';
-                writeVerdictLine(s, 'done', summary);
+                summary = m ? m[1].trim() : 'passed';
                 addStat(statLabel, summary, 'ok');
             } else {
-                const statusLine = `runner exited with status ${exitCode}`;
-                writeVerdictLine(s, 'fail', statusLine);
-                addStat(statLabel, `failed (exit ${exitCode})`, 'fail');
+                summary = `failed (exit ${exitCode})`;
+                addStat(statLabel, summary, 'fail');
                 addIssue('error', label, 'test command failed', [
-                    statusLine,
+                    `runner exited with status ${exitCode}`,
                     're-run with --expand to see the full failure output inline',
                     '--- last 30 lines of captured stdout ---',
                     ...stdoutBuf.split('\n').slice(-30),
                     '--- last 30 lines of captured stderr ---',
                     ...stderrBuf.split('\n').slice(-30),
                 ]);
+            }
+
+            const sumTxt = summary ? `  ${C.dim}${summary}${C.reset}` : '';
+            const linesUp = numProgressLines + 1;
+            process.stdout.write(`\x1b[${linesUp}A\r`);
+            process.stdout.write('\x1b[2K');
+            process.stdout.write(`${s.bar}  ${s.text.padEnd(52)}${tag} ${C.dim}${t}${C.reset}${sumTxt}\n`);
+            if (numProgressLines > 0) {
+                process.stdout.write(`\x1b[${numProgressLines}B`);
             }
             resolve();
         });
@@ -354,6 +352,9 @@ function runTestStep(label, cmd, statLabel = label) {
 // same slot at the end of the pipeline, so the operator always knows
 // where to look for the verdict.
 function printSummary() {
+    const elapsedMs = Date.now() - pipelineStartMs;
+    const elapsedTxt = elapsedMs < 1000 ? `${elapsedMs}ms` : `${(elapsedMs / 1000).toFixed(1)}s`;
+
     if (issues.length === 0) {
         // Green Summary — every stat in one tidy list. Pad the label
         // column to the longest label so values align regardless of
@@ -368,6 +369,7 @@ function printSummary() {
             console.log(`${C.green}│${C.reset}  ${tag} ${C.bold}${label}${C.reset}${s.value}`);
         }
         footer(C.green);
+        console.log(`\n${C.green}${C.bold}✓ Maintenance Pipeline passed in ${elapsedTxt}.${C.reset}`);
         return;
     }
 
@@ -403,6 +405,19 @@ function printSummary() {
         }
     }
     footer(color);
+
+    if (errors > 0) {
+        console.log(`\n${C.red}${C.bold}✗ Maintenance Pipeline failed in ${elapsedTxt}.${C.reset}`);
+        console.log(`${C.bold}Failed sections:${C.reset}`);
+        const failSections = Array.from(bySection.entries())
+            .filter(([_, items]) => items.some(item => item.severity === 'error'))
+            .map(([name]) => name);
+        for (const sec of failSections) {
+            console.log(`  - ${sec}`);
+        }
+    } else {
+        console.log(`\n${C.yellow}${C.bold}⚠ Maintenance Pipeline passed with warnings in ${elapsedTxt}.${C.reset}`);
+    }
 }
 
 function runDockerCheck() {
@@ -550,14 +565,14 @@ async function runPostTestsSections() {
 // sim.mjs --skip-monorepo-build reuses the dist/ this prep run produced.
 section('Consumer Simulation', C.cyan);
 if (skipTests) {
-    const s = startStep('Regenerating _playground tarballs (sim.mjs --regen-tars)');
+    const s = startStep('Regenerating tarballs (sim.mjs --regen-tars)');
     finishStep(s, 'done', 'skipped (--skip-tests)');
     addStat('Consumer Sim', 'skipped (--skip-tests)', 'ok');
 } else {
-    const s = startStep('Regenerating _playground tarballs (sim.mjs --regen-tars)');
+    const s = startStep('Regenerating tarballs (sim.mjs --regen-tars)');
     const r = run('node tools/sim.mjs --source _playground --regen-tars --skip-monorepo-build');
     if (r.ok) {
-        finishStep(s, 'done', 'tars written to _playground/local-tars/');
+        finishStep(s, 'done', '\ntars written to _playground/local-tars/');
         addStat('Consumer Sim', 'tarballs regenerated', 'ok');
     } else {
         finishStep(s, 'fail', `exit ${r.status}`);

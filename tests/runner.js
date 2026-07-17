@@ -198,7 +198,7 @@ addExternal(
 // --- Section 5: Feature integration (legacy feature-integration.test.js) --------------
 addExternal(
   'features',
-  'Feature integration (29 scenarios — zero-config, i18n, versioning, navigation, code blocks, search, sitemap, etc.)',
+  'Feature integration (29 scenarios — zero-config, i18n, versioning, navigation, search, etc.)',
   'node',
   ['tests/feature-integration.test.js']
 );

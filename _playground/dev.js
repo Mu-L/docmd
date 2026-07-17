@@ -38,6 +38,11 @@ if (tars.length === 0) {
 
 // node_modules — install lazily on first dev/build/live run so `pnpm prep`
 // does not pollute _playground with a full install (prep only writes tars).
+const env = { ...process.env };
+delete env.npm_config_npm_globalconfig;
+delete env.npm_config_verify_deps_before_run;
+delete env.npm_config__jsr_registry;
+
 if (!existsSync(nodeModules)) {
   console.log(`\n  \x1b[36m→\x1b[0m installing _playground dependencies (one-time)…\n`);
   // --include=optional picks up engine-rust / engine-rust-binaries so
@@ -47,10 +52,11 @@ if (!existsSync(nodeModules)) {
   const r = spawnSync('npm', ['install', '--no-audit', '--no-fund', '--include=optional', '--foreground-scripts'], {
     cwd: __dirname,
     stdio: 'inherit',
+    env,
   });
   if (r.status !== 0) fail(`npm install failed (exit ${r.status})`);
 }
 
 const cmdArgs = command === 'live' ? ['docmd-live'] : ['docmd', command];
-const r = spawnSync('npx', cmdArgs, { cwd: __dirname, stdio: 'inherit' });
+const r = spawnSync('npx', cmdArgs, { cwd: __dirname, stdio: 'inherit', env });
 process.exit(r.status ?? 0);
