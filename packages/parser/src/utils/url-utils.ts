@@ -235,8 +235,14 @@ export function buildContextualUrl(href: string, context: UrlContext): string {
   if (context.offline) {
     if (combinedPath === '' || combinedPath.endsWith('/')) {
       combinedPath = combinedPath + 'index.html';
-    } else if (!combinedPath.endsWith('.html') && !/\.(?!html?)[a-z][a-z0-9]{0,5}$/i.test(combinedPath)) {
-      combinedPath = combinedPath + '/index.html';
+    } else if (!combinedPath.endsWith('.html') && !combinedPath.endsWith('.htm')) {
+      const lastSlash = combinedPath.lastIndexOf('/');
+      const filename = lastSlash >= 0 ? combinedPath.substring(lastSlash + 1) : combinedPath;
+      const lastDot = filename.lastIndexOf('.');
+      const hasUnmodifiedExtension = lastDot > 0 && lastDot < filename.length - 1;
+      if (!hasUnmodifiedExtension) {
+        combinedPath = combinedPath + '/index.html';
+      }
     }
   }
 

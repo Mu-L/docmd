@@ -92,18 +92,23 @@ export function resolveHref(href: string): NormalizedHref {
     href = href.substring(0, hashIndex);
   }
 
-  // 6. Strip .md, .html, and .ejs extensions
+  // 6. Strip .md, .html, .htm, and .ejs extensions
   if (href.endsWith('.md')) {
     href = href.slice(0, -3);
   } else if (href.endsWith('.html')) {
     href = href.slice(0, -5);
+  } else if (href.endsWith('.htm')) {
+    href = href.slice(0, -4);
   } else if (href.endsWith('.ejs')) {
     href = href.slice(0, -4);
   }
 
   // 6.5 Check for other file extensions. If present, treat as raw and do not normalise.
-  const hasFileExtension = /\.(?!html?)[a-z][a-z0-9]{0,5}$/i.test(href);
-  if (hasFileExtension) {
+  const lastSlash = href.lastIndexOf('/');
+  const filename = lastSlash >= 0 ? href.substring(lastSlash + 1) : href;
+  const lastDot = filename.lastIndexOf('.');
+  const hasUnmodifiedExtension = lastDot > 0 && lastDot < filename.length - 1;
+  if (hasUnmodifiedExtension) {
     return { href: href + hash, isExternal, isRaw: true };
   }
 
