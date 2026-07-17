@@ -14,6 +14,7 @@
 
 import chalk from 'chalk';
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
 const pkgUrl = new URL('../package.json', import.meta.url);
 const { version: PKG_VERSION } = JSON.parse(readFileSync(pkgUrl, 'utf-8'));
@@ -421,8 +422,26 @@ export const TUI = {
       versions?: { count: number; labels: string };
       locales?:  { count: number; labels: string };
     } = {
-      source: (config.src || 'docs') + '/',
-      output: outputDir.startsWith(cwd) ? outputDir.slice(cwd.length + 1) + '/' : outputDir + '/',
+      source: (() => {
+        const src = config.src || 'docs';
+        if (path.isAbsolute(src)) {
+          const rel = path.relative(cwd, src);
+          const upCount = (rel.match(/\.\.\//g) || []).length;
+          if (upCount > 3) {
+            return src.endsWith('/') ? src : src + '/';
+          }
+          return rel.endsWith('/') ? rel : rel + '/';
+        }
+        return src.endsWith('/') ? src : src + '/';
+      })(),
+      output: (() => {
+        const rel = path.relative(cwd, outputDir);
+        const upCount = (rel.match(/\.\.\//g) || []).length;
+        if (upCount > 3) {
+          return outputDir.endsWith('/') ? outputDir : outputDir + '/';
+        }
+        return rel.endsWith('/') ? rel : rel + '/';
+      })(),
     };
 
     if (config.engine && config.engine !== 'js') {
