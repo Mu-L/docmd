@@ -37,4 +37,9 @@ packages/engines/rust-binaries/native/target/
 
 # Docmd Cache
 .docmd/
-.docmd-search/_brutetest/
+.docmd-search/
+
+# _playground
+_playground/local-tars/
+_playground/node_modules/
+_playground/site/
