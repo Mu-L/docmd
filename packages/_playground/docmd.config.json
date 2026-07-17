@@ -1,0 +1,90 @@
+{
+  "engine": "rust",
+  "title": "_playground",
+  "favicon": "assets/favicon.ico",
+  "theme": {
+    "name": "summer",
+    "customCss": []
+  },
+  "layout": {
+    "menubar": {
+      "enabled": true,
+      "position": "header",
+      "left": [ { "text": "Menu 1", "url": "/" }, { "text": "Menu 2", "url": "/nostyle" } ]
+    },
+    "optionsMenu": {
+      "position": "menubar",
+      "components": {
+        "search": true,
+        "themeSwitch": true,
+        "sponsor": "https://github.com/sponsors/mgks"
+      }
+    },
+    "footer": {
+      "style": "minimal"
+    }
+  },
+  "plugins": {
+    "search": {
+      "semantic": false,
+      "showConfidence": false
+    },
+    "seo": {},
+    "sitemap": {},
+    "analytics": {
+      "googleV4": { "measurementId": "G-X9WTDL262N" }
+    },
+    "llms": {},
+    "mermaid": {},
+    "git": {
+      "repo": "https://github.com/docmd-io/docmd"
+    },
+    "openapi": {},
+    "math": {},
+    "okf": {
+      "graph": true
+    }
+  },
+
+  "versions": {
+    "current": "06",
+    "position": "sidebar-top",
+    "all": [
+      { "id": "06", "dir": "docs", "label": "v0.6.0" },
+      { "id": "05", "dir": "docs-05", "label": "v0.5.0",
+        "navigation": [
+          { "title": "V0.5 Home", "path": "/", "icon": "home" },
+          { "title": "V0.5 Install", "path": "/getting-started/installation", "icon": "download" }
+        ]
+      }
+    ]
+  },
+
+  "i18n": {
+    "default": "en",
+    "locales": [
+      { "id": "en", "label": "English", "dir": "ltr" },
+      { "id": "hi", "label": "हिन्दी", "dir": "ltr" },
+      { "id": "zh", "label": "中文", "dir": "ltr" },
+      { "id": "es", "label": "Español", "dir": "ltr" }
+    ]
+  },
+
+  "navigation": [
+    {
+      "title": "Getting Started",
+      "children": [
+        { "title": "Latest Home", "path": "/", "icon": "home" },
+        {
+          "title": "Mermaid icon test",
+          "path": "/mermaid-icon-test",
+          "icon": "mermaid",
+          "children": [
+            { "title": "Nested Page 1", "path": "/nested-page-1" },
+            { "title": "Nested Page 2", "path": "/nested-page-2" }
+          ]
+        }
+      ]
+    }
+  ]
+}
