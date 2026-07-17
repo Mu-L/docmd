@@ -235,7 +235,7 @@ export function buildContextualUrl(href: string, context: UrlContext): string {
   if (context.offline) {
     if (combinedPath === '' || combinedPath.endsWith('/')) {
       combinedPath = combinedPath + 'index.html';
-    } else if (!combinedPath.endsWith('.html')) {
+    } else if (!combinedPath.endsWith('.html') && !/\.(?!html?)[a-z][a-z0-9]{0,5}$/i.test(combinedPath)) {
       combinedPath = combinedPath + '/index.html';
     }
   }

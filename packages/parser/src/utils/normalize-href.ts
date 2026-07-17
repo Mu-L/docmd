@@ -101,6 +101,12 @@ export function resolveHref(href: string): NormalizedHref {
     href = href.slice(0, -4);
   }
 
+  // 6.5 Check for other file extensions. If present, treat as raw and do not normalise.
+  const hasFileExtension = /\.(?!html?)[a-z][a-z0-9]{0,5}$/i.test(href);
+  if (hasFileExtension) {
+    return { href: href + hash, isExternal, isRaw: true };
+  }
+
   // 7. Strip trailing /index or /README (the page is the folder root)
   //    Handles: dir/index, ./dir/index, ../dir/index, /dir/index
   //    And:     dir/README, ./dir/README, ../dir/README, /dir/README
