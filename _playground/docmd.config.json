@@ -1,0 +1,12 @@
+{
+  "title": "_playground",
+  "url": "https://docmd.io",
+  "engine": "js",
+  "theme": {
+    "name": "default"
+  },
+  "layout": {
+    "sidebar": { "collapsible": true }
+  },
+  "plugins": {}
+}

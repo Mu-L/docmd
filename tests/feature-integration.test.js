@@ -36,6 +36,7 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { tryHit, store as cacheStore } from './_lib/build-cache.mjs';
 
 const DOCMD = path.resolve(import.meta.dirname, '../packages/core/dist/bin/docmd.js');
 const TEST_ROOT = '/tmp/docmd-brute-tests';
@@ -54,10 +55,40 @@ function setup(name) {
 }
 
 function build(dir, expectFail = false) {
+  // Cache check: if the test's source files + config match a previous
+  // successful build, reuse the cached `site/` directory instead of running
+  // a fresh `docmd build`. This collapses second-run prep time when nothing
+  // in the test fixtures changed. Cache miss / failure fall back to the
+  // original execSync path so the test behaves identically on the first
+  // run. To bypass the cache entirely, set DOCMD_TEST_CACHE_OFF=1.
+  const configPath = path.join(dir, 'docmd.config.js');
+  if (!expectFail) {
+    const hit = tryHit(dir, configPath);
+    if (hit && hit.ok) {
+      // Copy (or hardlink) the cached site into the test dir so the rest
+      // of the test sees the same paths it always did. Hardlink saves
+      // disk for large sites; cp as fallback.
+      const cachedSite = hit.siteDir;
+      const targetSite = path.join(dir, 'site');
+      fs.rmSync(targetSite, { recursive: true, force: true });
+      try {
+        fs.cpSync(cachedSite, targetSite, { recursive: true, dereference: false });
+      } catch {
+        fs.rmSync(targetSite, { recursive: true, force: true });
+        fs.mkdirSync(targetSite, { recursive: true });
+      }
+      return { ok: true, output: hit.output, cached: true };
+    }
+  }
   try {
     const out = execSync(`node ${DOCMD} build`, { cwd: dir, stdio: 'pipe', encoding: 'utf8' });
     if (expectFail) return { ok: false, output: out };
-    return { ok: true, output: out };
+    // Store successful builds so the next run can skip the rebuild.
+    const siteDir = path.join(dir, 'site');
+    if (!expectFail && fs.existsSync(siteDir)) {
+      try { cacheStore(dir, configPath, siteDir, true, out); } catch { /* cache best-effort */ }
+    }
+    return { ok: true, output: out, cached: false };
   } catch (e) {
     if (expectFail) return { ok: true, output: e.stderr || e.stdout || '' };
     return { ok: false, output: e.stderr || e.stdout || '' };

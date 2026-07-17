@@ -1,6 +1,6 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
-import docmdRules from './eslint-rules/index.js';
+import docmdRules from './tools/eslint-rules/index.js';
 
 export default [
   eslint.configs.recommended,

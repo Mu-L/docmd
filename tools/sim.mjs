@@ -12,22 +12,40 @@
  * [docmd-source] - Please do not remove this header.
  * --------------------------------------------------------------------
  *
- * sim : single-command live preview of unreleased docmd in a real consumer.
+ * sim : consumer simulator for docmd.
  *
- * Replaces ad-hoc manual steps (resolve-ws-deps + npm pack for every
- * package + copy to consumer/local-tars + reinstall + build) with one
- * invocation. Use to verify a release candidate before tagging.
+ * Three modes (combinable):
  *
- * USAGE (from the docmd/ monorepo root):
- *   pnpm sim                      # build everything, then consumer dev
- *   pnpm sim --dev                # keep dev server running after the build
- *   pnpm sim --build              # consumer build only (no dev server)
- *   pnpm sim --push               # also commit + push consumer (triggers CI)
+ *   --regen-tars        Build monorepo + pack fresh tarballs into <source>/local-tars/.
+ *                       Used by `pnpm prep` after tests pass. Does NOT install or run.
  *
- * SAFE TO RUN FROM THE MONOREPO:
- *   Packages are packed from a staging copy under $STAGING_DIR, never
- *   from the live monorepo working tree. Killing the script mid-run
- *   leaves /tmp dirty at most.
+ *   --build             Wipe <source>/node_modules, site/, package-lock.json. npm install.
+ *                       Then run `docmd build` in source.
+ *
+ *   --dev               Same as --build, but starts the dev server (long-running).
+ *
+ * --source=<dir>       Consumer project directory. Defaults to ./_playground if it
+ *                       exists in the monorepo, else process.cwd().
+ *
+ * --skip-monorepo-build  Skip the `pnpm -r run build` step. Use when prep already built.
+ *
+ * --verbose            Stream every command's output.
+ *
+ * Tarballs are renamed to versionless names during shipping (e.g.
+ * `docmd-core-0.8.16.tgz` -> `docmd-core.tgz`) so consumers can reference
+ * `file:local-tars/docmd-core.tgz` and never need to bump on version change.
+ *
+ * Usage examples:
+ *   node tools/sim.mjs --source _playground --regen-tars --skip-monorepo-build
+ *   node tools/sim.mjs --source _playground --regen-tars --build
+ *   node tools/sim.mjs --source _playground --build
+ *   node tools/sim.mjs --source _playground --dev
+ *   node tools/sim.mjs --source ./my-docs --build
+ *
+ * SAFETY:
+ *   Tarballs are packed from a /tmp staging copy of each package, never from
+ *   the live monorepo working tree. The monorepo is NEVER mutated. Killing
+ *   the script mid-run leaves /tmp dirty at most.
  * --------------------------------------------------------------------
  */
 
@@ -38,71 +56,64 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const MONOREPO_ROOT = path.resolve(__dirname, '..');
 
-// ---------------------------------------------------------------------------
-// CONFIGURATION — change these to point at any consumer project.
-// ---------------------------------------------------------------------------
+const args = process.argv.slice(2);
+const SOURCE_FLAG = args.find((a) => a.startsWith('--source='));
+const SOURCE_DIR = SOURCE_FLAG
+  ? path.resolve(SOURCE_FLAG.slice('--source='.length))
+  : (fs.existsSync(path.join(MONOREPO_ROOT, '_playground'))
+      ? path.join(MONOREPO_ROOT, '_playground')
+      : process.cwd());
 
-const MONOREPO_ROOT  = path.resolve(__dirname, '..');               // this repo
-const CONSUMER_ROOT  = '/Users/mac/Workspace/GitHub/docmd-io/_brutetest/gh-sub-parent';
-const CONSUMER_TARS  = path.join(CONSUMER_ROOT, 'local-tars');      // where tars land
-const CONSUMER_CFG   = path.join(CONSUMER_ROOT, 'docmd.config.json');// consumer config
-const CONSUMER_PKGS  = path.join(CONSUMER_ROOT, 'package.json');     // consumer manifest
-const STAGING_DIR    = '/tmp/docmd-sim-staging';                     // copy of pkgs before pack
-const TARBALL_DIR    = path.join(STAGING_DIR, 'tarballs');
-const WORK_DIR       = '/tmp/docmd-sim-consumer';                    // throwaway consumer dir
-const BRANCH         = 'main';                                       // git push target
-const REMOTE         = 'origin';                                     // git remote name
+const REGEN_TARS = args.includes('--regen-tars');
+const DO_DEV = args.includes('--dev');
+const EXPLICIT_BUILD = args.includes('--build');
+// Default to --build when no mode specified, so `pnpm sim` does the obvious thing.
+const DO_BUILD = EXPLICIT_BUILD || (!DO_DEV && !REGEN_TARS);
 
-// Packages to PACK into the consumer. Anything matching this prefix gets
-// a fresh tarball. Keep narrow: only @docmd/* monorepo packages.
+const SKIP_MONOREPO_BUILD = args.includes('--skip-monorepo-build') || args.includes('--skip-build');
+const VERBOSE = args.includes('--verbose') || args.includes('--v');
+
+const STAGING_DIR = '/tmp/docmd-sim-staging';
+const TARBALL_DIR = path.join(STAGING_DIR, 'tarballs');
+const LOCAL_TARS = path.join(SOURCE_DIR, 'local-tars');
+
 const PACKAGE_PREFIX = '@docmd/';
 
-// Verbose: stream every command's output. Toggle with --verbose.
-const ARGS = process.argv.slice(2);
-const VERBOSE = ARGS.includes('--verbose') || ARGS.includes('--v');
-const AFTER_DEV = ARGS.includes('--dev');            // keep dev server running
-const BUILD_ONLY = ARGS.includes('--build');          // consumer build only
-const DO_PUSH = ARGS.includes('--push');              // also git push consumer
+// ── ANSI helpers ─────────────────────────────────────────────────────
+const DIM = (s) => `\x1b[2m${s}\x1b[0m`;
+const GREEN = (s) => `\x1b[32m${s}\x1b[0m`;
+const RED = (s) => `\x1b[31m${s}\x1b[0m`;
+const BOLD = (s) => `\x1b[1m${s}\x1b[0m`;
 
-// ---------------------------------------------------------------------------
-// ANSI helpers (zero deps)
-// ---------------------------------------------------------------------------
-
-const DIM    = (s) => `\x1b[2m${s}\x1b[0m`;
-const GREEN  = (s) => `\x1b[32m${s}\x1b[0m`;
-const RED    = (s) => `\x1b[31m${s}\x1b[0m`;
-const CYAN   = (s) => `\x1b[36m${s}\x1b[0m`;
-const BOLD   = (s) => `\x1b[1m${s}\x1b[0m`;
-const YELLOW = (s) => `\x1b[33m${s}\x1b[0m`;
-
-const RESET  = '\x1b[0m';
+function fail(msg, code = 1) {
+  console.error(`\n  ${RED('✗')} ${msg}\n`);
+  process.exit(code);
+}
 
 function step(label, fn) {
   process.stdout.write(`  ${DIM('WAIT')} ${label}...`);
   try {
     const result = fn();
-    process.stdout.write(`\r  ${GREEN('DONE')} ${label}      ${RESET}\n`);
+    process.stdout.write(`\r  ${GREEN('DONE')} ${label}      \n`);
     return result;
   } catch (err) {
-    process.stdout.write(`\r  ${RED('FAIL')} ${label}      ${RESET}\n`);
+    process.stdout.write(`\r  ${RED('FAIL')} ${label}      \n`);
     if (VERBOSE) console.error(err.stderr?.toString() || err.message);
     throw err;
   }
 }
 
 function run(cmd, opts = {}) {
-  const merged = { encoding: 'utf8', stdio: VERBOSE ? 'inherit' : 'pipe', timeout: 180000, ...opts };
-  return execSync(cmd, merged);
+  return execSync(cmd, { encoding: 'utf8', stdio: VERBOSE ? 'inherit' : 'pipe', timeout: 180000, ...opts });
 }
 
 function rmrf(p) {
   if (fs.existsSync(p)) run(`rm -rf "${p}"`);
 }
 
-// ---------------------------------------------------------------------------
-// STEP 1: Build the monorepo so fresh dist/ files exist in every package.
-// ---------------------------------------------------------------------------
+// ── Monorepo build (optional) ───────────────────────────────────────
 
 function buildMonorepo() {
   step('Building monorepo (pnpm -r run build)', () => {
@@ -110,9 +121,7 @@ function buildMonorepo() {
   });
 }
 
-// ---------------------------------------------------------------------------
-// STEP 2: Collect every @docmd/* package metadata from the monorepo.
-// ---------------------------------------------------------------------------
+// ── Tarball generation ──────────────────────────────────────────────
 
 function collectPackages() {
   const out = [];
@@ -139,12 +148,6 @@ function collectPackages() {
   walk(path.join(MONOREPO_ROOT, 'packages'));
   return out;
 }
-
-// ---------------------------------------------------------------------------
-// STEP 3: Copy each package to staging, rewrite workspace:* in the copy
-// (NOT the monorepo), pack into tars, then copy the tars to the consumer.
-// The monorepo working tree is NEVER mutated.
-// ---------------------------------------------------------------------------
 
 function packAndShip() {
   const packages = collectPackages();
@@ -199,109 +202,97 @@ function packAndShip() {
     }
   });
 
-  step('Shipping tars into consumer/local-tars', () => {
-    rmrf(CONSUMER_TARS);
-    fs.mkdirSync(CONSUMER_TARS, { recursive: true });
-    run(`cp ${TARBALL_DIR}/*.tgz "${CONSUMER_TARS}/"`);
+  step('Shipping tars into source/local-tars (versionless names)', () => {
+    rmrf(LOCAL_TARS);
+    fs.mkdirSync(LOCAL_TARS, { recursive: true });
+    const versioned = fs.readdirSync(TARBALL_DIR).filter((f) => f.endsWith('.tgz'));
+    for (const file of versioned) {
+      // Strip the trailing `-<version>` from npm-pack default filename.
+      // `docmd-core-0.8.16.tgz` -> `docmd-core.tgz`. Lets the consumer's
+      // package.json reference `file:local-tars/docmd-core.tgz` without
+      // bumping on every release.
+      const versionless = file.replace(/-\d+\.\d+\.\d+(-[\w.]+)?\.tgz$/, '.tgz');
+      fs.copyFileSync(path.join(TARBALL_DIR, file), path.join(LOCAL_TARS, versionless));
+    }
   });
 
   step('Cleaning staging', () => rmrf(STAGING_DIR));
 }
 
-// ---------------------------------------------------------------------------
-// STEP 4: Install the new tars in the consumer (in WORK_DIR copy) and run
-// the consumer's build/dev command.
-// ---------------------------------------------------------------------------
+// ── Install + run in source ─────────────────────────────────────────
 
-function buildConsumer() {
-  // Copy consumer to a throwaway dir so we don't touch its working tree.
-  rmrf(WORK_DIR);
-  fs.mkdirSync(WORK_DIR, { recursive: true });
-  step('Copying consumer to throwaway work dir', () => {
-    run(`cp -R "${CONSUMER_ROOT}/." "${WORK_DIR}/"`);
-    // Ensure installed deps are wiped so npm picks up the new tars.
-    run(`rm -rf "${WORK_DIR}/node_modules" "${WORK_DIR}/package-lock.json" "${WORK_DIR}/site"`);
-  });
-
-  step('npm install (consumer)', () => {
-    run('npm install', { cwd: WORK_DIR });
-  });
-
-  step('docmd build (consumer)', () => {
-    run('npx docmd build', { cwd: WORK_DIR });
-  });
-
-  step('Syncing site/ back into consumer', () => {
-    // Make the build output available to the real consumer dir for inspection.
-    if (fs.existsSync(path.join(WORK_DIR, 'site'))) {
-      rmrf(path.join(CONSUMER_ROOT, 'site'));
-      run(`cp -R "${WORK_DIR}/site" "${CONSUMER_ROOT}/"`);
+function wipeSource() {
+  step('Wiping source node_modules/site/lockfile', () => {
+    for (const sub of ['node_modules', 'site', 'package-lock.json', '.docmd-search']) {
+      const p = path.join(SOURCE_DIR, sub);
+      if (fs.existsSync(p)) run(`rm -rf "${p}"`);
     }
   });
 }
 
-function startDevServer() {
-  // Run docmd dev in the real consumer dir so the user can interact,
-  // edit, and watch rebuilds happen in place.
-  step('Starting dev server in consumer', () => {
-    return new Promise((resolve, reject) => {
-      const child = spawn('npx', ['docmd', 'dev'], { cwd: CONSUMER_ROOT, stdio: 'inherit' });
-      process.on('SIGINT', () => { child.kill('SIGINT'); resolve(); });
-      child.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`dev exited ${code}`))));
+function npmInstall() {
+  step('npm install (source)', () => {
+    run('npm install --no-audit --no-fund', { cwd: SOURCE_DIR });
+  });
+}
+
+function runDocmd(command) {
+  return new Promise((resolve, reject) => {
+    process.stdout.write(`  ${DIM('WAIT')} docmd ${command} (source)...`);
+    const child = spawn('npx', ['docmd', command], { cwd: SOURCE_DIR, stdio: 'inherit' });
+    child.on('exit', (code) => {
+      const tag = code === 0 ? `${GREEN('DONE')}` : `${RED('FAIL')}`;
+      process.stdout.write(`\r  ${tag} docmd ${command} (source)               \n`);
+      code === 0 ? resolve() : reject(new Error(`docmd ${command} exited ${code}`));
     });
+    child.on('error', reject);
   });
 }
 
-// ---------------------------------------------------------------------------
-// Optional: commit and push consumer (triggers GH Pages deploy).
-// ---------------------------------------------------------------------------
-
-function pushConsumer(message) {
-  step('Committing consumer for CI deploy', () => {
-    run('git add -A', { cwd: CONSUMER_ROOT });
-    try {
-      run(`git commit -m "${message}"`, { cwd: CONSUMER_ROOT });
-      run(`git push ${REMOTE} ${BRANCH}`, { cwd: CONSUMER_ROOT });
-    } catch {
-      console.log(`  ${YELLOW('note')}: nothing to commit or push failed`);
-    }
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Main
-// ---------------------------------------------------------------------------
+// ── Main ─────────────────────────────────────────────────────────────
 
 (async function main() {
+  // Validate source directory.
+  if (!fs.existsSync(path.join(SOURCE_DIR, 'package.json'))) {
+    fail(`No package.json in ${SOURCE_DIR}. Pass --source=<consumer-dir>.`, 2);
+  }
+  // Tars are required for build/dev unless we're regenerating them now.
+  if (!REGEN_TARS && !fs.existsSync(LOCAL_TARS)) {
+    fail(`${LOCAL_TARS} not found. Run with --regen-tars first to generate tarballs.`, 2);
+  }
+
+  const modeLabel = REGEN_TARS && (DO_BUILD || DO_DEV)
+    ? 'regen-tars + ' + (DO_DEV ? 'dev' : 'build')
+    : REGEN_TARS ? 'regen-tars' : DO_DEV ? 'dev' : 'build';
+
   console.log();
-  console.log(`  ${BOLD('docmd sim')} ${DIM('— single-command preview of unreleased changes')}`);
+  console.log(`  ${BOLD('docmd sim')} ${DIM('— consumer simulator')}`);
   console.log(`  ${DIM('monorepo: ' + MONOREPO_ROOT)}`);
-  console.log(`  ${DIM('consumer: ' + CONSUMER_ROOT)}`);
+  console.log(`  ${DIM('source:   ' + SOURCE_DIR)}`);
+  console.log(`  ${DIM('mode:     ' + modeLabel)}`);
   console.log();
 
-  buildMonorepo();
-  packAndShip();
-  buildConsumer();
-
-  console.log();
-  if (BUILD_ONLY) {
-    console.log(`  ${GREEN('build complete')} ${DIM('site/ synced into consumer for inspection')}`);
-    process.exit(0);
-  }
-
-  if (DO_PUSH) {
-    pushConsumer(`test: docmd sim preview (auto-generated)`);
-    console.log();
-    console.log(`  ${GREEN('pushed')} ${DIM(`watch CI: https://github.com/mgks/gh-sub-parent/actions`)}`);
-    process.exit(0);
-  }
-
-  if (AFTER_DEV) {
-    console.log(`  ${CYAN('starting dev server')}`);
-    await startDevServer();
+  if (!SKIP_MONOREPO_BUILD) {
+    buildMonorepo();
   } else {
-    console.log(`  ${GREEN('done')} ${DIM('re-run with --dev to start the dev server, --push to deploy via CI')}`);
-    process.exit(0);
+    console.log(`  ${DIM('(skipping monorepo build — assuming packages/*/dist/ is current)')}\n`);
+  }
+
+  if (REGEN_TARS) packAndShip();
+
+  if (DO_BUILD || DO_DEV) {
+    wipeSource();
+    npmInstall();
+    await runDocmd(DO_DEV ? 'dev' : 'build');
+  }
+
+  if (REGEN_TARS && !DO_BUILD && !DO_DEV) {
+    console.log();
+    console.log(`  ${GREEN('done')} ${DIM('tars written to ' + LOCAL_TARS)}`);
+    console.log(`  ${DIM('next: `pnpm dev` or `pnpm build` to consume them')}`);
+  } else if (DO_BUILD) {
+    console.log();
+    console.log(`  ${GREEN('done')} ${DIM('site/ is in ' + path.join(SOURCE_DIR, 'site'))}`);
   }
 })().catch((err) => {
   console.error(`\n  ${RED('failure')}: ${err.message}\n`);

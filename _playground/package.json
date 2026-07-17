@@ -1,0 +1,40 @@
+{
+  "name": "docmd-playground",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "docmd integration test playground. Manual use only; not wired into automated tests.",
+  "scripts": {
+    "dev": "docmd dev",
+    "build": "docmd build",
+    "preview": "npx serve site"
+  },
+  "dependencies": {
+    "@docmd/api": "file:local-tars/docmd-api.tgz",
+    "@docmd/core": "file:local-tars/docmd-core.tgz",
+    "@docmd/deployer": "file:local-tars/docmd-deployer.tgz",
+    "@docmd/live": "file:local-tars/docmd-live.tgz",
+    "@docmd/parser": "file:local-tars/docmd-parser.tgz",
+    "@docmd/themes": "file:local-tars/docmd-themes.tgz",
+    "@docmd/tui": "file:local-tars/docmd-tui.tgz",
+    "@docmd/ui": "file:local-tars/docmd-ui.tgz",
+    "@docmd/utils": "file:local-tars/docmd-utils.tgz",
+    "@docmd/engine-js": "file:local-tars/docmd-engine-js.tgz",
+    "@docmd/engine-rust": "file:local-tars/docmd-engine-rust.tgz",
+    "@docmd/engine-rust-binaries": "file:local-tars/docmd-engine-rust-binaries.tgz",
+    "@docmd/plugin-analytics": "file:local-tars/docmd-plugin-analytics.tgz",
+    "@docmd/plugin-git": "file:local-tars/docmd-plugin-git.tgz",
+    "@docmd/plugin-installer": "file:local-tars/docmd-plugin-installer.tgz",
+    "@docmd/plugin-llms": "file:local-tars/docmd-plugin-llms.tgz",
+    "@docmd/plugin-math": "file:local-tars/docmd-plugin-math.tgz",
+    "@docmd/plugin-mermaid": "file:local-tars/docmd-plugin-mermaid.tgz",
+    "@docmd/plugin-okf": "file:local-tars/docmd-plugin-okf.tgz",
+    "@docmd/plugin-openapi": "file:local-tars/docmd-plugin-openapi.tgz",
+    "@docmd/plugin-pwa": "file:local-tars/docmd-plugin-pwa.tgz",
+    "@docmd/plugin-search": "file:local-tars/docmd-plugin-search.tgz",
+    "@docmd/plugin-seo": "file:local-tars/docmd-plugin-seo.tgz",
+    "@docmd/plugin-sitemap": "file:local-tars/docmd-plugin-sitemap.tgz",
+    "@docmd/plugin-threads": "file:local-tars/docmd-plugin-threads.tgz",
+    "@docmd/template-summer": "file:local-tars/docmd-template-summer.tgz"
+  }
+}
