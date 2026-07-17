@@ -50,7 +50,9 @@
       "esbuild",
       "@docmd/engine-rust"
     ],
-    "overrides": {},
+    "overrides": {
+      "adm-zip": ">=0.6.0"
+    },
     "peerDependencyRules": {
       "ignoreMissing": [
         "docmd-search"
@@ -98,10 +100,5 @@
   },
   "homepage": "https://docmd.io",
   "funding": "https://github.com/sponsors/mgks",
-  "license": "MIT",
-  "pnpm": {
-    "overrides": {
-      "adm-zip": ">=0.6.0"
-    }
-  }
+  "license": "MIT"
 }
