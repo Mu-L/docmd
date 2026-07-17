@@ -1,6 +1,5 @@
 packages:
   - 'packages/*'
-  - '!packages/_playground'
   - 'packages/legacy/*'
   - 'packages/plugins/*'
   - 'packages/templates/*'
