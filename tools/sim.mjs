@@ -236,8 +236,45 @@ function wipeSource() {
 }
 
 function npmInstall() {
+  const pkgJsonPath = path.join(SOURCE_DIR, 'package.json');
+  let originalPkgJson = null;
+  let didRewrite = false;
+
+  if (fs.existsSync(pkgJsonPath)) {
+    try {
+      originalPkgJson = fs.readFileSync(pkgJsonPath, 'utf8');
+      const data = JSON.parse(originalPkgJson);
+      if (!data.dependencies) data.dependencies = {};
+
+      if (fs.existsSync(LOCAL_TARS)) {
+        const files = fs.readdirSync(LOCAL_TARS).filter((f) => f.endsWith('.tgz'));
+        for (const file of files) {
+          const namePart = file.slice(0, -4);
+          if (namePart.startsWith('docmd-')) {
+            const shortName = namePart.slice('docmd-'.length);
+            const pkgName = `${PACKAGE_PREFIX}${shortName}`;
+            data.dependencies[pkgName] = `file:local-tars/${file}`;
+            didRewrite = true;
+          }
+        }
+      }
+
+      if (didRewrite) {
+        fs.writeFileSync(pkgJsonPath, JSON.stringify(data, null, 2) + '\n', 'utf8');
+      }
+    } catch (err) {
+      console.warn(`  WARN Failed to temporarily rewrite package.json: ${err.message}`);
+    }
+  }
+
   step('npm install (source)', () => {
-    run('npm install --no-audit --no-fund', { cwd: SOURCE_DIR });
+    try {
+      run('npm install --no-audit --no-fund', { cwd: SOURCE_DIR });
+    } finally {
+      if (originalPkgJson !== null && didRewrite) {
+        fs.writeFileSync(pkgJsonPath, originalPkgJson, 'utf8');
+      }
+    }
   });
 }
 
