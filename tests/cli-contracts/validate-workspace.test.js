@@ -153,7 +153,7 @@ export const test = runTestFile({
       assert(/docs\.docmd\.io/.test(captured), 'M-2: error message links to the workspace guide');
     }
 
-    // Issue #184 — In a multi-project workspace setup, page-relative links to files
+    // In a multi-project workspace setup, page-relative links to files
     // in the same subdirectory (or nested subdirectories) must resolve correctly relative
     // to the output HTML file path rather than escaping the project prefix.
     {
