@@ -59,9 +59,9 @@ declare const MiniSearch: any;
         if (!ROOT_PATH.endsWith('/')) ROOT_PATH += '/';
 
         // Determine the locale-specific search index path.
-        // All search data lives under .docmd-search/ at the site base:
-        //   default locale: /.docmd-search/search-index.json
-        //   non-default:    /.docmd-search/<locale>/search-index.json
+        // All search data lives under _docmd-search/ at the site base:
+        //   default locale: /_docmd-search/search-index.json
+        //   non-default:    /_docmd-search/<locale>/search-index.json
         // We detect the locale prefix from the current URL and build the
         // fetch path relative to the site base.
         const siteBase = (window.DOCMD_SITE_ROOT || window.DOCMD_ROOT || '/').replace(/\/$/, '') + '/';
@@ -85,7 +85,7 @@ declare const MiniSearch: any;
         
         const localePrefix = knownLocales.has(firstSegment) ? firstSegment + '/' : '';
         const baseUrl = new URL(siteBase, window.location.href).href;
-        const searchIndexUrl = baseUrl + '.docmd-search/' + localePrefix + 'search-index.json';
+        const searchIndexUrl = baseUrl + '_docmd-search/' + localePrefix + 'search-index.json';
 
         function escapeHtml(str: any): string {
             const s = typeof str === 'string' ? str : String(str || '');

@@ -131,11 +131,11 @@ export async function buildSearchIndex(config: any, pages: any[], outputDir: str
     miniSearch.addAll(searchData);
     const json = JSON.stringify(miniSearch.toJSON());
 
-    // Keyword index lives under .docmd-search/ alongside any semantic index,
+    // Keyword index lives under _docmd-search/ alongside any semantic index,
     // keeping all search data in one place and the output root clean.
-    // Default locale: .docmd-search/search-index.json
-    // Non-default:    .docmd-search/<locale>/search-index.json
-    const searchDir = path.join(outputDir, '.docmd-search');
+    // Default locale: _docmd-search/search-index.json
+    // Non-default:    _docmd-search/<locale>/search-index.json
+    const searchDir = path.join(outputDir, '_docmd-search');
     const indexPath = localeId === '_default'
       ? path.join(searchDir, 'search-index.json')
       : path.join(searchDir, localeId, 'search-index.json');
