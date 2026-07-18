@@ -545,12 +545,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       //   root deploy            → '/'
       //   locale/version subpath → '/de/' or '/v1/'
       //   explicit `config.base` → '/my-repo/' (3rd-party deploys)
-      let siteRootAbs = '/';
-      if (config._activePrefix && config._activePrefix !== '/') {
-        siteRootAbs = config._activePrefix;
-      } else if (config.base && config.base !== '/') {
-        siteRootAbs = config.base;
-      }
+      let siteRootAbs = config.base || '/';
       if (siteRootAbs !== '/' && !siteRootAbs.endsWith('/')) siteRootAbs += '/';
 
       if (!options.offline && siteRootAbs !== '/') {
@@ -577,7 +572,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
         relativePathToRoot,
         outputPrefix,
         offline: options.offline,
-        base: config.base || '/',
+        base: siteRootAbs,
         siteUrl: config.url || '',
       });
 

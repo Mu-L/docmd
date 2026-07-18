@@ -401,7 +401,7 @@ export async function loadConfig(configPath: string, options: any = {}) {
       // Merge with global defaults: root project config overrides global defaults
       const mergedConfig = { ...(options._globalDefaults || {}), ...rawConfig };
 
-      const normalized = normalizeConfig(mergedConfig);
+      const normalized = normalizeConfig(mergedConfig, { isDev: options.isDev });
 
       // Dev server always serves the output dir at root ('/'), regardless of
       // where the production site will live. If base was auto-derived from url

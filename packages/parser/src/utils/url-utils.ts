@@ -217,14 +217,24 @@ export function buildContextualUrl(href: string, context: UrlContext): string {
     href = href.substring(0, hashIdx);
   }
 
-  // Strip leading ./ and / to get a clean relative path
+  // Check if the link is relative to the page itself (already relative, not root-relative)
+  // Assets are placed at the root level, so they are treated as root-relative even if written relatively.
+  const isAsset = href.match(/(^|\/)assets\//);
+  const isPageRelative = !href.startsWith('/') && !isAsset;
+
+  // Strip leading ./ and / to get a clean path
   const cleanPath = href.replace(/^(\.\/|\/)+/, '');
 
   // Build the prefixed path: outputPrefix (locale/version) + clean path
-  const prefixStr = context.outputPrefix ? context.outputPrefix.replace(/\/$/, '') : '';
-  let combinedPath = prefixStr
-    ? (cleanPath ? prefixStr + '/' + cleanPath : prefixStr + '/')
-    : cleanPath;
+  // For page-relative paths, we do not prepend the outputPrefix because they are already
+  // scoped to the current folder/locale/version context.
+  let combinedPath = cleanPath;
+  if (!isPageRelative) {
+    const prefixStr = context.outputPrefix ? context.outputPrefix.replace(/\/$/, '') : '';
+    combinedPath = prefixStr
+      ? (cleanPath ? prefixStr + '/' + cleanPath : prefixStr + '/')
+      : cleanPath;
+  }
 
   // Offline mode: append /index.html for file:// browsing. Without this
   // every directory-style URL (`./`, `./guide/`, `./en/`) resolves to a
@@ -246,8 +256,16 @@ export function buildContextualUrl(href: string, context: UrlContext): string {
     }
   }
 
-  // Build final relative URL
-  const result = context.relativePathToRoot + combinedPath + hash;
+  // Build final relative URL.
+  // For page-relative paths, we do not prepend relativePathToRoot unless relativePathToRoot is './'
+  // (to preserve exact './' prefix formatting for root-level pages as expected by tests).
+  let result = combinedPath + hash;
+  if (!isPageRelative) {
+    result = context.relativePathToRoot + combinedPath + hash;
+  } else if (context.relativePathToRoot === './') {
+    result = './' + combinedPath + hash;
+  }
+
   return sanitizeUrl(result);
 }
 
@@ -503,6 +521,9 @@ export function buildAbsoluteContextualUrl(
   let cleanPath = absoluteTarget;
   if (context.base && context.base !== '/' && cleanPath.startsWith(context.base)) {
     cleanPath = cleanPath.substring(context.base.length);
+    if (!cleanPath.startsWith('/')) {
+      cleanPath = '/' + cleanPath;
+    }
   }
 
   // Delegate the offline index.html / relativePathToRoot work to the

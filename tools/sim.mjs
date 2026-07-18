@@ -266,7 +266,9 @@ function npmInstall() {
         restorePkgJson = () => {
           try {
             fs.writeFileSync(pkgJsonPath, originalPkgJson, 'utf8');
-          } catch {}
+          } catch {
+            // ignore restore failure
+          }
         };
       }
     } catch (err) {

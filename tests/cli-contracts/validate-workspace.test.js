@@ -152,6 +152,46 @@ export const test = runTestFile({
       assert(/"prefix": "\/"/.test(captured), 'M-2: error message example shows prefix "/"');
       assert(/docs\.docmd\.io/.test(captured), 'M-2: error message links to the workspace guide');
     }
+
+    // Issue #184 — In a multi-project workspace setup, page-relative links to files
+    // in the same subdirectory (or nested subdirectories) must resolve correctly relative
+    // to the output HTML file path rather than escaping the project prefix.
+    {
+      const dir = setup('validate-workspace-29-subdir-linking');
+      // Root project source
+      writeFile(dir, 'docs/index.md', '# Root Home\n');
+      
+      // Project 1 source
+      writeFile(dir, 'proj1/index.md', '# Proj1 Home\n');
+      writeFile(dir, 'proj1/sub1/file1.md', '# File 1\n\n[link to file 2](file2.md)\n');
+      writeFile(dir, 'proj1/sub1/file2.md', '# File 2\n');
+      
+      writeFile(dir, 'docmd.config.json', JSON.stringify({
+        title: 'Workspace Test',
+        src: './docs',
+        out: './site',
+        workspace: {
+          projects: [
+            { src: './docs', prefix: '/' },
+            { src: './proj1', prefix: '/project1' }
+          ]
+        }
+      }));
+      
+      execSync(`node ${DOCMD} build`, { cwd: dir, stdio: 'pipe' });
+      
+      // Check the output html file1
+      const htmlPath = path.join(dir, 'site/project1/sub1/file1/index.html');
+      assert(fs.existsSync(htmlPath), 'Subdirectory page built at correct output path');
+      
+      const html = fs.readFileSync(htmlPath, 'utf8');
+      
+      // The link in proj1/sub1/file1.md to file2.md should be relative: "../file2/"
+      // or "./../file2/" or similar, but NOT escape project1/
+      assert(html.includes('href="../file2/"') || html.includes('href="./../file2/"'), 'Subdirectory page-relative link resolved relative to the page');
+      assert(!html.includes('href="/file2/"'), 'Subdirectory link does not resolve to the site root');
+      assert(!html.includes('href="../../../file2/"'), 'Subdirectory link does not over-traverse out of project prefix');
+    }
   }
 });
 
