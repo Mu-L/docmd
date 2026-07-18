@@ -235,6 +235,8 @@ function wipeSource() {
   });
 }
 
+let restorePkgJson = () => {};
+
 function npmInstall() {
   const pkgJsonPath = path.join(SOURCE_DIR, 'package.json');
   let originalPkgJson = null;
@@ -261,6 +263,11 @@ function npmInstall() {
 
       if (didRewrite) {
         fs.writeFileSync(pkgJsonPath, JSON.stringify(data, null, 2) + '\n', 'utf8');
+        restorePkgJson = () => {
+          try {
+            fs.writeFileSync(pkgJsonPath, originalPkgJson, 'utf8');
+          } catch {}
+        };
       }
     } catch (err) {
       console.warn(`  WARN Failed to temporarily rewrite package.json: ${err.message}`);
@@ -268,13 +275,7 @@ function npmInstall() {
   }
 
   step('npm install (source)', () => {
-    try {
-      run('npm install --no-audit --no-fund', { cwd: SOURCE_DIR });
-    } finally {
-      if (originalPkgJson !== null && didRewrite) {
-        fs.writeFileSync(pkgJsonPath, originalPkgJson, 'utf8');
-      }
-    }
+    run('npm install --no-audit --no-fund', { cwd: SOURCE_DIR });
   });
 }
 
@@ -326,21 +327,38 @@ function runDocmd(command) {
 
   if (REGEN_TARS) packAndShip();
 
-  if (DO_BUILD || DO_DEV || DO_DOCTOR) {
-    wipeSource();
-    npmInstall();
-    await runDocmd(DO_DEV ? 'dev' : DO_DOCTOR ? 'doctor' : 'build');
-  }
+  // Register clean up on exit/SIGINT/SIGTERM to restore package.json
+  const cleanup = () => {
+    restorePkgJson();
+  };
+  process.on('exit', cleanup);
+  const onSignal = () => {
+    cleanup();
+    process.exit(0);
+  };
+  process.on('SIGINT', onSignal);
+  process.on('SIGTERM', onSignal);
 
-  if (REGEN_TARS && !DO_BUILD && !DO_DEV) {
-    console.log();
-    console.log(`  ${GREEN('done')} ${DIM('tars written to ' + LOCAL_TARS)}`);
-    console.log(`  ${DIM('next: `pnpm dev` or `pnpm build` to consume them')}`);
-  } else if (DO_BUILD) {
-    console.log();
-    console.log(`  ${GREEN('done')} ${DIM('site/ is in ' + path.join(SOURCE_DIR, 'site'))}`);
+  try {
+    if (DO_BUILD || DO_DEV || DO_DOCTOR) {
+      wipeSource();
+      npmInstall();
+      await runDocmd(DO_DEV ? 'dev' : DO_DOCTOR ? 'doctor' : 'build');
+    }
+
+    if (REGEN_TARS && !DO_BUILD && !DO_DEV) {
+      console.log();
+      console.log(`  ${GREEN('done')} ${DIM('tars written to ' + LOCAL_TARS)}`);
+      console.log(`  ${DIM('next: `pnpm dev` or `pnpm build` to consume them')}`);
+    } else if (DO_BUILD) {
+      console.log();
+      console.log(`  ${GREEN('done')} ${DIM('site/ is in ' + path.join(SOURCE_DIR, 'site'))}`);
+    }
+  } finally {
+    cleanup();
   }
 })().catch((err) => {
+  restorePkgJson();
   console.error(`\n  ${RED('failure')}: ${err.message}\n`);
   process.exit(1);
 });
