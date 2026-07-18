@@ -524,7 +524,7 @@ console.log('\n🔍 Test 15: Search index generation');
   writeFile(dir, 'docs/guide.md', '# Guide\nMore searchable content.');
   const r = build(dir);
   assert('builds with search', r.ok);
-  assert('search-index.json exists under .docmd-search/', siteExists(dir, '_docmd-search/search-index.json'));
+  assert('search-index.json exists under _docmd-search/', siteExists(dir, '_docmd-search/search-index.json'));
   const idx = readSite(dir, '_docmd-search/search-index.json');
   assert('search index has content', idx && JSON.parse(idx).documentCount >= 2);
 }

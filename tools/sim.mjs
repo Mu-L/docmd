@@ -228,7 +228,7 @@ function packAndShip() {
 
 function wipeSource() {
   step('Wiping source node_modules/site/lockfile', () => {
-    for (const sub of ['node_modules', 'site', 'package-lock.json', '.docmd-search']) {
+    for (const sub of ['node_modules', 'site', 'package-lock.json', '_docmd-search']) {
       const p = path.join(SOURCE_DIR, sub);
       if (fs.existsSync(p)) run(`rm -rf "${p}"`);
     }

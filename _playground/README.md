@@ -24,4 +24,4 @@ After the first `pnpm dev` or `pnpm build`, `_playground/node_modules/` is popul
 - `docs/` — committed sample markdown.
 - `package.json` — `file:local-tars/*.tgz` deps, versioned to match the tars that `pnpm prep` produces. `tools/sim.mjs --regen-tars` rewrites the version segments on every prep.
 - `local-tars/` — gitignored; populated by `pnpm prep`.
-- `node_modules/` / `site/` / `.docmd-search/` — gitignored; populated by `pnpm dev` / `pnpm build`.
+- `node_modules/` / `site/` / `_docmd-search/` — gitignored; populated by `pnpm dev` / `pnpm build`.
