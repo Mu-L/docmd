@@ -49,7 +49,7 @@ let semanticClient: any = null;
  * Load the semantic search index and client.
  */
 export async function loadSemanticIndex(ctx: SemanticSearchContext): Promise<boolean> {
-    const semanticIndexBase = new URL('.docmd-search/', new URL(ctx.siteBase, window.location.href)).href;
+    const semanticIndexBase = new URL('_docmd-search/', new URL(ctx.siteBase, window.location.href)).href;
     const clientUrl = new URL('.docmd-search-client.js', new URL(ctx.siteBase, window.location.href)).href;
 
     try {
@@ -77,7 +77,7 @@ export async function loadSemanticIndex(ctx: SemanticSearchContext): Promise<boo
 
     // Load versions.json for filter chips
     try {
-        const versionsUrl = new URL('.docmd-search/versions.json', new URL(ctx.siteBase, window.location.href)).href;
+        const versionsUrl = new URL('_docmd-search/versions.json', new URL(ctx.siteBase, window.location.href)).href;
         const vRes = await fetch(versionsUrl);
         if (vRes.ok) {
             const vData: Array<{ label: string; pathPrefix: string }> = await vRes.json();

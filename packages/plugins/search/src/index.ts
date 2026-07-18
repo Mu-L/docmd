@@ -478,7 +478,7 @@ export function translations(localeId: string): Record<string, string> {
  *   - If options.indexDir is provided and contains a valid manifest.json,
  *     skip indexing entirely — the index was pre-built (e.g. by docmd-search CLI).
  *   - Otherwise, runs the docmd-search indexer over the docs source directory
- *     and outputs the vector index to <outputDir>/.docmd-search/.
+ *     and outputs the vector index to <outputDir>/_docmd-search/.
  *   - Falls back to keyword-only search if docmd-search is not installed.
  *
  * When options.semantic is false (default):
@@ -518,7 +518,7 @@ async function findHtmlFiles(dir: string): Promise<string[]> {
   for (const entry of entries) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (entry.name === '.docmd-search' || entry.name === 'node_modules') continue;
+      if (entry.name === '_docmd-search' || entry.name === 'node_modules') continue;
       results.push(...await findHtmlFiles(full));
     } else if (entry.name.endsWith('.html')) {
       results.push(full);
@@ -562,7 +562,7 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
           if (manifest.status === 'complete' && manifest.batchCount > 0) {
             if (showTui) tui.step('Using pre-built semantic index', 'DONE');
             // Copy the index to outputDir if it's not already there
-            const targetDir = path.join(outputDir, '.docmd-search');
+            const targetDir = path.join(outputDir, '_docmd-search');
             if (pluginOptions.indexDir !== targetDir) {
               await fs.mkdir(targetDir, { recursive: true });
               // Copy manifest and batches
@@ -619,7 +619,7 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
         if (options?.isDev) childEnv.DOCMD_DEV = 'true';
         const cmd = nativeFs.existsSync(docmdBin)
           ? `"${docmdBin}" build`
-          : `node -e "import('docmd-search').then(m => m.indexDirectory({ rootDir: '${cwd}', outDir: '${path.join(outputDir, '.docmd-search')}' }))"`;
+          : `node -e "import('docmd-search').then(m => m.indexDirectory({ rootDir: '${cwd}', outDir: '${path.join(outputDir, '_docmd-search')}' }))"`;
         execSync(cmd, { stdio: 'inherit', cwd, timeout: 300000, env: childEnv });
         if (showTui) tui.step('Semantic search index built', 'DONE');
       } catch (err: any) {
@@ -651,7 +651,7 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
 
         // Determine the docs source directory from config
         const docsDir = path.resolve(config.root || process.cwd(), config.srcDir || config.src || 'docs');
-        const semanticOutDir = path.join(outputDir, '.docmd-search');
+        const semanticOutDir = path.join(outputDir, '_docmd-search');
         const hasVersioning = config.versions?.all?.length > 0;
 
         if (hasVersioning) {
@@ -687,11 +687,11 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
           const versionMap: Array<{ label: string; pathPrefix: string }> = [];
 
           // Always exclude semantic index output dir and --ui artifacts from indexing
-          const builtinExcludes = ['**/.docmd-search/**', '**/_site/**', '**/_ui/**'];
+          const builtinExcludes = ['**/_docmd-search/**', '**/_site/**', '**/_ui/**'];
           const mergedExclude = [...builtinExcludes, ...(pluginOptions.exclude || [])];
 
           for (const ver of versions) {
-            const versionIndexDir = path.join(ver.dir, '.docmd-search');
+            const versionIndexDir = path.join(ver.dir, '_docmd-search');
             try {
               await docmdSearch.indexDirectory(
                 {
@@ -782,12 +782,12 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
         // Always exclude the semantic index output directory itself and any
         // docmd-search --ui artifacts (_site/, _ui/) so the indexer never
         // crawls its own output. Merge with any user-supplied excludes.
-        const builtinExcludes = ['**/.docmd-search/**', '**/_site/**', '**/_ui/**'];
+        const builtinExcludes = ['**/_docmd-search/**', '**/_site/**', '**/_ui/**'];
         const mergedExclude = [
           ...builtinExcludes,
           ...(pluginOptions.exclude || []),
         ];
-        const sourceIndexDir = path.join(docsDir, '.docmd-search');
+        const sourceIndexDir = path.join(docsDir, '_docmd-search');
         await docmdSearch.indexDirectory(
           {
             rootDir: docsDir,
@@ -981,11 +981,11 @@ async function buildSearchIndexInline(config: any, pages: any[], outputDir: stri
     miniSearch.addAll(searchData);
     const json = JSON.stringify(miniSearch.toJSON());
 
-    // Keyword index lives under .docmd-search/ alongside any semantic index,
+    // Keyword index lives under _docmd-search/ alongside any semantic index,
     // keeping all search data in one place and the output root clean.
-    // Default locale: .docmd-search/search-index.json
-    // Non-default:    .docmd-search/<locale>/search-index.json
-    const searchDir = path.join(outputDir, '.docmd-search');
+    // Default locale: _docmd-search/search-index.json
+    // Non-default:    _docmd-search/<locale>/search-index.json
+    const searchDir = path.join(outputDir, '_docmd-search');
     const indexPath = localeId === '_default'
       ? path.join(searchDir, 'search-index.json')
       : path.join(searchDir, localeId, 'search-index.json');

@@ -197,7 +197,7 @@ export async function onPostBuild({ config, outputDir, log }: any) {
 
   // Auto-generate .nojekyll at the site root.
   // GitHub Pages runs Jekyll by default, which silently drops every file or
-  // directory whose name starts with a dot — including .docmd-search/ (the
+  // directory whose name starts with a dot — including _docmd-search/ (the
   // semantic index) and .docmd-search-client.js (the browser bundle).
   // An empty .nojekyll file disables Jekyll so those assets are served as-is.
   // This is a zero-config fix: users deploying to GitHub Pages never need to

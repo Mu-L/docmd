@@ -429,7 +429,8 @@ export async function loadConfig(configPath: string, options: any = {}) {
       // Warn loudly at build time so the user notices before deploying.
       // Only the last pathname segment matters: the URL doesn't encode the
       // owner (that's fixed by the host), so the repo name is what must match.
-      if (!options.quiet && normalized.url) {
+      // Skip in dev mode — the warning is only actionable before a real deploy.
+      if (!options.quiet && !options.isDev && normalized.url) {
         const remotePath = readGitHubRemotePathname(cwd);
         if (remotePath) {
           try {
