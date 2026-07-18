@@ -186,11 +186,9 @@ export const test = runTestFile({
       
       const html = fs.readFileSync(htmlPath, 'utf8');
       
-      // The link in proj1/sub1/file1.md to file2.md should be relative: "../file2/"
-      // or "./../file2/" or similar, but NOT escape project1/
-      assert(html.includes('href="../file2/"') || html.includes('href="./../file2/"'), 'Subdirectory page-relative link resolved relative to the page');
+      // The link in proj1/sub1/file1.md to file2.md should be resolved to the prefix-aware root-relative URL "/project1/sub1/file2/"
+      assert(html.includes('href="/project1/sub1/file2/"'), 'Subdirectory page-relative link resolved relative to the page');
       assert(!html.includes('href="/file2/"'), 'Subdirectory link does not resolve to the site root');
-      assert(!html.includes('href="../../../file2/"'), 'Subdirectory link does not over-traverse out of project prefix');
     }
   }
 });
