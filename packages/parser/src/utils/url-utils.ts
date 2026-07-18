@@ -77,6 +77,8 @@ export interface UrlContext {
   readonly assetBaseUrl: string;
   /** Whether the renderer is emitting a `<base href>` tag for this page. */
   readonly emitBase: boolean;
+  /** The root-relative pathname of the current page, e.g. `/guide/` or `/project1/sub1/file1/` */
+  readonly pathname?: string;
 }
 
 /**
@@ -146,9 +148,17 @@ export function outputPathToSlug(outputPath: string): string {
  * @param outputPath - e.g. `guide/index.html`
  * @returns e.g. `/guide/`
  */
-export function outputPathToPathname(outputPath: string): string {
+export function outputPathToPathname(outputPath: string, base?: string): string {
   const slug = outputPathToSlug(outputPath);
-  return slug.startsWith('/') ? slug : '/' + slug;
+  let pathname = slug.startsWith('/') ? slug : '/' + slug;
+  if (base && base !== '/') {
+    let b = base.trim();
+    if (!b.startsWith('/')) b = '/' + b;
+    if (!b.endsWith('/')) b = b + '/';
+    b = b.replace(/([^:])\/{2,}/g, '$1/');
+    pathname = (b + pathname).replace(/\/+/g, '/');
+  }
+  return pathname;
 }
 
 /**
@@ -158,10 +168,10 @@ export function outputPathToPathname(outputPath: string): string {
  * @param siteUrl    - e.g. `https://docmd.io` (no trailing slash)
  * @returns e.g. `https://docmd.io/guide/`
  */
-export function outputPathToCanonical(outputPath: string, siteUrl: string): string {
+export function outputPathToCanonical(outputPath: string, siteUrl: string, base?: string): string {
   if (!siteUrl) return '';
   const cleanSiteUrl = siteUrl.replace(/\/+$/, '');
-  const pathname = outputPathToPathname(outputPath);
+  const pathname = outputPathToPathname(outputPath, base);
   return sanitizeUrl(cleanSiteUrl + pathname);
 }
 
@@ -221,6 +231,16 @@ export function buildContextualUrl(href: string, context: UrlContext): string {
   // Assets are placed at the root level, so they are treated as root-relative even if written relatively.
   const isAsset = href.match(/(^|\/)assets\//);
   const isPageRelative = !href.startsWith('/') && !isAsset;
+
+  // Resolve page-relative link against pathname to produce prefix-aware root-relative path
+  if (isPageRelative && !context.offline && context.pathname) {
+    try {
+      const resolved = new URL(href, 'http://dummy-host' + context.pathname).pathname;
+      return sanitizeUrl(resolved + hash);
+    } catch {
+      // Fallback to legacy behaviour if URL resolution fails
+    }
+  }
 
   // Strip leading ./ and / to get a clean path
   const cleanPath = href.replace(/^(\.\/|\/)+/, '');
@@ -388,6 +408,7 @@ export function createUrlContext(options: {
   offline?: boolean;
   base?: string;
   siteUrl?: string;
+  pathname?: string;
 }): UrlContext {
   const relativePathToRoot = options.relativePathToRoot || './';
   const base = options.base || '/';
@@ -412,6 +433,7 @@ export function createUrlContext(options: {
     siteUrl: (options.siteUrl || '').replace(/\/+$/, ''),
     assetBaseUrl,
     emitBase,
+    pathname: options.pathname,
   });
 }
 
@@ -424,11 +446,11 @@ export function createUrlContext(options: {
  * @param outputPath - The page's output path, e.g. `guide/index.html`
  * @param siteUrl    - The site URL from config, e.g. `https://docmd.io`
  */
-export function computePageUrls(outputPath: string, siteUrl: string): PageUrls {
+export function computePageUrls(outputPath: string, siteUrl: string, base?: string): PageUrls {
   return Object.freeze({
     slug: outputPathToSlug(outputPath),
-    canonical: outputPathToCanonical(outputPath, siteUrl),
-    pathname: outputPathToPathname(outputPath),
+    canonical: outputPathToCanonical(outputPath, siteUrl, base),
+    pathname: outputPathToPathname(outputPath, base),
   });
 }
 

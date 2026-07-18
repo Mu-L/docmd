@@ -473,6 +473,8 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       else relativePathToRootForMarkdown += '/';
       relativePathToRootForMarkdown = relativePathToRootForMarkdown.replace(/\\/g, '/');
 
+      const pageUrlsForMarkdown = computePageUrls(htmlOutputPath, config.url || '', config.base || '/');
+
       const processed = await parser.processContentAsync(
         rawContent,
         mdProcessor,
@@ -489,7 +491,8 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
           // locale lives at root, not under its own prefix).
           defaultLocale: config._defaultLocale || null,
           allLocales: (config._allLocales || []).map((l: any) => l.id),
-          config: { base: config.base || '/' }
+          config: { base: config.base || '/' },
+          pathname: pageUrlsForMarkdown.pathname,
         },
         hooks
       );
@@ -567,6 +570,9 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       const { prevPage, nextPage } = findPageNeighbors(config.navigation, navPath);
       const breadcrumbs = config.layout?.breadcrumbs !== false ? findBreadcrumbs(config.navigation, navPath) : [];
 
+      // Pre-compute page URLs for plugin consumption
+      const pageUrls = computePageUrls(page.outputPath, config.url || '', config.base || '/');
+
       // ── Centralized URL Context ──
       const urlContext = createUrlContext({
         relativePathToRoot,
@@ -574,6 +580,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
         offline: options.offline,
         base: siteRootAbs,
         siteUrl: config.url || '',
+        pathname: pageUrls.pathname,
       });
 
       // Front the URL context with simple-relative asset + root-prefixed nav
@@ -583,9 +590,6 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       const emitBaseTag = urlContext.emitBase;
       const assetBaseUrl = urlContext.assetBaseUrl;
       const navRootPrefix = emitBaseTag ? urlContext.base : '';
-
-      // Pre-compute page URLs for plugin consumption
-      const pageUrls = computePageUrls(page.outputPath, config.url || '');
 
       const buildRelativeUrl = (href: string) => buildContextualUrl(href, urlContext);
 

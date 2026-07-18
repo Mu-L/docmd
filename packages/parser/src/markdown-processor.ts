@@ -475,6 +475,7 @@ async function processContentAsync(rawString: string, mdInstance: any, config: a
       offline: env.isOfflineMode === true,
       base: env.config?.base || '/',
       siteUrl: '',
+      pathname: env.pathname,
     });
     htmlContent = rewriteHtmlLinks(htmlContent, urlContext, {
       defaultLocale: env.defaultLocale || null,
