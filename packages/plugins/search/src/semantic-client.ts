@@ -50,7 +50,7 @@ let semanticClient: any = null;
  */
 export async function loadSemanticIndex(ctx: SemanticSearchContext): Promise<boolean> {
     const semanticIndexBase = new URL('_docmd-search/', new URL(ctx.siteBase, window.location.href)).href;
-    const clientUrl = new URL('.docmd-search-client.js', new URL(ctx.siteBase, window.location.href)).href;
+    const clientUrl = new URL('_docmd-search/docmd-search-client.js', new URL(ctx.siteBase, window.location.href)).href;
 
     try {
         semanticClient = await import(/* @vite-ignore */ clientUrl);
