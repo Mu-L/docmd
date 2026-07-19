@@ -810,6 +810,10 @@ html[data-theme="dark"] .summer-logo__light {
   grid-template-columns: var(--summer-sidebar-width) 1fr;
 }
 
+.summer-template.toc-disabled .summer-content {
+  max-width: 100%;
+}
+
 .summer-template.no-sidebar .summer-layout {
   grid-template-columns: 1fr var(--summer-toc-width);
 }
