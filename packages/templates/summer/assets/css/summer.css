@@ -806,7 +806,7 @@ html[data-theme="dark"] .summer-logo__light {
   width: 100%;
 }
 
-.summer-template.no-toc .summer-layout {
+.summer-template.toc-disabled .summer-layout {
   grid-template-columns: var(--summer-sidebar-width) 1fr;
 }
 
@@ -814,7 +814,7 @@ html[data-theme="dark"] .summer-logo__light {
   grid-template-columns: 1fr var(--summer-toc-width);
 }
 
-.summer-template.no-sidebar.no-toc .summer-layout {
+.summer-template.no-sidebar.toc-disabled .summer-layout {
   grid-template-columns: 1fr;
 }
 

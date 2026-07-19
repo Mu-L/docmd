@@ -953,8 +953,22 @@ body.has-menubar-header .docmd-menubar {
     align-self: flex-start
 }
 
-.no-toc .toc-sidebar {
+.toc-disabled .toc-sidebar {
     display: none !important;
+}
+
+@media (min-width: 1025px) {
+    .no-toc:not(.toc-disabled) .toc-sidebar {
+        visibility: hidden;
+        height: 0;
+        overflow: hidden;
+    }
+}
+
+@media (max-width: 1024px) {
+    .no-toc .toc-sidebar {
+        display: none !important;
+    }
 }
 
 .docmd-options-menu {

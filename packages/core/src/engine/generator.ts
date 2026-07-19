@@ -579,7 +579,6 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       // Pre-compute page URLs for plugin consumption
       const pageUrls = computePageUrls(page.outputPath, config.url || '', config.base || '/');
 
-      // ── Centralized URL Context ──
       const urlContext = createUrlContext({
         relativePathToRoot,
         outputPrefix,
@@ -587,6 +586,8 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
         base: siteRootAbs,
         siteUrl: config.url || '',
         pathname: pageUrls.pathname,
+        projectPrefix: config._activePrefix || '/',
+        workspaceProjects: config._workspace?.projects || [],
       });
 
       // Front the URL context with simple-relative asset + root-prefixed nav

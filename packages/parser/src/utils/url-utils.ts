@@ -79,6 +79,10 @@ export interface UrlContext {
   readonly emitBase: boolean;
   /** The root-relative pathname of the current page, e.g. `/guide/` or `/project1/sub1/file1/` */
   readonly pathname?: string;
+  /** The prefix of the active project in the workspace, e.g. `/semantic` or `/` */
+  readonly projectPrefix?: string;
+  /** All projects in the workspace */
+  readonly workspaceProjects?: readonly any[];
 }
 
 /**
@@ -239,6 +243,66 @@ export function buildContextualUrl(href: string, context: UrlContext): string {
       return sanitizeUrl(resolved + hash);
     } catch {
       // Fallback to legacy behaviour if URL resolution fails
+    }
+  }
+
+  // Intercept root-relative links in workspace projects
+  if (href.startsWith('/') && !isAsset && context.workspaceProjects && context.workspaceProjects.length > 0) {
+    const matchingProject = [...context.workspaceProjects]
+      .sort((a, b) => b.prefix.length - a.prefix.length)
+      .find(p => {
+        if (p.prefix === '/') {
+          return href === '/' || href === '/index.html';
+        }
+        const normPrefix = p.prefix.replace(/\/$/, '') + '/';
+        const normHref = href.endsWith('/') ? href : href + '/';
+        return normHref.startsWith(normPrefix) || href === p.prefix;
+      });
+
+    if (matchingProject) {
+      const targetPrefix = matchingProject.prefix === '/' ? '/' : matchingProject.prefix.replace(/\/$/, '') + '/';
+      let targetSubPath = href.substring(matchingProject.prefix === '/' ? 0 : matchingProject.prefix.length);
+      if (targetSubPath.startsWith('/')) targetSubPath = targetSubPath.substring(1);
+
+      const isCurrentProject = matchingProject.prefix === context.projectPrefix;
+
+      if (context.offline) {
+        let relPath = context.relativePathToRoot;
+        if (!isCurrentProject) {
+          const currentPfx = context.projectPrefix === '/' ? '' : context.projectPrefix.replace(/^\//, '').replace(/\/$/, '');
+          if (currentPfx) {
+            const levels = currentPfx.split('/').length;
+            relPath += '../'.repeat(levels);
+          }
+          const targetPfx = matchingProject.prefix === '/' ? '' : matchingProject.prefix.replace(/^\//, '').replace(/\/$/, '') + '/';
+          relPath += targetPfx;
+        }
+        
+        let combined = relPath + targetSubPath;
+        if (combined === '' || combined.endsWith('/')) {
+          combined += 'index.html';
+        } else if (!combined.endsWith('.html') && !combined.endsWith('.htm')) {
+          const lastSlash = combined.lastIndexOf('/');
+          const filename = lastSlash >= 0 ? combined.substring(lastSlash + 1) : combined;
+          const lastDot = filename.lastIndexOf('.');
+          const hasUnmodifiedExtension = lastDot > 0 && lastDot < filename.length - 1;
+          if (!hasUnmodifiedExtension) {
+            combined += '/index.html';
+          }
+        }
+        return sanitizeUrl(combined + hash);
+      } else {
+        let workspaceBase = context.base;
+        const currentPfx = context.projectPrefix === '/' ? '' : context.projectPrefix.replace(/^\//, '').replace(/\/$/, '');
+        if (currentPfx && workspaceBase.endsWith(currentPfx + '/')) {
+          workspaceBase = workspaceBase.substring(0, workspaceBase.length - currentPfx.length - 1);
+        }
+        
+        const targetPfx = matchingProject.prefix === '/' ? '' : matchingProject.prefix.replace(/^\//, '').replace(/\/$/, '') + '/';
+        const targetBase = workspaceBase + targetPfx;
+        
+        return sanitizeUrl(targetBase + targetSubPath + hash);
+      }
     }
   }
 
@@ -414,6 +478,8 @@ export function createUrlContext(options: {
   base?: string;
   siteUrl?: string;
   pathname?: string;
+  projectPrefix?: string;
+  workspaceProjects?: readonly any[];
 }): UrlContext {
   const relativePathToRoot = options.relativePathToRoot || './';
   const base = options.base || '/';
@@ -439,6 +505,8 @@ export function createUrlContext(options: {
     assetBaseUrl,
     emitBase,
     pathname: options.pathname,
+    projectPrefix: options.projectPrefix || '',
+    workspaceProjects: options.workspaceProjects || [],
   });
 }
 

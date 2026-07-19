@@ -63,10 +63,12 @@
     <% (customCssFiles || []).forEach(cssFile=> { %>
       <link rel="stylesheet" href="<%= assetBaseUrl %><%= cssFile.startsWith('/') ? cssFile.substring(1) : cssFile %>?v=<%= buildHash %>">
     <% }); %>
-    <%- themeInitScript %>
+    <%
+      const _tocDisabled = (config.theme?.toc === false) || (locals.frontmatter && (frontmatter.toc === false || frontmatter.toc === 'false' || frontmatter.toc === 'hidden'));
+    %>
   </head>
   <body
-    class="<%= sidebarConfig?.enabled === false ? 'no-sidebar' : (sidebarConfig?.collapsible ? 'sidebar-collapsible' : 'sidebar-not-collapsible') %><%= (locals.menubarConfig && menubarConfig?.enabled !== false) ? ' has-menubar has-menubar-' + (menubarConfig.position || 'top') : '' %><%= headerConfig?.enabled === false ? ' no-header' : '' %>"
+    class="<%= sidebarConfig?.enabled === false ? 'no-sidebar' : (sidebarConfig?.collapsible ? 'sidebar-collapsible' : 'sidebar-not-collapsible') %><%= (locals.menubarConfig && menubarConfig?.enabled !== false) ? ' has-menubar has-menubar-' + (menubarConfig.position || 'top') : '' %><%= headerConfig?.enabled === false ? ' no-header' : '' %><%= _tocDisabled ? ' toc-disabled' : '' %>"
     data-default-collapsed="<%= sidebarConfig?.defaultCollapsed %>"
     data-copy-code-enabled="<%= config.copyCode === true %>" data-spa-enabled="<%= config.layout?.spa !== false %>"<% if (locals.sourceFile) { %> data-source-file="<%= sourceFile %>"<% } %>>
 
@@ -258,9 +260,11 @@
                   </div>
                 <% } %>
               </div>
+              <% if (!_tocDisabled) { %>
               <div class="toc-sidebar">
                 <%- await include('toc', { content, headings, navigationHtml, isActivePage, t: typeof t === 'function' ? t : null }) %>
               </div>
+              <% } %>
             </div>
             <div class="page-footer-actions">
               <%# Git Plugin: Last updated timestamp (core plugin, always inject) %>

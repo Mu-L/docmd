@@ -88,13 +88,15 @@
 
   <%
     const _noSidebar = (sidebarConfig?.enabled === false);
-    const _noToc = (config.theme?.toc === false);
+    const _tocDisabled = (config.theme?.toc === false) || (locals.frontmatter && (frontmatter.toc === false || frontmatter.toc === 'false' || frontmatter.toc === 'hidden'));
     const _noHeader = (headerConfig?.enabled === false);
     const _hasMenubar = (locals.menubarConfig && menubarConfig?.enabled !== false);
     const _hasBanner = (locals.config && config.layout && config.layout.banner);
     const _bodyClasses = ['summer-template'];
     if (_noSidebar) _bodyClasses.push('no-sidebar');
-    if (_noToc) _bodyClasses.push('no-toc');
+    if (_tocDisabled) _bodyClasses.push('toc-disabled');
+    // We can also add no-toc class to body so that JS behaves properly on load
+    if (_tocDisabled) _bodyClasses.push('no-toc');
     if (_noHeader) _bodyClasses.push('no-header');
     if (_hasMenubar) _bodyClasses.push('has-menubar');
     if (_hasBanner) _bodyClasses.push('has-banner');
@@ -486,11 +488,10 @@
     </main>
 
     <%# ── Right-rail TOC (INLINED) ── %>
-    <% if (!_noToc) { %>
+    <% if (!_tocDisabled) { %>
       <%
-        const _tocDisabled = (frontmatter && (frontmatter.toc === false || frontmatter.toc === 'false' || frontmatter.toc === 'hidden'));
         let _tocHeadings = [];
-        if (!_tocDisabled) {
+        if (true) {
           if (typeof headings !== 'undefined' && Array.isArray(headings) && headings.length > 0) {
             _tocHeadings = headings.filter(h => h.level >= 1 && h.level <= 4);
           } else if (typeof content !== 'undefined' && content) {

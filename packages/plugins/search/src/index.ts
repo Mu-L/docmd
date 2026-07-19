@@ -622,6 +622,8 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
           : `node -e "import('docmd-search').then(m => m.indexDirectory({ rootDir: '${cwd}', outDir: '${path.join(outputDir, '_docmd-search')}' }))"`;
         execSync(cmd, { stdio: 'inherit', cwd, timeout: 300000, env: childEnv });
         if (showTui) tui.step('Semantic search index built', 'DONE');
+        await stampSemanticFlag(outputDir);
+        semanticBuilt = true;
       } catch (err: any) {
         if (showTui) tui.warn('  Subprocess indexing failed — semantic search unavailable this build.');
       }
