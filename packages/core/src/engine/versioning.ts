@@ -19,6 +19,7 @@ import { TUI } from '@docmd/tui';
 import { renderPages } from './generator.js';
 import { resolveLocaleSrcDir, resolveFallbackSrcDir } from './i18n.js';
 import { normalizeNavPaths } from '@docmd/parser';
+import { buildAutoNav } from '../utils/auto-router.js';
 
 /**
  * Filter out "ghost" versions - configured versions whose source directories
@@ -121,7 +122,7 @@ export function filterNavForVersion(items: any[], vSrcDir: string, fallbackSrcDi
  * Resolve the active navigation for a version - checks for navigation.json (Nav V2),
  * then per-version config override, then falls back to the global config navigation.
  */
-export function resolveVersionNav(v: any, vSrcDir: string, configNavigation: any): any {
+export function resolveVersionNav(v: any, vSrcDir: string, configNavigation: any, fallbackSrcDir?: string | null): any {
   let activeNav = configNavigation;
 
   try {
@@ -135,6 +136,11 @@ export function resolveVersionNav(v: any, vSrcDir: string, configNavigation: any
   } catch (err) {
     TUI.warn(`Failed to parse navigation.json in ${vSrcDir}: ${err.message}`);
     activeNav = v.navigation || configNavigation;
+  }
+
+  if (!activeNav || activeNav.length === 0) {
+    const navDir = fallbackSrcDir || vSrcDir;
+    activeNav = buildAutoNav(navDir);
   }
 
   // Clone activeNav before mutating to avoid modifying global config
@@ -216,7 +222,7 @@ export async function buildVersions({
     const versionPrefixSegment = isCurrent ? '' : v.id + '/';
     const combinedOutputPrefix = pathPrefix + versionPrefixSegment;
 
-    const activeNav = resolveVersionNav(v, vSrcDir, config.navigation);
+    const activeNav = resolveVersionNav(v, vSrcDir, config.navigation, fallbackSrcDir);
     const cleanedNav = filterNavForVersion(activeNav, vSrcDir, fallbackSrcDir);
 
     const versionedConfig = {

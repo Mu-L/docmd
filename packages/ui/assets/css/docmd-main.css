@@ -953,6 +953,10 @@ body.has-menubar-header .docmd-menubar {
     align-self: flex-start
 }
 
+.no-toc .toc-sidebar {
+    display: none !important;
+}
+
 .docmd-options-menu {
     display: flex;
     align-items: center;

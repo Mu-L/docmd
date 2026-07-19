@@ -105,12 +105,33 @@ export function buildAutoNav(dir: string, basePath = '/'): any[] { // Default ba
     if (item.isDirectory()) {
       const children = buildAutoNav(fullPath, relPath);
       if (children.length > 0) {
+        const relPathWithSlash = relPath.endsWith('/') ? relPath : relPath + '/';
+        const indexChildIndex = children.findIndex(c => c.path === relPath || c.path === relPathWithSlash);
+
+        let folderPath: string | undefined = undefined;
+        if (indexChildIndex >= 0) {
+          folderPath = children[indexChildIndex].path;
+          children.splice(indexChildIndex, 1);
+        }
+
         const title = item.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        nav.push({
-          title,
-          collapsible: true,
-          children
-        });
+        
+        if (children.length === 0 && folderPath) {
+          nav.push({
+            title,
+            path: folderPath
+          });
+        } else {
+          const navItem: any = {
+            title,
+            collapsible: true,
+            children
+          };
+          if (folderPath) {
+            navItem.path = folderPath;
+          }
+          nav.push(navItem);
+        }
       }
     } else if (item.isFile() && /\.(md|ejs)$/i.test(item.name)) {
       const title = extractTitleFromFile(fullPath, item.name);
@@ -121,7 +142,7 @@ export function buildAutoNav(dir: string, basePath = '/'): any[] { // Default ba
       const isReadme = item.name.toLowerCase() === 'readme.md';
 
       if (isIndex || (isReadme && !hasIndex)) {
-        linkPath = basePath === '/' ? '/' : basePath;
+        linkPath = normalizeInternalHref(basePath === '/' ? '/' : basePath);
       } else {
         // Use centralised normaliser for clean URLs with trailing slash
         linkPath = normalizeInternalHref(linkPath);

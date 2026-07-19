@@ -41,6 +41,7 @@ function slugifyOutputPath(p: string): string {
 }
 import { generateAssetTag, findFilesRecursive } from './assets.js';
 import { generateHreflangTags } from './i18n.js';
+import { buildAutoNav } from '../utils/auto-router.js';
 import nativeFs from 'fs';
 
 const _require = createRequire(import.meta.url);
@@ -148,6 +149,11 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
     } catch {
       TUI.warn(`Failed to parse locale navigation: ${localeNavPath}`);
     }
+  }
+
+  if (config.autoNav !== false && (!config.navigation || config.navigation.length === 0)) {
+    const navDir = fallbackSrcDir || srcDir;
+    config = { ...config, navigation: buildAutoNav(navDir) };
   }
 
   // Pass UI strings to the markdown processor (for locale-aware aria-labels etc.)
