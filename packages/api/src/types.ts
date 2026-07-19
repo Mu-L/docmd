@@ -318,7 +318,7 @@ export interface PostBuildContext {
 export interface PluginHooks {
   markdownSetup: ((md: any) => void)[];
   injectHead: ((config: any, pageContext: any, root?: string) => string | Promise<string>)[];
-  injectBody: ((config: any, pageContext: any) => string | Promise<string>)[];
+  injectBody: ((config: any, pageContext: any, root?: string) => string | Promise<string>)[];
   onBeforeBuild: ((ctx: BeforeBuildContext) => Promise<void>)[];
   onPostBuild: ((ctx: PostBuildContext) => Promise<void>)[];
   assets: (() => Asset[] | Promise<Asset[]>)[];

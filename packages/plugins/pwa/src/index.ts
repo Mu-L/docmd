@@ -144,7 +144,7 @@ export async function onPostBuild({ config, outputDir, log }: any) {
   );
 }
 
-export function generateMetaTags(config: any) {
+export function generateMetaTags(config: any, page: any, root: string) {
   const pwaConfig = config.plugins?.pwa || {};
   if (pwaConfig.enabled === false) return '';
 
@@ -161,8 +161,10 @@ export function generateMetaTags(config: any) {
   // attrEsc is defence-in-depth: a valid hex color is unaffected, but a payload
   // that somehow slipped past the regex still won't break out of the attribute.
 
+  const manifestPath = root ? `${root}manifest.webmanifest`.replace(/\/+/g, '/') : 'manifest.webmanifest';
+
   return `
-<link rel="manifest" href="/manifest.webmanifest">
+<link rel="manifest" href="${manifestPath}">
 <meta name="theme-color" content="${attrEsc(themeColor)}">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -170,17 +172,16 @@ export function generateMetaTags(config: any) {
 `;
 }
 
-export function generateScripts(config: any) {
+export function generateScripts(config: any, options: any, target: string, root: string) {
   const pwaConfig = config.plugins?.pwa || {};
   if (pwaConfig.enabled === false) return {};
 
+  const swPath = root ? `${root}service-worker.js`.replace(/\/+/g, '/') : './service-worker.js';
   const swRegistration = `
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        // Use relative path for PWA SW registration to support nested deployments
-        const swPath = window.DOCMD_SITE_ROOT ? window.DOCMD_SITE_ROOT + 'service-worker.js' : './service-worker.js';
-        navigator.serviceWorker.register(swPath).then(reg => {
+        navigator.serviceWorker.register("${swPath}").then(reg => {
           // Check for Service Worker updates from the server every 5 minutes 
           setInterval(() => {
              reg.update().catch(() => {});
