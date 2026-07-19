@@ -539,11 +539,10 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
   // knows to suppress its own TUI messages (it still runs as a fallback).
   let semanticBuilt = false;
 
-  // ── Semantic search path ────────────────────────────────────────────────
   if (pluginOptions.semantic === true) {
-    // Strip sourcemap comment from the copied .docmd-search-client.js to avoid
+    // Strip sourcemap comment from the copied _docmd-search/docmd-search-client.js to avoid
     // a 404 for the non-existent .js.map file in the browser.
-    const clientDestPath = path.join(outputDir, '.docmd-search-client.js');
+    const clientDestPath = path.join(outputDir, '_docmd-search/docmd-search-client.js');
     if (nativeFs.existsSync(clientDestPath)) {
       try {
         const src = await fs.readFile(clientDestPath, 'utf8');
@@ -551,8 +550,6 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
         if (stripped !== src) await fs.writeFile(clientDestPath, stripped, 'utf8');
       } catch { /* non-critical */ }
     }
-
-    // Check if a pre-built index exists (e.g. docmd-search --ui mode)
     // If indexDir is provided and has a valid manifest, skip indexing entirely.
     if (pluginOptions.indexDir) {
       const manifestPath = path.join(pluginOptions.indexDir, 'manifest.json');
@@ -676,6 +673,10 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
           }
 
           if (showTui) tui.step('Building semantic search index (multi-version)', 'WAIT');
+
+          // Clean output directory before copying to remove stale files from prior builds
+          await fs.rm(path.join(semanticOutDir, 'manifest.json'), { force: true }).catch(() => {});
+          await fs.rm(path.join(semanticOutDir, 'batches'), { recursive: true, force: true }).catch(() => {});
 
           const tmpBase = path.join(semanticOutDir, '_tmp_versions');
           await fs.mkdir(tmpBase, { recursive: true });
@@ -810,8 +811,11 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
         );
 
         // Clean output directory before copying to remove stale files from prior builds
-        await fs.rm(semanticOutDir, { recursive: true, force: true }).catch(() => {});
+        // Only delete manifest.json and batches directory to preserve docmd-search-client.js
+        await fs.rm(path.join(semanticOutDir, 'manifest.json'), { force: true }).catch(() => {});
+        await fs.rm(path.join(semanticOutDir, 'batches'), { recursive: true, force: true }).catch(() => {});
         // Copy built index from source directory to output directory
+        await fs.mkdir(semanticOutDir, { recursive: true });
         await fs.cp(sourceIndexDir, semanticOutDir, { recursive: true, force: true });
 
         // No versioning — write an empty versions.json so the client knows
@@ -1133,11 +1137,11 @@ export function getAssets(options: any) {
     ];
 
     if (semanticClientSrc) {
-      // Serve the docmd-search client at a well-known root path
-      // The search client.ts fetches it via import('.docmd-search-client.js')
+      // Serve the docmd-search client at a well-known path
+      // The search client.ts fetches it via import('_docmd-search/docmd-search-client.js')
       assets.push({
         src: semanticClientSrc,
-        dest: '.docmd-search-client.js',
+        dest: '_docmd-search/docmd-search-client.js',
         type: 'js',
         location: 'none', // not injected into <head>/<body> — loaded on demand
       });
