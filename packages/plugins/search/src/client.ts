@@ -53,38 +53,57 @@ declare const MiniSearch: any;
             offline: searchModal.dataset.searchOffline || 'Search requires a web server. Open this site via http://localhost instead of file:// to enable search.'
         };
 
-        // Use Site Root if available (for versioning), fallback to Context Root
-        const rawRoot = window.DOCMD_SITE_ROOT || window.DOCMD_ROOT || './';
-        let ROOT_PATH = new URL(rawRoot, window.location.href).href;
-        if (!ROOT_PATH.endsWith('/')) ROOT_PATH += '/';
-
-        // Determine the locale-specific search index path.
-        // All search data lives under _docmd-search/ at the site base:
-        //   default locale: /_docmd-search/search-index.json
-        //   non-default:    /_docmd-search/<locale>/search-index.json
-        // We detect the locale prefix from the current URL and build the
-        // fetch path relative to the site base.
-        const siteBase = (window.DOCMD_SITE_ROOT || window.DOCMD_ROOT || '/').replace(/\/$/, '') + '/';
-        const currentPath = window.location.pathname;
-        
-        // Extract locale prefix from current URL path.
-        // If URL is /hi/content/steps and base is /, locale prefix is "hi/".
-        const pathAfterBase = currentPath.startsWith(siteBase) 
-            ? currentPath.slice(siteBase.length) 
-            : currentPath.replace(/^\//, '');
-        const firstSegment = pathAfterBase.split('/')[0];
-        
-        // Check if the first segment looks like a locale (2-3 letter code)
-        // by checking the meta tag that the engine injects.
+        // Extract known locales from link hreflang tags
         const hreflangLinks = document.querySelectorAll('link[hreflang]');
         const knownLocales = new Set<string>();
         hreflangLinks.forEach(link => {
             const lang = link.getAttribute('hreflang');
             if (lang && lang !== 'x-default') knownLocales.add(lang);
         });
+
+        // Determine the canonical siteBase (including any subpath/repository prefix).
+        // If window.DOCMD_SITE_ROOT is set and is not the default '/', use it directly.
+        // Otherwise, resolve the relative window.DOCMD_ROOT to deduce the absolute URL pathname.
+        let siteBase = '/';
+        if (window.DOCMD_SITE_ROOT && window.DOCMD_SITE_ROOT !== '/') {
+            siteBase = window.DOCMD_SITE_ROOT;
+        } else {
+            const projectRootUrl = new URL(window.DOCMD_ROOT || './', window.location.href);
+            let projectRootPath = projectRootUrl.pathname;
+            if (!projectRootPath.endsWith('/')) projectRootPath += '/';
+
+            const segments = projectRootPath.split('/').filter(Boolean);
+            let checkIdx = segments.length - 1;
+            while (checkIdx >= 0) {
+                const seg = segments[checkIdx];
+                const isLocale = knownLocales.has(seg);
+                const isVersion = /^v\d+/.test(seg) || seg === 'latest' || seg === 'stable';
+                
+                if (isLocale || isVersion) {
+                    checkIdx--;
+                } else {
+                    break;
+                }
+            }
+
+            const baseSegments = segments.slice(0, checkIdx + 1);
+            siteBase = '/' + baseSegments.join('/') + '/';
+            if (siteBase === '//') siteBase = '/';
+        }
+        if (!siteBase.endsWith('/')) siteBase += '/';
+
+        const baseUrl = new URL(siteBase, window.location.href).href;
+        const ROOT_PATH = baseUrl;
+
+        // Determine the locale-specific search index path.
+        // Extract the locale prefix of the current URL based on our computed siteBase
+        const currentPath = window.location.pathname;
+        const pathAfterBase = currentPath.startsWith(siteBase) 
+            ? currentPath.slice(siteBase.length) 
+            : currentPath.replace(/^\//, '');
+        const firstSegment = pathAfterBase.split('/')[0];
         
         const localePrefix = knownLocales.has(firstSegment) ? firstSegment + '/' : '';
-        const baseUrl = new URL(siteBase, window.location.href).href;
         const searchIndexUrl = baseUrl + '_docmd-search/' + localePrefix + 'search-index.json';
 
         function escapeHtml(str: any): string {

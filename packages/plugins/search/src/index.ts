@@ -618,9 +618,14 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
           ? `"${docmdBin}" build`
           : `node -e "import('docmd-search').then(m => m.indexDirectory({ rootDir: '${cwd}', outDir: '${path.join(outputDir, '_docmd-search')}' }))"`;
         execSync(cmd, { stdio: 'inherit', cwd, timeout: 300000, env: childEnv });
-        if (showTui) tui.step('Semantic search index built', 'DONE');
-        await stampSemanticFlag(outputDir);
-        semanticBuilt = true;
+        const manifestPath = path.join(outputDir, '_docmd-search/manifest.json');
+        if (nativeFs.existsSync(manifestPath)) {
+          if (showTui) tui.step('Semantic search index built', 'DONE');
+          await stampSemanticFlag(outputDir);
+          semanticBuilt = true;
+        } else {
+          if (showTui) tui.warn('  Subprocess completed but semantic manifest is missing — falling back to keyword search.');
+        }
       } catch (err: any) {
         if (showTui) tui.warn('  Subprocess indexing failed — semantic search unavailable this build.');
       }

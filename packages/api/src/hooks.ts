@@ -761,14 +761,14 @@ function registerPlugin(
       // body gets an empty string. Previously a string return was dropped
       // on the body side (result?.bodyScriptsHtml was undefined), making
       // the body capability effectively dead for the simple shape.
-      hooks.injectHead.push(async (config: any, pageContext: any) => {
+      hooks.injectHead.push(async (config: any, pageContext: any, root: any) => {
         if (!shouldExecute(pageContext)) return '';
-        const raw = await safeCall('generateScripts', name, fn, config, options, 'head') as any;
+        const raw = await safeCall('generateScripts', name, fn, config, options, 'head', root) as any;
         return coerceGenerateScriptsReturn(raw, 'head', name) || '';
       });
-      hooks.injectBody.push(async (config: any, pageContext: any) => {
+      hooks.injectBody.push(async (config: any, pageContext: any, root: any) => {
         if (!shouldExecute(pageContext)) return '';
-        const raw = await safeCall('generateScripts', name, fn, config, options, 'body') as any;
+        const raw = await safeCall('generateScripts', name, fn, config, options, 'body', root) as any;
         return coerceGenerateScriptsReturn(raw, 'body', name) || '';
       });
     } else {
