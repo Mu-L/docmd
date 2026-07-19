@@ -16,7 +16,6 @@ import MarkdownIt from 'markdown-it';
 import matter from 'lite-matter';
 import { highlight } from 'lite-hl';
 import { resolveHref } from './utils/normalize-href.js';
-import { attrEsc } from '@docmd/utils';
 import {
   normaliseContainers,
   type NormaliserWarning

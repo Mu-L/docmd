@@ -583,6 +583,16 @@
     headings.forEach(h => scrollObserver.observe(h));
   }
 
+  function updateTocClass() {
+    const hasToc = document.querySelector('.toc-link, .summer-toc__link') !== null;
+    if (hasToc) {
+      document.body.classList.remove('no-toc');
+    } else {
+      document.body.classList.add('no-toc');
+    }
+  }
+
+
   function executeScripts(container) {
     container.querySelectorAll('script').forEach(oldScript => {
       const newScript = document.createElement('script');
@@ -867,6 +877,7 @@
 
         injectCopyButtons();
         initializeScrollSpy();
+        updateTocClass();
         initializeHeroSliders();
         const newMainContent = document.querySelector('.main-content');
         if (newMainContent) executeScripts(newMainContent);
@@ -914,6 +925,7 @@
 
     injectCopyButtons();
     initializeScrollSpy();
+    updateTocClass();
     initializeHeroSliders();
     initializeSPA();
     initBanner();

@@ -507,11 +507,15 @@ export async function loadConfig(configPath: string, options: any = {}) {
         }
 
         if (!hasNavInSubdirs) {
-          if (!options.quiet && !(global as any).__DOCMD_ZERO_NAV_LOGGED) {
-            TUI.info('No navigation settings found. Auto-generating with Zero-Config...');
-            if (options.isDev) (global as any).__DOCMD_ZERO_NAV_LOGGED = true;
+          const hasVersions = normalized.versions?.all?.length > 0;
+          const hasI18n = !!normalized.i18n?.default;
+          if (!hasVersions && !hasI18n) {
+            if (!options.quiet && !(global as any).__DOCMD_ZERO_NAV_LOGGED) {
+              TUI.info('No navigation settings found. Auto-generating with Zero-Config...');
+              if (options.isDev) (global as any).__DOCMD_ZERO_NAV_LOGGED = true;
+            }
+            normalized.navigation = buildAutoNav(navScanDir);
           }
-          normalized.navigation = buildAutoNav(navScanDir);
         }
       }
 

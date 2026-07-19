@@ -1576,6 +1576,10 @@ html[data-theme="dark"] .summer-logo__light {
   font-size: 0.8125rem;
 }
 
+.summer-toc:not(:has(.summer-toc__inner)) {
+  display: none;
+}
+
 .summer-toc::-webkit-scrollbar {
   width: 6px;
 }

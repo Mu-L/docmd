@@ -281,7 +281,12 @@ export function buildContextualUrl(href: string, context: UrlContext): string {
   // (to preserve exact './' prefix formatting for root-level pages as expected by tests).
   let result = combinedPath + hash;
   if (!isPageRelative) {
-    result = context.relativePathToRoot + combinedPath + hash;
+    if (context.base !== '/' && !context.offline) {
+      const basePrefix = context.base.endsWith('/') ? context.base : context.base + '/';
+      result = basePrefix + combinedPath + hash;
+    } else {
+      result = context.relativePathToRoot + combinedPath + hash;
+    }
   } else if (context.relativePathToRoot === './') {
     result = './' + combinedPath + hash;
   }

@@ -166,6 +166,11 @@ addInProcess(
   await import('./cli-contracts/asset-base-url.test.js')
 );
 addInProcess(
+  'url-routing',
+  'URL Routing architecture stability (Phase 1, 2, 3)',
+  await import('./cli-contracts/url-routing.test.js')
+);
+addInProcess(
   'runtime-deps',
   'Runtime-deps shared auto-install pipeline (RD-1..RD-CWE, CWE-78 fix)',
   await import('./cli-contracts/runtime-deps.test.js')
