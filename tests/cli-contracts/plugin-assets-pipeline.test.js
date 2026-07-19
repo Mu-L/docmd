@@ -173,7 +173,7 @@ export const test = runTestFile({
         'assets/js/docmd-git.js',
         'assets/css/docmd-git.css',
         'assets/css/docmd-openapi.css',
-        '.docmd-search-client.js'  // semantic mode root-level drop
+        '_docmd-search/docmd-search-client.js'  // semantic mode drop
       ];
       for (const rel of copied) {
         assert(fs.existsSync(path.join(proj, 'site', rel)),
