@@ -67,7 +67,7 @@ type SearchConfig = {
   /** All peer deps (transformers + onnxruntime-node) are resolvable. */
   peersInstalled: boolean;
   /** True only when all three of the above are true — that's when the modal
-   *  emits `data-semantic="true"`, the .docmd-search-client.js asset ships,
+   *  emits `data-semantic="true"`, the docmd-search-client.js asset ships,
    *  and the page points users at the semantic index. */
   semanticUsable: boolean;
   /** The exact names of any peer deps that are missing. Empty when
@@ -540,9 +540,29 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
   let semanticBuilt = false;
 
   if (pluginOptions.semantic === true) {
+    const clientDestPath = path.join(outputDir, '_docmd-search/docmd-search-client.js');
+    if (!nativeFs.existsSync(clientDestPath)) {
+      try {
+        const searchPaths = [
+          process.cwd(),
+          path.join(process.cwd(), 'node_modules')
+        ];
+        if (process.env.DOCMD_TEST === 'true' && process.env.DOCMD_TEST_SEARCH_PATH) {
+          const extraPaths = process.env.DOCMD_TEST_SEARCH_PATH.split(path.delimiter);
+          searchPaths.push(...extraPaths);
+        }
+        const pkgPath = require.resolve('docmd-search/package.json', { paths: searchPaths });
+        const pkgDir = path.dirname(pkgPath);
+        const clientEntry = path.join(pkgDir, 'dist', 'client', 'index.js');
+        if (nativeFs.existsSync(clientEntry)) {
+          await fs.mkdir(path.dirname(clientDestPath), { recursive: true });
+          await fs.copyFile(clientEntry, clientDestPath);
+        }
+      } catch { /* non-critical */ }
+    }
+
     // Strip sourcemap comment from the copied _docmd-search/docmd-search-client.js to avoid
     // a 404 for the non-existent .js.map file in the browser.
-    const clientDestPath = path.join(outputDir, '_docmd-search/docmd-search-client.js');
     if (nativeFs.existsSync(clientDestPath)) {
       try {
         const src = await fs.readFile(clientDestPath, 'utf8');

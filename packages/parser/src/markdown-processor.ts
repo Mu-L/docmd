@@ -473,8 +473,10 @@ async function processContentAsync(rawString: string, mdInstance: any, config: a
       outputPrefix: '',
       offline: env.isOfflineMode === true,
       base: env.config?.base || '/',
-      siteUrl: '',
+      siteUrl: config.url || '',
       pathname: env.pathname,
+      projectPrefix: config._activePrefix || '/',
+      workspaceProjects: config._workspace?.projects || [],
     });
     htmlContent = rewriteHtmlLinks(htmlContent, urlContext, {
       defaultLocale: env.defaultLocale || null,
