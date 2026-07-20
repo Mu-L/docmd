@@ -113,7 +113,9 @@ function buildSearchConfig(config: any): SearchConfig {
   // List every peer dep and which are missing, in stable order.
   const missingPeers: string[] = [];
   for (const pkg of PEER_DEPS) {
-    try { require.resolve(pkg, { paths: resolvePaths }); }
+    const atIdx = pkg.lastIndexOf('@');
+    const cleanPkgName = atIdx > 0 ? pkg.slice(0, atIdx) : pkg;
+    try { require.resolve(cleanPkgName, { paths: resolvePaths }); }
     catch { missingPeers.push(pkg); }
   }
   const peersInstalled = missingPeers.length === 0;
@@ -136,6 +138,31 @@ function peersHash(sc: SearchConfig): string {
 }
 
 /* ── Semantic search peer-dep detection ─────────────────────────────────── */
+
+/**
+ * Robust package directory resolver that walks up the directory tree
+ * recursively (completely bypassing Node's module resolution failure cache).
+ */
+function manualResolvePackageDir(packageName: string, startDirs: string[]): string | null {
+  const dirsToSearch = [...startDirs];
+  if (process.env.DOCMD_TEST === 'true' && process.env.DOCMD_TEST_SEARCH_PATH) {
+    dirsToSearch.push(...process.env.DOCMD_TEST_SEARCH_PATH.split(path.delimiter));
+  }
+  for (const startDir of dirsToSearch) {
+    if (!startDir) continue;
+    let dir = path.resolve(startDir);
+    while (true) {
+      const candidate = path.join(dir, 'node_modules', packageName, 'package.json');
+      if (nativeFs.existsSync(candidate)) {
+        return path.dirname(candidate);
+      }
+      const parent = path.dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+  }
+  return null;
+}
 
 /**
  * Check if docmd-search is available (installed as a peer/optional dep).
@@ -161,23 +188,24 @@ function resolveDocmdSearch(): string | null {
     searchPaths.push(...extraPaths);
   }
 
-  // First, locate the package via its `./package.json` subpath export.
-  // This works regardless of the main `exports` conditions because the
-  // subpath is explicitly declared in the package manifest.
-  let pkgDir: string | null = null;
-  try {
-    const pkgPath = require.resolve('docmd-search/package.json', { paths: searchPaths });
-    pkgDir = path.dirname(pkgPath);
-  } catch {
-    // Fallback: walk the search paths manually. This is a defensive
-    // backstop in case the `./package.json` subpath export is ever
-    // removed or the package is installed in a layout require.resolve
-    // does not understand (e.g. pnpm's isolated node_modules).
-    for (const root of searchPaths) {
-      const candidate = path.join(root, 'node_modules', 'docmd-search', 'package.json');
-      if (nativeFs.existsSync(candidate)) {
-        pkgDir = path.dirname(candidate);
-        break;
+  // First, locate the package using the cache-bypassing recursive directory walk.
+  let pkgDir: string | null = manualResolvePackageDir('docmd-search', [process.cwd(), __dirname]);
+  
+  if (!pkgDir) {
+    try {
+      const pkgPath = require.resolve('docmd-search/package.json', { paths: searchPaths });
+      pkgDir = path.dirname(pkgPath);
+    } catch {
+      // Fallback: walk the search paths manually. This is a defensive
+      // backstop in case the `./package.json` subpath export is ever
+      // removed or the package is installed in a layout require.resolve
+      // does not understand (e.g. pnpm's isolated node_modules).
+      for (const root of searchPaths) {
+        const candidate = path.join(root, 'node_modules', 'docmd-search', 'package.json');
+        if (nativeFs.existsSync(candidate)) {
+          pkgDir = path.dirname(candidate);
+          break;
+        }
       }
     }
   }
@@ -543,20 +571,13 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
     const clientDestPath = path.join(outputDir, '_docmd-search/docmd-search-client.js');
     if (!nativeFs.existsSync(clientDestPath)) {
       try {
-        const searchPaths = [
-          process.cwd(),
-          path.join(process.cwd(), 'node_modules')
-        ];
-        if (process.env.DOCMD_TEST === 'true' && process.env.DOCMD_TEST_SEARCH_PATH) {
-          const extraPaths = process.env.DOCMD_TEST_SEARCH_PATH.split(path.delimiter);
-          searchPaths.push(...extraPaths);
-        }
-        const pkgPath = require.resolve('docmd-search/package.json', { paths: searchPaths });
-        const pkgDir = path.dirname(pkgPath);
-        const clientEntry = path.join(pkgDir, 'dist', 'client', 'index.js');
-        if (nativeFs.existsSync(clientEntry)) {
-          await fs.mkdir(path.dirname(clientDestPath), { recursive: true });
-          await fs.copyFile(clientEntry, clientDestPath);
+        const pkgDir = manualResolvePackageDir('docmd-search', [process.cwd(), __dirname]);
+        if (pkgDir) {
+          const clientEntry = path.join(pkgDir, 'dist', 'client', 'index.js');
+          if (nativeFs.existsSync(clientEntry)) {
+            await fs.mkdir(path.dirname(clientDestPath), { recursive: true });
+            await fs.copyFile(clientEntry, clientDestPath);
+          }
         }
       } catch { /* non-critical */ }
     }
@@ -1143,16 +1164,11 @@ export function getAssets(options: any) {
     // Resolve the actual file path (not a file:// URL) from docmd-search package.
     let semanticClientSrc: string | null = null;
     try {
-      const searchPaths = [
-        process.cwd(),
-        __dirname,
-        path.resolve(__dirname, '../../..'),
-        path.resolve(__dirname, '../../../..'),
-      ];
-      const pkgPath = require.resolve('docmd-search/package.json', { paths: searchPaths });
-      const pkgDir = path.dirname(pkgPath);
-      const clientEntry = path.join(pkgDir, 'dist', 'client', 'index.js');
-      if (nativeFs.existsSync(clientEntry)) semanticClientSrc = clientEntry;
+      const pkgDir = manualResolvePackageDir('docmd-search', [process.cwd(), __dirname]);
+      if (pkgDir) {
+        const clientEntry = path.join(pkgDir, 'dist', 'client', 'index.js');
+        if (nativeFs.existsSync(clientEntry)) semanticClientSrc = clientEntry;
+      }
     } catch { /* not installed */ }
 
     const assets: any[] = [
