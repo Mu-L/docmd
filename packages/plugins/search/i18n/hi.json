@@ -7,5 +7,6 @@
   "searchClose": "खोज बंद करें",
   "searchNavigate": "नेविगेट करें",
   "searchEscape": "बंद करें",
-  "searchVersionBadge": "v{version}"
+  "searchVersionBadge": "v{version}",
+  "searchOfflineBuild": "खोज अक्षम है क्योंकि ये दस्तावेज़ --offline ध्वज के साथ बनाए गए थे। खोज सक्षम करने के लिए ध्वज के बिना साइट का पुनर्निर्माण करें।"
 }

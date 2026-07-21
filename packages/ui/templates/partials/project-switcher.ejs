@@ -45,8 +45,10 @@ if (locals.workspace && workspace.projects && workspace.projects.length > 0) {
       // Calculate Workspace Base (Domain Root -> Workspace Root)
       // config.base includes the current project's prefix. We need to strip it to find the workspace root.
       const normalizedBase = (config.base || '/').replace(/\/?$/, '');
-      const normalizedActivePrefix = currentPrefix.replace(/\/?$/, '');
-      const workspaceBase = normalizedBase.endsWith(normalizedActivePrefix) 
+      // Strip leading '/' from the active prefix so the endsWith/substring
+      // math correctly removes only the project segment, not the separator.
+      const normalizedActivePrefix = currentPrefix.replace(/^\//, '').replace(/\/?$/, '');
+      const workspaceBase = (normalizedActivePrefix && normalizedBase.endsWith(normalizedActivePrefix))
         ? normalizedBase.substring(0, normalizedBase.length - normalizedActivePrefix.length)
         : normalizedBase;
 

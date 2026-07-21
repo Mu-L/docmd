@@ -7,5 +7,6 @@
   "searchClose": "Close search",
   "searchNavigate": "to navigate",
   "searchEscape": "to close",
-  "searchVersionBadge": "v{version}"
+  "searchVersionBadge": "v{version}",
+  "searchOfflineBuild": "Search is disabled because these docs were built with the --offline flag. Rebuild the site without the flag to enable search."
 }

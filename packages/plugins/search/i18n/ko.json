@@ -7,5 +7,6 @@
   "searchClose": "검색 닫기",
   "searchNavigate": "이동",
   "searchEscape": "닫기",
-  "searchVersionBadge": "v{version}"
+  "searchVersionBadge": "v{version}",
+  "searchOfflineBuild": "이 문서는 --offline 플래그와 함께 빌드되어 검색이 비활성화되었습니다. 검색을 사용하려면 플래그 없이 사이트를 다시 빌드하십시오."
 }

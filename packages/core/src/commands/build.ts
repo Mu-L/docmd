@@ -96,6 +96,7 @@ export async function buildSite(configPath: string, opts: any = {}) {
     config._workspace = opts._workspace || null;
     config._activePrefix = opts._activePrefix || '/';
     config._globalDefaults = opts._globalDefaults || null;
+    config.offline = options.offline || false;
     
     // Initialize global WorkerPool (or use provided one)
     const workerScript = path.resolve(__dirname, '../engine/worker-parser.js');
@@ -338,6 +339,12 @@ export async function buildSite(configPath: string, opts: any = {}) {
     });
 
     await fs.writeFile(path.join(rootOutputDir, '404.html'), full404Html);
+
+    // Auto-generate .nojekyll at the root output directory to disable Jekyll globally on GitHub Pages
+    const rootNoJekyllPath = path.join(rootOutputDir, '.nojekyll');
+    if (!nativeFs.existsSync(rootNoJekyllPath)) {
+      await fs.writeFile(rootNoJekyllPath, '');
+    }
 
     // --- 4. GENERATE STATIC REDIRECTS ---
     if (config.redirects && Object.keys(config.redirects).length > 0) {

@@ -2,9 +2,9 @@ import { LitElement, html, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { Thread } from '../../types';
 
-import '@awesome.me/webawesome/dist/components/button/button.js';
-import '@awesome.me/webawesome/dist/components/divider/divider.js';
-import '@awesome.me/webawesome/dist/components/tag/tag.js';
+import '@shoelace-style/shoelace/dist/components/button/button.js';
+import '@shoelace-style/shoelace/dist/components/divider/divider.js';
+import '@shoelace-style/shoelace/dist/components/tag/tag.js';
 
 import './threads-comment';
 import './threads-compose';
@@ -58,7 +58,7 @@ export class ThreadsThread extends LitElement {
         ${truncatedQuote ? html`
           <div class="tc-thread__quote" @click=${this.scrollToHighlight}>
             <div class="tc-thread__quote-text">${truncatedQuote}</div>
-            ${this.orphan ? html`<wa-tag size="small" variant="warning" pill>orphaned</wa-tag>` : nothing}
+            ${this.orphan ? html`<sl-tag size="small" variant="warning" pill>orphaned</sl-tag>` : nothing}
           </div>
         ` : nothing}
 
@@ -80,10 +80,10 @@ export class ThreadsThread extends LitElement {
         </div>
 
         <div class="tc-thread__footer">
-          <wa-button size="small" appearance="plain" variant=${t.resolved ? 'neutral' : 'success'} @click=${this.toggleResolve}>
+          <sl-button size="small" variant="text" style=${t.resolved ? '' : 'color: var(--sl-color-success-600);'} @click=${this.toggleResolve}>
             ${t.resolved ? 'Unresolve' : 'Resolve'}
-          </wa-button>
-          <wa-button size="small" appearance="plain" variant="danger" @click=${this.requestDelete}>Delete</wa-button>
+          </sl-button>
+          <sl-button size="small" variant="text" style="color: var(--sl-color-danger-600);" @click=${this.requestDelete}>Delete</sl-button>
         </div>
       </div>
     `;

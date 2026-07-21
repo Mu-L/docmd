@@ -7,5 +7,6 @@
   "searchClose": "关闭搜索",
   "searchNavigate": "导航",
   "searchEscape": "关闭",
-  "searchVersionBadge": "v{version}"
+  "searchVersionBadge": "v{version}",
+  "searchOfflineBuild": "由于此文档是使用 --offline 标志构建的，搜索已被禁用。请在不带该标志的情况下重新构建站点以启用搜索。"
 }

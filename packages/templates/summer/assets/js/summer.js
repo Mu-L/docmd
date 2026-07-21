@@ -375,7 +375,7 @@
 
       // Make the plugin input also off-screen so it cannot grab focus
       pluginInput.tabIndex = -1;
-      pluginInput.setAttribute('aria-hidden', 'true');
+      pluginInput.setAttribute('inert', '');
     }
 
     tryInitPluginSearch();

@@ -319,7 +319,7 @@ export function injectComponentStyles(): void {
       color: var(--tc-muted-fg);
     }
 
-    /* ========= Emoji picker item (used inside wa-popover) ========= */
+    /* ========= Emoji picker item (used inside sl-popup) ========= */
     .tc-emoji-picker__item {
       width: 30px;
       height: 30px;
@@ -358,20 +358,20 @@ export function injectComponentStyles(): void {
       margin-top: 8px;
       justify-content: flex-end;
     }
-    .tc-compose wa-textarea,
-    .tc-thread__reply wa-textarea,
-    .threads-thread wa-textarea {
+    .tc-compose sl-textarea,
+    .tc-thread__reply sl-textarea,
+    .threads-thread sl-textarea {
       width: 100% !important;
       display: block;
       box-sizing: border-box;
     }
-    /* Force wa-textarea internal textarea to expand */
-    .tc-compose wa-textarea::part(base),
-    .tc-compose wa-textarea::part(textarea),
-    .tc-thread__reply wa-textarea::part(base),
-    .tc-thread__reply wa-textarea::part(textarea),
-    .threads-thread wa-textarea::part(base),
-    .threads-thread wa-textarea::part(textarea) {
+    /* Force sl-textarea internal textarea to expand */
+    .tc-compose sl-textarea::part(base),
+    .tc-compose sl-textarea::part(textarea),
+    .tc-thread__reply sl-textarea::part(base),
+    .tc-thread__reply sl-textarea::part(textarea),
+    .threads-thread sl-textarea::part(base),
+    .threads-thread sl-textarea::part(textarea) {
       width: 100% !important;
       min-width: 0;
       box-sizing: border-box;

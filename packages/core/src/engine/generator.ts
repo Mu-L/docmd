@@ -557,9 +557,8 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
       let siteRootAbs = config.base || '/';
       if (siteRootAbs !== '/' && !siteRootAbs.endsWith('/')) siteRootAbs += '/';
 
-      if (!options.offline && siteRootAbs !== '/') {
-        relativePathToRoot = siteRootAbs;
-      }
+      // Keep relativePathToRoot relative (e.g. '../', './') so all page assets and links are loaded relatively.
+      // Do not overwrite with siteRootAbs.
 
       // Navigation Context
       let navPath = '/' + page.outputPath.replace(/\\/g, '/').replace(/\/index\.html$/, '').replace(/^index\.html$/, '');
@@ -589,6 +588,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
         projectPrefix: config._activePrefix || '/',
         workspaceProjects: config._workspace?.projects || [],
       });
+
 
       // Front the URL context with simple-relative asset + root-prefixed nav
       // helpers for build mode where <base> is emitted. In dev/offline these

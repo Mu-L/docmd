@@ -506,16 +506,26 @@ export function installPackages(packages: string[], cwd: string = process.cwd())
     let stderr = '';
     let stdout = '';
     const useShell = process.platform === 'win32';
-    const child = spawn(pm, args, { cwd, shell: useShell, timeout: 180_000 });
+    const child = spawn(pm, args, { cwd, shell: useShell, timeout: 300_000 });
 
     child.stdout.on('data', (chunk) => { stdout += chunk.toString(); });
     child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
 
     child.on('error', (err) => {
+      TUI.warn(`Auto-install command execution failed: ${err.message}`);
       resolve(false);
     });
 
     child.on('close', (code) => {
+      if (code !== 0) {
+        TUI.warn(`Auto-install failed with exit code ${code} for command: ${pm} ${args.join(' ')}`);
+        if (stderr.trim()) {
+          TUI.warn(`Stderr:\n${stderr}`);
+        }
+        if (stdout.trim()) {
+          TUI.warn(`Stdout:\n${stdout}`);
+        }
+      }
       resolve(code === 0);
     });
   });

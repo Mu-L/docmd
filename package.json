@@ -1,6 +1,6 @@
 {
   "name": "@docmd/monorepo",
-  "version": "0.8.16",
+  "version": "0.8.17",
   "private": true,
   "description": "The minimalist, zero-config documentation generator monorepo.",
   "scripts": {
@@ -39,7 +39,7 @@
     "eslint": "^10.7.0",
     "globals": "^17.7.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.64.0"
+    "typescript-eslint": "^8.65.0"
   },
   "engines": {
     "node": ">=18"
@@ -51,7 +51,8 @@
       "@docmd/engine-rust"
     ],
     "overrides": {
-      "adm-zip": ">=0.6.0"
+      "adm-zip": ">=0.6.0",
+      "onnxruntime-node": "^1.27.0"
     },
     "peerDependencyRules": {
       "ignoreMissing": [

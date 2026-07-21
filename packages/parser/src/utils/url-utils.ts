@@ -203,8 +203,9 @@ export function outputPathToCanonical(outputPath: string, siteUrl: string, base?
  *   // → 'https://github.com'  (external, untouched)
  */
 export function buildContextualUrl(href: string, context: UrlContext): string {
-  // Pass-through: empty, hash-only, external protocols, data URIs
-  if (!href || href === '#') return href || '#';
+  // Pass-through: hash-only, no href
+  if (href === '#') return '#';
+  if (href === undefined || href === null) return '#';
   // D-S2: strip the `external:` prefix defensively. Plugin callers may
   // invoke this function directly without going through `resolveHref`
   // first; previously `external:https://...` was treated as a literal
@@ -236,18 +237,14 @@ export function buildContextualUrl(href: string, context: UrlContext): string {
   const isAsset = href.match(/(^|\/)assets\//);
   const isPageRelative = !href.startsWith('/') && !isAsset;
 
-  // Resolve page-relative link against pathname to produce prefix-aware root-relative path
-  if (isPageRelative && !context.offline && context.pathname) {
-    try {
-      const resolved = new URL(href, 'http://dummy-host' + context.pathname).pathname;
-      return sanitizeUrl(resolved + hash);
-    } catch {
-      // Fallback to legacy behaviour if URL resolution fails
-    }
-  }
-
-  // Intercept root-relative links in workspace projects
-  if (href.startsWith('/') && !isAsset && context.workspaceProjects && context.workspaceProjects.length > 0) {
+  // Intercept root-relative links in workspace projects.
+  // Guard: when the current project is a subproject (prefix !== '/'), a bare
+  // '/' href from a nav item or sidebar title means "this project's root",
+  // NOT the workspace root project. Skip workspace interception so the
+  // normal outputPrefix-based resolution handles it correctly.
+  const isBareRootInSubproject = (href === '/' || href === '/index.html')
+    && context.projectPrefix && context.projectPrefix !== '/';
+  if (href.startsWith('/') && !isAsset && !isBareRootInSubproject && context.workspaceProjects && context.workspaceProjects.length > 0) {
     const matchingProject = [...context.workspaceProjects]
       .sort((a, b) => b.prefix.length - a.prefix.length)
       .find(p => {
@@ -260,25 +257,22 @@ export function buildContextualUrl(href: string, context: UrlContext): string {
       });
 
     if (matchingProject) {
-      const targetPrefix = matchingProject.prefix === '/' ? '/' : matchingProject.prefix.replace(/\/$/, '') + '/';
-      let targetSubPath = href.substring(matchingProject.prefix === '/' ? 0 : matchingProject.prefix.length);
-      if (targetSubPath.startsWith('/')) targetSubPath = targetSubPath.substring(1);
-
+      const targetSubPath = href.substring(matchingProject.prefix === '/' ? 0 : matchingProject.prefix.length).replace(/^\//, '');
       const isCurrentProject = matchingProject.prefix === context.projectPrefix;
 
-      if (context.offline) {
-        let relPath = context.relativePathToRoot;
-        if (!isCurrentProject) {
-          const currentPfx = context.projectPrefix === '/' ? '' : context.projectPrefix.replace(/^\//, '').replace(/\/$/, '');
-          if (currentPfx) {
-            const levels = currentPfx.split('/').length;
-            relPath += '../'.repeat(levels);
-          }
-          const targetPfx = matchingProject.prefix === '/' ? '' : matchingProject.prefix.replace(/^\//, '').replace(/\/$/, '') + '/';
-          relPath += targetPfx;
+      let relPath = context.relativePathToRoot;
+      if (!isCurrentProject) {
+        const currentPfx = context.projectPrefix === '/' ? '' : context.projectPrefix.replace(/^\//, '').replace(/\/$/, '');
+        if (currentPfx) {
+          const levels = currentPfx.split('/').length;
+          relPath += '../'.repeat(levels);
         }
-        
-        let combined = relPath + targetSubPath;
+        const targetPfx = matchingProject.prefix === '/' ? '' : matchingProject.prefix.replace(/^\//, '').replace(/\/$/, '') + '/';
+        relPath += targetPfx;
+      }
+      
+      let combined = relPath + targetSubPath;
+      if (context.offline) {
         if (combined === '' || combined.endsWith('/')) {
           combined += 'index.html';
         } else if (!combined.endsWith('.html') && !combined.endsWith('.htm')) {
@@ -290,19 +284,8 @@ export function buildContextualUrl(href: string, context: UrlContext): string {
             combined += '/index.html';
           }
         }
-        return sanitizeUrl(combined + hash);
-      } else {
-        let workspaceBase = context.base;
-        const currentPfx = context.projectPrefix === '/' ? '' : context.projectPrefix.replace(/^\//, '').replace(/\/$/, '');
-        if (currentPfx && workspaceBase.endsWith(currentPfx + '/')) {
-          workspaceBase = workspaceBase.substring(0, workspaceBase.length - currentPfx.length - 1);
-        }
-        
-        const targetPfx = matchingProject.prefix === '/' ? '' : matchingProject.prefix.replace(/^\//, '').replace(/\/$/, '') + '/';
-        const targetBase = workspaceBase + targetPfx;
-        
-        return sanitizeUrl(targetBase + targetSubPath + hash);
       }
+      return sanitizeUrl(combined + hash);
     }
   }
 
@@ -345,12 +328,7 @@ export function buildContextualUrl(href: string, context: UrlContext): string {
   // (to preserve exact './' prefix formatting for root-level pages as expected by tests).
   let result = combinedPath + hash;
   if (!isPageRelative) {
-    if (context.base !== '/' && !context.offline) {
-      const basePrefix = context.base.endsWith('/') ? context.base : context.base + '/';
-      result = basePrefix + combinedPath + hash;
-    } else {
-      result = context.relativePathToRoot + combinedPath + hash;
-    }
+    result = context.relativePathToRoot + combinedPath + hash;
   } else if (context.relativePathToRoot === './') {
     result = './' + combinedPath + hash;
   }
@@ -484,18 +462,9 @@ export function createUrlContext(options: {
   const relativePathToRoot = options.relativePathToRoot || './';
   const base = options.base || '/';
   const offline = options.offline || false;
-  // Emit a <base href> tag whenever the site is served from a non-root
-  // subpath AND we're not generating for file:// browsing. We also emit
-  // root-relative asset hrefs (e.g. /beta-test/assets/main.css) rather than
-  // simple-relative — Chrome's HTML preloader fetches resources before the
-  // document's <base> is in effect, so simple-relative paths get resolved
-  // against the page URL and 404 on nested pages. Root-relative paths
-  // resolve correctly through every layer (preloader, browser, SPA).
-  const emitBase = base !== '/' && !offline;
-  // When emitBase is true, asset paths use root-relative with the deploy
-  // prefix (e.g. '/beta-test/assets/x'). When false, fall back to page-
-  // depth-aware paths via relativePathToRoot (dev/offline).
-  const assetBaseUrl = emitBase ? base : relativePathToRoot;
+  // Never emit <base href> tags or root-relative/absolute asset URLs. Keep everything relative so the site is self-contained.
+  const emitBase = false;
+  const assetBaseUrl = relativePathToRoot;
   return Object.freeze({
     relativePathToRoot,
     outputPrefix: options.outputPrefix || '',
@@ -506,7 +475,7 @@ export function createUrlContext(options: {
     emitBase,
     pathname: options.pathname,
     projectPrefix: options.projectPrefix || '',
-    workspaceProjects: options.workspaceProjects || [],
+    workspaceProjects: (options.workspaceProjects && options.workspaceProjects.length > 0) ? options.workspaceProjects : [{ prefix: '/', title: 'Root' }],
   });
 }
 
@@ -598,32 +567,68 @@ export function buildAbsoluteContextualUrl(
     return buildAbsoluteUrl(base, localePrefix, versionPrefix, pagePath);
   }
 
-  // Non-offline builds keep clean absolute URLs (HTTP servers and SEO).
-  if (!context.offline) {
-    return buildAbsoluteUrl(base, localePrefix, versionPrefix, pagePath);
+  // Calculate workspace base by stripping projectPrefix from context.base
+  let workspaceBase = context.base;
+  if (context.projectPrefix && context.projectPrefix !== '/') {
+    const normalizedBaseContext = context.base.replace(/\/?$/, '');
+    const normalizedProjPfx = context.projectPrefix.replace(/^\//, '').replace(/\/?$/, '');
+    if (normalizedProjPfx && normalizedBaseContext.endsWith(normalizedProjPfx)) {
+      workspaceBase = normalizedBaseContext.substring(0, normalizedBaseContext.length - normalizedProjPfx.length).replace(/\/?$/, '/');
+    }
   }
 
-  // Offline build: produce a file://-safe relative URL. We re-use
-  // `buildContextualUrl` so the trailing-/index.html logic stays in
-  // exactly one place. The base path is stripped so sub-path deploys
-  // don't double-prefix the relative URL.
+  // Strip the workspace base prefix from the absolute target if it's there.
   const normalizedBase = base.endsWith('/') ? base : base + '/';
   const absoluteTarget = normalizedBase + localePrefix + versionPrefix + pagePath;
-
-  // Strip the base prefix from the absolute target if it's there. The
-  // relative URL is rooted at the current page via context, so we only
-  // want the path *below* the base.
   let cleanPath = absoluteTarget;
-  if (context.base && context.base !== '/' && cleanPath.startsWith(context.base)) {
-    cleanPath = cleanPath.substring(context.base.length);
+  if (workspaceBase && workspaceBase !== '/' && cleanPath.startsWith(workspaceBase)) {
+    cleanPath = cleanPath.substring(workspaceBase.length);
     if (!cleanPath.startsWith('/')) {
       cleanPath = '/' + cleanPath;
     }
   }
 
-  // Delegate the offline index.html / relativePathToRoot work to the
-  // canonical function so behaviour stays consistent across paths.
-  return buildContextualUrl(cleanPath, context);
+  // Compute the relative URL from the current page to the target directly.
+  // cleanPath is workspace-root-relative (e.g., '/i18n/', '/semantic/', '/').
+  // We need to resolve this relative to the current page's position in the
+  // output tree, which includes locale/version/project depth.
+  //
+  // The current page's depth below the workspace root is determined by
+  // context.relativePathToRoot (for project root) plus the project prefix
+  // depth. For example, from site/i18n/de/v1/index.html:
+  //   relativePathToRoot = '../../'  (2 levels up to project root i18n/)
+  //   projectPrefix = '/i18n'        (1 level from workspace root to project)
+  //   total depth = 3 levels below workspace root
+
+  // Count levels from current page to workspace root
+  const projectPfxSegments = (context.projectPrefix && context.projectPrefix !== '/')
+    ? context.projectPrefix.replace(/^\//, '').replace(/\/$/, '').split('/').filter(Boolean).length
+    : 0;
+  const relRootSegments = context.relativePathToRoot
+    ? context.relativePathToRoot.split('/').filter(s => s === '..').length
+    : 0;
+  const totalDepth = relRootSegments + projectPfxSegments;
+  const toWorkspaceRoot = totalDepth > 0 ? '../'.repeat(totalDepth) : './';
+
+  // Build path from workspace root to target
+  let targetPath = cleanPath.replace(/^\//, '');
+
+  // Offline mode: ensure index.html suffix
+  if (context.offline) {
+    if (targetPath === '' || targetPath.endsWith('/')) {
+      targetPath += 'index.html';
+    } else if (!targetPath.endsWith('.html') && !targetPath.endsWith('.htm')) {
+      const lastSlash = targetPath.lastIndexOf('/');
+      const filename = lastSlash >= 0 ? targetPath.substring(lastSlash + 1) : targetPath;
+      const lastDot = filename.lastIndexOf('.');
+      const hasExt = lastDot > 0 && lastDot < filename.length - 1;
+      if (!hasExt) {
+        targetPath += '/index.html';
+      }
+    }
+  }
+
+  return sanitizeUrl(toWorkspaceRoot + targetPath);
 }
 
 /**
@@ -660,24 +665,8 @@ export function buildAbsoluteContextualUrl(
  */
 export function normaliseBaseTag(html: string, isOffline: boolean, siteRootAbs: string): string {
   // Strip every existing <base> tag (self-closing or with close, any attribute order)
-  // so the canonical decision below is the only one that survives.
   const BASE_TAG_RE = /<base\b[^>]*\/?>\s*/gi;
-  const cleaned = html.replace(BASE_TAG_RE, '');
-
-  // offline mode or root deploy → no <base> tag at all
-  if (isOffline || siteRootAbs === '/' || siteRootAbs === '') return cleaned;
-
-  // Insert the canonical <base> right after the closing </title> tag so
-  // it applies to every subsequent <link>/<script>/asset reference in
-  // the head. Falls back to right after <head> if no <title> is present.
-  const canonicalBase = `<base href="${escapeHtmlAttr(siteRootAbs)}">`;
-  if (cleaned.includes('</title>')) {
-    return cleaned.replace('</title>', `</title>\n    ${canonicalBase}`);
-  }
-  if (cleaned.includes('<head>')) {
-    return cleaned.replace('<head>', `<head>\n    ${canonicalBase}`);
-  }
-  return cleaned;
+  return html.replace(BASE_TAG_RE, '');
 }
 
 /** Minimal attribute-value escaper for the canonical <base href="...">. */
