@@ -30,6 +30,7 @@ declare const MiniSearch: any;
     let miniSearch: any = null;
     let isSemanticMode = false;  // Track if semantic search is active
     let isIndexLoaded = false;
+    let loadedIndexUrl = '';
     let selectedIndex = -1;
     const activeVersionFilters = new Set<string>();
     let globalAllVersions: string[] = [];
@@ -50,7 +51,8 @@ declare const MiniSearch: any;
             initial: searchModal.dataset.searchInitial || 'Type to start searching...',
             noResults: searchModal.dataset.searchNoResults || 'No results found.',
             error: searchModal.dataset.searchError || 'Failed to load search index.',
-            offline: searchModal.dataset.searchOffline || 'Search requires a web server. Open this site via http://localhost instead of file:// to enable search.'
+            offline: searchModal.dataset.searchOffline || 'Search requires a web server. Open this site via http://localhost instead of file:// to enable search.',
+            offlineBuild: searchModal.dataset.searchOfflineBuild || 'Search is disabled because these docs were built with the --offline flag. Rebuild the site without the flag to enable search.'
         };
 
         // Extract known locales from link hreflang tags
@@ -65,9 +67,13 @@ declare const MiniSearch: any;
         // If window.DOCMD_SITE_ROOT is set and is not the default '/', use it directly.
         // Otherwise, resolve the relative window.DOCMD_ROOT to deduce the absolute URL pathname.
         let siteBase = '/';
-        if (window.DOCMD_SITE_ROOT && window.DOCMD_SITE_ROOT !== '/') {
-            siteBase = window.DOCMD_SITE_ROOT;
-        } else {
+        let baseUrl = '';
+        let ROOT_PATH = '';
+        let searchIndexUrl = '';
+
+        function updateSearchPaths() {
+            // Always resolve the relative window.DOCMD_ROOT to deduce the absolute URL pathname dynamically.
+            // This ensures that when the site is running on a different domain or server, search indexes resolve correctly.
             const projectRootUrl = new URL(window.DOCMD_ROOT || './', window.location.href);
             let projectRootPath = projectRootUrl.pathname;
             if (!projectRootPath.endsWith('/')) projectRootPath += '/';
@@ -89,22 +95,25 @@ declare const MiniSearch: any;
             const baseSegments = segments.slice(0, checkIdx + 1);
             siteBase = '/' + baseSegments.join('/') + '/';
             if (siteBase === '//') siteBase = '/';
+            if (!siteBase.endsWith('/')) siteBase += '/';
+
+            baseUrl = new URL(siteBase, window.location.href).href;
+            ROOT_PATH = baseUrl;
+
+            // Determine the locale-specific search index path.
+            // Extract the locale prefix of the current URL based on our computed siteBase
+            const currentPath = window.location.pathname;
+            const pathAfterBase = currentPath.startsWith(siteBase) 
+                ? currentPath.slice(siteBase.length) 
+                : currentPath.replace(/^\//, '');
+            const firstSegment = pathAfterBase.split('/')[0];
+            
+            const localePrefix = knownLocales.has(firstSegment) ? firstSegment + '/' : '';
+            searchIndexUrl = baseUrl + '_docmd-search/' + localePrefix + 'search-index.json';
         }
-        if (!siteBase.endsWith('/')) siteBase += '/';
 
-        const baseUrl = new URL(siteBase, window.location.href).href;
-        const ROOT_PATH = baseUrl;
-
-        // Determine the locale-specific search index path.
-        // Extract the locale prefix of the current URL based on our computed siteBase
-        const currentPath = window.location.pathname;
-        const pathAfterBase = currentPath.startsWith(siteBase) 
-            ? currentPath.slice(siteBase.length) 
-            : currentPath.replace(/^\//, '');
-        const firstSegment = pathAfterBase.split('/')[0];
-        
-        const localePrefix = knownLocales.has(firstSegment) ? firstSegment + '/' : '';
-        const searchIndexUrl = baseUrl + '_docmd-search/' + localePrefix + 'search-index.json';
+        // Initialize paths once at startup
+        updateSearchPaths();
 
         function escapeHtml(str: any): string {
             const s = typeof str === 'string' ? str : String(str || '');
@@ -139,9 +148,23 @@ declare const MiniSearch: any;
 
         // 1. Open/Close Logic
         function openSearch() {
+            updateSearchPaths();
+
+            if (loadedIndexUrl !== searchIndexUrl) {
+                isIndexLoaded = false;
+                isSemanticMode = false;
+                miniSearch = null;
+                activeVersionFilters.clear();
+                const filterContainer = document.getElementById('docmd-global-search-filters');
+                if (filterContainer) filterContainer.remove();
+            }
+
             searchModal.style.display = 'flex';
             window.lastFocusedElement = document.activeElement as HTMLElement | null;
-            setTimeout(() => searchInput.focus(), 50);
+            const isInert = searchInput.hasAttribute('inert') || searchInput.closest('[inert]') !== null;
+            if (!isInert) {
+                setTimeout(() => searchInput.focus(), 50);
+            }
 
             if (!searchInput.value.trim()) {
                 const sanitized = `<div class="search-initial">${escapeHtml(strings.initial)}</div>`;
@@ -202,6 +225,12 @@ declare const MiniSearch: any;
             // security (CORS). Show a helpful message instead of the generic
             // "Failed to load" error. The user needs to serve the site via a
             // local HTTP server (e.g. `npx serve site`) for search to work.
+            if (searchModal.dataset.offlineBuild === 'true') {
+                const sanitized = `<div class="search-error">${escapeHtml(strings.offlineBuild)}</div>`;
+                searchResults.innerHTML = sanitized;
+                return;
+            }
+
             if (window.location.protocol === 'file:') {
                 const sanitized = `<div class="search-error">${escapeHtml(strings.offline)}</div>`;
                 searchResults.innerHTML = sanitized;
@@ -242,6 +271,7 @@ declare const MiniSearch: any;
 
                     isSemanticMode = true;
                     isIndexLoaded = true;
+                    loadedIndexUrl = searchIndexUrl;
                     if (searchInput.value.trim()) searchInput.dispatchEvent(new Event('input'));
                     return;
                 }
@@ -282,6 +312,7 @@ declare const MiniSearch: any;
                     renderGlobalFilters();
                 }
                 isIndexLoaded = true;
+                loadedIndexUrl = searchIndexUrl;
                 if (searchInput.value.trim()) searchInput.dispatchEvent(new Event('input'));
             } catch {
                 const sanitized = `<div class="search-error">${escapeHtml(strings.error)}</div>`;

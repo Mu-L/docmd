@@ -12,12 +12,6 @@
     <meta charset="UTF-8">
     <meta name="generator" content="docmd v<%= coreVersion %>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <%- themeInitScript %>
-    <style>
-      html {
-        visibility: hidden;
-      }
-    </style>
     <% let versionRoot='/' ; let siteRoot=relativePathToRoot; 
       const _locPfx = (typeof localePrefix !== 'undefined' && localePrefix) ? localePrefix : '';
       if (config.versions?.current && config._activeVersion?.id) {
@@ -42,6 +36,12 @@
       window.DOCMD_LOCALE = "<%= (locals.activeLocale && locals.activeLocale.id) ? locals.activeLocale.id : '' %>";
       window.DOCMD_DEFAULT_LOCALE = "<%= locals.defaultLocale || '' %>";
     </script>
+    <%- themeInitScript %>
+    <style>
+      html {
+        visibility: hidden;
+      }
+    </style>
     <title>
       <%= pageTitle %><% if (siteTitle && pageTitle !== siteTitle && !(frontmatter && frontmatter.titleAppend === false)) { %> : <%= siteTitle %><% } %>
     </title>

@@ -1,7 +1,7 @@
 {
   "name": "doc.md",
-  "version": "0.8.16",
-  "description": "Discontinued. Legacy wrapper for docmd. Please use @docmd/core.",
+  "version": "0.8.17",
+  "description": "Discontinued from 0.8.x, use @docmd/core instead.",
   "bin": {
     "docmd": "bin/docmd.js"
   },

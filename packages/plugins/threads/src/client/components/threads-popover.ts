@@ -1,8 +1,8 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
-import '@awesome.me/webawesome/dist/components/button/button.js';
-import '@awesome.me/webawesome/dist/components/icon/icon.js';
+import '@shoelace-style/shoelace/dist/components/button/button.js';
+import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 
 @customElement('threads-popover')
 export class ThreadsPopover extends LitElement {
@@ -18,12 +18,12 @@ export class ThreadsPopover extends LitElement {
       box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
       padding: 4px;
     }
-    wa-button::part(base) {
+    sl-button::part(base) {
       color: var(--tc-fg, hsl(0 0% 9%));
       font-weight: 500;
       font-size: 13px;
     }
-    wa-button::part(base):hover {
+    sl-button::part(base):hover {
       background: var(--tc-accent, hsl(0 0% 96.1%));
     }
   `;
@@ -46,10 +46,10 @@ export class ThreadsPopover extends LitElement {
         class="popover-content"
         style="position:fixed; left:${this.x}px; top:${this.y - 10}px; transform:translate(-50%, -100%);"
       >
-        <wa-button size="small" appearance="plain" @click=${this.addComment}>
-          <wa-icon slot="start" name="comment" variant="regular" label="Add comment"></wa-icon>
+        <sl-button size="small" variant="text" @click=${this.addComment}>
+          <sl-icon slot="prefix" name="chat-left-text" label="Add comment"></sl-icon>
           Add comment
-        </wa-button>
+        </sl-button>
       </div>
     `;
   }

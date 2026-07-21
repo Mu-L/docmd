@@ -12,7 +12,8 @@
       // All href generation goes through buildRelativeUrl() which delegates to the
       // centralized URL engine in @docmd/parser.
       function normalizePath(p) {
-        if (!p || p === '#') return '#';
+        if (p === undefined || p === null) return '#';
+        if (p === '' || p === '#') return p === '' ? '/' : '#';
         if (p.startsWith('http')) return p;
         let path = p.replace(/^(\.\/|\/)+/, '');
         path = path.replace(/(\/index\.html|index\.html|\/README\.md|README\.md|\.html|\.md)$/i, '');
@@ -38,7 +39,7 @@
         const itemNorm = normalizePath(item.path);
         const currentNorm = normalizePath(currentPagePath);
 
-        const isDummyLink = !item.path || item.path === '#' || item.path === 'javascript:;';
+        const isDummyLink = (item.path === undefined || item.path === null || item.path === '#' || item.path === 'javascript:;');
         const isActive = itemNorm === currentNorm;
         const isParentOfActive = !isActive && isChildActive(item, currentPagePath);
 
@@ -53,7 +54,7 @@
         if (hasChildren && isOpen) liClasses.push('expanded');
         if (hasChildren) liClasses.push('nav-group');
 
-        let href = item.path || '#';
+        let href = (item.path !== undefined && item.path !== null) ? item.path : '#';
         if (!isExternal && !isDummyLink) {
           href = buildRelativeUrl(href);
         }

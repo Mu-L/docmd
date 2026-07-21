@@ -11,9 +11,9 @@ import './threads-popover';
 import './threads-inline-editor';
 import './threads-identity';
 
-import '@awesome.me/webawesome/dist/components/dialog/dialog.js';
-import '@awesome.me/webawesome/dist/components/button/button.js';
-import '@awesome.me/webawesome/dist/components/icon/icon.js';
+import '@shoelace-style/shoelace/dist/components/dialog/dialog.js';
+import '@shoelace-style/shoelace/dist/components/button/button.js';
+import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 
 @customElement('threads-app')
 export class ThreadsApp extends LitElement {
@@ -124,8 +124,8 @@ export class ThreadsApp extends LitElement {
 
       const btn = document.createElement('button');
       btn.className = 'threads-new-thread-btn';
-      const icon = document.createElement('wa-icon');
-      icon.setAttribute('name', 'plus');
+      const icon = document.createElement('sl-icon');
+      icon.setAttribute('name', 'plus-lg');
       icon.setAttribute('style', 'font-size:14px;');
       btn.appendChild(icon);
       btn.appendChild(document.createTextNode(' ' + t('newThread')));
@@ -419,7 +419,7 @@ export class ThreadsApp extends LitElement {
         // Reply button
         const replyBtn = document.createElement('button');
         replyBtn.className = 'threads-comment-reply-btn';
-        const replyIcon = document.createElement('wa-icon');
+        const replyIcon = document.createElement('sl-icon');
         replyIcon.setAttribute('name', 'reply');
         replyIcon.setAttribute('style', 'font-size:13px;');
         replyBtn.appendChild(replyIcon);
@@ -434,7 +434,7 @@ export class ThreadsApp extends LitElement {
         // Delete button
         const delBtn = document.createElement('button');
         delBtn.className = 'threads-delete-btn';
-        const delIcon = document.createElement('wa-icon');
+        const delIcon = document.createElement('sl-icon');
         delIcon.setAttribute('name', 'trash');
         delIcon.setAttribute('style', 'font-size:13px;');
         delBtn.appendChild(delIcon);
@@ -470,8 +470,8 @@ export class ThreadsApp extends LitElement {
 
       const btn = document.createElement('button');
       btn.className = 'threads-new-comment-btn';
-      const plusIcon = document.createElement('wa-icon');
-      plusIcon.setAttribute('name', 'plus');
+      const plusIcon = document.createElement('sl-icon');
+      plusIcon.setAttribute('name', 'plus-lg');
       plusIcon.setAttribute('style', 'font-size:13px;');
       btn.appendChild(plusIcon);
       btn.appendChild(document.createTextNode(' ' + t('newComment')));
@@ -484,7 +484,7 @@ export class ThreadsApp extends LitElement {
       // Collapse/expand toggle button
       const toggleBtn = document.createElement('button');
       toggleBtn.className = 'threads-collapse-btn';
-      const upIcon = document.createElement('wa-icon');
+      const upIcon = document.createElement('sl-icon');
       upIcon.setAttribute('name', 'chevron-up');
       upIcon.setAttribute('style', 'font-size:14px;');
       toggleBtn.appendChild(upIcon);
@@ -493,7 +493,7 @@ export class ThreadsApp extends LitElement {
         e.stopPropagation();
         const isCollapsed = threadEl.classList.toggle('threads-thread--collapsed');
         toggleBtn.innerHTML = '';
-        const icon = document.createElement('wa-icon');
+        const icon = document.createElement('sl-icon');
         icon.setAttribute('name', isCollapsed ? 'chevron-down' : 'chevron-up');
         icon.setAttribute('style', 'font-size:14px;');
         toggleBtn.appendChild(icon);
@@ -690,9 +690,8 @@ export class ThreadsApp extends LitElement {
     const toggle = document.createElement('button');
     toggle.className = 'tc-sidebar-toggle';
     toggle.title = t('openThreadsPanel');
-    const toggleIcon = document.createElement('wa-icon');
-    toggleIcon.setAttribute('name', 'comments');
-    toggleIcon.setAttribute('variant', 'regular');
+    const toggleIcon = document.createElement('sl-icon');
+    toggleIcon.setAttribute('name', 'chat-dots');
     toggleIcon.setAttribute('style', 'font-size:16px;');
     toggle.appendChild(toggleIcon);
     toggle.addEventListener('click', () => {
@@ -723,8 +722,8 @@ export class ThreadsApp extends LitElement {
     cBtn.className = 'tc-panel__close-btn';
     cBtn.title = t('closePanel');
     cBtn.style.cssText = 'background:none;border:none;cursor:pointer;color:var(--tc-muted-fg);padding:4px;';
-    const closeIcon = document.createElement('wa-icon');
-    closeIcon.setAttribute('name', 'xmark');
+    const closeIcon = document.createElement('sl-icon');
+    closeIcon.setAttribute('name', 'x-lg');
     closeIcon.setAttribute('variant', 'solid');
     closeIcon.setAttribute('style', 'font-size:16px;');
     cBtn.appendChild(closeIcon);
@@ -781,9 +780,8 @@ export class ThreadsApp extends LitElement {
     const fab = document.createElement('button');
     fab.className = 'threads-fab';
     fab.title = t('jumpToThreads');
-    const fabIcon = document.createElement('wa-icon');
-    fabIcon.setAttribute('name', 'comments');
-    fabIcon.setAttribute('variant', 'regular');
+    const fabIcon = document.createElement('sl-icon');
+    fabIcon.setAttribute('name', 'chat-dots');
     fabIcon.setAttribute('style', 'font-size:20px;');
     fab.appendChild(fabIcon);
 
@@ -861,11 +859,11 @@ export class ThreadsApp extends LitElement {
         @add-comment=${this.handleAddComment}
       ></threads-popover>
 
-      <wa-dialog id="delete-dialog" label=${t('confirmDelete')} light-dismiss>
+      <sl-dialog id="delete-dialog" label=${t('confirmDelete')}>
         ${t('confirmDeleteMessage')} ${this.deleteTarget?.type ?? 'item'}?
-        <wa-button slot="footer" appearance="outlined" @click=${this.cancelDelete}>${t('cancel')}</wa-button>
-        <wa-button slot="footer" variant="danger" @click=${this.confirmDelete}>${t('delete')}</wa-button>
-      </wa-dialog>
+        <sl-button slot="footer" variant="neutral" @click=${this.cancelDelete}>${t('cancel')}</sl-button>
+        <sl-button slot="footer" variant="danger" @click=${this.confirmDelete}>${t('delete')}</sl-button>
+      </sl-dialog>
     `;
   }
 }

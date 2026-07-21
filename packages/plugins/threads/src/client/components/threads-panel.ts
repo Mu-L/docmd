@@ -3,10 +3,10 @@ import { customElement, property } from 'lit/decorators.js';
 import { t } from '../lib/i18n';
 import type { Thread, Anchor } from '../../types';
 
-import '@awesome.me/webawesome/dist/components/button/button.js';
-import '@awesome.me/webawesome/dist/components/badge/badge.js';
-import '@awesome.me/webawesome/dist/components/icon/icon.js';
-import '@awesome.me/webawesome/dist/components/divider/divider.js';
+import '@shoelace-style/shoelace/dist/components/button/button.js';
+import '@shoelace-style/shoelace/dist/components/badge/badge.js';
+import '@shoelace-style/shoelace/dist/components/icon/icon.js';
+import '@shoelace-style/shoelace/dist/components/divider/divider.js';
 
 import './threads-thread';
 import './threads-compose';
@@ -79,12 +79,11 @@ export class ThreadsPanel extends LitElement {
     const filtered = this.filteredThreads;
 
     const filterBtn = (f: FilterType, label: string) => html`
-      <wa-button
+      <sl-button
         size="small"
-        appearance=${this.filter === f ? 'filled' : 'plain'}
-        variant="neutral"
+        variant=${this.filter === f ? 'neutral' : 'text'}
         @click=${() => this.setFilter(f)}
-      >${label}</wa-button>
+      >${label}</sl-button>
     `;
 
     const quote = this.composing?.anchor?.quote ?? '';
@@ -97,15 +96,15 @@ export class ThreadsPanel extends LitElement {
         <div class="tc-panel__header">
           <div class="tc-panel__title">
             <span>${t('threads')}</span>
-            <wa-badge variant="neutral" pill>${this.threads.filter(t => !t.resolved).length}</wa-badge>
+            <sl-badge variant="neutral" pill>${this.threads.filter(t => !t.resolved).length}</sl-badge>
           </div>
           <div class="tc-panel__header-actions">
-            <wa-button size="small" appearance="plain" title=${t('addGeneralComment')} @click=${this.handleAddGeneralComment}>
-              <wa-icon name="plus" variant="solid"></wa-icon>
-            </wa-button>
-            <wa-button size="small" appearance="plain" title=${t('collapseSidebar')} @click=${this.handleClose}>
-              <wa-icon name="angles-right" variant="solid"></wa-icon>
-            </wa-button>
+            <sl-button size="small" variant="text" title=${t('addGeneralComment')} @click=${this.handleAddGeneralComment}>
+              <sl-icon name="plus-lg"></sl-icon>
+            </sl-button>
+            <sl-button size="small" variant="text" title=${t('collapseSidebar')} @click=${this.handleClose}>
+              <sl-icon name="chevron-double-right"></sl-icon>
+            </sl-button>
           </div>
         </div>
 
@@ -131,7 +130,7 @@ export class ThreadsPanel extends LitElement {
 
           ${filtered.length === 0 && !this.composing ? html`
             <div class="tc-empty">
-              <wa-icon name="comments" variant="regular" style="font-size:32px; opacity:0.4; margin-bottom:8px;"></wa-icon>
+              <sl-icon name="chat-dots" style="font-size:32px; opacity:0.4; margin-bottom:8px;"></sl-icon>
               ${t('noThreads')}<br>${t('selectTextToStart')}
             </div>
           ` : nothing}

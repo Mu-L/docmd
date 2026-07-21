@@ -33,7 +33,7 @@ const require = createRequire(import.meta.url);
 
 export const plugin: PluginDescriptor = {
   name: 'search',
-  version: '0.8.16',
+  version: '0.8.17',
   // `init` lets onConfigResolved run at config-parse time — that's where we
   // compute the single `searchConfig` object. The build pipeline reads
   // it from `config._searchConfig` everywhere else, so there's exactly
@@ -119,7 +119,7 @@ function buildSearchConfig(config: any): SearchConfig {
     catch { missingPeers.push(pkg); }
   }
   const peersInstalled = missingPeers.length === 0;
-  const semanticUsable = semanticRequested && docmdSearchInstalled && peersInstalled;
+  const semanticUsable = !config.offline && semanticRequested && docmdSearchInstalled && peersInstalled;
 
   return {
     enabled: isEnabled,
@@ -479,16 +479,29 @@ function maybeReportPeerStatus(tui: any, sc: SearchConfig, quiet: boolean): void
  * on `config._searchConfig` for the rest of the build pipeline. Also
  * emits the first-install peer-status TUI block if appropriate.
  */
-export function onConfigResolved(config: any): void {
+const fallbackTui = {
+  step: (msg: string, status?: string) => {
+    if (status === 'WAIT') console.log(`[docmd-search]   ${msg}...`);
+    else if (status === 'DONE') console.log(`[docmd-search]   ${msg}`);
+    else if (status === 'FAIL') console.log(`[docmd-search]   ${msg}`);
+    else console.log(`[docmd-search]   ${msg}`);
+  },
+  warn: (msg: string) => {
+    console.warn(`[docmd-search]   ${msg}`);
+  }
+};
+
+export async function onConfigResolved(config: any): Promise<void> {
+  const pluginOptions = (config.plugins && config.plugins.search) || {};
+  if (pluginOptions.semantic === true && !config.offline) {
+    try {
+      await ensureDocmdSearch(fallbackTui, false);
+    } catch { /* ignore */ }
+  }
+
   const sc = buildSearchConfig(config);
   config._searchConfig = sc;
   _searchState.lastConfig = sc;
-  // `tui` isn't passed to onConfigResolved (the lifecycle signature is
-  // `onConfigResolved(config: any): void`), so we don't emit the TUI
-  // block here — the equivalent emission happens inside `onPostBuild`
-  // where the TUI is in scope. We do, however, keep this hook for
-  // future extensions (e.g. warming the require cache, pre-computing
-  // derived values that the EJS partial needs at template time).
 }
 
 /**
@@ -560,6 +573,13 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
   const pluginOptions = (config.plugins && config.plugins.search) || {};
   const isEnabled = config.optionsMenu ? config.optionsMenu.components.search !== false : config.search !== false;
   if (!isEnabled) return;
+
+  if (config.offline) {
+    if (tui && !options?.quiet) {
+      tui.step('Search index generation disabled (offline build)', 'SKIP');
+    }
+    return;
+  }
 
   const showTui = tui && !options?.quiet;
 
@@ -1083,14 +1103,16 @@ export function generateScripts(config: any, options: any) {
   const semanticAttr = isSemantic ? ' data-semantic="true"' : '';
   const confidenceAttr = ` data-show-confidence="${showConfidence}"`;
   const filtersAttr = ` data-show-filters="${showFilters}"`;
+  const offlineBuildAttr = config.offline ? ' data-offline-build="true"' : '';
 
   const modalHtml = `
   <!-- Search Modal (Injected by @docmd/plugin-search) -->
-  <div id="docmd-search-modal" class="docmd-search-modal" style="display: none;"${semanticAttr}${confidenceAttr}${filtersAttr}
+  <div id="docmd-search-modal" class="docmd-search-modal" style="display: none;"${semanticAttr}${confidenceAttr}${filtersAttr}${offlineBuildAttr}
        data-search-placeholder="${escape(strings.searchPlaceholder || 'Search documentation...')}"
        data-search-no-results="${escape(strings.searchNoResults || 'No results found.')}"
        data-search-error="${escape(strings.searchError || 'Failed to load search index.')}"
        data-search-offline="${escape(strings.searchOffline || 'Search requires a web server. Open this site via http://localhost instead of file:// to enable search.')}"
+       data-search-offline-build="${escape(strings.searchOfflineBuild || 'Search is disabled because these docs were built with the --offline flag. Rebuild the site without the flag to enable search.')}"
        data-search-initial="${escape(strings.searchInitial || 'Type to start searching...')}"
        data-search-navigate="${escape(strings.searchNavigate || 'to navigate')}"
        data-search-escape="${escape(strings.searchEscape || 'to close')}">

@@ -1,4 +1,4 @@
-import '@awesome.me/webawesome/dist/styles/themes/default.css';
+import '@shoelace-style/shoelace/dist/themes/light.css';
 import './components/threads-app';
 
 function init(): void {

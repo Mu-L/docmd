@@ -2,8 +2,8 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { t } from '../lib/i18n';
 
-import '@awesome.me/webawesome/dist/components/button/button.js';
-import '@awesome.me/webawesome/dist/components/textarea/textarea.js';
+import '@shoelace-style/shoelace/dist/components/button/button.js';
+import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 
 @customElement('threads-inline-editor')
 export class ThreadsInlineEditor extends LitElement {
@@ -23,7 +23,7 @@ export class ThreadsInlineEditor extends LitElement {
     .editor-body {
       padding: 12px;
     }
-    wa-textarea {
+    sl-textarea {
       width: 100%;
     }
     .editor-footer {
@@ -32,7 +32,7 @@ export class ThreadsInlineEditor extends LitElement {
       align-items: center;
       padding: 8px 12px;
       border-top: 1px solid var(--tc-border, hsl(0 0% 89.8%));
-      background: var(--wa-color-surface-raised, hsl(0 0% 96.1%));
+      background: var(--sl-color-neutral-50, hsl(0 0% 96.1%));
     }
     .hint {
       font-size: 12px;
@@ -54,9 +54,9 @@ export class ThreadsInlineEditor extends LitElement {
   };
 
   private _attachNativeListener(): void {
-    const waTextarea = this.shadowRoot?.querySelector('wa-textarea');
-    if (!waTextarea) return;
-    const inner = (waTextarea as Element).shadowRoot?.querySelector('textarea') as HTMLTextAreaElement | null;
+    const slTextarea = this.shadowRoot?.querySelector('sl-textarea');
+    if (!slTextarea) return;
+    const inner = (slTextarea as Element).shadowRoot?.querySelector('textarea') as HTMLTextAreaElement | null;
     if (inner && inner !== this._innerTextarea) {
       if (this._innerTextarea) {
         this._innerTextarea.removeEventListener('input', this._nativeInputListener);
@@ -67,15 +67,15 @@ export class ThreadsInlineEditor extends LitElement {
   }
 
   override firstUpdated() {
-    // Attach native input listener and focus after wa-textarea upgrades its internal DOM.
+    // Attach native input listener and focus after sl-textarea upgrades its internal DOM.
     requestAnimationFrame(() => {
       this._attachNativeListener();
       const inner = this._innerTextarea;
       if (inner) {
         inner.focus();
       } else {
-        const waTextarea = this.shadowRoot?.querySelector('wa-textarea');
-        (waTextarea as unknown as HTMLElement)?.focus();
+        const slTextarea = this.shadowRoot?.querySelector('sl-textarea');
+        (slTextarea as unknown as HTMLElement)?.focus();
       }
     });
   }
@@ -99,8 +99,8 @@ export class ThreadsInlineEditor extends LitElement {
   private getTextareaValue(): string {
     // Read from native textarea as source of truth (handles Playwright fill())
     if (this._innerTextarea) return this._innerTextarea.value;
-    const waTextarea = this.shadowRoot?.querySelector('wa-textarea') as any;
-    if (waTextarea?.value !== undefined) return String(waTextarea.value);
+    const slTextarea = this.shadowRoot?.querySelector('sl-textarea') as any;
+    if (slTextarea?.value !== undefined) return String(slTextarea.value);
     return this.value;
   }
 
@@ -125,30 +125,30 @@ export class ThreadsInlineEditor extends LitElement {
     return html`
       <div class="editor">
         <div class="editor-body">
-          <wa-textarea
+          <sl-textarea
             placeholder=${t('writeComment')}
             .value=${this.value}
             rows="3"
             resize="vertical"
             size="small"
-            @wa-input=${this.handleInput}
+            @sl-input=${this.handleInput}
             @input=${this.handleInput}
             @keydown=${(e: KeyboardEvent) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) this.submit();
               if (e.key === 'Escape') this.cancel();
             }}
-          ></wa-textarea>
+          ></sl-textarea>
         </div>
         <div class="editor-footer">
           <span class="hint">${t('cmdEnterSubmit')}</span>
           <div class="actions">
-            <wa-button size="small" appearance="outlined" @click=${this.cancel}>${t('cancel')}</wa-button>
-            <wa-button
+            <sl-button size="small" variant="neutral" @click=${this.cancel}>${t('cancel')}</sl-button>
+            <sl-button
               size="small"
-              variant="brand"
+              variant="primary"
               ?disabled=${!this.value.trim() || this.submitting}
               @click=${this.submit}
-            >${this.submitting ? t('saving') : t('submit')}</wa-button>
+            >${this.submitting ? t('saving') : t('submit')}</sl-button>
           </div>
         </div>
       </div>

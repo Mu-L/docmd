@@ -160,17 +160,17 @@ export const test = runTestFile({
       const result = build(proj);
       assert(result.ok, 'URL-1e: workspace build with summer sub-site succeeds');
       const searchHtml = fs.readFileSync(path.join(proj, 'site/search/index.html'), 'utf8');
-      assert(/<base\s+href="\/search\/"\s*>/.test(searchHtml),
-        'URL-1e: /search/ sub-site has <base href="/search/"> (absolute, not relative)');
+      assert(!/<base\s+href=/.test(searchHtml),
+        'URL-1e: /search/ sub-site has no <base> tag (uses relative paths)');
       assert(/window\.DOCMD_SITE_ROOT\s*=\s*"\/search\/"/.test(searchHtml),
         'URL-1e: /search/ sub-site has window.DOCMD_SITE_ROOT = "/search/"');
-      assert(/href="\/search\/assets\//.test(searchHtml),
-        'URL-1e: /search/ sub-site uses root-relative /search/assets/ paths');
+      assert(/src="\.\/assets\//.test(searchHtml),
+        'URL-1e: /search/ sub-site uses page-relative assets paths');
     }
 
     // URL-1f: issue #175 — GitHub Pages project site (url has subpath,
-    // no explicit base). As of 0.8.15, docmd uses root-relative asset
-    // paths (/some-project/assets/...) with NO <base> tag. This fixes
+    // no explicit base). As of 0.8.15, docmd uses page-relative asset
+    // paths (./assets/...) with NO <base> tag. This fixes
     // the #175 regression where the <base> tag + depth-relative paths
     // broke nested-page asset resolution on subpath deploys.
     {
@@ -186,10 +186,10 @@ export const test = runTestFile({
       const result = build(proj);
       assert(result.ok, 'URL-1f: GH Pages subpath build succeeds');
       const html = fs.readFileSync(path.join(proj, 'site/index.html'), 'utf8');
-      assert(/<base\s+href="\/some-project\/"\s*>/.test(html),
-        'URL-1f: GH Pages subpath emits <base href="/some-project/">');
-      assert(/href="\/some-project\/assets\/css\/docmd-main\.css/.test(html),
-        'URL-1f: CSS link is root-relative (/some-project/assets/...)');
+      assert(!/<base\s+href=/.test(html),
+        'URL-1f: GH Pages subpath does NOT emit <base> tag');
+      assert(/href="\.\/assets\/css\/docmd-main\.css/.test(html),
+        'URL-1f: CSS link is page-relative (./assets/...)');
     }
 
     // URL-1g: issue #177 — --offline mode must NOT emit a <base> tag.
@@ -310,11 +310,11 @@ export const test = runTestFile({
       // directory index. The fix keeps the trailing slash.
       assert(searchHref && /\/search\/$/.test(searchHref.href),
         `URL-3b: project switcher link to /search sub-site ends with /search/ (got: ${searchHref?.href})`);
-      // The root project link should be "/" (no extra trailing slash
-      // for the root). buildAbsoluteUrl collapses the // form to //.
+      // The root project link should be relative "./" or absolute "/" (no extra trailing slash
+      // for the root).
       const mainHref = switcherHrefs.find(h => h.title === 'main');
-      assert(mainHref && /^\/+$/.test(mainHref.href),
-        `URL-3b: project switcher link to root project is "/" (got: ${mainHref?.href})`);
+      assert(mainHref && (mainHref.href === './' || /^\/+$/.test(mainHref.href)),
+        `URL-3b: project switcher link to root project is "./" or "/" (got: ${mainHref?.href})`);
     }
   }
 });

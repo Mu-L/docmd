@@ -16,17 +16,16 @@ function injectThemeCSS(): void {
   style.id = THEME_STYLE_ID;
   style.textContent = `
     :root {
-      --wa-color-surface-default: var(--tc-bg, hsl(0 0% 100%));
-      --wa-color-surface-raised: var(--tc-muted, hsl(0 0% 96.1%));
-      --wa-color-surface-border: var(--tc-border, hsl(0 0% 89.8%));
-      --wa-color-text-normal: var(--tc-fg, hsl(0 0% 9%));
-      --wa-color-text-quiet: var(--tc-muted-fg, hsl(0 0% 45.1%));
-      --wa-color-text-link: var(--tc-fg, hsl(0 0% 9%));
-      --wa-color-brand-fill-loud: var(--tc-fg, hsl(0 0% 9%));
-      --wa-color-brand-on-loud: hsl(0 0% 98%);
-      --wa-color-focus: var(--tc-ring, hsl(0 0% 9%));
-      --wa-font-sans: var(--tc-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
-      --wa-font-mono: var(--font-family-mono, SFMono-Regular, Consolas, Menlo, monospace);
+      --sl-color-neutral-0: var(--tc-bg, hsl(0 0% 100%));
+      --sl-color-neutral-50: var(--tc-muted, hsl(0 0% 96.1%));
+      --sl-color-neutral-200: var(--tc-border, hsl(0 0% 89.8%));
+      --sl-color-neutral-900: var(--tc-fg, hsl(0 0% 9%));
+      --sl-color-neutral-500: var(--tc-muted-fg, hsl(0 0% 45.1%));
+      --sl-color-primary-600: var(--tc-fg, hsl(0 0% 9%));
+      --sl-color-primary-50: var(--tc-muted, hsl(0 0% 96.1%));
+      --sl-focus-ring-color: var(--tc-ring, hsl(0 0% 9%));
+      --sl-font-sans: var(--tc-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+      --sl-font-mono: var(--font-family-mono, SFMono-Regular, Consolas, Menlo, monospace);
     }
 
     .threads-highlight {
@@ -59,8 +58,7 @@ function injectThemeCSS(): void {
 
 function syncDarkMode(): void {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  document.documentElement.classList.toggle('wa-dark', isDark);
-  document.documentElement.classList.toggle('wa-light', !isDark);
+  document.documentElement.classList.toggle('sl-theme-dark', isDark);
 }
 
 function observeThemeChanges(): void {

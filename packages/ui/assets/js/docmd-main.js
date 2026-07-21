@@ -130,13 +130,42 @@
     // Sticky Version Switching (Path Preservation)
     const versionLink = e.target.closest('.version-dropdown-item');
     if (versionLink) {
+      if (window.location.protocol === 'file:') {
+        return;
+      }
       e.preventDefault(); // Prevent default link behavior immediately
       const targetRoot = versionLink.dataset.versionRoot;
       // Use global fallback if undefined (e.g. on 404 pages)
-      const currentRoot = window.DOCMD_VERSION_ROOT || '/';
+      let currentRoot = window.DOCMD_VERSION_ROOT || '/';
 
       if (targetRoot && window.location.pathname) {
         let currentPath = window.location.pathname;
+
+        // Adjust currentRoot to include the runtime base path if it doesn't already
+        const runtimeBase = (window.DOCMD_BASE || '/').replace(/\/$/, '') + '/';
+        let adjustedBase = runtimeBase;
+        if (runtimeBase !== '/' && !currentPath.startsWith(runtimeBase)) {
+          const baseSegments = runtimeBase.split('/').filter(Boolean);
+          if (baseSegments.length === 1) {
+            adjustedBase = '/';
+          } else {
+            let suffix = '';
+            for (let i = baseSegments.length - 1; i >= 0; i--) {
+              const candidate = '/' + baseSegments.slice(i).join('/') + '/';
+              if (currentPath.indexOf(candidate) !== -1) {
+                suffix = candidate;
+                break;
+              }
+            }
+            if (suffix) {
+              adjustedBase = suffix;
+            }
+          }
+        }
+        if (currentRoot.startsWith('/')) {
+          currentRoot = adjustedBase + currentRoot.substring(1);
+        }
+
         const normCurrentRoot = currentRoot.endsWith('/') ? currentRoot : currentRoot + '/';
 
         // Only try sticky if we are actually INSIDE the known version path
@@ -228,6 +257,9 @@
     // Language Switcher Navigation (dynamic URL like version switching)
     const langLink = e.target.closest('.language-switcher-item');
     if (langLink) {
+      if (window.location.protocol === 'file:') {
+        return;
+      }
       e.preventDefault();
 
       // Skip disabled locales (no content available)
@@ -245,6 +277,26 @@
       var currentLocale = window.DOCMD_LOCALE || '';
       var defaultLocale = window.DOCMD_DEFAULT_LOCALE || '';
       var currentPath = window.location.pathname;
+
+      // Adjust base for local preview server / dev server if workspace base is missing
+      if (base !== '/' && !currentPath.startsWith(base)) {
+        const baseSegments = base.split('/').filter(Boolean);
+        if (baseSegments.length === 1) {
+          base = '/';
+        } else {
+          let suffix = '';
+          for (let i = baseSegments.length - 1; i >= 0; i--) {
+            const candidate = '/' + baseSegments.slice(i).join('/') + '/';
+            if (currentPath.indexOf(candidate) !== -1) {
+              suffix = candidate;
+              break;
+            }
+          }
+          if (suffix) {
+            base = suffix;
+          }
+        }
+      }
 
       // Strip base from current path
       if (base !== '/' && currentPath.startsWith(base)) {
@@ -734,6 +786,41 @@
         currentPath = new URL(finalUrl).pathname;
         document.title = doc.title;
 
+        // Sync head inline scripts to update DOCMD_ROOT, DOCMD_BASE, etc.
+        const inlineScripts = doc.head.querySelectorAll('script:not([src])');
+        inlineScripts.forEach(script => {
+          if (script.textContent && script.textContent.includes('window.DOCMD_')) {
+            const fn = new Function(script.textContent);
+            try { fn(); } catch(e) { console.error(e); }
+          }
+        });
+
+        // Re-resolve and apply theme based on new page configuration and user localStorage preference
+        const localValue = localStorage.getItem('docmd-theme');
+        const configValue = window.DOCMD_APPEARANCE || 'light';
+        let theme = (localValue === 'light' || localValue === 'dark') ? localValue : configValue;
+        if (theme === 'system') {
+          theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', theme);
+        document.body.setAttribute('data-theme', theme);
+
+        const lightLink = document.getElementById('hljs-light');
+        const darkLink = document.getElementById('hljs-dark');
+        if (lightLink && darkLink) {
+          lightLink.disabled = theme === 'dark';
+          darkLink.disabled = theme === 'light';
+        }
+
+        // Sync Search Modal Attributes to preserve DOM event listeners but sync settings/locale strings
+        const oldModal = document.getElementById('docmd-search-modal');
+        const newModal = doc.getElementById('docmd-search-modal');
+        if (oldModal && newModal) {
+          Array.from(newModal.attributes).forEach(attr => {
+            oldModal.setAttribute(attr.name, attr.value);
+          });
+        }
+
         // Sync Assets (CSS/Icons). The new page's <base href> already
         // resolved each new asset's URL when the browser parsed the fetched
         // HTML, so `newAsset.href` is already an absolute URL we can clone
@@ -742,10 +829,25 @@
         const assetSelectors = 'link[rel="stylesheet"], link[rel="icon"], link[rel="shortcut icon"]';
         const newAssets = Array.from(doc.head.querySelectorAll(assetSelectors));
 
+        // Resolve absolute URLs for all new assets
+        const newAssetHrefs = new Set();
+        newAssets.forEach(newAsset => {
+          const rawHref = newAsset.getAttribute('href');
+          const newHref = rawHref ? new URL(rawHref, data.finalUrl).href : newAsset.href;
+          newAssetHrefs.add(newHref);
+        });
+
+        // Drop any old assets that are not present in the new set
+        Array.from(document.head.querySelectorAll(assetSelectors)).forEach(oldAsset => {
+          if (!newAssetHrefs.has(oldAsset.href)) {
+            oldAsset.remove();
+          }
+        });
+
+        // Add new assets that are not already present
         newAssets.forEach((newAsset) => {
-          // `newAsset.href` returns the already-resolved absolute URL because
-          // the browser applied the source document's <base href>.
-          const newHref = newAsset.href;
+          const rawHref = newAsset.getAttribute('href');
+          const newHref = rawHref ? new URL(rawHref, data.finalUrl).href : newAsset.href;
           const alreadyPresent = Array.from(document.head.querySelectorAll(assetSelectors)).some(oldAsset => {
             return oldAsset.href === newHref;
           });
@@ -830,6 +932,9 @@
         const selectorsToSwap = [
           '.content-layout',
           '.docmd-breadcrumbs',
+          '.docmd-menubar',
+          '.docmd-banner',
+          '.docmd-cookie-banner',
           '.page-header .header-title',
           '.page-footer',
           '.footer-complete',

@@ -115,7 +115,7 @@ export const test = runTestFile({
       // Under url-utils logic, it should resolve to '/proj1/nested/subdir/page-b/' or relative '../page-b/'.
       // If we use buildRelativeUrl/buildContextualUrl with context.pathname, it rewrites to '/proj1/nested/subdir/page-b/'.
       const targetLink = hrefs.find(h => h.includes('page-b'));
-      assert(targetLink === '/proj1/nested/subdir/page-b/', `Workspace nested link: relative link resolves correctly to absolute subpath (got: ${targetLink})`);
+      assert(targetLink === '../../../nested/subdir/page-b/', `Workspace nested link: relative link resolves correctly to absolute subpath (got: ${targetLink})`);
     }
 
     // 3. Custom assets and links under subpath builds (e.g. GitHub Pages) (#175)
@@ -138,16 +138,16 @@ export const test = runTestFile({
       const indexHtml = fs.readFileSync(path.join(dir, 'site/index.html'), 'utf8');
       const { hrefs, srcs } = extractHrefsAndSrcs(indexHtml);
 
-      // Verify <base href="/some-project/"> is emitted
-      assert(indexHtml.includes('<base href="/some-project/">'), 'Subpath build: base tag matches the project subpath');
+      // Verify no base tag is emitted
+      assert(!indexHtml.includes('<base href='), 'Subpath build: no base tag emitted');
 
-      // Verify custom image resolves with the subpath prefix
+      // Verify custom image resolves relatively
       const imgsrc = srcs.find(s => s.includes('img.png'));
-      assert(imgsrc === '/some-project/assets/img.png', `Subpath build: custom root-relative image is rewritten with subpath prefix (got: ${imgsrc})`);
+      assert(imgsrc === './assets/img.png', `Subpath build: custom root-relative image is rewritten with page-relative prefix (got: ${imgsrc})`);
 
-      // Verify custom link resolves with the subpath prefix
+      // Verify custom link resolves relatively
       const targetLink = hrefs.find(h => h.includes('guide'));
-      assert(targetLink === '/some-project/guide/page/', `Subpath build: custom root-relative link is rewritten with subpath prefix (got: ${targetLink})`);
+      assert(targetLink === './guide/page/', `Subpath build: custom root-relative link is rewritten with page-relative prefix (got: ${targetLink})`);
     }
 
     // 4. Auto navigation clickable folders and index deduplication (#184 / i18n auto nav)

@@ -2,8 +2,8 @@ import { LitElement, html, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { t } from '../lib/i18n';
 
-import '@awesome.me/webawesome/dist/components/button/button.js';
-import '@awesome.me/webawesome/dist/components/textarea/textarea.js';
+import '@shoelace-style/shoelace/dist/components/button/button.js';
+import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 
 @customElement('threads-compose')
 export class ThreadsCompose extends LitElement {
@@ -15,7 +15,7 @@ export class ThreadsCompose extends LitElement {
   @property({ type: Boolean }) cancellable = false;
 
   private submit(): void {
-    const textarea = this.querySelector<HTMLElement & { value: string }>('wa-textarea');
+    const textarea = this.querySelector<HTMLElement & { value: string }>('sl-textarea');
     const value = textarea?.value?.trim();
     if (!value) return;
     this.dispatchEvent(new CustomEvent('compose-submit', {
@@ -37,17 +37,17 @@ export class ThreadsCompose extends LitElement {
         ${this.quote ? html`
           <div class="tc-compose__quote">${this.quote}</div>
         ` : nothing}
-        <wa-textarea
+        <sl-textarea
           placeholder=${this.placeholder || t('addComment')}
           rows="2"
           resize="vertical"
           size="small"
-        ></wa-textarea>
+        ></sl-textarea>
         <div class="tc-compose__actions">
           ${this.cancellable ? html`
-            <wa-button size="small" appearance="plain" @click=${this.cancel}>${t('cancel')}</wa-button>
+            <sl-button size="small" variant="text" @click=${this.cancel}>${t('cancel')}</sl-button>
           ` : nothing}
-          <wa-button size="small" variant="brand" @click=${this.submit}>${this.submitLabel || t('comment')}</wa-button>
+          <sl-button size="small" variant="primary" @click=${this.submit}>${this.submitLabel || t('comment')}</sl-button>
         </div>
       </div>
     `;

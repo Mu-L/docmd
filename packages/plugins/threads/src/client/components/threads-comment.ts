@@ -2,11 +2,11 @@ import { LitElement, html, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { Comment } from '../../types';
 
-import '@awesome.me/webawesome/dist/components/button/button.js';
-import '@awesome.me/webawesome/dist/components/textarea/textarea.js';
-import '@awesome.me/webawesome/dist/components/avatar/avatar.js';
-import '@awesome.me/webawesome/dist/components/icon/icon.js';
-import '@awesome.me/webawesome/dist/components/popover/popover.js';
+import '@shoelace-style/shoelace/dist/components/button/button.js';
+import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
+import '@shoelace-style/shoelace/dist/components/avatar/avatar.js';
+import '@shoelace-style/shoelace/dist/components/icon/icon.js';
+import '@shoelace-style/shoelace/dist/components/popup/popup.js';
 
 const EMOJI_PRESETS = ['\u{1F44D}', '\u{1F44E}', '\u{1F602}', '\u{1F389}', '\u{1F914}', '\u{2764}\u{FE0F}', '\u{1F680}', '\u{1F440}'];
 
@@ -24,6 +24,26 @@ export class ThreadsComment extends LitElement {
   private get isOwn(): boolean {
     return this.comment.author === this.currentAuthor;
   }
+
+  override connectedCallback() {
+    super.connectedCallback();
+    document.addEventListener('click', this.handleOutsideClick);
+  }
+
+  override disconnectedCallback() {
+    super.disconnectedCallback();
+    document.removeEventListener('click', this.handleOutsideClick);
+  }
+
+  private handleOutsideClick = (e: MouseEvent) => {
+    if (this.showEmojiPicker) {
+      const trigger = this.querySelector(`#emoji-trigger-${this.comment.id}`);
+      const popup = this.querySelector('sl-popup');
+      if (trigger && !e.composedPath().includes(trigger) && popup && !e.composedPath().includes(popup)) {
+        this.showEmojiPicker = false;
+      }
+    }
+  };
 
   private formatTime(dateStr: string): string {
     const d = new Date(dateStr);
@@ -47,7 +67,7 @@ export class ThreadsComment extends LitElement {
   }
 
   private saveEdit(): void {
-    const textarea = this.querySelector<HTMLElement & { value: string }>('wa-textarea');
+    const textarea = this.querySelector<HTMLElement & { value: string }>('sl-textarea');
     const value = textarea?.value?.trim();
     if (!value) return;
     this.dispatchEvent(new CustomEvent('comment-edit', {
@@ -80,15 +100,15 @@ export class ThreadsComment extends LitElement {
   private renderBody() {
     if (this.editing) {
       return html`
-        <wa-textarea
+        <sl-textarea
           value=${this.editValue}
           rows="3"
           size="small"
           @input=${(e: Event) => { this.editValue = (e.target as any).value; }}
-        ></wa-textarea>
+        ></sl-textarea>
         <div style="display:flex; gap:8px; margin-top:6px; justify-content:flex-end;">
-          <wa-button size="small" appearance="outlined" @click=${this.cancelEdit}>Cancel</wa-button>
-          <wa-button size="small" variant="brand" @click=${this.saveEdit}>Save</wa-button>
+          <sl-button size="small" variant="text" @click=${this.cancelEdit}>Cancel</sl-button>
+          <sl-button size="small" variant="primary" @click=${this.saveEdit}>Save</sl-button>
         </div>
       `;
     }
@@ -130,19 +150,19 @@ export class ThreadsComment extends LitElement {
     return html`
       <div class="tc-comment">
         <div class="tc-comment__header">
-          <wa-avatar initials="${c.author.charAt(0).toUpperCase()}" label="${c.author}" style="--size: 26px;"></wa-avatar>
+          <sl-avatar initials="${c.author.charAt(0).toUpperCase()}" label="${c.author}" style="--size: 26px;"></sl-avatar>
           <div class="tc-comment__meta">
             <span class="tc-comment__author">${c.author}</span>
             <span class="tc-comment__time">${this.formatTime(c.date)}${c.edited_at ? ' (edited)' : ''}</span>
           </div>
           ${this.isOwn && !this.editing ? html`
             <div class="tc-comment__menu">
-              <wa-button size="small" appearance="plain" title="Edit" @click=${this.startEdit}>
-                <wa-icon name="pen-to-square" variant="regular"></wa-icon>
-              </wa-button>
-              <wa-button size="small" appearance="plain" title="Delete" @click=${this.requestDelete}>
-                <wa-icon name="trash-can" variant="regular"></wa-icon>
-              </wa-button>
+              <sl-button size="small" variant="text" title="Edit" @click=${this.startEdit}>
+                <sl-icon name="pencil"></sl-icon>
+              </sl-button>
+              <sl-button size="small" variant="text" title="Delete" @click=${this.requestDelete}>
+                <sl-icon name="trash"></sl-icon>
+              </sl-button>
             </div>
           ` : nothing}
         </div>
@@ -163,27 +183,27 @@ export class ThreadsComment extends LitElement {
           ` : nothing}
 
           <div class="tc-comment__actions">
-            <wa-button
+            <sl-button
               id="emoji-trigger-${c.id}"
               size="small"
-              appearance="plain"
+              variant="text"
               title="Add reaction"
               @click=${this.toggleEmojiPicker}
             >
-              <wa-icon name="face-smile" variant="regular"></wa-icon>
-            </wa-button>
-            <wa-popover
+              <sl-icon name="emoji-smile"></sl-icon>
+            </sl-button>
+            <sl-popup
               placement="bottom-start"
               .anchor=${this.querySelector(`#emoji-trigger-${c.id}`)}
-              ?open=${this.showEmojiPicker}
-              @wa-hide=${() => { this.showEmojiPicker = false; }}
+              ?active=${this.showEmojiPicker}
+              style="z-index: 10;"
             >
-              <div style="display:flex; gap:2px; padding:4px 6px;">
+              <div style="display:flex; gap:2px; padding:4px 6px; background: var(--sl-color-neutral-0); border: 1px solid var(--sl-color-neutral-200); border-radius: var(--tc-radius); box-shadow: var(--sl-shadow-medium);">
                 ${EMOJI_PRESETS.map(e => html`
                   <button class="tc-emoji-picker__item" @click=${() => this.addReaction(e)}>${e}</button>
                 `)}
               </div>
-            </wa-popover>
+            </sl-popup>
           </div>
         </div>
       </div>
