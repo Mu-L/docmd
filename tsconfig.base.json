@@ -9,6 +9,12 @@
     "skipLibCheck": true,
     "declaration": true,
     "resolveJsonModule": true,
-    "types": ["node"]
+    "types": ["node"],
+    "typeRoots": [
+      "${configDir}/node_modules/@types",
+      "${configDir}/../node_modules/@types",
+      "${configDir}/../../node_modules/@types",
+      "${configDir}/../../../node_modules/@types"
+    ]
   }
 }
