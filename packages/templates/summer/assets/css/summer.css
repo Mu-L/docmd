@@ -172,6 +172,46 @@ html[data-theme="dark"] {
   --docmd-tooltip-border: #334155;
 }
 
+/* Bridge core + plugin variables to the summer palette.
+   Base UI partials (sidebar, search, options menu) and plugin CSS
+   (ai, git, openapi) read these; docmd-main.css is not loaded here. */
+:root {
+  --docmd-bg: var(--summer-bg);
+  --docmd-bg-card: var(--summer-surface);
+  --docmd-bg-secondary: var(--summer-surface-2);
+  --docmd-bg-header: var(--summer-surface-2);
+  --docmd-bg-input: var(--summer-surface-sunken);
+  --docmd-bg-bubble: var(--summer-surface-3);
+  --docmd-border: var(--summer-border);
+  --docmd-text: var(--summer-fg);
+  --docmd-text-muted: var(--summer-fg-muted);
+  --docmd-primary: var(--summer-accent);
+  --docmd-radius: var(--summer-radius);
+  --docmd-shadow: var(--summer-shadow-lg);
+  --docmd-font-sans: var(--summer-font-sans);
+
+  --bg-color: var(--summer-bg);
+  --bg-surface: var(--summer-surface);
+  --sidebar-bg: var(--summer-surface);
+  --sidebar-text: var(--summer-fg-soft);
+  --sidebar-link-active-bg: var(--summer-accent-soft);
+  --text-color: var(--summer-fg);
+  --text-muted: var(--summer-fg-muted);
+  --text-light: var(--summer-fg-faint);
+  --border-color: var(--summer-border);
+  --link-color: var(--summer-accent);
+  --accent-color: var(--summer-accent);
+  --code-bg: var(--summer-surface-sunken);
+  --font-family-sans: var(--summer-font-sans);
+  --font-family-mono: var(--summer-font-mono);
+  --radius-sm: var(--summer-radius-sm);
+  --radius-md: var(--summer-radius);
+  --radius-lg: var(--summer-radius-lg);
+  --shadow-sm: var(--summer-shadow-sm);
+  --shadow-md: var(--summer-shadow);
+  --shadow-lg: var(--summer-shadow-lg);
+}
+
 *,
 *::before,
 *::after {
