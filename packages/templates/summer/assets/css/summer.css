@@ -559,6 +559,10 @@ html[data-theme="dark"] .summer-logo__light {
   gap: 6px;
 }
 
+.summer-topbar__search-toggle {
+  display: none;
+}
+
 .summer-subnav {
   position: sticky;
   top: var(--summer-topbar-height);
@@ -2642,16 +2646,29 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution {
 
   .summer-topbar__inner {
     grid-template-columns: 1fr auto;
+    grid-template-rows: var(--summer-topbar-height);
+    height: auto;
     padding: 0 16px;
-    gap: 12px;
+    gap: 0 12px;
   }
 
   .summer-topbar__center {
     display: none;
   }
 
-  .summer-topbar__mobile {
+  .summer-topbar__mobile,
+  .summer-topbar__search-toggle {
     display: inline-flex;
+  }
+
+  body.summer-search-open .summer-topbar__center {
+    display: flex;
+    grid-column: 1 / -1;
+    padding-bottom: 10px;
+  }
+
+  body.summer-search-open .summer-search-container {
+    max-width: none;
   }
 
   .summer-subnav {
