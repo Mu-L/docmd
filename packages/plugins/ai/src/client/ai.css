@@ -721,3 +721,71 @@ body.summer-template .docmd-ai-send-btn:hover {
   margin-top: 0.15rem;
   opacity: 0.88;
 }
+
+/* --- Live Response Message Actions (Copy, Retry, Edit) --- */
+.docmd-ai-bubble-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--ai-border);
+}
+
+.docmd-ai-msg-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid var(--ai-border);
+  color: var(--ai-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.2;
+}
+
+.docmd-ai-msg-action-btn:hover {
+  background: var(--ai-bg-secondary);
+  color: var(--ai-text);
+  border-color: var(--ai-text-muted);
+}
+
+.docmd-ai-msg-action-btn.copied {
+  color: #10b981;
+  border-color: #10b981;
+}
+
+.docmd-ai-chat-bubble.user {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.docmd-ai-user-text {
+  flex: 1;
+}
+
+.docmd-ai-chat-bubble.user .edit-prompt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.docmd-ai-chat-bubble.user .edit-prompt-btn:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.25);
+}

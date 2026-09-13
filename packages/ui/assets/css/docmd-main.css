@@ -630,8 +630,8 @@ img {
     box-sizing: border-box;
 }
 
-.docmd-copy-raw-btn {
-    border-right: 1px solid var(--border-color);
+.docmd-copy-widgets .docmd-copy-btn + .docmd-copy-btn {
+    border-left: 1px solid var(--border-color);
 }
 
 .docmd-copy-btn:hover {

@@ -284,6 +284,51 @@ export class DocmdAIAssistantUI {
         return;
       }
 
+      // Assistant Message Copy Button
+      const msgCopyBtn = target.closest('.copy-msg-btn') as HTMLButtonElement | null;
+      if (msgCopyBtn) {
+        const bubble = msgCopyBtn.closest('.docmd-ai-chat-bubble');
+        const contentEl = bubble?.querySelector('.docmd-ai-content') || bubble;
+        const textToCopy = contentEl ? (contentEl.textContent || '').trim() : '';
+        if (textToCopy) {
+          const checkSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+          const copySvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>`;
+          navigator.clipboard.writeText(textToCopy).then(() => {
+            msgCopyBtn.classList.add('copied');
+            msgCopyBtn.innerHTML = `${checkSvg} <span>Copied</span>`;
+            setTimeout(() => {
+              msgCopyBtn.classList.remove('copied');
+              msgCopyBtn.innerHTML = `${copySvg} <span>Copy</span>`;
+            }, 2000);
+          }).catch((err) => {
+            console.error('[docmd-ai] Failed to copy message:', err);
+          });
+        }
+        return;
+      }
+
+      // Assistant Message Retry Button
+      const retryBtn = target.closest('.retry-msg-btn') as HTMLButtonElement | null;
+      if (retryBtn) {
+        if (this.isPending) return;
+        const prompt = retryBtn.getAttribute('data-prompt');
+        if (prompt) {
+          this.submitQuery(prompt);
+        }
+        return;
+      }
+
+      // User Message Edit/Reuse Prompt Button
+      const editPromptBtn = target.closest('.edit-prompt-btn') as HTMLButtonElement | null;
+      if (editPromptBtn) {
+        const prompt = editPromptBtn.getAttribute('data-prompt');
+        if (prompt && drawerInput) {
+          drawerInput.value = prompt;
+          drawerInput.focus();
+        }
+        return;
+      }
+
       if (target && target.classList.contains('docmd-ai-pill-btn')) {
         if (this.isPending) return;
         const prompt = target.getAttribute('data-prompt');
@@ -467,9 +512,11 @@ CRITICAL SCOPE & NAVIGATION RULES:
    - Use \`search_documentation\` first to identify the exact single page or section needed.
    - Only call \`read_documentation_page\` on that specific page when required to fetch precise code snippets or steps.
    - Keep answers clean, structured, and focused directly on what the user asked.
-6. STRICT FACTUALITY (ZERO FABRICATION):
+6. STRICT FACTUALITY & ARCHITECTURAL SYNTHESIS:
    - Ground all answers, configuration snippets, code examples, and commands strictly in verified facts retrieved from this documentation site.
-   - NEVER guess or fabricate non-existent keys, options, or parameters. If the documentation does not evidence a setting, state clearly what is verified and do not invent hypothetical configs.
+   - NEVER guess or fabricate non-existent keys, options, or parameters.
+   - When a user asks about a capability or concept that does not have a single dedicated configuration option (e.g. pinning an item, database authentication, etc.), explicitly explain that no dedicated setting exists for that exact query, explain the closest supported architectural mechanism or pattern (such as explicit navigation configuration via navigation.json or docmd.config.json, frontmatter, or project settings), and guide the user to the relevant documentation pages.
+   - Never return an empty response or silence. Always provide an informative, grounded answer to the user.
 7. VERSION FILTERING:
    - The \`search_documentation\` tool supports an optional \`version\` parameter. When the user asks about a specific version (e.g. v0.8.0), specify \`version\` to filter results strictly to that version branch.`;
 
@@ -479,18 +526,23 @@ CRITICAL CONSTRAINTS & BEHAVIORAL RULES:
 1. IDENTITY: Your name is "docmd assistant". You are an expert AI documentation assistant dedicated to "${siteTitle}". If asked who you are, state that you are docmd assistant, serving the documentation for "${siteTitle}".
 2. STRICT SCOPE & BOUNDARIES: Answer ONLY questions related to the software, tools, APIs, guides, and documentation provided on this site. Politely decline off-topic queries.
 3. PROFESSIONAL & CONCISE: Provide direct, succinct, and professional answers. Do NOT use excessive emojis (keep emojis to a minimum or none). Avoid conversational fluff, boilerplate apologies, or asking for permission. Get straight to the answer.
-4. TARGETED RETRIEVAL & MINIMAL TOKEN USAGE:
+4. STRICT FACTUALITY & ARCHITECTURAL SYNTHESIS:
+   - Ground all answers, configuration snippets, code examples, and commands strictly in verified facts retrieved from this documentation site.
+   - NEVER guess or fabricate non-existent keys, options, or parameters.
+   - If the documentation does not have an explicit dedicated setting matching the exact query, clearly state this, synthesize the closest supported mechanism or architectural pattern (such as explicit navigation in navigation.json or docmd.config.json, frontmatter, or project settings), and guide the user to relevant pages.
+   - Never return an empty response or silence. Always provide an informative, grounded answer.
+5. TARGETED RETRIEVAL & MINIMAL TOKEN USAGE:
    - Only retrieve what is strictly necessary. Never attempt to read the entire documentation or fetch excessive pages.
    - Use \`search_documentation\` first with targeted keywords to locate the exact page.
    - Only invoke \`read_documentation_page\` when you need specific code blocks or configuration details from that single page.
-5. TOOL SELECTION & EXECUTION:
+6. TOOL SELECTION & EXECUTION:
    - Use \`get_site_structure\` whenever you need structural inspection of available documentation versions, supported locales, or navigation trees.
    - Use \`search_documentation\` to search documentation content for specific technical terms, API parameters, error messages, or release notes. Keyword search is always active; pass clean, focused search terms for highest accuracy.
    - Use \`read_documentation_page\` when you need full section context or deep code examples.
-6. CLEAN WRITING & LIST FORMATTING:
+7. CLEAN WRITING & LIST FORMATTING:
    - Write cleanly and directly without artificial gaps, repeated quotes, or messy text breaks.
    - For lists, use standard numbered lists (1., 2., 3.) or bullet points (-). Do not leave blank lines between list items unless separating distinct multi-paragraph steps.
-7. HYPERLINKS & CITATIONS: Always include clickable Markdown hyperlinks \`[Page Title](path)\` in your response for referenced pages.`;
+8. HYPERLINKS & CITATIONS: Always include clickable Markdown hyperlinks \`[Page Title](path)\` in your response for referenced pages.`;
 
     const basePrompt = cfg.systemPrompt || defaultBasePrompt;
     return `${basePrompt}\n\n${workspaceContext}`;
@@ -953,9 +1005,11 @@ CRITICAL CONSTRAINTS & BEHAVIORAL RULES:
               if (msgs) msgs.scrollTop = msgs.scrollHeight;
             }
           },
-          onChunk: (chunk: string) => {
+          onChunk: (chunk: string, meta?: { replace?: boolean; turn?: number; isFinal?: boolean }) => {
             if (chunk) {
-              if (!accumulatedText) {
+              if (meta?.replace) {
+                accumulatedText = chunk;
+              } else if (!accumulatedText) {
                 accumulatedText = chunk;
               } else if (chunk.startsWith(accumulatedText)) {
                 accumulatedText = chunk;
@@ -983,7 +1037,30 @@ CRITICAL CONSTRAINTS & BEHAVIORAL RULES:
       if (statusWrap) {
         statusWrap.style.display = 'none';
       }
-      contentDiv.innerHTML = this.formatMarkdown(res.message || accumulatedText || 'No response generated.');
+      const fallbackMsg = text
+        ? `No documentation page in the retrieved results explicitly covers a dedicated setting for "${text}". You can explore the site navigation or search for related topics.`
+        : 'No response generated.';
+      const finalMsg = res?.message || accumulatedText || fallbackMsg;
+      contentDiv.innerHTML = this.formatMarkdown(finalMsg);
+
+      // Render response action buttons (Copy and Retry) when messageActions is enabled
+      const cfg = (window as any).__docmd_ai_config || {};
+      if (cfg.messageActions) {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'docmd-ai-bubble-actions';
+        actionsDiv.innerHTML = `
+          <button class="docmd-ai-msg-action-btn copy-msg-btn" title="Copy response">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>
+            <span>Copy</span>
+          </button>
+          <button class="docmd-ai-msg-action-btn retry-msg-btn" title="Retry prompt" data-prompt="${this.escapeHtml(text)}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+            <span>Retry</span>
+          </button>
+        `;
+        bubble.appendChild(actionsDiv);
+      }
+      if (msgs) msgs.scrollTop = msgs.scrollHeight;
     } catch (err: any) {
       const errMsg = err?.message || String(err || '');
       const isAuthOrConfigError = errMsg.includes('Domain Not Authorized') ||
@@ -1029,7 +1106,17 @@ CRITICAL CONSTRAINTS & BEHAVIORAL RULES:
     const msgs = document.getElementById('docmd-ai-messages');
     const div = document.createElement('div');
     div.className = `docmd-ai-chat-bubble ${sender}`;
-    div.innerHTML = sender === 'assistant' ? this.formatMarkdown(text) : this.escapeHtml(text);
+    if (sender === 'user') {
+      const cfg = (window as any).__docmd_ai_config || {};
+      const editBtnHtml = cfg.messageActions
+        ? `<button class="edit-prompt-btn" title="Edit and re-run prompt" data-prompt="${this.escapeHtml(text)}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </button>`
+        : '';
+      div.innerHTML = `<span class="docmd-ai-user-text">${this.escapeHtml(text)}</span>${editBtnHtml}`;
+    } else {
+      div.innerHTML = this.formatMarkdown(text);
+    }
     if (msgs) {
       msgs.appendChild(div);
       msgs.scrollTop = msgs.scrollHeight;

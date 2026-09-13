@@ -93,6 +93,9 @@ const expand = args.includes('--expand');
 // opening a PR (the test pipeline takes 60+ seconds on a warm cache).
 const skipTests = args.includes('--skip-tests') || args.includes('--fast');
 
+// --skip-audit skips dependency vulnerability scanning.
+const skipAudit = args.includes('--skip-audit');
+
 // Issue accumulator — populated by every section so a single trailing
 // "Issues" block can show the operator everything that needs fixing.
 const issues = [];
@@ -237,6 +240,24 @@ function runLint() {
 
     if (errors > 0) addIssue('error', 'Lint', `${errors} lint error(s)`, details);
     else if (warnings > 0) addIssue('warning', 'Lint', `${warnings} lint warning(s)`, details);
+}
+
+function runSecurityAudit() {
+    const s = startStep('Auditing dependencies for high/critical CVEs');
+    const result = run('pnpm audit --audit-level=high', { capture: true });
+
+    if (result.ok) {
+        finishStep(s);
+        addStat('Security Audit', '0 high/critical vulnerabilities', 'ok');
+    } else {
+        finishStep(s, 'fail', 'vulnerabilities detected');
+        addStat('Security Audit', 'high/critical CVEs found', 'fail');
+        const lines = (result.stdout || result.stderr || '').split('\n').filter(l => l.trim());
+        addIssue('error', 'Security Audit', 'High or critical dependency vulnerabilities detected', [
+            'run `pnpm audit` for full vulnerability advisory details',
+            ...lines.slice(0, 15)
+        ]);
+    }
 }
 
 function runTestStep(label, cmd, statLabel = label) {
@@ -493,7 +514,18 @@ section('Lint', C.cyan);
 runLint();
 footer(C.cyan);
 
-// Section 3: Build — required so tests have dist files to run against.
+// Section 3: Security Audit — scans monorepo dependencies for High/Critical CVEs
+section('Security Audit', C.blue);
+if (skipAudit) {
+    const s = startStep('Auditing dependencies for high/critical CVEs');
+    finishStep(s, 'done', 'skipped (--skip-audit)');
+    addStat('Security Audit', 'skipped (--skip-audit)', 'ok');
+} else {
+    runSecurityAudit();
+}
+footer(C.blue);
+
+// Section 4: Build — required so tests have dist files to run against.
 // `pnpm clean` (called in Setup) wipes every package's dist directory;
 // deps are already restored by Setup's install step.
 section('Build', C.cyan);

@@ -710,7 +710,10 @@
     // Intent-based Hover Prefetching
     document.addEventListener('mouseover', (e) => {
       const link = e.target.closest('.sidebar-nav a, .page-navigation a, .page-footer a, .main-content a');
-      if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+      if (!link) return;
+      const rawTarget = (link.getAttribute('target') || link.target || '').replace(/^["']|["']$/g, '');
+      const rel = link.getAttribute('rel') || '';
+      if (rawTarget === '_blank' || rel.includes('noopener') || link.hasAttribute('download')) return;
 
       const url = new URL(link.href).href;
       if (new URL(url).origin !== location.origin) return;
@@ -739,7 +742,10 @@
       if (e.target.closest('[data-spa-ignore], .language-switcher-item, .version-dropdown-item')) return;
 
       const link = e.target.closest('.sidebar-nav a, .page-navigation a, .page-footer a, .main-content a');
-      if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+      if (!link) return;
+      const rawTarget = (link.getAttribute('target') || link.target || '').replace(/^["']|["']$/g, '');
+      const rel = link.getAttribute('rel') || '';
+      if (rawTarget === '_blank' || rel.includes('noopener') || link.hasAttribute('download')) return;
 
       // Real <a class="nav-group"> links navigate normally via SPA. The
       // toggle handler above only prevents default for dummy <span>s and
@@ -1048,27 +1054,30 @@
     function setFocusMode(enabled) {
       if (enabled) {
         document.body.classList.add('focus-mode');
-        try { localStorage.setItem('docmd-focus-mode', 'true'); } catch (_) { }
+        try { localStorage.setItem('docmd-focus-mode', 'true'); } catch (_) { /* ignore */ }
       } else {
         document.body.classList.remove('focus-mode');
-        try { localStorage.setItem('docmd-focus-mode', 'false'); } catch (_) { }
+        try { localStorage.setItem('docmd-focus-mode', 'false'); } catch (_) { /* ignore */ }
       }
       try {
         window.dispatchEvent(new CustomEvent('docmd:focus-mode', { detail: { enabled } }));
-      } catch (_) { }
+      } catch (_) { /* ignore */ }
     }
 
     function toggleFocusMode() {
+      if (!document.querySelector('.focus-mode-toggle-button, .docmd-focus-toolbar')) return;
       const isCurrentlyFocus = document.body.classList.contains('focus-mode');
       setFocusMode(!isCurrentlyFocus);
     }
 
-    // Restore focus mode state if previously enabled
+    // Restore focus mode state if previously enabled and supported on this page
     try {
       if (localStorage.getItem('docmd-focus-mode') === 'true') {
-        document.body.classList.add('focus-mode');
+        if (document.querySelector('.focus-mode-toggle-button, .docmd-focus-toolbar')) {
+          document.body.classList.add('focus-mode');
+        }
       }
-    } catch (_) { }
+    } catch (_) { /* ignore */ }
 
     // Wire focus mode and print buttons via event delegation
     document.addEventListener('click', (e) => {

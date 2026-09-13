@@ -56,7 +56,7 @@ export async function preCountPages(config: any, CWD: string, targetFiles?: stri
         if (!isDefault && localeId) continue; // non-default locale: skip
         // Default locale: try the base dir directly (old versions without locale dirs)
         if (v && nativeFs.existsSync(baseSrcDir)) {
-          const files = await findFilesRecursive(baseSrcDir, ['.md', '.markdown', '.ejs']);
+          const files = await findFilesRecursive(baseSrcDir, ['.md', '.markdown', '.ejs'], config.exclude);
           total += files.length;
         }
         continue;
@@ -66,7 +66,7 @@ export async function preCountPages(config: any, CWD: string, targetFiles?: stri
       const scanDir = fallbackSrcDir || localeSrcDir;
       if (!nativeFs.existsSync(scanDir)) continue;
 
-      const files = await findFilesRecursive(scanDir, ['.md', '.markdown', '.ejs']);
+      const files = await findFilesRecursive(scanDir, ['.md', '.markdown', '.ejs'], config.exclude);
       total += files.length;
     }
   }

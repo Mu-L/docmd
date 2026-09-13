@@ -31,17 +31,145 @@ const COPYRIGHT_BANNER = `/*!
  * License: MIT
  */`;
 
-export async function findFilesRecursive(dir: string, extensions: string[]): Promise<string[]> {
+/**
+ * Cache for parsed .gitignore patterns per root directory.
+ */
+const _gitignoreCache = new Map<string, string[]>();
+
+/**
+ * Read and parse .gitignore files up the directory tree from startDir.
+ */
+function getGitignorePatterns(startDir: string): string[] {
+  const root = path.resolve(startDir);
+  if (_gitignoreCache.has(root)) {
+    return _gitignoreCache.get(root)!;
+  }
+
+  const patterns: string[] = [];
+  const seenFiles = new Set<string>();
+  let current: string | null = root;
+  while (current) {
+    const gitignorePath = path.join(current, '.gitignore');
+    if (!seenFiles.has(gitignorePath)) {
+      seenFiles.add(gitignorePath);
+      try {
+        if (nativeFs.existsSync(gitignorePath)) {
+          const content = nativeFs.readFileSync(gitignorePath, 'utf8');
+          for (const line of content.split(/\r?\n/)) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith('#')) continue;
+            patterns.push(trimmed);
+          }
+        }
+      } catch {
+        // Ignore read errors
+      }
+    }
+    const parent = path.dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+
+  // Also check process.cwd() if not reached
+  const cwdGitignore = path.join(process.cwd(), '.gitignore');
+  if (!seenFiles.has(cwdGitignore) && nativeFs.existsSync(cwdGitignore)) {
+    try {
+      const content = nativeFs.readFileSync(cwdGitignore, 'utf8');
+      for (const line of content.split(/\r?\n/)) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) continue;
+        patterns.push(trimmed);
+      }
+    } catch {
+      // Ignore read errors
+    }
+  }
+
+  _gitignoreCache.set(root, patterns);
+  return patterns;
+}
+
+/**
+ * Check if a file or directory matches gitignore / exclude patterns.
+ */
+function isExcludedPath(fullPath: string, name: string, patterns: string[]): boolean {
+  if (patterns.length === 0) return false;
+  const normalizedPath = fullPath.replace(/\\/g, '/');
+
+  for (const pat of patterns) {
+    const cleanPat = pat.replace(/^\/+|\/+$/g, '');
+    if (!cleanPat) continue;
+
+    // Exact name match (e.g. 'drafts' or 'secret.md')
+    if (name === cleanPat) return true;
+
+    // Suffix wildcard (e.g. '*.tmp.md' or '*.draft')
+    if (cleanPat.startsWith('*.')) {
+      const ext = cleanPat.slice(1);
+      if (name.endsWith(ext)) return true;
+    }
+
+    // Prefix wildcard (e.g. 'draft-*')
+    if (cleanPat.endsWith('*') && !cleanPat.includes('/')) {
+      const prefix = cleanPat.slice(0, -1);
+      if (name.startsWith(prefix)) return true;
+    }
+
+    // Directory segment match (e.g. '/drafts/' or end of path)
+    if (normalizedPath.includes(`/${cleanPat}/`) || normalizedPath.endsWith(`/${cleanPat}`)) {
+      return true;
+    }
+
+    // General glob wildcard match
+    if (cleanPat.includes('*')) {
+      try {
+        const regexStr = cleanPat
+          .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+          .replace(/\*\*/g, '.*')
+          .replace(/\*/g, '[^/]*');
+        const re = new RegExp(`(^|/)${regexStr}(/|$)`);
+        if (re.test(normalizedPath) || re.test(name)) return true;
+      } catch {
+        // Ignore regex failure
+      }
+    }
+  }
+  return false;
+}
+
+export async function findFilesRecursive(
+  dir: string,
+  extensions: string[],
+  extraExclude: string[] = []
+): Promise<string[]> {
   let files: string[] = [];
   if (!await fs.exists(dir)) return [];
+
+  const gitignorePatterns = getGitignorePatterns(dir);
+  const allExcludes = [...extraExclude, ...gitignorePatterns];
+
   const items = await nativeFs.promises.readdir(dir, { withFileTypes: true });
   for (const item of items) {
-    // Explicitly ignore system files, git, and node_modules to prevent duplicate ID crashes
-    if (item.name === 'node_modules' || item.name.startsWith('.') || item.name === 'site') continue;
+    // Explicitly ignore system files, git, node_modules, and standard build/temp dirs
+    if (
+      item.name === 'node_modules' ||
+      item.name.startsWith('.') ||
+      item.name === 'site' ||
+      item.name === 'dist' ||
+      item.name === '_docmd-search'
+    ) {
+      continue;
+    }
 
     const fullPath = path.join(dir, item.name);
+
+    // Filter out items matching .gitignore or user-configured exclude patterns (Issue #226)
+    if (isExcludedPath(fullPath, item.name, allExcludes)) {
+      continue;
+    }
+
     if (item.isDirectory()) {
-      files = files.concat(await findFilesRecursive(fullPath, extensions));
+      files = files.concat(await findFilesRecursive(fullPath, extensions, extraExclude));
     } else if (item.isFile()) {
       if (!extensions || extensions.includes(path.extname(item.name))) {
         files.push(fullPath);

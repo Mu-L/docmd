@@ -115,10 +115,30 @@
   data-default-collapsed="<%= sidebarConfig?.defaultCollapsed === true %>"<% if (locals.sourceFile) { %> data-source-file="<%= sourceFile %>"<% } %>>
   <a href="#main-content" class="skip-link"><%= typeof t === 'function' ? t('skipToContent') : 'Skip to content' %></a>
 
+  <%
+    const _isFocusEnabled = !!(locals.config && (
+      config.layout?.focusMode === true ||
+      config.focusMode === true ||
+      config.layout?.optionsMenu?.components?.focusMode === true ||
+      config.optionsMenu?.components?.focusMode === true ||
+      (locals.optionsMenu && optionsMenu.components?.focusMode === true)
+    ));
+    const _isPrintEnabled = !!(locals.config && (
+      config.layout?.print === true ||
+      config.print === true ||
+      config.layout?.copyWidgets?.print === true ||
+      config.layout?.optionsMenu?.components?.print === true ||
+      config.optionsMenu?.components?.print === true ||
+      (locals.optionsMenu && optionsMenu.components?.print === true)
+    ));
+  %>
+  <% if (_isFocusEnabled) { %>
   <div class="docmd-focus-toolbar" id="docmd-focus-toolbar" aria-label="Focus mode controls">
+    <% if (_isPrintEnabled) { %>
     <button class="docmd-focus-btn print-button" type="button" aria-label="Print" title="Print (⌘P)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect width="12" height="8" x="6" y="14"></rect></svg>
     </button>
+    <% } %>
     <button class="docmd-focus-btn theme-toggle-button" type="button" data-summer-theme-toggle aria-label="Toggle theme" title="Toggle theme">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>
     </button>
@@ -126,6 +146,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline><line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
     </button>
   </div>
+  <% } %>
 
   <%# ─────────────────────────────────────────────────────────────
       Optional banner (data-docmd-banner is what docmd-main.js's
@@ -216,19 +237,13 @@
       <%# RIGHT — Action icons (theme, language, sponsor, github) %>
       <div class="summer-topbar__right">
         <% const _om = locals.optionsMenu; %>
-        <% if (!_om || _om.components?.print !== false) { %>
-          <button class="summer-iconbtn print-button" type="button" aria-label="Print" title="Print (⌘P)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect width="12" height="8" x="6" y="14"></rect></svg>
-          </button>
-        <% } %>
-
         <% if (!_om || _om.components?.themeSwitch !== false) { %>
           <button class="summer-iconbtn theme-toggle-button" type="button" data-summer-theme-toggle aria-label="Toggle theme" title="Toggle theme">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>
           </button>
         <% } %>
 
-        <% if (!_om || _om.components?.focusMode !== false) { %>
+        <% if (_isFocusEnabled) { %>
           <button class="summer-iconbtn focus-mode-toggle-button" type="button" aria-label="Focus mode" title="Focus mode (Alt+F)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
           </button>
@@ -309,7 +324,7 @@
               </button>
               <div class="summer-subnav__menu" role="menu">
                 <% (item.items || []).forEach(sub => { %>
-                  <a href="<%= sub.external ? (sub.url || '#') : buildRelativeUrl(sub.url || sub.path || '#') %>" class="summer-subnav__menuitem" role="menuitem" <%= sub.external ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
+                  <a href="<%= sub.external ? (sub.url || '#') : buildRelativeUrl(sub.url || sub.path || '#') %>" class="summer-subnav__menuitem" role="menuitem" <%- sub.external ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
                     <% if (sub.icon) { %><span class="summer-subnav__menuitem-icon"><%- renderIcon(sub.icon) %></span><% } %>
                     <span><%= sub.text || sub.title %></span>
                     <% if (sub.description) { %><span class="summer-subnav__menuitem-desc"><%= sub.description %></span><% } %>
@@ -319,7 +334,7 @@
             </div>
           <% } else { %>
             <% const _active = _isActive(item); const _href = _itemHref(item); const _ext = !!item.external; %>
-            <a href="<%= _href %>" class="summer-subnav__tab<%= _active ? ' active' : '' %>" <%= _ext ? 'target="_blank" rel="noopener noreferrer"' : '' %><%= _active ? ' aria-current="page"' : '' %>>
+            <a href="<%= _href %>" class="summer-subnav__tab<%= _active ? ' active' : '' %>" <%- _ext ? 'target="_blank" rel="noopener noreferrer"' : '' %><%= _active ? ' aria-current="page"' : '' %>>
               <% if (item.icon) { %><span class="summer-subnav__tab-icon"><%- renderIcon(item.icon) %></span><% } %>
               <span><%= item.text || item.title || '' %></span>
               <% if (_ext) { %><span class="summer-subnav__tab-chevron">↗</span><% } %>
@@ -342,7 +357,7 @@
                 </button>
                 <div class="summer-subnav__menu" role="menu">
                   <% (item.items || []).forEach(sub => { %>
-                    <a href="<%= sub.external ? (sub.url || '#') : buildRelativeUrl(sub.url || sub.path || '#') %>" class="summer-subnav__menuitem" role="menuitem" <%= sub.external ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
+                    <a href="<%= sub.external ? (sub.url || '#') : buildRelativeUrl(sub.url || sub.path || '#') %>" class="summer-subnav__menuitem" role="menuitem" <%- sub.external ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
                       <% if (sub.icon) { %><span class="summer-subnav__menuitem-icon"><%- renderIcon(sub.icon) %></span><% } %>
                       <span><%= sub.text || sub.title %></span>
                     </a>
@@ -351,7 +366,7 @@
               </div>
             <% } else { %>
               <% const _active = _isActive(item); const _href = _itemHref(item); const _ext = !!item.external; %>
-              <a href="<%= _href %>" class="summer-subnav__tab<%= _active ? ' active' : '' %>" <%= _ext ? 'target="_blank" rel="noopener noreferrer"' : '' %><%= _active ? ' aria-current="page"' : '' %>>
+              <a href="<%= _href %>" class="summer-subnav__tab<%= _active ? ' active' : '' %>" <%- _ext ? 'target="_blank" rel="noopener noreferrer"' : '' %><%= _active ? ' aria-current="page"' : '' %>>
                 <% if (item.icon) { %><span class="summer-subnav__tab-icon"><%- renderIcon(item.icon) %></span><% } %>
                 <span><%= item.text || item.title || '' %></span>
                 <% if (_ext) { %><span class="summer-subnav__tab-chevron">↗</span><% } %>
@@ -446,16 +461,23 @@
             </div>
 
             <div class="summer-copy-widgets">
-              <% if (config.theme?.copyWidgets?.raw !== false) { %>
+              <% const _copyWidgetsConfig = config.layout?.copyWidgets || config.theme?.copyWidgets; %>
+              <% if (_copyWidgetsConfig?.enabled !== false && _copyWidgetsConfig?.raw !== false) { %>
                 <button class="summer-copy-btn docmd-copy-raw-btn" type="button" data-copied="<%= typeof t === 'function' ? t('copiedToClipboard') : 'Copied!' %>" title="<%= typeof t === 'function' ? t('copyMarkdown') : 'Copy page as Markdown' %>" aria-label="<%= typeof t === 'function' ? t('copyMarkdown') : 'Copy Markdown' %>">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                   <span><%= typeof t === 'function' ? t('copyMarkdown') : 'Copy page' %></span>
                 </button>
               <% } %>
-              <% if (config.theme?.copyWidgets?.context !== false) { %>
+              <% if (_copyWidgetsConfig?.enabled !== false && _copyWidgetsConfig?.context !== false) { %>
                 <button class="summer-copy-btn docmd-copy-context-btn" type="button" data-copied="<%= typeof t === 'function' ? t('copiedToClipboard') : 'Copied!' %>" title="<%= typeof t === 'function' ? t('copyContext') : 'Copy page + context for AI' %>" aria-label="<%= typeof t === 'function' ? t('copyContext') : 'Copy Context' %>">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                   <span><%= typeof t === 'function' ? t('copyContext') : 'Copy context' %></span>
+                </button>
+              <% } %>
+              <% if (_isPrintEnabled) { %>
+                <button class="summer-copy-btn print-button" type="button" title="<%= typeof t === 'function' ? t('print') : 'Print' %>" aria-label="<%= typeof t === 'function' ? t('print') : 'Print' %>">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect width="12" height="8" x="6" y="14"></rect></svg>
+                  <span><%= typeof t === 'function' ? t('print') : 'Print' %></span>
                 </button>
               <% } %>
             </div>
@@ -623,7 +645,7 @@
             <h4 class="summer-footer__col-title"><%= col.title %></h4>
             <ul>
               <% (col.links || []).forEach(link => { %>
-                <li><a href="<%= link.external ? (link.url || '#') : buildRelativeUrl(link.url || '#') %>" <%= link.external ? 'target="_blank" rel="noopener noreferrer"' : '' %>><%= link.text %></a></li>
+                <li><a href="<%= link.external ? (link.url || '#') : buildRelativeUrl(link.url || '#') %>" <%- link.external ? 'target="_blank" rel="noopener noreferrer"' : '' %>><%= link.text %></a></li>
               <% }) %>
             </ul>
           </div>

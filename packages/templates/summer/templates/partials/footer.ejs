@@ -31,7 +31,7 @@
           <h4 class="summer-footer__col-title"><%= typeof t === 'function' ? t(col.title) : col.title %></h4>
           <ul>
             <% (col.links || []).forEach(link => { %>
-              <li><a href="<%= link.external ? (link.url || '#') : buildRelativeUrl(link.url || '#') %>" <%= link.external ? 'target="_blank" rel="noopener noreferrer"' : '' %>><%= typeof t === 'function' ? t(link.text) : link.text %></a></li>
+              <li><a href="<%= link.external ? (link.url || '#') : buildRelativeUrl(link.url || '#') %>" <%- link.external ? 'target="_blank" rel="noopener noreferrer"' : '' %>><%= typeof t === 'function' ? t(link.text) : link.text %></a></li>
             <% }) %>
           </ul>
         </div>
