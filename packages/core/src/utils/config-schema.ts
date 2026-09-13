@@ -126,14 +126,6 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
     }
 
     const _userSetBaseExplicitly = userConfig.base !== undefined || !!process.env.DOCMD_PROJECT_PREFIX;
-    // Top-level QoL defaults — opt out by setting `false`.
-    if (config.pageNavigation === undefined) config.pageNavigation = true;
-    if (config.copyCode === undefined) config.copyCode = true;
-    if (config.autoTitleFromH1 === undefined) config.autoTitleFromH1 = true;
-    // autoNav: when true (default), docmd auto-generates navigation from the
-    // source tree if the user provides no navigation, an empty navigation
-    // array, or no navigation.json. Set false to keep navigation empty.
-    if (config.autoNav === undefined) config.autoNav = true;
 
     // --- 1.5 Security defaults ---
     // Controls how the markdown parser handles raw HTML in user content.
@@ -141,16 +133,24 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
     //   'escape' - raw HTML is HTML-escaped and shown as text
     //   'strip'  - raw HTML blocks are removed from the rendered output
     const VALID_HTML_POLICIES = new Set(['allow', 'escape', 'strip']);
-    const userHtmlPolicy = config.security && config.security.html;
+    const userHtmlPolicy = (config.security && (config.security.html || config.security.htmlPolicy)) || config.htmlPolicy || config.htmlSecurity;
     config.security = {
         html: VALID_HTML_POLICIES.has(userHtmlPolicy) ? userHtmlPolicy : 'allow',
+        ...(typeof config.security === 'object' ? config.security : {})
     };
+    config.security.html = VALID_HTML_POLICIES.has(userHtmlPolicy) ? userHtmlPolicy : 'allow';
+    config.htmlPolicy = config.security.html;
 
     // Failsafe: Keep legacy keys attached for older plugins (SEO, Sitemap) to prevent breakage during transition.
     config.siteTitle = config.title;
     config.siteUrl = config.url;
     config.srcDir = config.src;
     config.outputDir = config.out;
+
+    // --- Exclude / Ignore Patterns (Issue #226) ---
+    config.exclude = Array.isArray(config.exclude)
+      ? config.exclude.filter((x: any) => typeof x === 'string' && x.trim().length > 0)
+      : (typeof config.exclude === 'string' && config.exclude.trim() ? [config.exclude.trim()] : []);
 
     // --- Logo Normalization
     if (typeof config.logo === 'string') {
@@ -161,14 +161,89 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
         };
     }
 
-    // --- 2. Layout Structure (V2 Schema) ---
+    // --- 2. Layout Structure (V2/V3 Schema) ---
     const userLayout = config.layout || {};
+
+    // Top-level QoL defaults — opt out by setting `false`.
+    const resolvedPageNav = userLayout.pageNavigation !== undefined ? userLayout.pageNavigation : config.pageNavigation;
+    config.pageNavigation = resolvedPageNav === undefined ? true : !!resolvedPageNav;
+
+    const resolvedCopyCode = userLayout.copyCode !== undefined ? userLayout.copyCode : config.copyCode;
+    config.copyCode = resolvedCopyCode === undefined ? true : !!resolvedCopyCode;
+
+    if (config.autoTitleFromH1 === undefined) config.autoTitleFromH1 = true;
+    if (config.autoNav === undefined) config.autoNav = true;
+
+    // Resolve focusMode (DISABLED by default)
+    // Fallback order:
+    // 1. userLayout.focusMode
+    // 2. userConfig.focusMode
+    // 3. optionsMenu.components.focusMode (layout or root)
+    // 4. default false
+    let isFocusModeEnabled = false;
+    if (typeof userLayout.focusMode === 'boolean') {
+        isFocusModeEnabled = userLayout.focusMode;
+    } else if (typeof userLayout.focusMode === 'object' && userLayout.focusMode !== null) {
+        isFocusModeEnabled = userLayout.focusMode.enabled !== false;
+    } else if (typeof userConfig.focusMode === 'boolean') {
+        isFocusModeEnabled = userConfig.focusMode;
+    } else if (typeof userConfig.focusMode === 'object' && userConfig.focusMode !== null) {
+        isFocusModeEnabled = userConfig.focusMode.enabled !== false;
+    } else if (userLayout.optionsMenu?.components?.focusMode !== undefined) {
+        isFocusModeEnabled = !!userLayout.optionsMenu.components.focusMode;
+    } else if (userConfig.optionsMenu?.components?.focusMode !== undefined) {
+        isFocusModeEnabled = !!userConfig.optionsMenu.components.focusMode;
+    }
+
+    // Resolve print (DISABLED by default)
+    // Fallback order:
+    // 1. userLayout.print
+    // 2. userConfig.print
+    // 3. userLayout.copyWidgets?.print or userConfig.theme?.copyWidgets?.print
+    // 4. userLayout.optionsMenu?.components?.print or userConfig.optionsMenu?.components?.print
+    // 5. default false
+    let isPrintEnabled = false;
+    if (typeof userLayout.print === 'boolean') {
+        isPrintEnabled = userLayout.print;
+    } else if (typeof userLayout.print === 'object' && userLayout.print !== null) {
+        isPrintEnabled = userLayout.print.enabled !== false;
+    } else if (typeof userConfig.print === 'boolean') {
+        isPrintEnabled = userConfig.print;
+    } else if (typeof userConfig.print === 'object' && userConfig.print !== null) {
+        isPrintEnabled = userConfig.print.enabled !== false;
+    } else if (userLayout.copyWidgets?.print !== undefined) {
+        isPrintEnabled = !!userLayout.copyWidgets.print;
+    } else if (userConfig.theme?.copyWidgets?.print !== undefined) {
+        isPrintEnabled = !!userConfig.theme.copyWidgets.print;
+    } else if (userLayout.optionsMenu?.components?.print !== undefined) {
+        isPrintEnabled = !!userLayout.optionsMenu.components.print;
+    } else if (userConfig.optionsMenu?.components?.print !== undefined) {
+        isPrintEnabled = !!userConfig.optionsMenu.components.print;
+    }
+
+    // Resolve copyWidgets (layout.copyWidgets or theme.copyWidgets)
+    const userCopyWidgets = userLayout.copyWidgets || userConfig.theme?.copyWidgets || {};
+    const normalizedCopyWidgets = {
+        enabled: userCopyWidgets.enabled !== false,
+        raw: userCopyWidgets.raw !== false,
+        context: userCopyWidgets.context !== false,
+        ...userCopyWidgets
+    };
 
     config.layout = {
         spa: true,
         breadcrumbs: true,
-        ...userLayout
+        ...userLayout,
+        focusMode: isFocusModeEnabled,
+        print: isPrintEnabled,
+        pageNavigation: config.pageNavigation,
+        copyCode: config.copyCode,
+        copyWidgets: normalizedCopyWidgets
     };
+
+    // Attach root aliases for backward compatibility
+    config.focusMode = isFocusModeEnabled;
+    config.print = isPrintEnabled;
 
     config.header = {
         enabled: true,
@@ -203,12 +278,12 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
         }
     }
 
-    // --- 3. Options Menu (Search, Theme, Focus Mode, Print, Sponsor) ---
+    // --- 3. Options Menu (Search, Theme, Focus Mode, Sponsor) ---
+    // Note: Print is strictly NOT part of the header/menubar options menu.
     const defaultOptionsMenuComponents = {
         search: true,
         themeSwitch: true,
-        focusMode: true,
-        print: true,
+        focusMode: isFocusModeEnabled,
         sponsor: null
     };
 
@@ -221,6 +296,11 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
             ...(userOptionsMenu.components || {})
         }
     };
+    // Ensure print is never rendered in header/menubar options menu
+    if (config.optionsMenu.components) {
+        delete (config.optionsMenu.components as any).print;
+    }
+    config.layout.optionsMenu = config.optionsMenu;
 
     // --- 3.1. Site-wide Banner (new in 0.8.7) ---
     // Sits above the menubar. Opt-in — defaults to null (no banner rendered).
@@ -287,13 +367,24 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
     }
 
     // --- 4. Theme & Branding ---
+    const rawCustomCss = userConfig.theme?.customCss || userConfig.customCss || [];
+    const normalizedCustomCss = Array.isArray(rawCustomCss) ? rawCustomCss : (rawCustomCss ? [rawCustomCss] : []);
+
+    const rawCustomJs = userConfig.theme?.customJs || userConfig.customJs || [];
+    const normalizedCustomJs = Array.isArray(rawCustomJs) ? rawCustomJs : (rawCustomJs ? [rawCustomJs] : []);
+
     config.theme = {
         name: 'default',
         appearance: 'system',
-        customCss: [],
         codeHighlight: true,
-        ...(config.theme || {})
+        ...(config.theme || {}),
+        customCss: normalizedCustomCss,
+        customJs: normalizedCustomJs,
+        copyWidgets: normalizedCopyWidgets
     };
+
+    config.customCss = normalizedCustomCss;
+    config.customJs = normalizedCustomJs;
 
     // Legacy Support: Map defaultMode to appearance if appearance isn't explicitly set
     if (config.theme.defaultMode && !userConfig.theme?.appearance) {
@@ -343,7 +434,19 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
         config.cookie = null;
     }
 
-    config.customJs = config.customJs || [];
+    // Edit Link (layout.editLink or root editLink)
+    const userEditLink = userLayout.editLink || config.editLink;
+    if (userEditLink) {
+        config.editLink = typeof userEditLink === 'object' ? {
+            enabled: userEditLink.enabled !== false,
+            baseUrl: userEditLink.baseUrl || userEditLink.url || '',
+            text: userEditLink.text || null
+        } : null;
+        config.layout.editLink = config.editLink;
+    } else {
+        config.editLink = null;
+        config.layout.editLink = null;
+    }
 
     // Normalize Navigation
     config.navigation = Array.isArray(config.navigation) ? config.navigation : [];

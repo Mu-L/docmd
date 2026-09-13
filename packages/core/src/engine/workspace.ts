@@ -39,7 +39,7 @@
  */
 
 import path from 'path';
-import { fsUtils as fs, FileSignatureTracker } from '@docmd/utils';
+import { fsUtils as fs, FileSignatureTracker, parseJsonc } from '@docmd/utils';
 import nativeFs from 'fs';
 import { TUI } from '@docmd/tui';
 import { loadConfig } from '../utils/config-loader.js';
@@ -114,6 +114,7 @@ export async function detectWorkspace(configPathOption: string): Promise<Workspa
 
   if (configPathOption === 'docmd.config.js') {
     const candidates = [
+      'docmd.config.jsonc',
       'docmd.config.json',
       'docmd.config.ts',
       'docmd.config.js',
@@ -137,8 +138,8 @@ export async function detectWorkspace(configPathOption: string): Promise<Workspa
   try {
     let rawConfig: any;
 
-    if (absolutePath.endsWith('.json')) {
-      rawConfig = JSON.parse(nativeFs.readFileSync(absolutePath, 'utf-8'));
+    if (absolutePath.endsWith('.json') || absolutePath.endsWith('.jsonc')) {
+      rawConfig = parseJsonc(nativeFs.readFileSync(absolutePath, 'utf-8'));
     } else {
       // Polyfill defineConfig
       (global as any).defineConfig = (config: any) => config;
@@ -302,7 +303,7 @@ export async function buildWorkspace(
     const prefix = project.prefix === '/' ? '/' : project.prefix.replace(/\/$/, '');
     const projectSrcDir = path.resolve(CWD, project.src);
 
-    const candidates = ['docmd.config.json', 'docmd.config.ts', 'docmd.config.js', 'docmd.config.mjs', 'config.js'];
+    const candidates = ['docmd.config.jsonc', 'docmd.config.json', 'docmd.config.ts', 'docmd.config.js', 'docmd.config.mjs', 'config.js'];
     let resolvedConfigName: string | null = null;
     for (const c of candidates) {
       if (nativeFs.existsSync(path.join(projectSrcDir, c))) {
@@ -412,7 +413,7 @@ async function buildWorkspaceProject(
   const prefix = project.prefix === '/' ? '/' : project.prefix.replace(/\/$/, '');
   const projectSrcDir = path.resolve(CWD, project.src);
 
-  const candidates = ['docmd.config.json', 'docmd.config.ts', 'docmd.config.js', 'docmd.config.mjs', 'config.js'];
+  const candidates = ['docmd.config.jsonc', 'docmd.config.json', 'docmd.config.ts', 'docmd.config.js', 'docmd.config.mjs', 'config.js'];
   let resolvedConfigName: string | null = null;
   for (const c of candidates) {
     if (nativeFs.existsSync(path.join(projectSrcDir, c))) {

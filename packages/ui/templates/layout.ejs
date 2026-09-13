@@ -74,10 +74,30 @@
 
     <a href="#main-content" class="skip-link"><%= typeof t === 'function' ? t('skipToContent') : 'Skip to content' %></a>
 
+    <%
+      const _isFocusEnabled = !!(locals.config && (
+        config.layout?.focusMode === true ||
+        config.focusMode === true ||
+        config.layout?.optionsMenu?.components?.focusMode === true ||
+        config.optionsMenu?.components?.focusMode === true ||
+        (locals.optionsMenu && optionsMenu.components?.focusMode === true)
+      ));
+      const _isPrintEnabled = !!(locals.config && (
+        config.layout?.print === true ||
+        config.print === true ||
+        config.layout?.copyWidgets?.print === true ||
+        config.layout?.optionsMenu?.components?.print === true ||
+        config.optionsMenu?.components?.print === true ||
+        (locals.optionsMenu && optionsMenu.components?.print === true)
+      ));
+    %>
+    <% if (_isFocusEnabled) { %>
     <div class="docmd-focus-toolbar" id="docmd-focus-toolbar" aria-label="Focus mode controls">
+      <% if (_isPrintEnabled) { %>
       <button class="docmd-focus-btn print-button" type="button" aria-label="<%= typeof t === 'function' ? t('print') : 'Print' %>" title="<%= typeof t === 'function' ? t('print') : 'Print' %>">
         <%- renderIcon('printer', { class: 'icon-print' }) %>
       </button>
+      <% } %>
       <button class="docmd-focus-btn theme-toggle-button" type="button" aria-label="<%= typeof t === 'function' ? t('toggleTheme') : 'Toggle theme' %>" title="<%= typeof t === 'function' ? t('toggleTheme') : 'Toggle theme' %>">
         <%- renderIcon('sun', { class: 'icon-sun' }) %> <%- renderIcon('moon', { class: 'icon-moon' }) %>
       </button>
@@ -85,6 +105,7 @@
         <%- renderIcon('minimize-2', { class: 'icon-focus-exit' }) %>
       </button>
     </div>
+    <% } %>
 
     <% const _isTopMenubar = locals.menubarConfig && menubarConfig?.enabled !== false && menubarConfig.position === 'top'; %>
     <% if (locals.config && config.layout && config.layout.banner && _isTopMenubar) { %>
@@ -226,17 +247,24 @@
                     <div class="docmd-breadcrumbs-spacer"></div>
                   <% } %>
 
-                  <% if (config.theme?.copyWidgets?.enabled !== false) { %>
+                  <% const _copyWidgetsConfig = config.layout?.copyWidgets || config.theme?.copyWidgets; %>
+                  <% if (_copyWidgetsConfig?.enabled !== false || _isPrintEnabled) { %>
                     <div class="docmd-copy-widgets">
-                      <% if (config.theme?.copyWidgets?.raw !== false) { %>
+                      <% if (_copyWidgetsConfig?.enabled !== false && _copyWidgetsConfig?.raw !== false) { %>
                         <button class="docmd-copy-btn docmd-copy-raw-btn" data-copied="<%= typeof t === 'function' ? t('copiedToClipboard') : 'Copied!' %>" title="<%= typeof t === 'function' ? t('copyMarkdown') : 'Copy Markdown' %>" aria-label="<%= typeof t === 'function' ? t('copyMarkdown') : 'Copy Markdown' %>">
                           <span class="docmd-btn-icon"><%- renderIcon('copy') %></span>
                         </button>
                       <% } %>
-                      <% if (config.theme?.copyWidgets?.context !== false) { %>
+                      <% if (_copyWidgetsConfig?.enabled !== false && _copyWidgetsConfig?.context !== false) { %>
                         <button class="docmd-copy-btn docmd-copy-context-btn" data-copied="<%= typeof t === 'function' ? t('copiedToClipboard') : 'Copied!' %>" title="<%= typeof t === 'function' ? t('copyContext') : 'Copy Context' %>">
                           <span class="docmd-btn-icon"><%- renderIcon('message-square') || renderIcon('copy') %></span>
                           <span class="docmd-btn-text"><%= typeof t === 'function' ? t('copyContext') : 'Copy Context' %></span>
+                        </button>
+                      <% } %>
+                      <% if (_isPrintEnabled) { %>
+                        <button class="docmd-copy-btn print-button" type="button" title="<%= typeof t === 'function' ? t('print') : 'Print' %>" aria-label="<%= typeof t === 'function' ? t('print') : 'Print' %>">
+                          <span class="docmd-btn-icon"><%- renderIcon('printer', { class: 'icon-print' }) %></span>
+                          <span class="docmd-btn-text"><%= typeof t === 'function' ? t('print') : 'Print' %></span>
                         </button>
                       <% } %>
                     </div>

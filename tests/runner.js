@@ -185,6 +185,11 @@ addInProcess(
   'Pre-release 0.9.5 fixes (#220, #210/PR #211, #223)',
   await import('./cli-contracts/issue-fixes-0-9-5.test.js')
 );
+addInProcess(
+  'release-0-9-6-fixes',
+  'Release 0.9.6 fixes (PR #229, #227, #226, #228, Security)',
+  await import('./cli-contracts/release-0-9-6-fixes.test.js')
+);
 
 // --- Section 2: Container parser (Phase 2 PR 1+2+3) ----------------------
 addExternal(

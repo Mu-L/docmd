@@ -51,6 +51,18 @@ declare module 'docmd-assistant' {
     off(event: string, listener: (...args: any[]) => any): this;
     emit(type: string, data: any): void;
     sendMessage(content: string, overrideOptions?: Partial<AssistantOptions>): Promise<ChatResponse>;
+    sendMessageStream(
+      content: string,
+      callbacks: {
+        onChunk?: (chunk: string, meta?: { replace?: boolean; turn?: number; isFinal?: boolean }) => void;
+        onStatus?: (status: any) => void;
+        onToolCall?: (data: any) => void;
+        onToolResult?: (data: any) => void;
+        onError?: (err: Error) => void;
+        onFinish?: (res: ChatResponse) => void;
+      },
+      overrideOptions?: Partial<AssistantOptions>
+    ): Promise<ChatResponse>;
     executeTool(name: string, args: any): Promise<any>;
   }
 

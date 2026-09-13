@@ -28,10 +28,11 @@ const KNOWN_KEYS = [
   'siteTitle', 'siteUrl', 'srcDir', 'outputDir',
 
   // Shared Features
-  'logo', 'sidebar', 'theme', 'customJs', 'autoTitleFromH1',
+  'logo', 'sidebar', 'theme', 'customCss', 'customJs', 'autoTitleFromH1',
   'copyCode', 'plugins', 'navigation', 'footer', 'sponsor', 'favicon',
   'search', 'minify', 'editLink', 'pageNavigation', 'i18n',
-  'markdown', 'security',
+  'markdown', 'security', 'htmlPolicy', 'focusMode', 'print', 'copyWidgets',
+  'cookie', 'tmp',
 
   // Workspace
   'workspace'
@@ -46,8 +47,10 @@ const TYPO_MAPPING = {
   'outDir': 'out',
   'customCSS': 'theme.customCss',
   'customcss': 'theme.customCss',
-  'customJS': 'customJs',
-  'customjs': 'customJs',
+  'customJS': 'theme.customJs',
+  'customjs': 'theme.customJs',
+  'htmlPolicy': 'security.html',
+  'html_policy': 'security.html',
   'nav': 'navigation',
   'menu': 'navigation'
 };
@@ -71,9 +74,16 @@ function validateConfig(config) {
     errors.push('"customJs" must be an Array of strings');
   }
 
+  if (config.customCss && !Array.isArray(config.customCss)) {
+    errors.push('"customCss" must be an Array of strings');
+  }
+
   if (config.theme) {
     if (config.theme.customCss && !Array.isArray(config.theme.customCss)) {
       errors.push('"theme.customCss" must be an Array of strings');
+    }
+    if (config.theme.customJs && !Array.isArray(config.theme.customJs)) {
+      errors.push('"theme.customJs" must be an Array of strings');
     }
   }
 
@@ -105,6 +115,9 @@ function validateConfig(config) {
   if (config.theme) {
     if (config.theme.customCSS) {
       warnings.push('Found "theme.customCSS". Did you mean "theme.customCss"?');
+    }
+    if (config.theme.customJS) {
+      warnings.push('Found "theme.customJS". Did you mean "theme.customJs"?');
     }
   }
 

@@ -254,7 +254,11 @@ async function getLatestDocmdSearchVersion(): Promise<string> {
  * - @huggingface/transformers: the ML model runtime
  * - onnxruntime-node: ONNX backend for Node.js
  */
-const PEER_DEPS = ['@huggingface/transformers@^4.0.0', 'onnxruntime-node@^1.20.0'];
+const PEER_DEPS = [
+  '@huggingface/transformers@^4.2.0',
+  'onnxruntime-node@^1.27.0',
+  'sharp@^0.35.4'
+];
 
 /**
  * Auto-install docmd-search package along with its peer dependencies.
@@ -282,7 +286,7 @@ async function autoInstallDocmdSearch(tui: any, quiet: boolean): Promise<boolean
     return true;
   } else {
     const manualHint = 'Could not auto-install docmd-search. Please install manually:\n' +
-      '  npm install docmd-search @huggingface/transformers onnxruntime-node\n' +
+      '  npm install docmd-search @huggingface/transformers onnxruntime-node sharp\n' +
       'Or disable semantic search: plugins: { search: { semantic: false } }';
     if (!quiet && tui) {
       tui.step('Failed to install docmd-search', 'FAIL');
@@ -314,7 +318,7 @@ async function installPeerDeps(tui: any, quiet: boolean): Promise<boolean> {
     return true;
   } else {
     const manualHint = 'Could not auto-install peer dependencies. Please install manually:\n' +
-      '  npm install @huggingface/transformers onnxruntime-node\n' +
+      '  npm install @huggingface/transformers onnxruntime-node sharp\n' +
       'Or disable semantic search: plugins: { search: { semantic: false } }';
     if (!quiet && tui) {
       tui.step('Failed to install peer dependencies', 'FAIL');
@@ -552,6 +556,30 @@ async function stampSemanticFlag(outputDir: string) {
   }));
 }
 
+/**
+ * Read and parse .gitignore files for search indexing.
+ */
+function getGitignorePatterns(dir: string): string[] {
+  const patterns: string[] = [];
+  const candidateDirs = [process.cwd(), path.resolve(dir)];
+  for (const cDir of candidateDirs) {
+    const gitignorePath = path.join(cDir, '.gitignore');
+    try {
+      if (nativeFs.existsSync(gitignorePath)) {
+        const content = nativeFs.readFileSync(gitignorePath, 'utf8');
+        for (const line of content.split(/\r?\n/)) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+          patterns.push(trimmed);
+        }
+      }
+    } catch {
+      // Ignore read errors
+    }
+  }
+  return patterns;
+}
+
 // Recursively collect all .html files under a directory.
 async function findHtmlFiles(dir: string): Promise<string[]> {
   const entries = await fs.readdir(dir, { withFileTypes: true });
@@ -757,10 +785,16 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
 
           // Always exclude semantic index output dir and --ui artifacts from indexing
           const builtinExcludes = ['**/_docmd-search/**', '**/_site/**', '**/_ui/**'];
-          const mergedExclude = [...builtinExcludes, ...(pluginOptions.exclude || [])];
 
           for (const ver of versions) {
             const versionIndexDir = path.join(ver.dir, '_docmd-search');
+            const gitignorePatterns = getGitignorePatterns(ver.dir);
+            const mergedExclude = [
+              ...builtinExcludes,
+              ...(config.exclude || []),
+              ...gitignorePatterns,
+              ...(pluginOptions.exclude || []),
+            ];
             try {
               await docmdSearch.indexDirectory(
                 {
@@ -852,8 +886,11 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
         // docmd-search --ui artifacts (_site/, _ui/) so the indexer never
         // crawls its own output. Merge with any user-supplied excludes.
         const builtinExcludes = ['**/_docmd-search/**', '**/_site/**', '**/_ui/**'];
+        const gitignorePatterns = getGitignorePatterns(docsDir);
         const mergedExclude = [
           ...builtinExcludes,
+          ...(config.exclude || []),
+          ...gitignorePatterns,
           ...(pluginOptions.exclude || []),
         ];
         const sourceIndexDir = path.join(docsDir, '_docmd-search');

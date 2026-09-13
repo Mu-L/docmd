@@ -15,6 +15,7 @@
 import path from 'path';
 import fs from 'fs';
 import { validateConfig, normalizeNavPaths } from '@docmd/parser';
+import { parseJsonc } from '@docmd/utils';
 import { normalizeConfig } from './config-schema.js';
 import { buildAutoNav } from './auto-router.js';
 import { pathToFileURL } from 'url';
@@ -296,6 +297,7 @@ export async function loadConfig(configPath: string, options: any = {}) {
 
   if (configPath === 'docmd.config.js') {
     const candidates = [
+      'docmd.config.jsonc',
       'docmd.config.json',
       'docmd.config.ts',
       'docmd.config.js',
@@ -390,8 +392,8 @@ export async function loadConfig(configPath: string, options: any = {}) {
     let rawConfig: any;
 
     try {
-      if (absoluteConfigPath.endsWith('.json')) {
-          rawConfig = JSON.parse(fs.readFileSync(absoluteConfigPath, 'utf-8'));
+      if (absoluteConfigPath.endsWith('.json') || absoluteConfigPath.endsWith('.jsonc')) {
+          rawConfig = parseJsonc(fs.readFileSync(absoluteConfigPath, 'utf-8'));
       } else {
           if (absoluteConfigPath.endsWith('.ts')) {
               const esbuild = await import('esbuild');

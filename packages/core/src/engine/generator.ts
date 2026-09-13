@@ -290,7 +290,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
   // When fallbackSrcDir is set (non-default locale), scan the fallback dir as the canonical
   // file list, then check the locale dir for overrides per file.
   const scanDir = fallbackSrcDir || srcDir;
-  const mdFiles = await findFilesRecursive(scanDir, ['.md', '.markdown', '.ejs']);
+  const mdFiles = await findFilesRecursive(scanDir, ['.md', '.markdown', '.ejs'], config.exclude);
 
   // Build set of locale directory names to skip when scanning a non-locale-specific dir
   // This prevents locale subdirs inside old version dirs from being rendered as regular pages

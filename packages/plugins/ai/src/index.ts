@@ -58,6 +58,8 @@ export interface AIPluginOptions {
     maxRequests?: number;
     windowMs?: number;
   };
+  messageActions?: boolean;
+  allowEdit?: boolean;
 }
 
 /** Default system prompt for documentation assistant */
@@ -405,7 +407,8 @@ export function generateScripts(config: any, _options?: any): { headScriptsHtml:
       semantic: isSemanticUsable
     },
     isWorkspace: workspaceProjects.length > 0,
-    workspaceProjects
+    workspaceProjects,
+    messageActions: pluginOptions.messageActions === true
   };
   if (pluginOptions.provider) clientConfig.provider = pluginOptions.provider;
   if (pluginOptions.model) clientConfig.model = pluginOptions.model;
