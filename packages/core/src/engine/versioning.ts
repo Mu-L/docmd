@@ -20,6 +20,7 @@ import { renderPages } from './generator.js';
 import { resolveLocaleSrcDir, resolveFallbackSrcDir } from './i18n.js';
 import { normalizeNavPaths } from '@docmd/parser';
 import { buildAutoNav } from '../utils/auto-router.js';
+import { normalizeBannerItem, VALID_BANNER_POSITIONS } from '../utils/config-schema.js';
 
 /**
  * Filter out "ghost" versions - configured versions whose source directories
@@ -225,8 +226,42 @@ export async function buildVersions({
     const activeNav = resolveVersionNav(v, vSrcDir, config.navigation, fallbackSrcDir);
     const cleanedNav = filterNavForVersion(activeNav, vSrcDir, fallbackSrcDir);
 
+    let versionLayout = config.layout ? { ...config.layout } : {};
+    const vBanners = v.banners || v.banner || v.layout?.banners || v.layout?.banner;
+    if (vBanners) {
+      const mergedBanners = { ...(versionLayout.banners || {}) };
+      if (Array.isArray(vBanners)) {
+        for (const item of vBanners) {
+          const norm = normalizeBannerItem(item, 'top');
+          if (norm && VALID_BANNER_POSITIONS.has(norm.position)) {
+            mergedBanners[norm.position] = norm;
+          }
+        }
+      } else if (typeof vBanners === 'object') {
+        if (vBanners.content || vBanners.html || vBanners.image || vBanners.link) {
+          const norm = normalizeBannerItem(vBanners, vBanners.position || 'top');
+          if (norm && VALID_BANNER_POSITIONS.has(norm.position)) {
+            mergedBanners[norm.position] = norm;
+          }
+        } else {
+          for (const [posKey, item] of Object.entries(vBanners)) {
+            if (VALID_BANNER_POSITIONS.has(posKey)) {
+              const norm = normalizeBannerItem(item, posKey);
+              if (norm) mergedBanners[posKey] = norm;
+            }
+          }
+        }
+      } else if (typeof vBanners === 'string') {
+        const norm = normalizeBannerItem(vBanners, 'top');
+        if (norm) mergedBanners[norm.position] = norm;
+      }
+      versionLayout.banners = mergedBanners;
+      versionLayout.banner = mergedBanners['top'] || null;
+    }
+
     const versionedConfig = {
       ...config,
+      layout: versionLayout,
       _activeVersion: v,
       _versionHasI18n: versionHasI18n,
       navigation: cleanedNav

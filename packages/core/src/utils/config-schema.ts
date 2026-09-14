@@ -30,6 +30,66 @@ const KNOWN_CSS_THEMES: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Valid layout banner positions.
+ * - 'top': Site-wide banner (text only, image disallowed)
+ * - 'sidebar-top': Top of the sidebar (image + text allowed)
+ * - 'sidebar-bottom': Bottom of the sidebar (image + text allowed)
+ * - 'toc-top': Top of table of contents rail (image + text allowed)
+ * - 'toc-bottom': Bottom of table of contents rail (image + text allowed)
+ */
+export const VALID_BANNER_POSITIONS: ReadonlySet<string> = new Set([
+    'top',
+    'sidebar-top',
+    'sidebar-bottom',
+    'toc-top',
+    'toc-bottom'
+]);
+
+export function normalizeBannerItem(ub: any, defaultPos: string = 'top'): any {
+    if (!ub) return null;
+    if (typeof ub === 'string') {
+        const text = ub.trim();
+        if (!text) return null;
+        return {
+            content: text,
+            html: undefined,
+            type: 'info',
+            dismissible: true,
+            link: null,
+            icon: null,
+            image: null,
+            alt: '',
+            position: defaultPos
+        };
+    }
+    if (typeof ub === 'object') {
+        const pos = (ub.position && VALID_BANNER_POSITIONS.has(ub.position)) ? ub.position : defaultPos;
+        let link: any = null;
+        if (typeof ub.link === 'string' && ub.link.trim()) {
+            link = { url: ub.link.trim(), text: '' };
+        } else if (typeof ub.link === 'object' && ub.link && ub.link.url) {
+            link = { url: String(ub.link.url).trim(), text: String(ub.link.text || '') };
+        }
+        const bannerObj: any = {
+            content: typeof ub.content === 'string' ? ub.content : (ub.html || ''),
+            html: typeof ub.html === 'string' ? ub.html : undefined,
+            type: ub.type || 'info',
+            dismissible: ub.dismissible !== false,
+            link,
+            icon: ub.icon || null,
+            image: (pos !== 'top' && typeof ub.image === 'string' && ub.image.trim()) ? ub.image.trim() : null,
+            alt: typeof ub.alt === 'string' ? ub.alt : '',
+            position: pos
+        };
+        if (bannerObj.html && !bannerObj.content) {
+            bannerObj.content = bannerObj.html;
+        }
+        return bannerObj;
+    }
+    return null;
+}
+
+/**
  * Hardcoded English defaults for the 404 page. These are intentionally
  * NOT injected into `config.notFound` during normalisation — if we did,
  * the build site's `|| t('pageNotFound')` fallback would never fire
@@ -302,26 +362,43 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
     }
     config.layout.optionsMenu = config.optionsMenu;
 
-    // --- 3.1. Site-wide Banner (new in 0.8.7) ---
-    // Sits above the menubar. Opt-in — defaults to null (no banner rendered).
-    if (config.layout?.banner) {
-        const ub = config.layout.banner;
-        config.layout.banner = {
-            content: typeof ub === 'string' ? ub : (ub.content || ub.html || ''),
-            html: typeof ub === 'object' && ub.html ? ub.html : undefined,
-            type: (typeof ub === 'object' && ub.type) ? ub.type : 'info',
-            dismissible: typeof ub === 'object' && ub.dismissible === false ? false : true,
-            link: typeof ub === 'object' && ub.link && ub.link.url ? ub.link : null,
-            icon: typeof ub === 'object' && ub.icon ? ub.icon : null,
-        };
-        // If only a string was passed, `ub` is a string and `content` is the string.
-        // If it's an object, ensure `content` and `html` are mutually consistent.
-        if (config.layout.banner.html && !config.layout.banner.content) {
-            config.layout.banner.content = config.layout.banner.html;
+    // --- 3.1. Banners (multi-position support) ---
+    // Positions: 'top' | 'sidebar-top' | 'sidebar-bottom' | 'toc-top' | 'toc-bottom'
+    // 'top' allows text only (image disallowed); 'sidebar-*' and 'toc-*' allow both text and images.
+    const rawBanners = config.layout?.banners || userLayout.banners;
+    const rawBanner = config.layout?.banner || userLayout.banner;
+    const bannersMap: Record<string, any> = {};
+
+    if (rawBanners) {
+        if (Array.isArray(rawBanners)) {
+            for (const item of rawBanners) {
+                const norm = normalizeBannerItem(item, 'top');
+                if (norm && VALID_BANNER_POSITIONS.has(norm.position)) {
+                    bannersMap[norm.position] = norm;
+                }
+            }
+        } else if (typeof rawBanners === 'object') {
+            for (const [posKey, item] of Object.entries(rawBanners)) {
+                if (VALID_BANNER_POSITIONS.has(posKey)) {
+                    const norm = normalizeBannerItem(item, posKey);
+                    if (norm) {
+                        norm.position = posKey;
+                        bannersMap[posKey] = norm;
+                    }
+                }
+            }
         }
-    } else {
-        config.layout.banner = null;
     }
+
+    if (rawBanner) {
+        const norm = normalizeBannerItem(rawBanner, 'top');
+        if (norm && VALID_BANNER_POSITIONS.has(norm.position)) {
+            bannersMap[norm.position] = norm;
+        }
+    }
+
+    config.layout.banners = bannersMap;
+    config.layout.banner = bannersMap['top'] || null;
 
     // --- Menubar (Top Navigation Bar) ---
     const userMenubar = userLayout.menubar || config.menubar;
@@ -490,7 +567,10 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
                 id: v.id,
                 dir: v.dir || `docs-${v.id}`,
                 label: v.label || v.id,
-                navigation: v.navigation || null
+                navigation: v.navigation || null,
+                banner: v.banner !== undefined ? v.banner : undefined,
+                banners: v.banners !== undefined ? v.banners : undefined,
+                layout: v.layout !== undefined ? v.layout : undefined
             };
         });
     } else {
@@ -518,7 +598,10 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
                 id: loc.id,
                 label: loc.label || loc.id,
                 dir: loc.dir || 'ltr',
-                translations: loc.translations || {}
+                translations: loc.translations || {},
+                banner: loc.banner !== undefined ? loc.banner : undefined,
+                banners: loc.banners !== undefined ? loc.banners : undefined,
+                layout: loc.layout !== undefined ? loc.layout : undefined
             }))
         };
     } else {

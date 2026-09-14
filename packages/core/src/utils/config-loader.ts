@@ -281,6 +281,9 @@ function mergeWorkspaceDefaults(
     ) {
       // Child keys win over parent keys, parent fills in gaps
       merged[key] = { ...parentVal, ...childVal };
+      if (key === 'layout' && parentVal.banners && childVal.banners && typeof parentVal.banners === 'object' && typeof childVal.banners === 'object' && !Array.isArray(parentVal.banners) && !Array.isArray(childVal.banners)) {
+        merged[key].banners = { ...parentVal.banners, ...childVal.banners };
+      }
     }
   }
 

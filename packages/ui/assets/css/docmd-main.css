@@ -954,7 +954,10 @@ body.has-menubar-header .docmd-menubar {
     max-height: calc(100vh - var(--sticky-top-offset) - 4rem);
     overflow-y: auto;
     scrollbar-width: thin;
-    align-self: flex-start
+    align-self: flex-start;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
 .toc-disabled .toc-sidebar {
@@ -3794,6 +3797,86 @@ ul.contains-task-list>li::marker {
 
 .docmd-banner[hidden] {
     display: none;
+}
+
+/* Multi-position card banners for sidebar and TOC */
+.docmd-banner--card {
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+    border-radius: var(--docmd-radius, 8px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    margin: 0.5rem 0;
+    overflow: hidden;
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.docmd-banner--card .docmd-banner__card {
+    padding: 0.75rem 0.875rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    position: relative;
+}
+
+.docmd-banner--card.is-dismissible .docmd-banner__card {
+    padding-right: 2rem;
+}
+
+.docmd-banner--card .docmd-banner__close {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    width: 1.35rem;
+    height: 1.35rem;
+    z-index: 2;
+}
+
+.docmd-banner__image-link {
+    display: block;
+    width: 100%;
+    text-decoration: none;
+    border: none !important;
+}
+
+.docmd-banner__image {
+    width: 100%;
+    max-height: 120px;
+    object-fit: cover;
+    border-radius: calc(var(--docmd-radius, 8px) - 2px);
+    display: block;
+    background: transparent;
+}
+
+.docmd-banner__text-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    border: none !important;
+}
+
+.docmd-banner__text-link:hover .docmd-banner__text {
+    opacity: 0.85;
+}
+
+.docmd-banner--card .docmd-banner__content {
+    font-size: 0.8125rem;
+    line-height: 1.45;
+}
+
+.docmd-banner--card .docmd-banner__text {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+}
+
+.sidebar-banner-wrapper,
+.toc-banner-wrapper {
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .docmd-cookie-banner {

@@ -1594,11 +1594,14 @@ html[data-theme="dark"] .summer-logo__light {
   align-self: start;
   max-height: calc(100vh - var(--summer-header-sticky-top));
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   padding: 1rem 1rem 3rem;
   font-size: 0.8125rem;
 }
 
-.summer-toc:not(:has(.summer-toc__inner)) {
+.summer-toc:not(:has(.summer-toc__inner)):not(:has(.summer-banner)):not(:has(.docmd-banner)) {
   display: none;
 }
 
@@ -2556,6 +2559,89 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution {
 .summer-banner__close svg {
   width: 15px;
   height: 15px;
+}
+
+/* Multi-position card banners for sidebar and TOC */
+.summer-banner--card {
+  position: relative;
+  width: 100%;
+  border-radius: var(--summer-radius);
+  border: 1px solid var(--summer-border-soft);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  margin: 0.5rem 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.summer-banner--card .summer-banner__card {
+  padding: 0.75rem 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.summer-banner--card.is-dismissible .summer-banner__card {
+  padding-right: 2rem;
+}
+
+.summer-banner--card .summer-banner__close {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  width: 22px;
+  height: 22px;
+  transform: none;
+  z-index: 2;
+}
+
+.summer-banner__image-link {
+  display: block;
+  width: 100%;
+  text-decoration: none;
+  border: none !important;
+}
+
+.summer-banner__image {
+  width: 100%;
+  max-height: 120px;
+  object-fit: cover;
+  border-radius: calc(var(--summer-radius) - 2px);
+  display: block;
+  background: transparent;
+}
+
+.summer-banner__text-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  border: none !important;
+}
+
+.summer-banner__text-link:hover .summer-banner__text {
+  color: var(--summer-accent);
+}
+
+.summer-banner--card .summer-banner__content {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.summer-banner--card .summer-banner__text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+
+.summer-sidebar-banner-wrapper,
+.summer-toc-banner-wrapper {
+  width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 @media (max-width: 1280px) {

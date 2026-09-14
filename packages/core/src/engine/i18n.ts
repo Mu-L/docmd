@@ -20,6 +20,7 @@ import { renderPages } from './generator.js';
 import { buildVersions, filterGhostVersions } from './versioning.js';
 import { sanitizeUrl } from '@docmd/parser';
 import { findFilesRecursive } from './assets.js';
+import { normalizeBannerItem, VALID_BANNER_POSITIONS } from '../utils/config-schema.js';
 
 /**
  * Pre-count total pages across all locale × version passes.
@@ -89,8 +90,43 @@ export async function preCountPages(config: any, CWD: string, targetFiles?: stri
 export function createLocaleConfig(config: any, locale: any): any {
   if (!locale) return config;
   const isDefault = locale.id === config.i18n.default;
+
+  let localeLayout = config.layout ? { ...config.layout } : {};
+  const locBanners = locale.banners || locale.banner || locale.layout?.banners || locale.layout?.banner;
+  if (locBanners) {
+    const mergedBanners = { ...(localeLayout.banners || {}) };
+    if (Array.isArray(locBanners)) {
+      for (const item of locBanners) {
+        const norm = normalizeBannerItem(item, 'top');
+        if (norm && VALID_BANNER_POSITIONS.has(norm.position)) {
+          mergedBanners[norm.position] = norm;
+        }
+      }
+    } else if (typeof locBanners === 'object') {
+      if (locBanners.content || locBanners.html || locBanners.image || locBanners.link) {
+        const norm = normalizeBannerItem(locBanners, locBanners.position || 'top');
+        if (norm && VALID_BANNER_POSITIONS.has(norm.position)) {
+          mergedBanners[norm.position] = norm;
+        }
+      } else {
+        for (const [posKey, item] of Object.entries(locBanners)) {
+          if (VALID_BANNER_POSITIONS.has(posKey)) {
+            const norm = normalizeBannerItem(item, posKey);
+            if (norm) mergedBanners[posKey] = norm;
+          }
+        }
+      }
+    } else if (typeof locBanners === 'string') {
+      const norm = normalizeBannerItem(locBanners, 'top');
+      if (norm) mergedBanners[norm.position] = norm;
+    }
+    localeLayout.banners = mergedBanners;
+    localeLayout.banner = mergedBanners['top'] || null;
+  }
+
   return {
     ...config,
+    layout: localeLayout,
     _activeLocale: locale,
     _allLocales: config.i18n.locales,
     _defaultLocale: config.i18n.default,

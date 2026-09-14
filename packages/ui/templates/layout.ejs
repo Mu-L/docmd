@@ -108,8 +108,9 @@
     <% } %>
 
     <% const _isTopMenubar = locals.menubarConfig && menubarConfig?.enabled !== false && menubarConfig.position === 'top'; %>
-    <% if (locals.config && config.layout && config.layout.banner && _isTopMenubar) { %>
-      <%- await include('partials/banner', { config, relativePathToRoot, assetBaseUrl, renderIcon, t: typeof t === 'function' ? t : null }) %>
+    <% const _hasTopBanner = Boolean(locals.config && config.layout && (config.layout.banners?.['top'] || (config.layout.banner && (!config.layout.banner.position || config.layout.banner.position === 'top')))); %>
+    <% if (_hasTopBanner && _isTopMenubar) { %>
+      <%- await include('partials/banner', { position: 'top', banner: config.layout.banners?.['top'] || config.layout.banner, config, relativePathToRoot, assetBaseUrl, renderIcon, t: typeof t === 'function' ? t : null }) %>
     <% } %>
 
     <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position !=='header' ) { %>
@@ -124,15 +125,20 @@
 <a href="<%= logo.href ? buildRelativeUrl(logo.href) : buildRelativeUrl('/') %>" class="logo-link">
               <img
                 src="<%= assetBaseUrl %><%= logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>"
-                alt="<%= logo.alt || siteTitle %>" class="logo-light" <% if (logo.height) { %>style="height: <%=
-                logo.height %>;"<% } %>>
+                alt="<%= logo.alt || siteTitle %>" class="logo light-logo" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>>
               <img
                 src="<%= assetBaseUrl %><%= logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>"
-                alt="<%= logo.alt || siteTitle %>" class="logo-dark" <% if (logo.height) { %>style="height: <%=
-                logo.height %>;"<% } %>>
+                alt="<%= logo.alt || siteTitle %>" class="logo dark-logo" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>>
+            </a>
+          <% } else if (logo && (logo.light || logo.dark)) { %>
+            <% const logoSrc = logo.light || logo.dark; %>
+            <a href="<%= logo.href ? buildRelativeUrl(logo.href) : buildRelativeUrl('/') %>" class="logo-link">
+              <img
+                src="<%= assetBaseUrl %><%= logoSrc.startsWith('/') ? logoSrc.substring(1) : logoSrc %>"
+                alt="<%= logo.alt || siteTitle %>" class="logo" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>>
             </a>
           <% } else { %>
-<h1><a href="<%= buildRelativeUrl('/') %>">
+            <h1><a href="<%= buildRelativeUrl('/') %>">
                 <%= siteTitle %>
               </a></h1>
           <% } %>
@@ -141,6 +147,11 @@
           </span>
         </div>
         <div class="sidebar-top-group">
+          <% if (locals.config && config.layout && (config.layout.banners?.['sidebar-top'] || (config.layout.banner && config.layout.banner.position === 'sidebar-top'))) { %>
+            <div class="sidebar-banner-wrapper">
+              <%- await include('partials/banner', { position: 'sidebar-top', banner: config.layout.banners?.['sidebar-top'] || config.layout.banner, config, relativePathToRoot, assetBaseUrl, renderIcon, t: typeof t === 'function' ? t : null }) %>
+            </div>
+          <% } %>
           <% if (locals.workspace && workspace.switcher.enabled && workspace.switcher.position === 'sidebar-top') { %>
             <div class="sidebar-project-switcher-wrapper">
                 <%- await include('partials/project-switcher', { workspace, config, renderIcon, compact: false, buildAbsoluteUrl, t: typeof t === 'function' ? t : null }) %>
@@ -165,6 +176,11 @@
         </div>
         <%- navigationHtml %>
         <div class="sidebar-bottom-group mt-auto">
+          <% if (locals.config && config.layout && (config.layout.banners?.['sidebar-bottom'] || (config.layout.banner && config.layout.banner.position === 'sidebar-bottom'))) { %>
+            <div class="sidebar-banner-wrapper">
+              <%- await include('partials/banner', { position: 'sidebar-bottom', banner: config.layout.banners?.['sidebar-bottom'] || config.layout.banner, config, relativePathToRoot, assetBaseUrl, renderIcon, t: typeof t === 'function' ? t : null }) %>
+            </div>
+          <% } %>
           <% if (config.versions && config.versions.position==='sidebar-bottom' ) { %>
             <div class="sidebar-version-wrapper">
               <%- await include('partials/version-dropdown', { versions: config.versions, activeVersion:
@@ -190,8 +206,8 @@
       </aside>
       <% } %>
       <div class="main-content-wrapper">
-        <% if (locals.config && config.layout && config.layout.banner && !_isTopMenubar) { %>
-          <%- await include('partials/banner', { config, relativePathToRoot, assetBaseUrl, renderIcon, t: typeof t === 'function' ? t : null }) %>
+        <% if (_hasTopBanner && !_isTopMenubar) { %>
+          <%- await include('partials/banner', { position: 'top', banner: config.layout.banners?.['top'] || config.layout.banner, config, relativePathToRoot, assetBaseUrl, renderIcon, t: typeof t === 'function' ? t : null }) %>
         <% } %>
         <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position==='header' ) { %>
           <%- await include('partials/menubar', { menubarConfig, relativePathToRoot, assetBaseUrl, renderIcon, optionsMenu:
@@ -308,9 +324,25 @@
                   </div>
                 <% } %>
               </div>
-              <% if (!_tocDisabled) { %>
+              <% 
+                const _hasTocTopBanner = Boolean(locals.config && config.layout && (config.layout.banners?.['toc-top'] || (config.layout.banner && config.layout.banner.position === 'toc-top')));
+                const _hasTocBottomBanner = Boolean(locals.config && config.layout && (config.layout.banners?.['toc-bottom'] || (config.layout.banner && config.layout.banner.position === 'toc-bottom')));
+              %>
+              <% if (!_tocDisabled || _hasTocTopBanner || _hasTocBottomBanner) { %>
               <div class="toc-sidebar">
-                <%- await include('toc', { content, headings, navigationHtml, isActivePage, t: typeof t === 'function' ? t : null }) %>
+                <% if (_hasTocTopBanner) { %>
+                  <div class="toc-banner-wrapper">
+                    <%- await include('partials/banner', { position: 'toc-top', banner: config.layout.banners?.['toc-top'] || config.layout.banner, config, relativePathToRoot, assetBaseUrl, renderIcon, t: typeof t === 'function' ? t : null }) %>
+                  </div>
+                <% } %>
+                <% if (!_tocDisabled) { %>
+                  <%- await include('toc', { content, headings, navigationHtml, isActivePage, t: typeof t === 'function' ? t : null }) %>
+                <% } %>
+                <% if (_hasTocBottomBanner) { %>
+                  <div class="toc-banner-wrapper">
+                    <%- await include('partials/banner', { position: 'toc-bottom', banner: config.layout.banners?.['toc-bottom'] || config.layout.banner, config, relativePathToRoot, assetBaseUrl, renderIcon, t: typeof t === 'function' ? t : null }) %>
+                  </div>
+                <% } %>
               </div>
               <% } %>
             </div>

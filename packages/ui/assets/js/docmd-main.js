@@ -1189,32 +1189,51 @@
 /* global sessionStorage */
 // ---------------------------------------------------------------------------
 function initBanner() {
-  const banner = document.querySelector('[data-docmd-banner]');
-  if (!banner) return;
-  try {
-    if (sessionStorage.getItem('docmd-banner-dismissed') === '1') {
-      banner.remove();
-      document.body.classList.remove('has-banner');
-      return;
-    }
-  } catch (_) { /* sessionStorage blocked — leave visible */ }
-  const closeBtn = banner.querySelector('[data-docmd-banner-dismiss]');
-  if (!closeBtn) return;
-  closeBtn.addEventListener('click', () => {
-    banner.style.transition = 'opacity 0.15s ease, max-height 0.25s ease, padding 0.25s ease, margin 0.25s ease';
-    banner.style.overflow = 'hidden';
-    banner.style.maxHeight = banner.offsetHeight + 'px';
-    // Force reflow before collapsing
-    void banner.offsetHeight;
-    banner.style.opacity = '0';
-    banner.style.maxHeight = '0';
-    banner.style.padding = '0';
-    banner.style.margin = '0';
-    setTimeout(() => {
-      banner.remove();
-      document.body.classList.remove('has-banner');
-      try { sessionStorage.setItem('docmd-banner-dismissed', '1'); } catch (_) { /* ignore */ }
-    }, 260);
+  const banners = document.querySelectorAll('[data-docmd-banner]');
+  if (!banners || !banners.length) return;
+
+  banners.forEach((banner) => {
+    const pos = banner.getAttribute('data-docmd-banner') || 'top';
+    const storageKey = 'docmd-banner-dismissed-' + pos;
+    try {
+      if (
+        sessionStorage.getItem(storageKey) === '1' ||
+        (pos === 'top' && sessionStorage.getItem('docmd-banner-dismissed') === '1')
+      ) {
+        banner.remove();
+        if (pos === 'top') {
+          document.body.classList.remove('has-banner');
+        }
+        return;
+      }
+    } catch (_) { /* sessionStorage blocked — leave visible */ }
+
+    const closeBtn = banner.querySelector('[data-docmd-banner-dismiss]');
+    if (!closeBtn) return;
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      banner.style.transition = 'opacity 0.15s ease, max-height 0.25s ease, padding 0.25s ease, margin 0.25s ease';
+      banner.style.overflow = 'hidden';
+      banner.style.maxHeight = banner.offsetHeight + 'px';
+      // Force reflow before collapsing
+      void banner.offsetHeight;
+      banner.style.opacity = '0';
+      banner.style.maxHeight = '0';
+      banner.style.padding = '0';
+      banner.style.margin = '0';
+      setTimeout(() => {
+        banner.remove();
+        if (pos === 'top') {
+          document.body.classList.remove('has-banner');
+        }
+        try {
+          sessionStorage.setItem(storageKey, '1');
+          if (pos === 'top') {
+            sessionStorage.setItem('docmd-banner-dismissed', '1');
+          }
+        } catch (_) { /* ignore */ }
+      }, 260);
+    });
   });
 }
 
