@@ -115,7 +115,7 @@ export const test = runTestFile({
     {
       const rootPkg = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf8'));
       assert(rootPkg.pnpm?.overrides?.sharp === '^0.35.4', 'Root package.json overrides sharp to ^0.35.4 (Alert #40)');
-      assert(rootPkg.pnpm?.overrides?.['adm-zip'] === '>=0.6.0', 'Root package.json overrides adm-zip to >=0.6.0 (Alert #39)');
+      assert(rootPkg.pnpm?.overrides?.['adm-zip'] === '>=0.6.0' || rootPkg.pnpm?.overrides?.['adm-zip'] === '>=0.6.1', 'Root package.json overrides adm-zip to >=0.6.0 or >=0.6.1 (Alert #39)');
 
       const searchPluginSrc = fs.readFileSync(path.resolve('packages/plugins/search/src/index.ts'), 'utf8');
       assert(searchPluginSrc.includes("'sharp@^0.35.4'"), 'Search plugin PEER_DEPS includes sharp@^0.35.4');

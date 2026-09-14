@@ -5,10 +5,10 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  adm-zip: '>=0.6.0'
-  onnxruntime-node: ^1.27.0
+  adm-zip: '>=0.6.1'
+  onnxruntime-node: ^1.29.0
   sharp: ^0.35.4
-  protobufjs: ^7.6.5
+  protobufjs: ^8.8.0
 
 importers:
 
@@ -24,8 +24,8 @@ importers:
         specifier: ^5.6.2
         version: 5.6.2
       docmd-search:
-        specifier: ^0.1.3
-        version: 0.1.3(@docmd/engine-js@0.9.5)(@docmd/engine-rust@0.9.5)(@huggingface/transformers@4.2.0(@types/node@26.5.0))(adm-zip@0.6.0)(onnxruntime-node@1.27.0)(protobufjs@7.6.5)(sharp@0.35.4(@types/node@26.5.0))
+        specifier: ^0.1.5
+        version: 0.1.5(@docmd/engine-js@0.9.5)(@docmd/engine-rust@0.9.5)(@huggingface/transformers@4.2.0(@types/node@26.5.0))(sharp@0.35.4(@types/node@26.5.0))
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
@@ -392,8 +392,8 @@ importers:
   packages/plugins/search:
     dependencies:
       docmd-search:
-        specifier: '>=0.1.3'
-        version: 0.1.3(@docmd/engine-js@0.9.5)(@docmd/engine-rust@0.9.5)(@huggingface/transformers@4.2.0(@types/node@24.13.3))(adm-zip@0.6.0)(onnxruntime-node@1.27.0)(protobufjs@7.6.5)(sharp@0.35.4(@types/node@24.13.3))
+        specifier: '>=0.1.5'
+        version: 0.1.5(@docmd/engine-js@0.9.5)(@docmd/engine-rust@0.9.5)(@huggingface/transformers@4.2.0(@types/node@24.13.3))(sharp@0.35.4(@types/node@24.13.3))
       markdown-it:
         specifier: ^14.3.1
         version: 14.3.1
@@ -979,33 +979,6 @@ packages:
     engines: {node: '>=20'}
     hasBin: true
 
-  '@protobufjs/aspromise@1.1.2':
-    resolution: {integrity: sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ==}
-
-  '@protobufjs/base64@1.1.2':
-    resolution: {integrity: sha512-AZkcAA5vnN/v4PDqKyMR5lx7hZttPDgClv83E//FMNhR2TMcLUhfRUBHCmSl0oi9zMgDDqRUJkSxO3wm85+XLg==}
-
-  '@protobufjs/codegen@2.0.5':
-    resolution: {integrity: sha512-zgXFLzW3Ap33e6d0Wlj4MGIm6Ce8O89n/apUaGNB/jx+hw+ruWEp7EwGUshdLKVRCxZW12fp9r40E1mQrf/34g==}
-
-  '@protobufjs/eventemitter@1.1.1':
-    resolution: {integrity: sha512-vW1GmwMZNnL+gMRaovlh9yZX74kc+TTU3FObkkurpMaRtBfLP3ldjS9KQWlwZgraRE0+dheEEoAxdzcJQ8eXZg==}
-
-  '@protobufjs/fetch@1.1.1':
-    resolution: {integrity: sha512-GpptLrs57adMSuHi3VNj0mAF8dwh36LMaYF6XyJ6JMWlVsc+t42tm1HSEDmOs3A8fC9yyeisgLhsTVQokOZ0zw==}
-
-  '@protobufjs/float@1.0.2':
-    resolution: {integrity: sha512-Ddb+kVXlXst9d+R9PfTIxh1EdNkgoRe5tOX6t01f1lYWOvJnSPDBlG241QLzcyPdoNTsblLUdujGSE4RzrTZGQ==}
-
-  '@protobufjs/path@1.1.2':
-    resolution: {integrity: sha512-6JOcJ5Tm08dOHAbdR3GrvP+yUUfkjG5ePsHYczMFLq3ZmMkAD98cDgcT2iA1lJ9NVwFd4tH/iSSoe44YWkltEA==}
-
-  '@protobufjs/pool@1.1.0':
-    resolution: {integrity: sha512-0kELaGSIDBKvcgS4zkjz1PeddatrjYcmMWOlAuAPwAeccUrPHdUqo/J6LiymHHEiJT5NrF1UVwxY14f+fy4WQw==}
-
-  '@protobufjs/utf8@1.1.2':
-    resolution: {integrity: sha512-b1UQwcEZ4yCnMCD8DAL1VlbvBJE9/IX4FTIp7BG1xYpf29SLazLSrqUkj4w7Y5y7cCVP6E5tcqqcI0xemPkHug==}
-
   '@shoelace-style/animations@1.2.0':
     resolution: {integrity: sha512-avvo1xxkLbv2dgtabdewBbqcJfV0e0zCwFqkPMnHFGbJbBHorRFfMAHh1NG9ymmXn0jW95ibUVH03E1NYXD6Gw==}
 
@@ -1214,8 +1187,8 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  adm-zip@0.6.0:
-    resolution: {integrity: sha512-XleryMhbuksdKtofnWZ9Sk+4CUTbms4Mb/EU32SZwToAyZ5RgVos/ki8n+yr0LWHOGKuakbXTuuYNHLQjhddgg==}
+  adm-zip@0.6.1:
+    resolution: {integrity: sha512-Xwrja8nx9e5o2N1my4DsKCeKpdrnACyr1wtbPxBDgGzKzKyE9kRtBFA8mWldI+RVlD7CBZNWY/wQ2+ydwOR6kQ==}
     engines: {node: '>=14.0'}
 
   aiplug@0.1.2:
@@ -1485,17 +1458,17 @@ packages:
     resolution: {integrity: sha512-gkCuCeeB6DswUXjDafwKEteyOfNXTIfAMng+Hu+WxHP0l7KNqkanyU2ktTBpOutXCUSoVL/ojnaiBprFagdObw==}
     engines: {node: '>=20.0.0'}
 
-  docmd-search@0.1.3:
-    resolution: {integrity: sha512-cFUyJGWqlCCWnoFhnqhjxWF4n0DrWfmS4fxtCVUgFWnfN8hfdwC3GdOfHfaV6/WKLmXIkBTJdJHJQv9YEp40/g==}
+  docmd-search@0.1.5:
+    resolution: {integrity: sha512-/3z3d2pAr6vsxdEmI+X9mFg8/UhgtDtMAINw+qdJEJMW4T5lWfXHL1/MU83UtTXH2xrOZ3BiANXCcAQRd0wJcQ==}
     engines: {node: '>=20.0.0'}
     hasBin: true
     peerDependencies:
       '@docmd/engine-js': '>=0.8.10'
       '@docmd/engine-rust': '>=0.8.10'
       '@huggingface/transformers': ^4.2.0
-      adm-zip: '>=0.6.0'
-      onnxruntime-node: ^1.27.0
-      protobufjs: ^7.6.5
+      adm-zip: '>=0.6.1'
+      onnxruntime-node: ^1.29.0
+      protobufjs: ^8.8.0
       sharp: ^0.35.4
     peerDependenciesMeta:
       '@docmd/engine-js':
@@ -1837,11 +1810,11 @@ packages:
   onnxruntime-common@1.24.0-dev.20251116-b39e144322:
     resolution: {integrity: sha512-BOoomdHYmNRL5r4iQ4bMvsl2t0/hzVQ3OM3PHD0gxeXu1PmggqBv3puZicEUVOA3AtHHYmqZtjMj9FOfGrATTw==}
 
-  onnxruntime-common@1.27.0:
-    resolution: {integrity: sha512-3KxL5wIVqa8Ex08jxSzncm9CMgw8CjOFyOQ7SxvG9o0cVLlhTNKXyIQuTbtX4tGPJEf73OER2xrjt4HJSBL4ow==}
+  onnxruntime-common@1.29.0:
+    resolution: {integrity: sha512-/F63/e2VJoaVXGGNu6S5QH7jivBThGO95OzAVXXQ8hTta/b1QxI8udHa6cI3+3mAb5WWIIaMMwfZw01oivjJ1g==}
 
-  onnxruntime-node@1.27.0:
-    resolution: {integrity: sha512-QEzGwrvNBgv4uPVdnbHsOGG4G6T96mdlcFI8aAKPjMU8wOPpVocPXb6k3QGkaZagVTv2G9Bnnbo6Z3JdXr1fQw==}
+  onnxruntime-node@1.29.0:
+    resolution: {integrity: sha512-WjiVVB72riILz8HbYvxvmjKyE/WmkYoSfKY++axo5jAR609HQg8MwiG/HhShpTcJfmmAdzxxmB+MMST3A+SiPA==}
     os: [win32, darwin, linux]
 
   onnxruntime-web@1.26.0-dev.20260416-b7804b056c:
@@ -1900,8 +1873,8 @@ packages:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
 
-  protobufjs@7.6.5:
-    resolution: {integrity: sha512-/FPD0nUc9jH6rfFjji9IBqOz4pcSE3CsT1m7Ep6Mdb0LxSUMj8hgl6GomOvZzpNpAqqGaXA0P3VSrZLFzIhQrw==}
+  protobufjs@8.8.0:
+    resolution: {integrity: sha512-N3xhQ5yyBx3vQq4gubBfASzYhJGNzeDbjqBpu61g7UVylsN/qyffU96TKWD3GbbLOKF82VGNRNvv1+BFgE31Eg==}
     engines: {node: '>=12.0.0'}
 
   punycode.js@2.3.1:
@@ -2233,7 +2206,7 @@ snapshots:
     dependencies:
       '@huggingface/jinja': 0.5.10
       '@huggingface/tokenizers': 0.1.3
-      onnxruntime-node: 1.27.0
+      onnxruntime-node: 1.29.0
       onnxruntime-web: 1.26.0-dev.20260416-b7804b056c
       sharp: 0.35.4(@types/node@24.13.3)
     transitivePeerDependencies:
@@ -2244,7 +2217,7 @@ snapshots:
     dependencies:
       '@huggingface/jinja': 0.5.10
       '@huggingface/tokenizers': 0.1.3
-      onnxruntime-node: 1.27.0
+      onnxruntime-node: 1.29.0
       onnxruntime-web: 1.26.0-dev.20260416-b7804b056c
       sharp: 0.35.4(@types/node@26.5.0)
     transitivePeerDependencies:
@@ -2407,35 +2380,6 @@ snapshots:
   '@playwright/test@1.63.0':
     dependencies:
       playwright: 1.63.0
-
-  '@protobufjs/aspromise@1.1.2':
-    optional: true
-
-  '@protobufjs/base64@1.1.2':
-    optional: true
-
-  '@protobufjs/codegen@2.0.5':
-    optional: true
-
-  '@protobufjs/eventemitter@1.1.1':
-    optional: true
-
-  '@protobufjs/fetch@1.1.1':
-    dependencies:
-      '@protobufjs/aspromise': 1.1.2
-    optional: true
-
-  '@protobufjs/float@1.0.2':
-    optional: true
-
-  '@protobufjs/path@1.1.2':
-    optional: true
-
-  '@protobufjs/pool@1.1.0':
-    optional: true
-
-  '@protobufjs/utf8@1.1.2':
-    optional: true
 
   '@shoelace-style/animations@1.2.0': {}
 
@@ -2705,7 +2649,7 @@ snapshots:
 
   acorn@8.18.0: {}
 
-  adm-zip@0.6.0:
+  adm-zip@0.6.1:
     optional: true
 
   aiplug@0.1.2:
@@ -3002,24 +2946,18 @@ snapshots:
     dependencies:
       aiplug: 0.1.2
 
-  docmd-search@0.1.3(@docmd/engine-js@0.9.5)(@docmd/engine-rust@0.9.5)(@huggingface/transformers@4.2.0(@types/node@24.13.3))(adm-zip@0.6.0)(onnxruntime-node@1.27.0)(protobufjs@7.6.5)(sharp@0.35.4(@types/node@24.13.3)):
+  docmd-search@0.1.5(@docmd/engine-js@0.9.5)(@docmd/engine-rust@0.9.5)(@huggingface/transformers@4.2.0(@types/node@24.13.3))(sharp@0.35.4(@types/node@24.13.3)):
     optionalDependencies:
       '@docmd/engine-js': 0.9.5
       '@docmd/engine-rust': 0.9.5
       '@huggingface/transformers': 4.2.0(@types/node@24.13.3)
-      adm-zip: 0.6.0
-      onnxruntime-node: 1.27.0
-      protobufjs: 7.6.5
       sharp: 0.35.4(@types/node@24.13.3)
 
-  docmd-search@0.1.3(@docmd/engine-js@0.9.5)(@docmd/engine-rust@0.9.5)(@huggingface/transformers@4.2.0(@types/node@26.5.0))(adm-zip@0.6.0)(onnxruntime-node@1.27.0)(protobufjs@7.6.5)(sharp@0.35.4(@types/node@26.5.0)):
+  docmd-search@0.1.5(@docmd/engine-js@0.9.5)(@docmd/engine-rust@0.9.5)(@huggingface/transformers@4.2.0(@types/node@26.5.0))(sharp@0.35.4(@types/node@26.5.0)):
     optionalDependencies:
       '@docmd/engine-js': 0.9.5
       '@docmd/engine-rust': 0.9.5
       '@huggingface/transformers': 4.2.0(@types/node@26.5.0)
-      adm-zip: 0.6.0
-      onnxruntime-node: 1.27.0
-      protobufjs: 7.6.5
       sharp: 0.35.4(@types/node@26.5.0)
 
   dompurify@3.4.15:
@@ -3380,14 +3318,14 @@ snapshots:
   onnxruntime-common@1.24.0-dev.20251116-b39e144322:
     optional: true
 
-  onnxruntime-common@1.27.0:
+  onnxruntime-common@1.29.0:
     optional: true
 
-  onnxruntime-node@1.27.0:
+  onnxruntime-node@1.29.0:
     dependencies:
-      adm-zip: 0.6.0
+      adm-zip: 0.6.1
       global-agent: 4.1.3
-      onnxruntime-common: 1.27.0
+      onnxruntime-common: 1.29.0
     optional: true
 
   onnxruntime-web@1.26.0-dev.20260416-b7804b056c:
@@ -3397,7 +3335,7 @@ snapshots:
       long: 5.3.2
       onnxruntime-common: 1.24.0-dev.20251116-b39e144322
       platform: 1.3.6
-      protobufjs: 7.6.5
+      protobufjs: 8.8.0
     optional: true
 
   optionator@0.9.4:
@@ -3445,18 +3383,8 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  protobufjs@7.6.5:
+  protobufjs@8.8.0:
     dependencies:
-      '@protobufjs/aspromise': 1.1.2
-      '@protobufjs/base64': 1.1.2
-      '@protobufjs/codegen': 2.0.5
-      '@protobufjs/eventemitter': 1.1.1
-      '@protobufjs/fetch': 1.1.1
-      '@protobufjs/float': 1.0.2
-      '@protobufjs/path': 1.1.2
-      '@protobufjs/pool': 1.1.0
-      '@protobufjs/utf8': 1.1.2
-      '@types/node': 26.5.0
       long: 5.3.2
     optional: true
 
