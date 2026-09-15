@@ -17,11 +17,11 @@ import { fileURLToPath } from 'url';
 import nativeFs from 'fs';
 import { fsUtils as fs, WorkerPool } from '@docmd/utils';
 import { loadConfig } from '../utils/config-loader.js';
-import { TUI, loadPlugins, getPluginLoadErrors } from '@docmd/api';
+import { TUI, loadPlugins, getPluginLoadErrors, type ResolvedAsset } from '@docmd/api';
 import { flushNormaliserWarnings, setNormaliserVerbose } from '@docmd/parser';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-import { prepareAssets, prepareTemplateAssets } from '../engine/assets.js';
+import { copyResolvedAssets, prepareAssets, resolveBuildAssets } from '../engine/assets.js';
 import { buildLocales, generateLocaleRedirect, preCountPages } from '../engine/i18n.js';
 import { NOT_FOUND_DEFAULTS } from '../utils/config-schema.js';
 
@@ -29,6 +29,15 @@ import { NOT_FOUND_DEFAULTS } from '../utils/config-schema.js';
 // <meta name="generator"> tag so it stays in sync with @docmd/core.
 const _pkgUrl = new URL('../../package.json', import.meta.url);
 const pkg = JSON.parse(nativeFs.readFileSync(_pkgUrl, 'utf8')) as { version: string };
+
+function withResolvedAssets<T extends object>(ctx: T, assets: readonly ResolvedAsset[]): T & { readonly resolvedAssets: readonly ResolvedAsset[] } {
+  return Object.defineProperty(ctx, 'resolvedAssets', {
+    value: assets,
+    enumerable: true,
+    configurable: false,
+    writable: false
+  }) as T & { readonly resolvedAssets: readonly ResolvedAsset[] };
+}
 
 export async function buildSite(configPath: string, opts: any = {}) {
 
@@ -141,6 +150,11 @@ export async function buildSite(configPath: string, opts: any = {}) {
     const rootOutputDir = path.resolve(CWD, config.out);
     await fs.ensureDir(rootOutputDir);
 
+    // Resolve once so copying, page rendering, and build integrations all
+    // observe the same plugin/template declarations. Stateful or async asset
+    // hooks must not produce a different result for each pipeline stage.
+    const resolvedAssets = await resolveBuildAssets(hooks);
+
     // ── TUI: Build section header ──────────────────────────
     if (!options.quiet) {
       TUI.section('Build');
@@ -152,46 +166,7 @@ export async function buildSite(configPath: string, opts: any = {}) {
     // Helper: Build Assets for a specific output directory
     const buildAssetsForDir = async (targetOutDir: string) => {
       await prepareAssets(config, targetOutDir, options);
-      // New in 0.8.7: copy template assets (CSS/JS bundles shipped by
-      // template plugins) into `assets/template/`.
-      await prepareTemplateAssets(config, targetOutDir);
-      if (hooks.assets) {
-        for (const getAssetsFn of hooks.assets) {
-          // hooks.assets entries are async wrappers; missing the await here
-          // would make `assets` a Promise and silently skip the whole copy
-          // loop (Array.isArray(Promise) === false). The user-visible symptom
-          // is "plugin assets never land in site/" — search, git, mermaid,
-          // math, openapi CSS/JS all missing, search modal does not open.
-          const assets = await getAssetsFn();
-          if (Array.isArray(assets)) {
-            for (const asset of assets) {
-              // Backwards-compat: legacy assets used `src`/`dest` and
-              // `location`. The new typed `Asset` interface uses `path` and
-              // `position`. Accept both spellings here.
-              const src = (asset as any).src ?? (asset as any).path;
-              const dest = (asset as any).dest ?? (asset as any).url;
-              if (src && dest) {
-                const destPath = path.join(targetOutDir, dest);
-                await fs.ensureDir(path.dirname(destPath));
-                // Strip sourceMappingURL comments from copied JS so the
-                // browser doesn't 404 looking for .map files we don't ship.
-                // vendored libs (minisearch etc.) leave these behind.
-                if (dest.endsWith('.js')) {
-                  try {
-                    const content = await fs.readFile(src, 'utf8');
-                    const stripped = content.replace(/\n?\/\/# sourceMappingURL=\S+\s*$/, '');
-                    await fs.writeFile(destPath, stripped);
-                  } catch {
-                    await fs.copy(src, destPath);
-                  }
-                } else {
-                  await fs.copy(src, destPath);
-                }
-              }
-            }
-          }
-        }
-      }
+      await copyResolvedAssets(resolvedAssets, targetOutDir);
     };
 
     // Build assets ONCE for the root site (skip on targeted incremental rebuilds)
@@ -218,7 +193,8 @@ export async function buildSite(configPath: string, opts: any = {}) {
       CWD,
       onProgress: options.onProgress,
       targetFiles: options.targetFiles,
-      coreVersion: pkg.version
+      coreVersion: pkg.version,
+      resolvedAssets
     });
 
     // --- i18n ROOT REDIRECT ---
@@ -365,7 +341,7 @@ export async function buildSite(configPath: string, opts: any = {}) {
     //   Data Indexing → search (appended to already-open section from git above)
     //   Publishing    → sitemap, llms, pwa, etc.
     if (!options.targetFiles) {
-      const postBuildCtx = {
+      const postBuildCtx = withResolvedAssets({
         config,
         pages:     allGeneratedPages,
         outputDir: rootOutputDir,
@@ -378,7 +354,7 @@ export async function buildSite(configPath: string, opts: any = {}) {
           if (!config._workerPool) throw new Error('WorkerPool is not initialized');
           return config._workerPool.runTask({ type: 'plugin-task', modulePath, functionName, args });
         }
-      };
+      }, resolvedAssets);
 
       // Indexing — search runs in the already-open Data Indexing section
       for (const fn of indexingHooks) await fn(postBuildCtx);
@@ -390,12 +366,12 @@ export async function buildSite(configPath: string, opts: any = {}) {
         for (const fn of publishingHooks) {
           const pluginName = String((fn as any)._pluginName || 'plugin');
           const entries: Array<{ msg: string; status: 'DONE'|'SKIP'|'FAIL'|'WAIT' }> = [];
-          const pluginCtx = {
+          const pluginCtx = withResolvedAssets({
             ...postBuildCtx,
             log: (msg: string, status: 'DONE'|'SKIP'|'FAIL'|'WAIT' = 'DONE') => {
               entries.push({ msg, status });
             },
-          };
+          }, resolvedAssets);
           await fn(pluginCtx);
           if (!options.quiet) TUI.pluginTree(pluginName, entries, TUI.blue);
         }

@@ -17,6 +17,7 @@ import { fsUtils as fs } from '@docmd/utils';
 import esbuild from 'esbuild';
 import { createRequire } from 'module';
 import nativeFs from 'fs';
+import type { Asset, AssetKind, ResolvedAsset, TemplateAssetHook } from '@docmd/api';
 
 const _require = createRequire(import.meta.url);
 import * as themes from '@docmd/themes';
@@ -90,28 +91,135 @@ export async function prepareAssets(config: any, outputDir: string, options: any
   }
 }
 
-// Template Assets
-// Templates ship their own CSS/JS bundles. We copy them into
-// `assets/template/<basename>` so they survive minification and
-// can be referenced with a stable URL.
-export async function prepareTemplateAssets(config: any, outputDir: string) {
-  // The hooks object is exported by @docmd/api. We import lazily to avoid
-  // a hard build-time cycle between @docmd/core ↔ @docmd/api.
-  const { hooks } = await import('@docmd/api');
-  if (!hooks || !Array.isArray(hooks.templateAssets) || hooks.templateAssets.length === 0) return;
+type AssetHook = (() => Asset[] | Promise<Asset[]>) & { _pluginName?: string };
 
-  const templateDir = path.join(outputDir, 'assets', 'template');
-  await fs.ensureDir(templateDir);
+interface BuildAssetHooks {
+  assets?: AssetHook[];
+  templateAssets?: Array<TemplateAssetHook & { _pluginName?: string }>;
+}
 
-  for (const asset of hooks.templateAssets) {
-    if (!asset || !asset.path || !asset.type) continue;
-    if (asset.type !== 'css' && asset.type !== 'js') continue;
-    if (!await fs.exists(asset.path)) {
-      // Don't crash the build — the resolver already warned at render time.
-      continue;
+function effectivePosition(asset: Asset, type: AssetKind): 'head' | 'body' | 'none' {
+  if (type === 'static') return 'none';
+  // Prefer the legacy alias when both are present so existing plugins retain
+  // the placement that generator.ts historically used.
+  const declared = asset.location ?? asset.position;
+  if (declared === 'none') return 'none';
+  if (declared === 'head') return 'head';
+  // `footer` has historically shared the body injection bucket.
+  if (declared === 'body' || declared === 'footer') return 'body';
+  // Plugin assets historically default to the body, including CSS.
+  return 'body';
+}
+
+function isExternalUrl(value: string): boolean {
+  return /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(value);
+}
+
+function freezeResolvedAsset(asset: ResolvedAsset): ResolvedAsset {
+  const condition = asset.condition
+    ? Object.freeze({
+        ...asset.condition,
+        ...(Array.isArray(asset.condition.pageHtmlMatches)
+          ? { pageHtmlMatches: Object.freeze([...asset.condition.pageHtmlMatches]) }
+          : {})
+      })
+    : undefined;
+  const attributes = asset.attributes ? Object.freeze({ ...asset.attributes }) : undefined;
+
+  return Object.freeze({
+    ...asset,
+    provider: Object.freeze({ ...asset.provider }),
+    ...(attributes ? { attributes } : {}),
+    ...(condition ? { condition } : {})
+  });
+}
+
+/**
+ * Resolve template and plugin asset declarations once for a build.
+ *
+ * The returned snapshot is deeply frozen because every post-build hook sees
+ * the same value. It intentionally excludes core/theme/user directories and
+ * files created later by post-build hooks; it is an asset declaration catalog,
+ * not an output-directory manifest.
+ */
+export async function resolveBuildAssets(hooks: BuildAssetHooks): Promise<readonly ResolvedAsset[]> {
+  const resolved: ResolvedAsset[] = [];
+
+  for (const asset of hooks.templateAssets || []) {
+    if (!asset?.path || (asset.type !== 'css' && asset.type !== 'js')) continue;
+    resolved.push(freezeResolvedAsset({
+      kind: 'file',
+      type: asset.type,
+      sourcePath: path.resolve(asset.path),
+      outputPath: path.join('assets', 'template', path.basename(asset.path)).replace(/\\/g, '/'),
+      priority: typeof asset.priority === 'number' ? asset.priority : 10,
+      position: asset.position === 'head' || (!asset.position && asset.type === 'css') ? 'head' : 'body',
+      provider: { kind: 'template', name: asset._pluginName || 'template' }
+    }));
+  }
+
+  for (const getAssets of hooks.assets || []) {
+    const assets = await getAssets();
+    if (!Array.isArray(assets)) continue;
+
+    for (const asset of assets) {
+      if (!asset || (asset.type !== 'css' && asset.type !== 'js' && asset.type !== 'static')) continue;
+      // Legacy aliases keep precedence because the two pre-resolver consumers
+      // did the same when copying local files.
+      const sourcePath = asset.src ?? asset.path;
+      const outputPath = asset.dest ?? (asset.url && !isExternalUrl(asset.url) ? asset.url : undefined);
+      const common = {
+        type: asset.type,
+        priority: typeof asset.priority === 'number' ? asset.priority : 20,
+        position: effectivePosition(asset, asset.type),
+        provider: { kind: 'plugin' as const, name: getAssets._pluginName || 'plugin' },
+        ...(asset.attributes ? { attributes: asset.attributes } : {}),
+        ...(asset.condition ? { condition: asset.condition } : {})
+      };
+
+      if (typeof sourcePath === 'string' && sourcePath && typeof outputPath === 'string' && outputPath) {
+        resolved.push(freezeResolvedAsset({
+          ...common,
+          kind: 'file',
+          sourcePath: path.resolve(sourcePath),
+          outputPath
+        }));
+      } else if ((asset.type === 'css' || asset.type === 'js') && typeof asset.url === 'string' && asset.url) {
+        resolved.push(freezeResolvedAsset({
+          ...common,
+          kind: 'url',
+          type: asset.type,
+          url: asset.url
+        }));
+      }
     }
-    const dest = path.join(templateDir, path.basename(asset.path));
-    await fs.copy(asset.path, dest);
+  }
+
+  return Object.freeze(resolved);
+}
+
+/** Copy every local entry from a previously resolved asset snapshot. */
+export async function copyResolvedAssets(assets: readonly ResolvedAsset[], outputDir: string) {
+  for (const asset of assets) {
+    if (asset.kind !== 'file') continue;
+    if (asset.provider.kind === 'template' && !await fs.exists(asset.sourcePath)) continue;
+    const destPath = path.join(outputDir, asset.outputPath);
+    await fs.ensureDir(path.dirname(destPath));
+
+    // Preserve the existing plugin-copy behaviour: vendored JavaScript often
+    // points at source maps that packages do not ship. Template JS was copied
+    // verbatim before the shared resolver and remains so.
+    if (asset.provider.kind === 'plugin' && asset.outputPath.endsWith('.js')) {
+      try {
+        const content = await fs.readFile(asset.sourcePath, 'utf8');
+        const stripped = content.replace(/\n?\/\/# sourceMappingURL=\S+\s*$/, '');
+        await fs.writeFile(destPath, stripped);
+      } catch {
+        await fs.copy(asset.sourcePath, destPath);
+      }
+    } else {
+      await fs.copy(asset.sourcePath, destPath);
+    }
   }
 }
 

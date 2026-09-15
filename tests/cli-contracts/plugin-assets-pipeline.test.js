@@ -26,6 +26,11 @@
  *          name; the gate then returned false and every plugin's
  *          getAssets was skipped with a "didn't declare" warning).
  *
+ *   PAA-4  One immutable, normalized asset snapshot drives copying,
+ *          page tags, and post-build integrations. This prevents a
+ *          stateful getAssets hook from returning different files to
+ *          different stages of the same build.
+ *
  * Uses the built-in @docmd/plugin-search, plugin-git, plugin-mermaid,
  * plugin-math, plugin-openapi as the test subjects because their
  * getAssets hooks cover the full matrix (local-copy src/dest, CDN
@@ -36,10 +41,10 @@
  */
 
 import {
-  DOCMD,
   setup,
   writeFile,
   build,
+  readSite,
   runTestFile
 } from '../shared.js';
 import fs from 'node:fs';
@@ -61,7 +66,7 @@ function assert(condition, message) {
 }
 
 export const test = runTestFile({
-  name: 'Plugin asset pipeline (await + capability)',
+  name: 'Plugin asset pipeline (resolution + capability)',
   emoji: '🧩',
   run: async () => {
 
@@ -180,6 +185,104 @@ export const test = runTestFile({
           `PAA-1b: ${rel} is present in site/ after the build`);
       }
     }
+
+    // PAA-4: one deliberately stateful async hook covers the relationships
+    // that matter. Before assets were resolved once, its first call supplied
+    // copied files while a later call supplied different page URLs.
+    {
+      const proj = setup('plugin-assets-pipeline-paa4-resolved-snapshot');
+      writeFile(proj, 'docs/index.md', '# Plain page\n');
+      writeFile(proj, 'docs/feature.md', [
+        '---',
+        'feature: true',
+        '---',
+        '# Feature page',
+        ''
+      ].join('\n'));
+      writeFile(proj, 'docs/nested/index.md', '# Widget page\n\n<div data-widget>widget</div>\n');
+      writeFile(proj, 'plugins/asset-observer/canonical.js', 'window.canonicalAsset = true;\n');
+      writeFile(proj, 'plugins/asset-observer/legacy.css', '.legacy-asset { color: inherit; }\n');
+      writeFile(proj, 'plugins/asset-observer/payload.json', '{"fixture":true}\n');
+      writeFile(proj, 'plugins/asset-observer/package.json', JSON.stringify({
+        name: 'asset-observer', version: '1.0.0', type: 'module', main: 'index.js'
+      }) + '\n');
+      writeFile(proj, 'plugins/asset-observer/index.js', [
+        "import fs from 'node:fs/promises';",
+        "import path from 'node:path';",
+        "import { fileURLToPath } from 'node:url';",
+        '',
+        "const here = path.dirname(fileURLToPath(import.meta.url));",
+        'let calls = 0;',
+        "export const plugin = { name: 'asset-observer', version: '1.0.0', capabilities: ['assets', 'post-build'] };",
+        'export async function getAssets() {',
+        '  calls += 1;',
+        '  await Promise.resolve();',
+        '  return [',
+        "    { path: path.join(here, 'canonical.js'), url: `assets/js/canonical-${calls}.js`, type: 'js', position: 'body', attributes: { type: 'module' }, condition: { frontmatterHas: 'feature' } },",
+        "    { src: path.join(here, 'legacy.css'), dest: 'assets/css/legacy.css', type: 'css' },",
+        "    { src: path.join(here, 'payload.json'), dest: 'assets/data/payload.json', type: 'static', location: 'none' },",
+        "    { url: 'https://assets.example.invalid/widget.css', type: 'css', position: 'head', condition: { pageHtmlMatches: ['data-widget', 'data-other-widget'] } },",
+        "    { url: 'https://assets.example.invalid/suppressed.js', type: 'js', location: 'none' }",
+        '  ];',
+        '}',
+        'export async function onPostBuild(ctx) {',
+        '  const deeplyFrozen = Object.isFrozen(ctx.resolvedAssets) && ctx.resolvedAssets.every((asset) =>',
+        '    Object.isFrozen(asset) && Object.isFrozen(asset.provider) &&',
+        '    (!asset.attributes || Object.isFrozen(asset.attributes)) &&',
+        '    (!asset.condition || (Object.isFrozen(asset.condition) &&',
+        '      (!Array.isArray(asset.condition.pageHtmlMatches) || Object.isFrozen(asset.condition.pageHtmlMatches))))',
+        '  );',
+        '  let itemMutationRejected = false;',
+        '  let bindingMutationRejected = false;',
+        '  try { ctx.resolvedAssets.push(null); } catch { itemMutationRejected = true; }',
+        '  try { ctx.resolvedAssets = []; } catch { bindingMutationRejected = true; }',
+        "  await fs.writeFile(path.join(ctx.outputDir, 'asset-observer.json'), JSON.stringify({ calls, deeplyFrozen, itemMutationRejected, bindingMutationRejected, resolvedAssets: ctx.resolvedAssets }, null, 2));",
+        '}',
+        ''
+      ].join('\n'));
+      writeFile(proj, 'docmd.config.json', JSON.stringify({
+        title: 'PAA-4',
+        src: './docs',
+        out: './site',
+        theme: { template: 'summer' },
+        plugins: { './plugins/asset-observer': {} }
+      }, null, 2) + '\n');
+
+      const result = build(proj);
+      const reportPath = path.join(proj, 'site/asset-observer.json');
+      assert(result.ok && fs.existsSync(reportPath), 'PAA-4: representative build exposes an asset snapshot');
+
+      const report = JSON.parse(readSite(proj, 'asset-observer.json'));
+      const observed = report.resolvedAssets.filter((asset) => asset.provider.name === 'asset-observer');
+      const outputPaths = observed.filter((asset) => asset.kind === 'file').map((asset) => asset.outputPath);
+      assert(report.calls === 1 && outputPaths.includes('assets/js/canonical-1.js') && !outputPaths.includes('assets/js/canonical-2.js'),
+        'PAA-4: async getAssets runs once and supplies one stable file set');
+      assert(outputPaths.every((outputPath) => fs.existsSync(path.join(proj, 'site', outputPath))),
+        'PAA-4: every resolved local asset was copied to its declared output path');
+      assert(observed.find((asset) => asset.outputPath === 'assets/css/legacy.css')?.position === 'body',
+        'PAA-4: legacy assets retain their historical body default');
+
+      const plainHtml = readSite(proj, 'index.html');
+      const featureHtml = readSite(proj, 'feature/index.html');
+      const widgetHtml = readSite(proj, 'nested/index.html');
+      assert(!plainHtml.includes('canonical-1.js') && /<script[^>]+src="\.\.\/assets\/js\/canonical-1\.js[^>]+type="module"/.test(featureHtml) && !widgetHtml.includes('canonical-1.js'),
+        'PAA-4: canonical local asset and attributes are injected only on the opted-in page');
+      const widgetHead = widgetHtml.slice(0, widgetHtml.indexOf('</head>'));
+      assert(!plainHtml.includes('widget.css') && !featureHtml.includes('widget.css') && widgetHead.includes('assets.example.invalid/widget.css'),
+        'PAA-4: canonical URL position and condition are applied per page');
+      assert(observed.find((asset) => asset.url?.endsWith('/suppressed.js'))?.position === 'none' &&
+        [plainHtml, featureHtml, widgetHtml].every((html) => !html.includes('suppressed.js')),
+        'PAA-4: legacy location none suppresses a URL-only asset tag');
+      assert([plainHtml, featureHtml, widgetHtml].every((html) => !html.includes('payload.json')),
+        'PAA-4: copy-only static asset is never injected into a page');
+
+      const summerAssets = report.resolvedAssets.filter((asset) => asset.provider.name === 'template-summer');
+      assert(summerAssets.length === 2 && summerAssets.every((asset) => asset.kind === 'file' && fs.existsSync(path.join(proj, 'site', asset.outputPath))),
+        'PAA-4: template assets share the same resolved and copied contract');
+      assert(report.deeplyFrozen && report.itemMutationRejected && report.bindingMutationRejected && !report.resolvedAssets.some((asset) => asset.outputPath === 'asset-observer.json'),
+        'PAA-4: post-build hooks receive an immutable declaration snapshot, not an output manifest');
+    }
+
   }
 });
 

@@ -173,8 +173,14 @@ export interface PluginModule {
   generateMetaTags?(config: any, page: any, relativePathToRoot: string): string | Promise<string>;
   /** Inject scripts into head and/or body. */
   generateScripts?(config: any, options?: any): { headScriptsHtml?: string; bodyScriptsHtml?: string };
-  /** Define external assets (JS/CSS) to inject. */
-  getAssets?(options?: any): Asset[];
+  /**
+   * Declare local or remote assets used by the generated site.
+   *
+   * Local assets use `path`/`url` (or legacy `src`/`dest`) and are copied
+   * before pages are rendered. URL-only assets are referenced directly.
+   * Implementations may resolve their declarations asynchronously.
+   */
+  getAssets?(options?: any): Asset[] | Promise<Asset[]>;
   /** Run logic before HTML generation, after markdown parsing. */
   onBeforeBuild?(ctx: BeforeBuildContext): Promise<void>;
   /** Run logic after all HTML files are generated. */
@@ -308,6 +314,17 @@ export interface PostBuildContext {
   config: DocConfigShape;
   pages: PageInfoShape[];
   outputDir: string;
+  /**
+   * Plugin and template assets resolved once for this build.
+   *
+   * This is not a manifest of every file in `outputDir`: core, theme, and
+   * user asset directories are copied separately, and post-build plugins may
+   * create additional files. Conditions describe per-page injection; local
+   * declarations participate in one site-wide copy phase. Asset fields the
+   * current core pipeline does not consume, including `inline` and `hash`,
+   * are omitted.
+   */
+  readonly resolvedAssets: readonly ResolvedAsset[];
   tui: any; // @docmd/tui instance for progress bars and spinners
   log: (msg: string) => void;
   options: any;
@@ -542,17 +559,17 @@ export type AssetPosition = 'head' | 'body' | 'footer';
 export interface Asset {
   /** Asset kind. */
   type: AssetKind;
-  /** Absolute or template-relative path to the source file. */
+  /** Local source path. Relative plugin paths are resolved from the process working directory. */
   path?: string;
   /** Public URL/path where the asset will be served from. */
   url?: string;
-  /** Load order. Lower = earlier. Defaults to 0. */
+  /** Load order. Lower = earlier. Defaults to 20 for plugin assets. */
   priority?: number;
-  /** Where in the document to inject. Defaults to `head` for css, `body` for js. */
+  /** Where in the document to inject. Plugin assets historically default to `body`. */
   position?: AssetPosition;
-  /** Optional content-hash suffix (e.g. for cache busting). */
+  /** Reserved for future use; the current core asset pipeline does not apply this field. */
   hash?: string;
-  /** Optional inline content (mutually exclusive with `path`). */
+  /** Reserved for future use; the current core asset pipeline does not apply this field. */
   inline?: string;
 
   /**
@@ -588,7 +605,7 @@ export interface Asset {
   dest?: string;
   /** @deprecated Use `position`. */
   location?: 'head' | 'body' | 'none';
-  /** @deprecated Use `position`. Legacy maps to `head`/`body`/`none`. */
+  /** Extra attributes to add to the generated `<link>` or `<script>` tag. */
   attributes?: Record<string, string | boolean>;
 }
 
@@ -615,6 +632,54 @@ export interface AssetCondition {
    */
   frontmatterHas?: string;
 }
+
+/** Where a resolved asset came from. */
+interface ResolvedAssetProvider {
+  readonly kind: 'plugin' | 'template';
+  /** Plugin descriptor name, or the configured package's short name. */
+  readonly name: string;
+}
+
+/** Metadata shared by copied-file and URL assets after alias normalization. */
+interface ResolvedAssetBase {
+  readonly type: AssetKind;
+  /** Effective injection position. `none` means no page tag is emitted. */
+  readonly position: 'head' | 'body' | 'none';
+  /** Effective load priority after defaults are applied. */
+  readonly priority: number;
+  readonly provider: ResolvedAssetProvider;
+  readonly attributes?: Readonly<Record<string, string | boolean>>;
+  readonly condition?: Readonly<{
+    pageHtmlMatches?: string | readonly string[];
+    frontmatterHas?: string;
+  }>;
+}
+
+/** A local asset declaration handled by DocMD's copy pipeline. */
+interface ResolvedFileAsset extends ResolvedAssetBase {
+  readonly kind: 'file';
+  /** Absolute local source path used by the build. */
+  readonly sourcePath: string;
+  /**
+   * Destination used by the existing copy/render pipeline. Plugin values are
+   * expected to be site-relative but are not validated by this API.
+   */
+  readonly outputPath: string;
+}
+
+/** A URL referenced by rendered pages without a corresponding local copy. */
+interface ResolvedUrlAsset extends ResolvedAssetBase {
+  readonly kind: 'url';
+  readonly type: 'css' | 'js';
+  readonly url: string;
+}
+
+/**
+ * Normalized template or plugin asset declared for the current build.
+ * Fields not consumed by the current asset pipeline, such as `inline` and
+ * `hash`, are not represented.
+ */
+export type ResolvedAsset = ResolvedFileAsset | ResolvedUrlAsset;
 
 // ---------------------------------------------------------------------------
 // Template System (new in 0.8.7)
