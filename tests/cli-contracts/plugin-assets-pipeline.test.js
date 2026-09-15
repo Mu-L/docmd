@@ -213,10 +213,11 @@ export const test = runTestFile({
         '',
         "const here = path.dirname(fileURLToPath(import.meta.url));",
         'let calls = 0;',
+        'let coreAssetsReady = false;',
         "export const plugin = { name: 'asset-observer', version: '1.0.0', capabilities: ['assets', 'post-build'] };",
         'export async function getAssets() {',
         '  calls += 1;',
-        '  await Promise.resolve();',
+        "  coreAssetsReady = await fs.access(path.join(here, '../../site/assets/css/docmd-main.css')).then(() => true, () => false);",
         '  return [',
         "    { path: path.join(here, 'canonical.js'), url: `assets/js/canonical-${calls}.js`, type: 'js', position: 'body', attributes: { type: 'module' }, condition: { frontmatterHas: 'feature' } },",
         "    { src: path.join(here, 'legacy.css'), dest: 'assets/css/legacy.css', type: 'css' },",
@@ -236,7 +237,7 @@ export const test = runTestFile({
         '  let bindingMutationRejected = false;',
         '  try { ctx.resolvedAssets.push(null); } catch { itemMutationRejected = true; }',
         '  try { ctx.resolvedAssets = []; } catch { bindingMutationRejected = true; }',
-        "  await fs.writeFile(path.join(ctx.outputDir, 'asset-observer.json'), JSON.stringify({ calls, deeplyFrozen, itemMutationRejected, bindingMutationRejected, resolvedAssets: ctx.resolvedAssets }, null, 2));",
+        "  await fs.writeFile(path.join(ctx.outputDir, 'asset-observer.json'), JSON.stringify({ calls, coreAssetsReady, deeplyFrozen, itemMutationRejected, bindingMutationRejected, resolvedAssets: ctx.resolvedAssets }, null, 2));",
         '}',
         ''
       ].join('\n'));
@@ -255,8 +256,8 @@ export const test = runTestFile({
       const report = JSON.parse(readSite(proj, 'asset-observer.json'));
       const observed = report.resolvedAssets.filter((asset) => asset.provider.name === 'asset-observer');
       const outputPaths = observed.filter((asset) => asset.kind === 'file').map((asset) => asset.outputPath);
-      assert(report.calls === 1 && outputPaths.includes('assets/js/canonical-1.js') && !outputPaths.includes('assets/js/canonical-2.js'),
-        'PAA-4: async getAssets runs once and supplies one stable file set');
+      assert(report.calls === 1 && report.coreAssetsReady && outputPaths.includes('assets/js/canonical-1.js') && !outputPaths.includes('assets/js/canonical-2.js'),
+        'PAA-4: async getAssets runs once at the existing copy-stage boundary');
       assert(outputPaths.every((outputPath) => fs.existsSync(path.join(proj, 'site', outputPath))),
         'PAA-4: every resolved local asset was copied to its declared output path');
       assert(observed.find((asset) => asset.outputPath === 'assets/css/legacy.css')?.position === 'body',

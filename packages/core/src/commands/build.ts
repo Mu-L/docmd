@@ -150,11 +150,6 @@ export async function buildSite(configPath: string, opts: any = {}) {
     const rootOutputDir = path.resolve(CWD, config.out);
     await fs.ensureDir(rootOutputDir);
 
-    // Resolve once so copying, page rendering, and build integrations all
-    // observe the same plugin/template declarations. Stateful or async asset
-    // hooks must not produce a different result for each pipeline stage.
-    const resolvedAssets = await resolveBuildAssets(hooks);
-
     // ── TUI: Build section header ──────────────────────────
     if (!options.quiet) {
       TUI.section('Build');
@@ -163,15 +158,19 @@ export async function buildSite(configPath: string, opts: any = {}) {
       TUI.footer(); // close Build — Data Indexing and progress appear in clean air
     }
 
-    // Helper: Build Assets for a specific output directory
-    const buildAssetsForDir = async (targetOutDir: string) => {
-      await prepareAssets(config, targetOutDir, options);
-      await copyResolvedAssets(resolvedAssets, targetOutDir);
-    };
+    let resolvedAssets: readonly ResolvedAsset[];
 
-    // Build assets ONCE for the root site (skip on targeted incremental rebuilds)
+    // Preserve the existing full-build timing: plugin declarations are first
+    // requested after core/theme/user assets have been prepared. Resolve them
+    // once at that boundary, then reuse the same value everywhere else.
     if (!options.targetFiles) {
-      await buildAssetsForDir(rootOutputDir);
+      await prepareAssets(config, rootOutputDir, options);
+      resolvedAssets = await resolveBuildAssets(hooks);
+      await copyResolvedAssets(resolvedAssets, rootOutputDir);
+    } else {
+      // Targeted rebuilds intentionally skip copying, as before, but rendering
+      // still needs the declaration catalog for page tags.
+      resolvedAssets = await resolveBuildAssets(hooks);
     }
 
     // Open Data Indexing before buildLocales so git (onBeforeBuild) runs inside it.

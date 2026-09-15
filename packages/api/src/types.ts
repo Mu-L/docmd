@@ -322,7 +322,9 @@ export interface PostBuildContext {
    * create additional files. Conditions describe per-page injection; local
    * declarations participate in one site-wide copy phase. Asset fields the
    * current core pipeline does not consume, including `inline` and `hash`,
-   * are omitted.
+   * are omitted. Declaration order and duplicates are preserved; rendering
+   * applies position/priority ordering, and output paths are not guaranteed
+   * to be unique.
    */
   readonly resolvedAssets: readonly ResolvedAsset[];
   tui: any; // @docmd/tui instance for progress bars and spinners
@@ -677,7 +679,8 @@ interface ResolvedUrlAsset extends ResolvedAssetBase {
 /**
  * Normalized template or plugin asset declared for the current build.
  * Fields not consumed by the current asset pipeline, such as `inline` and
- * `hash`, are not represented.
+ * `hash`, are not represented. This type does not imply a unique output path
+ * or final page-tag order.
  */
 export type ResolvedAsset = ResolvedFileAsset | ResolvedUrlAsset;
 
