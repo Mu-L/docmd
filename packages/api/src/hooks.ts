@@ -838,7 +838,9 @@ function registerPlugin(
   if (!skipClientAssets && typeof plugin.getAssets === 'function') {
     if (hasCapabilityForHook(descriptor, 'getAssets')) {
       const fn = plugin.getAssets;
-      hooks.assets.push(async () => (await safeCall('getAssets', name, fn, options)) as any[] || []);
+      const wrapper = async () => (await safeCall('getAssets', name, fn, options)) as any[] || [];
+      (wrapper as any)._pluginName = descriptor?.name || shortName;
+      hooks.assets.push(wrapper);
     } else {
       TUI.warn(`Plugin "${shortName}" exports getAssets but didn't declare "assets" capability - skipped`);
     }

@@ -49,6 +49,7 @@ import * as parser from '@docmd/parser';
 import { TUI } from '@docmd/tui';
 import { findPageNeighbors, findBreadcrumbs, normalizeNavPaths, createUrlContext, buildContextualUrl, buildAbsoluteContextualUrl, computePageUrls, sanitizeUrl, normaliseBaseTag } from '@docmd/parser';
 import * as ui from '@docmd/ui';
+import type { ResolvedAsset } from '@docmd/api';
 
 
 
@@ -109,9 +110,11 @@ interface RenderPagesOptions {
   onProgress?: (current: number, total: number) => void;
   /** Optional: only render specific files (relative to srcDir). Used for incremental dev rebuilds. */
   targetFiles?: string[];
+  /** Plugin/template assets resolved once by the top-level build. */
+  resolvedAssets: readonly ResolvedAsset[];
 }
 
-export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, hooks, buildHash, options, outputPrefix = '', coreVersion, onProgress, targetFiles }: RenderPagesOptions) {
+export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, hooks, buildHash, options, outputPrefix = '', coreVersion, onProgress, targetFiles, resolvedAssets }: RenderPagesOptions) {
   // Reset git root cache (cwd may have changed between workspace builds)
   _cachedGitRoot = null;
 
@@ -214,53 +217,15 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
     gen: (rel: string) => generateAssetTag(`${rel}assets/js/docmd-image-lightbox.js?v=${buildHash}`, 'js'),
   });
 
-  // Template assets (priority 10 by default — overrides theme, overridden by customCss)
-  if (hooks.templateAssets && Array.isArray(hooks.templateAssets)) {
-    for (const asset of hooks.templateAssets) {
-      if (!asset || !asset.path || (asset.type !== 'css' && asset.type !== 'js')) continue;
-      const baseName = path.basename(asset.path);
-      const position = (asset.position || (asset.type === 'css' ? 'head' : 'body')) as 'head' | 'body';
-      const priority = typeof asset.priority === 'number' ? asset.priority : 10;
-      const bucket = position === 'head' ? assetTags.head : assetTags.body;
-      // The URL is computed per-page (relativePathToRoot varies by depth).
-      bucket.push({
-        priority,
-        gen: (rel: string) => generateAssetTag(`${rel}assets/template/${baseName}?v=${buildHash}`, asset.type),
-      });
-    }
-  }
-
-  // Plugin Assets
-  if (hooks.assets) {
-    for (const getAssetsFn of hooks.assets) {
-      // hooks.assets entries are async wrappers; missing the await here
-      // would make `assets` a Promise and silently skip the whole tag
-      // generation loop (Array.isArray(Promise) === false). The
-      // user-visible symptom is "plugin <script>/<link> tags never appear
-      // in rendered HTML" — search modal can't open, git commit history
-      // widget never initialises, mermaid/math never hydrate.
-      const assets = await getAssetsFn();
-      if (Array.isArray(assets)) {
-        for (const asset of assets) {
-          let tagGen;
-          if (asset.src && asset.dest) {
-            // Copy is handled in build.js main loop, here we just ref tags
-            // location: 'none' means copy the file but don't inject any tag
-            if (asset.location !== 'none') {
-              tagGen = (rel: string) => generateAssetTag(`${rel}${asset.dest}?v=${buildHash}`, asset.type, asset.attributes);
-            }
-          } else if (asset.url) {
-            tagGen = () => generateAssetTag(asset.url, asset.type, asset.attributes);
-          }
-          if (tagGen) {
-            // Plugin assets without an explicit priority land at 20 (last).
-            const priority = typeof asset.priority === 'number' ? asset.priority : 20;
-            const bucket = asset.location === 'head' ? assetTags.head : assetTags.body;
-            bucket.push({ priority, gen: tagGen, condition: (asset as any).condition });
-          }
-        }
-      }
-    }
+  // Template and plugin declarations were normalized once by buildSite. The
+  // same immutable records drive copying, page tags, and post-build hooks.
+  for (const asset of resolvedAssets) {
+    if (asset.position === 'none') continue;
+    const gen = asset.kind === 'file'
+      ? (rel: string) => generateAssetTag(`${rel}${asset.outputPath}?v=${buildHash}`, asset.type, asset.attributes)
+      : () => generateAssetTag(asset.url, asset.type, asset.attributes);
+    const bucket = asset.position === 'head' ? assetTags.head : assetTags.body;
+    bucket.push({ priority: asset.priority, gen, condition: asset.condition });
   }
 
   // Sort each bucket by priority (stable). Conditional assets stay in the same

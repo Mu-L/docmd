@@ -157,7 +157,7 @@ addInProcess(
 );
 addInProcess(
   'plugin-assets-pipeline',
-  'Plugin asset pipeline (PAA-1, PAA-2, PAA-3 — async/await + capability)',
+  'Plugin asset pipeline (PAA-1–PAA-4 — resolution + capability)',
   await import('./cli-contracts/plugin-assets-pipeline.test.js')
 );
 addInProcess(

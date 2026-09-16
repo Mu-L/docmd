@@ -13,6 +13,7 @@
  */
 
 import path from 'path';
+import type { ResolvedAsset } from '@docmd/api';
 import nodeFs from 'fs';
 import { fsUtils as fs } from '@docmd/utils';
 import { TUI } from '@docmd/tui';
@@ -164,7 +165,8 @@ export async function buildVersions({
   pathPrefix = '',
   onProgress,
   targetFiles,
-  coreVersion
+  coreVersion,
+  resolvedAssets
 }: {
   config: any;
   outputDir: string;
@@ -176,6 +178,7 @@ export async function buildVersions({
   onProgress?: (current: number, total: number) => void;
   targetFiles?: string[];
   coreVersion?: string;
+  resolvedAssets: readonly ResolvedAsset[];
 }): Promise<any[]> {
   const allPages = [];
 
@@ -243,7 +246,8 @@ export async function buildVersions({
       outputPrefix: combinedOutputPrefix,
       onProgress,
       targetFiles,
-      coreVersion
+      coreVersion,
+      resolvedAssets
     });
 
     allPages.push(...pages);

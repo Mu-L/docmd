@@ -20,6 +20,7 @@ import { renderPages } from './generator.js';
 import { buildVersions, filterGhostVersions } from './versioning.js';
 import { sanitizeUrl } from '@docmd/parser';
 import { findFilesRecursive } from './assets.js';
+import type { ResolvedAsset } from '@docmd/api';
 
 /**
  * Pre-count total pages across all locale × version passes.
@@ -147,7 +148,8 @@ export async function buildLocales({
   CWD,
   onProgress,
   targetFiles,
-  coreVersion
+  coreVersion,
+  resolvedAssets
 }: {
   config: any;
   rootOutputDir: string;
@@ -158,6 +160,7 @@ export async function buildLocales({
   onProgress?: (current: number, total: number) => void;
   targetFiles?: string[];
   coreVersion?: string;
+  resolvedAssets: readonly ResolvedAsset[];
 }): Promise<any[]> {
   const allGeneratedPages = [];
 
@@ -266,7 +269,8 @@ export async function buildLocales({
         pathPrefix,
         onProgress,
         targetFiles,
-        coreVersion
+        coreVersion,
+        resolvedAssets
       });
       allGeneratedPages.push(...pages);
       if (isStringMode && isDefault) defaultPassPages = pages;
@@ -298,7 +302,8 @@ export async function buildLocales({
         outputPrefix: pathPrefix,
         onProgress,
         targetFiles,
-        coreVersion
+        coreVersion,
+        resolvedAssets
       });
       allGeneratedPages.push(...pages);
       if (isStringMode && (isDefault || !localeId)) defaultPassPages = pages;
