@@ -116,6 +116,7 @@ export type {
   AssetCondition,
   AssetKind,
   AssetPosition,
+  ResolvedAsset,
   // Template system
   TemplateSlot,
   TemplateHook,
