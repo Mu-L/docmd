@@ -122,6 +122,51 @@ export const test = runTestFile({
       assert(searchPluginSrc.includes("'onnxruntime-node@^1.27.0'"), 'Search plugin PEER_DEPS includes onnxruntime-node@^1.27.0');
       assert(searchPluginSrc.includes("'@huggingface/transformers@^4.2.0'"), 'Search plugin PEER_DEPS includes @huggingface/transformers@^4.2.0');
     }
+
+    // 6. Issue #232: OKF concept description and keywords/tags resolution
+    {
+      const proj = setup('okf-issue-232-metadata');
+      writeFile(proj, 'docs/index.md', [
+        '---',
+        'title: "Home Concept"',
+        'description: "Overview description for OKF"',
+        'keywords: ["knowledge", "manifest"]',
+        'tags: ["core"]',
+        '---',
+        '# Home Concept\n\nContent here.'
+      ].join('\n') + '\n');
+      writeFile(proj, 'docs/guides/quickstart.md', [
+        '---',
+        'title: "Quickstart Guide"',
+        'description: "Getting started with docmd"',
+        'keywords: "quickstart, guides"',
+        '---',
+        '# Quickstart\n\nGuide content.'
+      ].join('\n') + '\n');
+      writeFile(proj, 'docmd.config.json', JSON.stringify({
+        title: 'OKF Test',
+        src: './docs',
+        out: './site',
+        plugins: {
+          okf: {}
+        }
+      }, null, 2) + '\n');
+
+      const result = build(proj);
+      assert(result.ok, 'Issue #232: build succeeds with OKF plugin');
+
+      const okfYaml = fs.readFileSync(path.join(proj, 'site/okf/okf.yaml'), 'utf8');
+      assert(okfYaml.includes('description: "Overview description for OKF"'), 'Issue #232: okf.yaml concepts contain page description');
+      assert(okfYaml.includes('description: "Getting started with docmd"'), 'Issue #232: okf.yaml guides contain page description');
+
+      const bundleJson = JSON.parse(fs.readFileSync(path.join(proj, 'site/okf/_meta/bundle.json'), 'utf8'));
+      const homeConcept = bundleJson.concepts.find(c => c.id === 'root');
+      const quickConcept = bundleJson.concepts.find(c => c.id === 'guides-quickstart');
+
+      assert(homeConcept && homeConcept.description === 'Overview description for OKF', 'Issue #232: bundle.json has concept description');
+      assert(homeConcept && homeConcept.tags.includes('core') && homeConcept.tags.includes('knowledge'), 'Issue #232: tags merged from both tags and keywords');
+      assert(quickConcept && quickConcept.tags.includes('quickstart') && quickConcept.tags.includes('guides'), 'Issue #232: tags parsed from comma-separated keywords string');
+    }
   }
 });
 

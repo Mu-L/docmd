@@ -98,3 +98,31 @@ export function extractInternalLinks(md: string, ownSlug: string, known: Set<str
   }
   return out;
 }
+
+export function resolveTags(fm: any): string[] {
+  if (!fm || typeof fm !== 'object') return [];
+  const raw: any[] = [];
+  if (Array.isArray(fm.tags)) {
+    raw.push(...fm.tags);
+  } else if (typeof fm.tags === 'string') {
+    raw.push(...fm.tags.split(','));
+  }
+  if (Array.isArray(fm.keywords)) {
+    raw.push(...fm.keywords);
+  } else if (typeof fm.keywords === 'string') {
+    raw.push(...fm.keywords.split(','));
+  }
+
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const item of raw) {
+    if (typeof item === 'string') {
+      const clean = item.trim();
+      if (clean && !seen.has(clean.toLowerCase())) {
+        seen.add(clean.toLowerCase());
+        result.push(clean);
+      }
+    }
+  }
+  return result;
+}
