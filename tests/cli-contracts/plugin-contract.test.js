@@ -352,7 +352,7 @@ export const test = runTestFile({
       assert(/baseUrl/.test(output) && /url/.test(output), 'T-Z3: typo key surfaces a "Did you mean" suggestion');
     }
 
-    // Issue #210 / PR #211: OpenAPI download link rendering and root-relative URL
+    // OpenAPI download link rendering and root-relative URL
     {
       const openApiPlugin = await import('../../packages/plugins/openapi/dist/index.js');
       const md = { renderer: { rules: {} } };
@@ -386,13 +386,13 @@ export const test = runTestFile({
       fs.rmSync(tempSpecDir, { recursive: true, force: true });
     }
 
-    // PR #229: tryLoadAfterInstall sets rawModule = reloaded in hooks.ts
+    // Dynamic plugin installation and runtime module reload
     {
       const hooksSrc = fs.readFileSync(path.resolve('packages/api/src/hooks.ts'), 'utf8');
       assert(
         hooksSrc.includes('const reloaded = await tryLoadAfterInstall') &&
         hooksSrc.includes('rawModule = reloaded;'),
-        'PR #229: hooks.ts assigns rawModule = reloaded after tryLoadAfterInstall'
+        'Dynamic plugin install assigns rawModule = reloaded after tryLoadAfterInstall'
       );
     }
   }

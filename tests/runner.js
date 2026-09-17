@@ -127,7 +127,7 @@ addInProcess(
 );
 addInProcess(
   'offline-links',
-  'Offline-mode internal links work in every hosting shape (#167)',
+  'Offline-mode internal links work in every hosting shape',
   await import('./cli-contracts/offline-links.test.js')
 );
 addInProcess(

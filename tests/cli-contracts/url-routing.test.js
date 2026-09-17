@@ -72,7 +72,7 @@ export const test = runTestFile({
       assert(docmdMainJs.includes('updateTocClass()'), 'TOC JS: docmd-main.js calls updateTocClass');
     }
 
-    // 2. Page-relative links in workspace project subdirectory resolve correctly (#184)
+    // 2. Page-relative links in workspace project subdirectory resolve correctly
     {
       const dir = setup('url-routing-workspace-nested-links');
       
@@ -119,7 +119,7 @@ export const test = runTestFile({
       assert(targetLink === '../../../nested/subdir/page-b/', `Workspace nested link: relative link resolves correctly to absolute subpath (got: ${targetLink})`);
     }
 
-    // 3. Custom assets and links under subpath builds (e.g. GitHub Pages) (#175)
+    // 3. Custom assets and links under subpath builds (e.g. GitHub Pages)
     {
       const dir = setup('url-routing-subpath-assets');
       
@@ -151,7 +151,7 @@ export const test = runTestFile({
       assert(targetLink === './guide/page/', `Subpath build: custom root-relative link is rewritten with page-relative prefix (got: ${targetLink})`);
     }
 
-    // 4. Auto navigation clickable folders and index deduplication (#184 / i18n auto nav)
+    // 4. Auto navigation clickable folders and index deduplication
     {
       const dir = setup('url-routing-auto-nav-folders');
       writeFile(dir, 'docs/index.md', '# Home\n');
@@ -195,7 +195,7 @@ export const test = runTestFile({
       assert(!frLiTag.includes('collapsible'), 'Auto Nav: Folder "fr" with only an index page is rendered as a simple non-collapsible link');
     }
 
-    // 5. Zero-config root homepage SPA link synchronization (#196)
+    // 5. Zero-config root homepage SPA link synchronization
     {
       const docmdMainJsPath = path.join(rootDir, 'packages/ui/assets/js/docmd-main.js');
       const docmdMainJs = fs.readFileSync(docmdMainJsPath, 'utf8');
