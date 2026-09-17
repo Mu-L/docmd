@@ -3,9 +3,9 @@
  * docmd : the zero-config documentation engine.
  *
  * Layout, theming, navigation, and SEO metadata test suite:
- *   - Summer theme layout body attributes (Issue #223)
- *   - External navigation link attributes & normalization (Issue #227)
- *   - OKF concept description & keywords/tags merging (Issue #232)
+ *   - Summer theme layout body source file attributes
+ *   - External navigation link attributes & normalization
+ *   - OKF concept description & keywords/tags merging
  *   - Title separator, titleAppend hierarchy, and SEO plugin enhancements
  * --------------------------------------------------------------------
  */
@@ -39,7 +39,7 @@ export const test = runTestFile({
   name: 'Layout, theming, navigation, and SEO metadata contracts',
   emoji: '🎨',
   run: async () => {
-    // 1. Issue #223: Summer theme renders data-source-file on body
+    // 1. Summer theme renders data-source-file on body
     {
       const summerLayoutPath = path.resolve('packages/templates/summer/dist/templates/layout.ejs');
       assert(fs.existsSync(summerLayoutPath), 'Summer template layout exists at dist/templates/layout.ejs');
@@ -51,28 +51,28 @@ export const test = runTestFile({
       );
     }
 
-    // 2. Issue #227: Navigation EJS renders unescaped target/rel (<%-), and docmd-main.js normalizes target
+    // 2. Navigation EJS renders unescaped target/rel (<%-), and docmd-main.js normalizes target
     {
       const navEjs = fs.readFileSync(path.resolve('packages/ui/templates/navigation.ejs'), 'utf8');
       assert(
         navEjs.includes('<%- isExternal ? \'target="_blank" rel="noopener"\' : \'\' %>'),
-        'Issue #227: navigation.ejs uses <%- to render unescaped target/rel attributes'
+        'navigation.ejs uses <%- to render unescaped target/rel attributes'
       );
 
       const mainJs = fs.readFileSync(path.resolve('packages/ui/assets/js/docmd-main.js'), 'utf8');
       assert(
         mainJs.includes("rawTarget = (link.getAttribute('target') || link.target || '').replace(/^[\"']|[\"']$/g, '')"),
-        'Issue #227: docmd-main.js normalizes target attribute by stripping surrounding quotes'
+        'docmd-main.js normalizes target attribute by stripping surrounding quotes'
       );
       assert(
         mainJs.includes("rel.includes('noopener')"),
-        'Issue #227: docmd-main.js respects rel="noopener" on external links'
+        'docmd-main.js respects rel="noopener" on external links'
       );
     }
 
-    // 3. Issue #232: OKF concept description and keywords/tags resolution
+    // 3. OKF concept description and keywords/tags resolution
     {
-      const proj = setup('okf-issue-232-metadata');
+      const proj = setup('okf-metadata-resolution');
       writeFile(proj, 'docs/index.md', [
         '---',
         'title: "Home Concept"',
@@ -100,19 +100,19 @@ export const test = runTestFile({
       }, null, 2) + '\n');
 
       const result = build(proj);
-      assert(result.ok, 'Issue #232: build succeeds with OKF plugin');
+      assert(result.ok, 'OKF build succeeds with OKF plugin');
 
       const okfYaml = fs.readFileSync(path.join(proj, 'site/okf/okf.yaml'), 'utf8');
-      assert(okfYaml.includes('description: "Overview description for OKF"'), 'Issue #232: okf.yaml concepts contain page description');
-      assert(okfYaml.includes('description: "Getting started with docmd"'), 'Issue #232: okf.yaml guides contain page description');
+      assert(okfYaml.includes('description: "Overview description for OKF"'), 'okf.yaml concepts contain page description');
+      assert(okfYaml.includes('description: "Getting started with docmd"'), 'okf.yaml guides contain page description');
 
       const bundleJson = JSON.parse(fs.readFileSync(path.join(proj, 'site/okf/_meta/bundle.json'), 'utf8'));
       const homeConcept = bundleJson.concepts.find(c => c.id === 'root');
       const quickConcept = bundleJson.concepts.find(c => c.id === 'guides-quickstart');
 
-      assert(homeConcept && homeConcept.description === 'Overview description for OKF', 'Issue #232: bundle.json has concept description');
-      assert(homeConcept && homeConcept.tags.includes('core') && homeConcept.tags.includes('knowledge'), 'Issue #232: tags merged from both tags and keywords');
-      assert(quickConcept && quickConcept.tags.includes('quickstart') && quickConcept.tags.includes('guides'), 'Issue #232: tags parsed from comma-separated keywords string');
+      assert(homeConcept && homeConcept.description === 'Overview description for OKF', 'bundle.json has concept description');
+      assert(homeConcept && homeConcept.tags.includes('core') && homeConcept.tags.includes('knowledge'), 'tags merged from both tags and keywords');
+      assert(quickConcept && quickConcept.tags.includes('quickstart') && quickConcept.tags.includes('guides'), 'tags parsed from comma-separated keywords string');
     }
 
     // 4. Title separator, title append hierarchy, and SEO plugin enhancements

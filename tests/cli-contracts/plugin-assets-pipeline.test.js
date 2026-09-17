@@ -284,7 +284,7 @@ export const test = runTestFile({
         'PAA-4: post-build hooks receive an immutable declaration snapshot, not an output manifest');
     }
 
-    // Issue #226: findFilesRecursive respects .gitignore and config.exclude
+    // Assets discovery: findFilesRecursive respects .gitignore and config.exclude
     {
       const { findFilesRecursive } = await import('../../packages/core/dist/engine/assets.js');
       const testDir = path.resolve('tests/_tmp_ignore_test_' + Date.now());

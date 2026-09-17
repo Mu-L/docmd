@@ -3,9 +3,9 @@
  * docmd : the zero-config documentation engine.
  *
  * Plugin AI test suite:
- *   - Disable/enable flags & assets emission (Issue #209)
- *   - AI Assistant MCP tools registered in client bundle (Issue #220)
- *   - AI Assistant streaming replacement protocol & metadata (Issue #228)
+ *   - Disable/enable flags & assets emission
+ *   - AI Assistant MCP tools registered in client bundle
+ *   - AI Assistant streaming replacement protocol & metadata
  * --------------------------------------------------------------------
  */
 
@@ -123,7 +123,7 @@ export const test = runTestFile({
       assert(html.includes('window.__docmd_ai_config'), 'HTML contains window.__docmd_ai_config when enabled');
     }
 
-    // Case 4: Issue #220: AI Assistant Client Bundle includes all MCP tools
+    // Case 4: AI Assistant Client Bundle includes all MCP tools
     {
       const aiClientJsPath = path.resolve('packages/plugins/ai/dist/client/index.js');
       assert(fs.existsSync(aiClientJsPath), 'AI plugin client bundle exists at dist/client/index.js');
@@ -136,7 +136,7 @@ export const test = runTestFile({
       assert(clientJs.includes('search_documentation'), 'AI client bundle registers search_documentation tool');
     }
 
-    // Case 5: Issue #228: AI Assistant stream replacement protocol and synthesis fallback
+    // Case 5: AI Assistant stream replacement protocol and synthesis fallback
     {
       const { DocmdAssistantEngine } = await import(path.resolve('../docmd-assistant/dist/index.js'));
       const engine = new DocmdAssistantEngine();
@@ -145,7 +145,7 @@ export const test = runTestFile({
       const assistantTypes = fs.readFileSync(path.resolve('../docmd-assistant/src/types.ts'), 'utf8');
       assert(
         assistantTypes.includes('meta?: { replace?: boolean; turn?: number; isFinal?: boolean }'),
-        'Issue #228: StreamCallbacks.onChunk accepts replace and turn metadata'
+        'StreamCallbacks.onChunk accepts replace and turn metadata'
       );
     }
 

@@ -349,12 +349,12 @@ console.log('\n🔒 Test S9: Plugin loader rejects local-path escape (Phase 1.A,
   assert('original title preserved (or build failed loudly)', titlePreserved);
 }
 
-// ─── TEST S9b: Dependency Overrides & Security Pins (Alert #39, #40) ────
+// ─── TEST S9b: Dependency Overrides & Security Pins ─────────────────────
 console.log('\n🔒 Test S9b: Dependency overrides and security pins');
 {
   const rootPkg = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, '../package.json'), 'utf8'));
-  assert('Root package.json overrides sharp to ^0.35.4 (Alert #40)', rootPkg.pnpm?.overrides?.sharp === '^0.35.4');
-  assert('Root package.json overrides adm-zip to >=0.6.0 or >=0.6.1 (Alert #39)', rootPkg.pnpm?.overrides?.['adm-zip'] === '>=0.6.0' || rootPkg.pnpm?.overrides?.['adm-zip'] === '>=0.6.1');
+  assert('Root package.json overrides sharp to ^0.35.4 (libvips vulnerability mitigation)', rootPkg.pnpm?.overrides?.sharp === '^0.35.4');
+  assert('Root package.json overrides adm-zip to >=0.6.0 or >=0.6.1 (zip slip mitigation)', rootPkg.pnpm?.overrides?.['adm-zip'] === '>=0.6.0' || rootPkg.pnpm?.overrides?.['adm-zip'] === '>=0.6.1');
 
   const searchPluginSrc = fs.readFileSync(path.resolve(import.meta.dirname, '../packages/plugins/search/src/index.ts'), 'utf8');
   assert('Search plugin PEER_DEPS includes sharp@^0.35.4', searchPluginSrc.includes("'sharp@^0.35.4'"));
