@@ -40,11 +40,7 @@
   <!-- 2. META & TITLE -->
   <% if (frontmatter.components?.meta !==false) { %>
     <%- metaTagsHtml || '' %>
-      <title>
-        <%= pageTitle %>
-        <% if (frontmatter.components?.siteTitle !==false && siteTitle && pageTitle !== siteTitle && !(frontmatter && frontmatter.titleAppend === false)) { %> : <%= siteTitle %>
-        <% } %>
-      </title>
+      <title><%= (frontmatter.components?.siteTitle === false) ? pageTitle : (locals.fullTitle || (pageTitle + ((siteTitle && pageTitle !== siteTitle && !(frontmatter && frontmatter.titleAppend === false)) ? ((locals.titleSeparator || ' - ') + siteTitle) : ''))) %></title>
       <% if (description && !(metaTagsHtml && metaTagsHtml.includes('name="description"'))) { %>
         <meta name="description" content="<%= description %>">
       <% } %>

@@ -290,10 +290,20 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
         ...userCopyWidgets
     };
 
+    const rawTitleSeparator = userLayout.titleSeparator !== undefined
+        ? userLayout.titleSeparator
+        : (config.titleSeparator !== undefined ? config.titleSeparator : '-');
+
+    const rawTitleAppend = userLayout.titleAppend !== undefined
+        ? userLayout.titleAppend
+        : (config.titleAppend !== undefined ? config.titleAppend : true);
+
     config.layout = {
         spa: true,
         breadcrumbs: true,
         ...userLayout,
+        titleSeparator: rawTitleSeparator,
+        titleAppend: rawTitleAppend,
         focusMode: isFocusModeEnabled,
         print: isPrintEnabled,
         pageNavigation: config.pageNavigation,
@@ -304,6 +314,8 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
     // Attach root aliases for backward compatibility
     config.focusMode = isFocusModeEnabled;
     config.print = isPrintEnabled;
+    if (config.titleSeparator === undefined) config.titleSeparator = rawTitleSeparator;
+    if (config.titleAppend === undefined) config.titleAppend = rawTitleAppend;
 
     config.header = {
         enabled: true,
