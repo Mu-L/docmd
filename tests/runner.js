@@ -151,11 +151,6 @@ addInProcess(
   await import('./cli-contracts/llms-and-tui.test.js')
 );
 addInProcess(
-  'migrate-fix',
-  'Migration polish (Slice E — N-9, N-10, N-22)',
-  await import('./cli-contracts/migrate-fix.test.js')
-);
-addInProcess(
   'plugin-assets-pipeline',
   'Plugin asset pipeline (PAA-1–PAA-4 — resolution + capability)',
   await import('./cli-contracts/plugin-assets-pipeline.test.js')
@@ -176,19 +171,14 @@ addInProcess(
   await import('./cli-contracts/runtime-deps.test.js')
 );
 addInProcess(
-  'plugin-ai-disable',
-  'Plugin AI disable flags (Issue #209)',
-  await import('./cli-contracts/plugin-ai-disable.test.js')
+  'plugin-ai',
+  'Plugin AI contracts (flags, tools, streaming)',
+  await import('./cli-contracts/plugin-ai.test.js')
 );
 addInProcess(
-  'issue-fixes-0-9-5',
-  'Pre-release 0.9.5 fixes (#220, #210/PR #211, #223)',
-  await import('./cli-contracts/issue-fixes-0-9-5.test.js')
-);
-addInProcess(
-  'release-0-9-6-fixes',
-  'Release 0.9.6 fixes (PR #229, #227, #226, #228, Security)',
-  await import('./cli-contracts/release-0-9-6-fixes.test.js')
+  'layout-theming',
+  'Layout, theming, navigation, and SEO metadata contracts',
+  await import('./cli-contracts/layout-theming.test.js')
 );
 
 // --- Section 2: Container parser (Phase 2 PR 1+2+3) ----------------------
