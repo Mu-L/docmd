@@ -229,7 +229,7 @@ export async function buildVersions({
     const activeNav = resolveVersionNav(v, vSrcDir, config.navigation, fallbackSrcDir);
     const cleanedNav = filterNavForVersion(activeNav, vSrcDir, fallbackSrcDir);
 
-    let versionLayout = config.layout ? { ...config.layout } : {};
+    const versionLayout = config.layout ? { ...config.layout } : {};
     const vBanners = v.banners || v.banner || v.layout?.banners || v.layout?.banner;
     if (vBanners) {
       const mergedBanners = { ...(versionLayout.banners || {}) };

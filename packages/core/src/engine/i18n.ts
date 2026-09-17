@@ -92,7 +92,7 @@ export function createLocaleConfig(config: any, locale: any): any {
   if (!locale) return config;
   const isDefault = locale.id === config.i18n.default;
 
-  let localeLayout = config.layout ? { ...config.layout } : {};
+  const localeLayout = config.layout ? { ...config.layout } : {};
   const locBanners = locale.banners || locale.banner || locale.layout?.banners || locale.layout?.banner;
   if (locBanners) {
     const mergedBanners = { ...(localeLayout.banners || {}) };

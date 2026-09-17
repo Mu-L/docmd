@@ -351,6 +351,50 @@ export const test = runTestFile({
 
       assert(/baseUrl/.test(output) && /url/.test(output), 'T-Z3: typo key surfaces a "Did you mean" suggestion');
     }
+
+    // Issue #210 / PR #211: OpenAPI download link rendering and root-relative URL
+    {
+      const openApiPlugin = await import('../../packages/plugins/openapi/dist/index.js');
+      const md = { renderer: { rules: {} } };
+      openApiPlugin.markdownSetup(md, { download: true });
+
+      const tempSpecDir = path.resolve('temp-openapi-test');
+      if (!fs.existsSync(tempSpecDir)) fs.mkdirSync(tempSpecDir, { recursive: true });
+      const specPath = path.join(tempSpecDir, 'api.json');
+      fs.writeFileSync(specPath, JSON.stringify({
+        openapi: '3.0.0',
+        info: { title: 'Test Download API', version: '2.0.0' },
+        paths: {}
+      }));
+
+      const token = {
+        info: 'openapi',
+        content: './api.json'
+      };
+
+      const html = md.renderer.rules.fence(
+        [token],
+        0,
+        {},
+        { filePath: path.join(tempSpecDir, 'docs/endpoints.md') },
+        { renderToken: () => '' }
+      );
+
+      assert(html.includes('oa-download-link'), 'OpenAPI spec renders download link when download: true');
+      assert(html.includes('href="/api.json"'), 'OpenAPI spec download link is root-relative (/api.json)');
+
+      fs.rmSync(tempSpecDir, { recursive: true, force: true });
+    }
+
+    // PR #229: tryLoadAfterInstall sets rawModule = reloaded in hooks.ts
+    {
+      const hooksSrc = fs.readFileSync(path.resolve('packages/api/src/hooks.ts'), 'utf8');
+      assert(
+        hooksSrc.includes('const reloaded = await tryLoadAfterInstall') &&
+        hooksSrc.includes('rawModule = reloaded;'),
+        'PR #229: hooks.ts assigns rawModule = reloaded after tryLoadAfterInstall'
+      );
+    }
   }
 });
 
