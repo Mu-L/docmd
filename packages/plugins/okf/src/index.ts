@@ -39,7 +39,7 @@ import fs from 'fs/promises';
 import type { PluginDescriptor } from '@docmd/api';
 import { outputPathToPathname, sanitizeUrl, TUI } from '@docmd/api';
 
-import { slugify, resolveType, matchesPattern, extractInternalLinks } from './content.js';
+import { slugify, resolveType, matchesPattern, extractInternalLinks, resolveTags } from './content.js';
 import { toYaml, serializeConceptFrontmatter } from './yaml.js';
 import { GRAPH_CSS, GRAPH_JS, graphHtml } from './graph-assets.js';
 
@@ -174,15 +174,17 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
 
     const fullUrl = sanitizeUrl(siteUrl + pathname);
     const updated = fm.lastmod || new Date().toISOString().slice(0, 10);
+    const resolvedTags = resolveTags(fm);
+    const resolvedDescription = typeof fm.description === 'string' ? fm.description.trim() : '';
 
     const conceptFm: Record<string, any> = { [typeField]: type };
     if (fm.title) conceptFm.title = fm.title;
-    if (fm.description) conceptFm.description = fm.description;
+    if (resolvedDescription) conceptFm.description = resolvedDescription;
     conceptFm.source = fullUrl;
     conceptFm.path = pathname;
     if (locale) conceptFm.locale = locale;
     if (version) conceptFm.version = version;
-    if (Array.isArray(fm.tags) && fm.tags.length) conceptFm.tags = fm.tags;
+    if (resolvedTags.length) conceptFm.tags = resolvedTags;
     conceptFm.updated = updated;
     conceptFm.okf = { generated_by: '@docmd/plugin-okf', generated_at: new Date().toISOString() };
 
@@ -197,10 +199,10 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
     await fs.writeFile(fileAbs, fileContent);
 
     concepts.push({
-      id: slug, type, title: fm.title || 'Untitled', path: pathname, file: fileRel,
-      locale, version, tags: Array.isArray(fm.tags) ? fm.tags : [], source: fullUrl
+      id: slug, type, title: fm.title || 'Untitled', description: resolvedDescription, path: pathname, file: fileRel,
+      locale, version, tags: resolvedTags, source: fullUrl
     });
-    nodeList.push({ id: slug, title: fm.title || 'Untitled', type, path: pathname, source: fullUrl, description: fm.description || '' });
+    nodeList.push({ id: slug, title: fm.title || 'Untitled', type, path: pathname, source: fullUrl, description: resolvedDescription });
 
     if (body) {
       for (const t of extractInternalLinks(body, slug, known)) {
@@ -228,7 +230,17 @@ export async function onPostBuild({ config, pages, outputDir, log }: any) {
       default_type: defaultType
     },
     stats: { concepts: concepts.length, by_type: byType, locales: localeIds, versions: versionIds },
-    concepts: concepts.map(c => ({ id: c.id, type: c.type, title: c.title, path: c.path, file: c.file, locale: c.locale, version: c.version, tags: c.tags }))
+    concepts: concepts.map(c => ({
+      id: c.id,
+      type: c.type,
+      title: c.title,
+      description: c.description,
+      path: c.path,
+      file: c.file,
+      locale: c.locale,
+      version: c.version,
+      tags: c.tags
+    }))
   };
 
   await fs.writeFile(path.join(bundleRoot, 'okf.yaml'), toYaml(manifest));
