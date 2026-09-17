@@ -32,7 +32,7 @@ const KNOWN_KEYS = [
   'copyCode', 'plugins', 'navigation', 'footer', 'sponsor', 'favicon',
   'search', 'minify', 'editLink', 'pageNavigation', 'i18n',
   'markdown', 'security', 'htmlPolicy', 'focusMode', 'print', 'copyWidgets',
-  'cookie', 'tmp',
+  'cookie', 'tmp', 'titleSeparator', 'titleAppend',
 
   // Workspace
   'workspace'

@@ -13,7 +13,7 @@
  */
 
 import path from 'path';
-import { fsUtils as fs } from '@docmd/utils';
+import { fsUtils as fs, resolveTitle, resolveTitleSeparator, resolveTitleAppend } from '@docmd/utils';
 import { createRequire } from 'module';
 import { execSync } from 'child_process';
 
@@ -601,7 +601,8 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
         urls: pageUrls,
         html: page.htmlContent,
         urlContext,
-        config
+        config,
+        breadcrumbs
       };
 
       if (hooks.onBeforeRender) {
@@ -736,6 +737,15 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
           TUI.warn(`Template resolver failed for "${page.outputPath}" — falling back to default. ${e.message}`);
         }
       }
+      const fullTitle = resolveTitle(
+        page.frontmatter.title,
+        config.title,
+        config,
+        page.frontmatter
+      );
+      const titleSeparator = resolveTitleSeparator(config, page.frontmatter);
+      const titleAppend = resolveTitleAppend(config, page.frontmatter);
+
       let fullHtml = await parser.renderTemplateAsync(templateString, {
         content: page.htmlContent,
         rawMarkdown: page.rawMarkdown || '',
@@ -746,6 +756,9 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
         coreVersion: coreVersion || CORE_VERSION,
         siteTitle: config.title,
         pageTitle: page.frontmatter.title,
+        fullTitle,
+        titleSeparator,
+        titleAppend,
         description: page.frontmatter.description || '',
         appearance: config.theme?.appearance || config.theme?.defaultMode || 'system',
         defaultMode: config.theme?.appearance || config.theme?.defaultMode || 'system',

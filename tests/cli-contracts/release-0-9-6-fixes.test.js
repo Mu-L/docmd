@@ -167,6 +167,91 @@ export const test = runTestFile({
       assert(homeConcept && homeConcept.tags.includes('core') && homeConcept.tags.includes('knowledge'), 'Issue #232: tags merged from both tags and keywords');
       assert(quickConcept && quickConcept.tags.includes('quickstart') && quickConcept.tags.includes('guides'), 'Issue #232: tags parsed from comma-separated keywords string');
     }
+
+    // 7. Title separator, title append hierarchy, and SEO plugin enhancements
+    {
+      const proj = setup('title-and-seo-test');
+      writeFile(proj, 'docs/index.md', [
+        '---',
+        'title: "docmd - Home Page"',
+        'titleAppend: false',
+        'ldJson:',
+        '  "@type": "SoftwareApplication"',
+        '  "name": "docmd"',
+        '---',
+        '# Home\n\nWelcome home.'
+      ].join('\n') + '\n');
+
+      writeFile(proj, 'docs/guide.md', [
+        '---',
+        'title: "User Guide"',
+        '---',
+        '# Guide\n\nGuide content.'
+      ].join('\n') + '\n');
+
+      writeFile(proj, 'docs/custom-sep.md', [
+        '---',
+        'title: "Custom Sep Page"',
+        'titleSeparator: "/"',
+        '---',
+        '# Custom Sep\n\nContent.'
+      ].join('\n') + '\n');
+
+      writeFile(proj, 'docs/no-meta.md', [
+        '---',
+        'title: "No Meta Page"',
+        'components:',
+        '  meta: false',
+        '---',
+        '# No Meta\n\nContent.'
+      ].join('\n') + '\n');
+
+      writeFile(proj, 'docmd.config.json', JSON.stringify({
+        title: 'Title Docs',
+        url: 'https://example.com/docs',
+        src: './docs',
+        out: './site',
+        layout: {
+          titleSeparator: '|'
+        },
+        organization: {
+          name: 'docmd Organization',
+          url: 'https://docmd.io',
+          logo: 'assets/logo.png',
+          sameAs: ['https://github.com/docmd-io/docmd']
+        },
+        plugins: {
+          seo: {}
+        }
+      }, null, 2) + '\n');
+
+      const result = build(proj);
+      assert(result.ok, 'Title & SEO: build succeeds');
+
+      const homeHtml = fs.readFileSync(path.join(proj, 'site/index.html'), 'utf8');
+      const guideHtml = fs.readFileSync(path.join(proj, 'site/guide/index.html'), 'utf8');
+      const customSepHtml = fs.readFileSync(path.join(proj, 'site/custom-sep/index.html'), 'utf8');
+      const noMetaHtml = fs.readFileSync(path.join(proj, 'site/no-meta/index.html'), 'utf8');
+
+      // Home: titleAppend: false suppresses siteTitle
+      assert(homeHtml.includes('<title>docmd - Home Page</title>'), 'Title & SEO: frontmatter titleAppend: false suppresses site title in <title>');
+      assert(homeHtml.includes('<meta property="og:title" content="docmd - Home Page">'), 'Title & SEO: og:title matches <title> without site title');
+      assert(homeHtml.includes('<meta name="twitter:title" content="docmd - Home Page">'), 'Title & SEO: twitter:title matches <title>');
+      assert(homeHtml.includes('"@type":"Organization"'), 'Title & SEO: Organization schema injected on home page');
+      assert(homeHtml.includes('"@type":"WebSite"'), 'Title & SEO: WebSite schema injected on home page');
+      assert(homeHtml.includes('"@type":"SoftwareApplication"'), 'Title & SEO: custom frontmatter ldJson injected');
+
+      // Guide: uses layout.titleSeparator: '|'
+      assert(guideHtml.includes('<title>User Guide | Title Docs</title>'), 'Title & SEO: layout.titleSeparator: "|" formatted as " | " in <title>');
+      assert(guideHtml.includes('<meta property="og:title" content="User Guide | Title Docs">'), 'Title & SEO: og:title uses layout separator');
+      assert(guideHtml.includes('"@type":"BreadcrumbList"'), 'Title & SEO: BreadcrumbList schema generated for guide page');
+
+      // Custom Sep: frontmatter titleSeparator: "/"
+      assert(customSepHtml.includes('<title>Custom Sep Page / Title Docs</title>'), 'Title & SEO: page frontmatter titleSeparator: "/" overrides layout');
+
+      // No Meta: components.meta: false suppresses SEO meta tags
+      assert(!noMetaHtml.includes('<meta property="og:title"'), 'Title & SEO: components.meta: false suppresses SEO meta tags');
+    }
   }
 });
 

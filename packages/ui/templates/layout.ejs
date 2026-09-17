@@ -42,9 +42,7 @@
         visibility: hidden;
       }
     </style>
-    <title>
-      <%= pageTitle %><% if (siteTitle && pageTitle !== siteTitle && !(frontmatter && frontmatter.titleAppend === false)) { %> : <%= siteTitle %><% } %>
-    </title>
+    <title><%= locals.fullTitle || (pageTitle + ((siteTitle && pageTitle !== siteTitle && !(frontmatter && frontmatter.titleAppend === false)) ? ((locals.titleSeparator || ' - ') + siteTitle) : '')) %></title>
     <% if (emitBaseTag) { %>
       <base href="<%= assetBaseUrl %>">
     <% } %>
