@@ -123,10 +123,10 @@
 <a href="<%= logo.href ? buildRelativeUrl(logo.href) : buildRelativeUrl('/') %>" class="logo-link">
               <img
                 src="<%= assetBaseUrl %><%= logo.light.startsWith('/') ? logo.light.substring(1) : logo.light %>"
-                alt="<%= logo.alt || siteTitle %>" class="logo light-logo" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>>
+                alt="<%= logo.alt || siteTitle %>" class="logo logo-light light-logo" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>>
               <img
                 src="<%= assetBaseUrl %><%= logo.dark.startsWith('/') ? logo.dark.substring(1) : logo.dark %>"
-                alt="<%= logo.alt || siteTitle %>" class="logo dark-logo" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>>
+                alt="<%= logo.alt || siteTitle %>" class="logo logo-dark dark-logo" <% if (logo.height) { %>style="height: <%= logo.height %>;"<% } %>>
             </a>
           <% } else if (logo && (logo.light || logo.dark)) { %>
             <% const logoSrc = logo.light || logo.dark; %>

@@ -54,7 +54,7 @@ export function normalizeBannerItem(ub: any, defaultPos: string = 'top'): any {
             content: text,
             html: undefined,
             type: 'info',
-            dismissible: true,
+            dismissible: defaultPos === 'top',
             link: null,
             icon: null,
             image: null,
@@ -70,11 +70,18 @@ export function normalizeBannerItem(ub: any, defaultPos: string = 'top'): any {
         } else if (typeof ub.link === 'object' && ub.link && ub.link.url) {
             link = { url: String(ub.link.url).trim(), text: String(ub.link.text || '') };
         }
+        const rawDismiss = ub.dismissible !== undefined
+            ? ub.dismissible
+            : (ub.dismissable !== undefined ? ub.dismissable : ub.closable);
+        const dismissible = rawDismiss !== undefined
+            ? (rawDismiss !== false && rawDismiss !== 'false')
+            : (pos === 'top');
+
         const bannerObj: any = {
             content: typeof ub.content === 'string' ? ub.content : (ub.html || ''),
             html: typeof ub.html === 'string' ? ub.html : undefined,
             type: ub.type || 'info',
-            dismissible: ub.dismissible !== false,
+            dismissible,
             link,
             icon: ub.icon || null,
             image: (pos !== 'top' && typeof ub.image === 'string' && ub.image.trim()) ? ub.image.trim() : null,
@@ -513,7 +520,7 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
                 declineText: uc.declineText || null,
                 policyUrl: uc.policyUrl || null,
                 position: ['bottom', 'bottom-left', 'bottom-right', 'center'].includes(uc.position) ? uc.position : 'bottom',
-                dismissible: uc.dismissible !== false,
+                dismissible: (uc.dismissible !== undefined ? uc.dismissible : (uc.dismissable !== undefined ? uc.dismissable : uc.closable)) !== false,
                 expiryDays: typeof uc.expiryDays === 'number' && uc.expiryDays > 0 ? uc.expiryDays : 180,
             };
         } else {

@@ -2631,6 +2631,7 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution {
 .summer-banner--card .summer-banner__text {
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4338,25 +4339,44 @@ html[data-theme="dark"] .docmd-tabs-nav-item:hover {
 
 .docmd-lightbox-caption {
   color: #fff;
-  padding: 1rem;
+  padding: 0.5rem 1.25rem;
   font-size: 1rem;
   max-width: 100%;
   font-family: var(--summer-font-sans);
+  background-color: rgba(20, 20, 20, 0.75);
+  border-radius: var(--summer-radius, 6px);
+  margin-top: 0.75rem;
+  backdrop-filter: blur(4px);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .docmd-lightbox-close {
   position: absolute;
-  top: 20px;
-  right: 30px;
+  top: -0.75rem;
+  right: -0.75rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: rgba(20, 20, 20, 0.75);
   color: #fff;
-  font-size: 2.5rem;
+  font-size: 1.25rem;
+  line-height: 1;
   cursor: pointer;
   z-index: 10001;
-  transition: opacity var(--summer-fast) var(--summer-ease);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: background-color var(--summer-fast) var(--summer-ease), transform var(--summer-fast) var(--summer-ease);
+  padding: 0;
 }
 
 .docmd-lightbox-close:hover {
-  opacity: 0.8;
+  background-color: rgba(60, 60, 60, 0.95);
+  transform: scale(1.1);
 }
 
 img.lightbox {
