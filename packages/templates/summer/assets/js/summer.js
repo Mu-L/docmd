@@ -295,6 +295,24 @@
     });
   }
 
+  function wireSearchToggle() {
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('[data-summer-search-toggle]')) {
+        var open = document.body.classList.toggle('summer-search-open');
+        if (open) {
+          var input = $('.summer-search-input');
+          if (input) input.focus();
+        }
+      }
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && document.body.classList.contains('summer-search-open')) {
+        document.body.classList.remove('summer-search-open');
+      }
+    });
+  }
+
   function wireScrollToTop() {
     var btn = $('.summer-totop');
     if (!btn) return;
@@ -432,10 +450,12 @@
       var isK = e.key === 'k' || e.key === 'K';
       if (isK && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
+        document.body.classList.add('summer-search-open');
         headerInput.focus();
       }
       if (e.key === '/' && !/^(input|textarea|select)$/i.test(e.target.tagName) && !e.target.isContentEditable) {
         e.preventDefault();
+        document.body.classList.add('summer-search-open');
         headerInput.focus();
       }
     });
@@ -678,6 +698,7 @@
       // First run: bind document-level listeners + topbar/footer wires
       document.documentElement.dataset.summerWired = '1';
       wireDrawer();
+      wireSearchToggle();
       wireScrollToTop();
       wireHeaderSearch();
     }
