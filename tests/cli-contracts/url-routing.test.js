@@ -371,6 +371,42 @@ export const test = runTestFile({
       assert(v2Html.includes('Version 2 Overridden Banner'), 'Banner Hierarchy: v2 overrides top banner');
       assert(v2Html.includes('Project Root Sidebar Banner'), 'Banner Hierarchy: v2 inherits project sidebar banner');
     }
+
+    // 10. Banner dismissable alias and card persistence defaults
+    {
+      const proj = setup('banner-dismissable-contracts');
+      writeFile(proj, 'docs/index.md', '# Banner Dismissable Contracts\n\nContent.\n');
+      writeFile(proj, 'docmd.config.json', JSON.stringify({
+        title: 'Banner Dismissable Contracts',
+        layout: {
+          banners: {
+            'top': {
+              content: 'Top Non Dismissible',
+              dismissable: false // using "dismissable" spelling
+            },
+            'toc-top': {
+              content: 'TOC Card Default Non Dismissible'
+              // omitted dismissible -> should default to false
+            },
+            'sidebar-bottom': {
+              content: 'Sidebar Card Explicit Dismissible',
+              dismissable: true // explicitly opt-in with alias
+            }
+          }
+        }
+      }, null, 2) + '\n');
+
+      const result = build(proj);
+      assert(result.ok, 'Banner Dismissable: build succeeds');
+
+      const html = fs.readFileSync(path.join(proj, 'site/index.html'), 'utf8');
+      // Top banner with dismissable: false must NOT have is-dismissible or data-docmd-banner-dismiss inside its top banner
+      assert(!html.includes('docmd-banner--pos-top is-dismissible'), 'Banner Dismissable: top with dismissable: false is not dismissible');
+      // TOC card banner with omitted dismissible must NOT have is-dismissible
+      assert(!html.includes('docmd-banner--pos-toc-top is-dismissible'), 'Banner Dismissable: toc-top omitted dismissible defaults to persistent');
+      // Sidebar card with dismissable: true MUST have is-dismissible
+      assert(html.includes('docmd-banner--pos-sidebar-bottom is-dismissible'), 'Banner Dismissable: sidebar-bottom with dismissable: true is dismissible');
+    }
   }
 });
 

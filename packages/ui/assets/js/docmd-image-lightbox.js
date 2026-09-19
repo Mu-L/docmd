@@ -30,47 +30,56 @@ document.addEventListener('DOMContentLoaded', function () {
   content.appendChild(img);
   content.appendChild(caption);
   
-  const close = document.createElement('div');
+  const close = document.createElement('button');
   close.className = 'docmd-lightbox-close';
+  close.setAttribute('aria-label', 'Close lightbox');
   close.innerHTML = '&times;'; // Hardcoded entity is safe
-  
+
+  // Place close button inside content so it positions relative to the image box
+  content.appendChild(close);
   lightbox.appendChild(content);
-  lightbox.appendChild(close);
   document.body.appendChild(lightbox);
 
   const lightboxImg = lightbox.querySelector('img');
   const lightboxCaption = lightbox.querySelector('.docmd-lightbox-caption');
   const lightboxClose = lightbox.querySelector('.docmd-lightbox-close');
 
-  // Find all images with lightbox class or in image galleries
-  const lightboxImages = document.querySelectorAll('img.lightbox, .image-gallery img');
-
-  // Add click event to each image
-  lightboxImages.forEach(function (img) {
-    img.style.cursor = 'zoom-in';
-
-    img.addEventListener('click', function () {
-      // Get the image source and caption
-      const src = this.getAttribute('src');
-      let caption = this.getAttribute('alt') || '';
-
-      // If image is inside a figure with figcaption, use that caption
-      const figure = this.closest('figure');
-      if (figure) {
-        const figcaption = figure.querySelector('figcaption');
-        if (figcaption) {
-          caption = figcaption.textContent;
-        }
-      }
-
-      // Set the lightbox content
-      lightboxImg.setAttribute('src', src);
-      lightboxCaption.textContent = caption;
-
-      // Show the lightbox
-      lightbox.style.display = 'flex';
-      document.body.style.overflow = 'hidden'; // Prevent scrolling
+  // Apply zoom-in cursor to all current lightbox images
+  function applyLightboxCursor() {
+    document.querySelectorAll('img.lightbox, .image-gallery img').forEach(function (img) {
+      img.style.cursor = 'zoom-in';
     });
+  }
+
+  // Apply cursor on initial load and after each SPA navigation
+  applyLightboxCursor();
+  document.addEventListener('docmd:page-mounted', applyLightboxCursor);
+
+  // Use event delegation so lightbox works after SPA navigation without re-binding
+  document.addEventListener('click', function (e) {
+    const img = e.target.closest('img.lightbox, .image-gallery img');
+    if (!img) return;
+
+    // Get the image source and caption
+    const src = img.getAttribute('src');
+    let caption = img.getAttribute('alt') || '';
+
+    // If image is inside a figure with figcaption, use that caption
+    const figure = img.closest('figure');
+    if (figure) {
+      const figcaption = figure.querySelector('figcaption');
+      if (figcaption) {
+        caption = figcaption.textContent;
+      }
+    }
+
+    // Set the lightbox content
+    lightboxImg.setAttribute('src', src);
+    lightboxCaption.textContent = caption;
+
+    // Show the lightbox
+    lightbox.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Prevent scrolling
   });
 
   // Close lightbox when clicking the close button or outside the image

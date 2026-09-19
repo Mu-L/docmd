@@ -20,7 +20,8 @@
 <%
   const _bPos = _b.position || _targetPos || 'top';
   const _bType = _b.type || 'info';
-  const _bDismissible = _b.dismissible !== false;
+  const _rawDismiss = _b.dismissible !== undefined ? _b.dismissible : (_b.dismissable !== undefined ? _b.dismissable : _b.closable);
+  const _bDismissible = _rawDismiss !== undefined ? (_rawDismiss !== false && _rawDismiss !== 'false') : (_bPos === 'top');
   const _bIcon = _b.icon || null;
   const _bLink = _b.link || null;
   const _hasImage = Boolean(_bPos !== 'top' && _b.image);

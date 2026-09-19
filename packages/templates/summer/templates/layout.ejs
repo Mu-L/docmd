@@ -150,11 +150,12 @@
 
   <%
     function _renderSummerBanner(pos) {
-      const banner = (locals.config && config.layout && (config.layout.banners?.[pos] || (config.layout.banner && config.layout.banner.position === pos))) || null;
+      const banner = (locals.config && config.layout && (config.layout.banners?.[pos] || (pos === 'top' ? config.layout.banner : (config.layout.banner && config.layout.banner.position === pos ? config.layout.banner : null)))) || null;
       if (!banner || (!banner.content && !banner.html && !banner.image && (!banner.link || !banner.link.url))) return '';
-      const _bPos = banner.position || pos;
-      const _bType = banner.type || banner.style || 'info';
-      const _bDismissible = banner.dismissible !== false && banner.closable !== false;
+      const _bPos = banner.position || pos || 'top';
+      const _bType = banner.type || 'info';
+      const _rawDismiss = banner.dismissible !== undefined ? banner.dismissible : (banner.dismissable !== undefined ? banner.dismissable : banner.closable);
+      const _bDismissible = _rawDismiss !== undefined ? (_rawDismiss !== false && _rawDismiss !== 'false') : (_bPos === 'top');
       const _bIcon = banner.icon || null;
       const _bLink = banner.link || null;
       const _hasImg = Boolean(_bPos !== 'top' && banner.image);
