@@ -3056,6 +3056,31 @@ html[data-theme="dark"] .summer-content .markdown-alert-caution {
   font-weight: 500;
 }
 
+/* The popover is only hidden, not removed, so its min-width overflows narrow viewports. */
+@media (max-width: 900px) {
+  .summer-pagefooter {
+    position: relative;
+  }
+
+  .summer-pagefooter__time {
+    position: static;
+  }
+
+  .summer-git-popover {
+    left: 0;
+    right: 0;
+    min-width: 0;
+    max-width: none;
+    transform: translateY(4px);
+  }
+
+  .summer-pagefooter__time.has-commits:hover .summer-git-popover,
+  .summer-pagefooter__time.has-commits:focus .summer-git-popover,
+  .summer-pagefooter__time.has-commits.open .summer-git-popover {
+    transform: translateY(0);
+  }
+}
+
 /* Print styles */
 @media print {
 
