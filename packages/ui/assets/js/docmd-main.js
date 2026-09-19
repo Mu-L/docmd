@@ -504,6 +504,45 @@
       }
     }
 
+    // Heading Anchor / Permalink copy-to-clipboard
+    const headingAnchor = e.target.closest('.heading-anchor, .step-permalink, .changelog-permalink');
+    if (headingAnchor) {
+      e.preventDefault();
+      const targetUrl = headingAnchor.href;
+      navigator.clipboard.writeText(targetUrl).then(() => {
+        const originalHTML = headingAnchor.innerHTML;
+        headingAnchor.classList.add('copied');
+        // Swap icon to checkmark
+        headingAnchor.innerHTML = '';
+        const checkSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        checkSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        checkSvg.setAttribute('width', '16');
+        checkSvg.setAttribute('height', '16');
+        checkSvg.setAttribute('viewBox', '0 0 24 24');
+        checkSvg.setAttribute('fill', 'none');
+        checkSvg.setAttribute('stroke', 'currentColor');
+        checkSvg.setAttribute('stroke-width', '2');
+        checkSvg.setAttribute('stroke-linecap', 'round');
+        checkSvg.setAttribute('stroke-linejoin', 'round');
+        checkSvg.classList.add('lucide', 'lucide-check');
+        const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+        polyline.setAttribute('points', '20 6 9 17 4 12');
+        checkSvg.appendChild(polyline);
+        headingAnchor.appendChild(checkSvg);
+        setTimeout(() => {
+          headingAnchor.classList.remove('copied');
+          headingAnchor.innerHTML = originalHTML;
+        }, 2000);
+      });
+      // Also update the URL hash in the address bar
+      history.pushState({}, '', targetUrl);
+      const hash = new URL(targetUrl).hash;
+      if (hash) {
+        const target = findTargetElement(hash);
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
     // Hero Slider
     const sliderBtn = e.target.closest('.hero-slider-btn, .hero-slider-dot');
     if (sliderBtn) {
