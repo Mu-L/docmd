@@ -105,11 +105,7 @@
     </div>
     <% } %>
 
-    <% const _isTopMenubar = locals.menubarConfig && menubarConfig?.enabled !== false && menubarConfig.position === 'top'; %>
     <% const _hasTopBanner = Boolean(locals.config && config.layout && (config.layout.banners?.['top'] || (config.layout.banner && (!config.layout.banner.position || config.layout.banner.position === 'top')))); %>
-    <% if (_hasTopBanner && _isTopMenubar) { %>
-      <%- await include('partials/banner', { position: 'top', banner: config.layout.banners?.['top'] || config.layout.banner, config, relativePathToRoot, assetBaseUrl, renderIcon, t: typeof t === 'function' ? t : null }) %>
-    <% } %>
 
     <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position !=='header' ) { %>
       <%- await include('partials/menubar', {
@@ -204,7 +200,7 @@
       </aside>
       <% } %>
       <div class="main-content-wrapper">
-        <% if (_hasTopBanner && !_isTopMenubar) { %>
+        <% if (_hasTopBanner) { %>
           <%- await include('partials/banner', { position: 'top', banner: config.layout.banners?.['top'] || config.layout.banner, config, relativePathToRoot, assetBaseUrl, renderIcon, t: typeof t === 'function' ? t : null }) %>
         <% } %>
         <% if (locals.menubarConfig && menubarConfig?.enabled !==false && menubarConfig.position==='header' ) { %>
