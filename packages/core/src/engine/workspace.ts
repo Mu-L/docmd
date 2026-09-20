@@ -45,6 +45,7 @@ import { TUI } from '@docmd/tui';
 import { loadConfig } from '../utils/config-loader.js';
 import { buildSite } from '../commands/build.js';
 import { createOriginVerify } from '../utils/ws-origin-guard.js';
+import { preflightEnsureRuntimeDeps, type PreflightRequirements } from '@docmd/api';
 
 /* ── Types ─────────────────────────────────────────────────── */
 
@@ -298,6 +299,71 @@ export async function buildWorkspace(
   if (!opts.quiet) {
     TUI.footer(TUI.cyan);
   }
+
+  // Pre-flight scan: inspect all projects in the workspace to discover any missing runtime dependencies
+  // (official templates, plugins, engines, or semantic search peer dependencies) and install them in a
+  // single batch before starting the project build loop.
+  const preflightReqs: PreflightRequirements = {
+    templates: [],
+    plugins: [],
+    engines: [],
+    semanticSearch: false,
+  };
+
+  if (globalDefaults.theme?.template) preflightReqs.templates!.push(globalDefaults.theme.template);
+  if (globalDefaults.site?.template) preflightReqs.templates!.push(globalDefaults.site.template);
+  if (globalDefaults.engine) preflightReqs.engines!.push(globalDefaults.engine);
+  if (globalDefaults.plugins) {
+    if (Array.isArray(globalDefaults.plugins)) {
+      preflightReqs.plugins!.push(...globalDefaults.plugins);
+    } else if (typeof globalDefaults.plugins === 'object') {
+      for (const [k, v] of Object.entries(globalDefaults.plugins)) {
+        if (v !== false) preflightReqs.plugins!.push(k);
+        if (k === 'search' && (v as any)?.semantic) preflightReqs.semanticSearch = true;
+      }
+    }
+  }
+
+  const preflightCandidates = ['docmd.config.jsonc', 'docmd.config.json', 'docmd.config.ts', 'docmd.config.js', 'docmd.config.mjs', 'config.js'];
+  for (const project of sorted) {
+    const projectSrcDir = path.resolve(CWD, project.src);
+    for (const c of preflightCandidates) {
+      const p = path.join(projectSrcDir, c);
+      if (nativeFs.existsSync(p)) {
+        try {
+          if (c.endsWith('.json') || c.endsWith('.jsonc')) {
+            const parsed = parseJsonc(nativeFs.readFileSync(p, 'utf8'));
+            if (parsed.theme?.template) preflightReqs.templates!.push(parsed.theme.template);
+            if (parsed.site?.template) preflightReqs.templates!.push(parsed.site.template);
+            if (parsed.engine) preflightReqs.engines!.push(parsed.engine);
+            if (parsed.plugins) {
+              if (Array.isArray(parsed.plugins)) {
+                preflightReqs.plugins!.push(...parsed.plugins);
+              } else if (typeof parsed.plugins === 'object') {
+                for (const [k, v] of Object.entries(parsed.plugins)) {
+                  if (v !== false) preflightReqs.plugins!.push(k);
+                  if (k === 'search' && (v as any)?.semantic) preflightReqs.semanticSearch = true;
+                }
+              }
+            }
+            if (parsed.search?.semantic || parsed.search?.engine === 'semantic') {
+              preflightReqs.semanticSearch = true;
+            }
+          } else {
+            const content = nativeFs.readFileSync(p, 'utf8');
+            const templateMatch = content.match(/template:\s*['"]([^'"]+)['"]/);
+            if (templateMatch) preflightReqs.templates!.push(templateMatch[1]);
+            if (/semantic:\s*true/.test(content)) preflightReqs.semanticSearch = true;
+            const engineMatch = content.match(/engine:\s*['"]([^'"]+)['"]/);
+            if (engineMatch) preflightReqs.engines!.push(engineMatch[1]);
+          }
+        } catch { /* ignore parse errors in pre-flight */ }
+        break;
+      }
+    }
+  }
+
+  await preflightEnsureRuntimeDeps(preflightReqs, CWD);
 
   for (const project of sorted) {
     const prefix = project.prefix === '/' ? '/' : project.prefix.replace(/\/$/, '');

@@ -33,6 +33,7 @@ import {
   installRuntimeDep,
   tryLoadAfterInstall,
   shortKey,
+  preflightEnsureRuntimeDeps,
 } from './runtime-deps.js';
 
 const require = createRequire(import.meta.url);
@@ -461,6 +462,26 @@ export async function loadPlugins(config: any, opts?: { resolvePaths?: string[];
         pluginMap.set(resolvedTemplate, {});
       }
     }
+  }
+
+  // 2.5 Batch auto-install for missing official plugins/templates
+  // If multiple are missing, install them together in one command to prevent npm pruning
+  const missingOfficial: string[] = [];
+  for (const [name, opts] of pluginMap) {
+    if (opts === false) continue;
+    const isOfficial = name.startsWith('@docmd/plugin-') || name.startsWith('@docmd/template-');
+    if (!isOfficial) continue;
+    try {
+      require.resolve(name, { paths: resolvePaths });
+    } catch {
+      missingOfficial.push(name);
+    }
+  }
+  if (missingOfficial.length > 1) {
+    await preflightEnsureRuntimeDeps({
+      plugins: missingOfficial.filter(n => n.startsWith('@docmd/plugin-')),
+      templates: missingOfficial.filter(n => n.startsWith('@docmd/template-')),
+    }, process.cwd());
   }
 
   // 3. Load and Register (with auto-install for official plugins)
