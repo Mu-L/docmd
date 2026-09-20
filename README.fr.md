@@ -16,7 +16,10 @@
 
   <br/>
 
-  <p><b>Documentation pour les humains et les machines.</b><br/>Une source Markdown → site web, recherche, contexte IA et protocoles d'agents. Le tout généré ensemble.</p>
+  <p>
+    <b>Documentation pour les humains et les machines.</b><br/>
+    Une source Markdown → site web, recherche, contexte IA, agents et formats de connaissances.
+  </p>
 
   <p>
     <a href="https://www.npmjs.com/package/@docmd/core"><img src="https://img.shields.io/npm/v/@docmd/core.svg?style=flat-square&color=CB3837" alt="version npm"></a>
@@ -26,231 +29,228 @@
   </p>
 
   <h4>
-    <a href="https://docmd.io">Site Web</a> &nbsp;·&nbsp;
-    <a href="https://docs.docmd.io/fr/">Documentation</a> &nbsp;·&nbsp;
-    <a href="https://cloud.docmd.io">AI Cloud Relay</a> &nbsp;·&nbsp;
+    <a href="https://docmd.io">Site web</a> &nbsp;·&nbsp;
+    <a href="https://docs.docmd.io">Documentation</a> &nbsp;·&nbsp;
+    <a href="https://cloud.docmd.io">Cloud Relay</a> &nbsp;·&nbsp;
     <a href="https://live.docmd.io">Éditeur en direct</a> &nbsp;·&nbsp;
     <a href="https://github.com/docmd-io/docmd-skills">Agent Skills</a> &nbsp;·&nbsp;
-    <a href="https://github.com/docmd-io/docmd/issues">Signaler un bug</a>
+    <a href="https://github.com/docmd-io/docmd/issues">Issues</a>
   </h4>
 
   <br/>
 
-  <a href="https://docs.docmd.io/fr/">
-    <img width="820" alt="Thème par défaut de docmd — aperçu en mode clair et sombre" src="https://raw.githubusercontent.com/docmd-io/docmd/refs/heads/main/assets/docmd-cover.webp" />
+  <a href="https://docmd.io">
+    <img width="820" alt="Documentation docmd — aperçu en mode clair et sombre" src="https://raw.githubusercontent.com/docmd-io/docmd/refs/heads/main/assets/docmd-cover.webp" />
   </a>
-
-  <br/><br/>
 
 </div>
 
-> ## ✦ 0.9 Serie — IA, Automatisation & Sécurité
->
-> La série 0.9.x marque la transition de docmd d'un générateur de documentation
-> compatible IA vers une plateforme de documentation conçue à la fois pour les
-> **humains et les agents d'IA**.
->
-> La série introduit l'**Assistant IA**, permettant de consulter la documentation
-> de façon conversationnelle via votre propre fournisseur, une IA locale, ou le
-> **docmd Cloud Relay** pour les sites statiques sans backend dédié.
-> Elle enrichit également l'écosystème IA de docmd avec le support MCP, la génération
-> de contexte LLM, les Agent Skills et des formats de connaissances structurés.
->
-> En parallèle de l'IA, cette série se concentre sur la **sécurité, la confidentialité et l'automatisation**,
-> tout en continuant d'améliorer l'expérience documentaire centrale, la recherche,
-> le déploiement et les flux de travail des développeurs.
->
-> [Suivre la feuille de route 0.9 →](https://github.com/orgs/docmd-io/discussions/10)
-
 ## Démarrage rapide
 
-Exécutez docmd dans n'importe quel dossier contenant des fichiers Markdown — aucune installation requise :
+Pointez docmd vers un dossier de fichiers Markdown :
 
 ```bash
 npx @docmd/core dev
 ```
 
-<details>
-  <summary><b>Disponible sur <code>http://localhost:3000</code></b></summary><br>
+Ouvrez `http://localhost:3000`.
 
-```bash
-    _                 _ 
-  _| |___ ___ _____ _| |
- | . | . |  _|     | . |
- |___|___|___|_|_|_|___|
+C'est tout. La navigation est générée automatiquement à partir de votre arborescence de fichiers. Aucun fichier de configuration, frontmatter ou framework requis.
 
- v0.9.0
-
-BUILD
-  Engine          JS
-  Source          docs/
-  Output          site/
-  Versions        2 (06, 05)
-  Locales         7 (en, hi, zh, es, de, ja, fr)
-
-DATA INDEXING
-  [ DONE ] Syncing git metadata
-  [ DONE ] Building search index & RAG embeddings (multi-version)
-  [ DONE ] Generating AI Assistant RAG context
-
-PUBLISHING
-  [ DONE ] Generated robots.txt
-  [ DONE ] Generated .nojekyll (disables Jekyll on GitHub Pages)
-  [ DONE ] Generated sitemap
-  [ DONE ] Generating LLMs context files (llms.txt)
-  [ DONE ] Generating OKF bundles
-
-⬢ Initial build completed in 1.2s.
-
-WATCHING
-  Source          ./docs
-  Config          ./docmd.config.json
-  Assets          ./assets
-
-DEVELOPMENT SERVER RUNNING
-  Local Access    http://127.0.0.1:3000
-  Network Access  http://192.168.1.6:3000
-  Serving from    ./site
-```
-
-</details>
-
-La navigation est générée à partir de la structure de vos fichiers. Aucun fichier de configuration, aucun frontmatter obligatoire, aucun framework à apprendre.
-
-**Quand vous êtes prêt à publier :**
+Lorsque vous êtes prêt à déployer :
 
 ```bash
 npx @docmd/core build
 ```
 
-Génère un site statique hautement optimisé (SPA) prêt à être déployé sur Vercel, Cloudflare Pages, Netlify, GitHub Pages ou n'importe quel hébergeur statique.
+docmd génère un site statique déployable sur Vercel, Cloudflare Pages, Netlify, GitHub Pages, S3, NGINX, Caddy ou tout autre hébergeur statique.
 
-**Préréquis :** Node.js 18+
+**Nécessite Node.js 20+.**
 
 <details>
-  <summary><b>Ou installez-le globalement / via Docker</b></summary><br/>
+  <summary><b>Installation globale et Docker</b></summary>
+
+<br/>
+
+Installer globalement :
 
 ```bash
-# Installer globalement via npm
 npm install -g @docmd/core
 
-# Ou via pnpm
+# ou
 pnpm add -g @docmd/core
-
-# Exécuter
-docmd dev    # démarrer le serveur de développement
-docmd build  # construire pour le déploiement
 ```
 
-Ou exécuter via Docker :
+Puis :
 
 ```bash
-docker run -p 3000:3000 ghcr.io/docmd-io/docmd:0.9.0
+docmd dev
+docmd build
 ```
 
-> Épinglez une version pour des builds reproductibles.
+Ou exécuter avec Docker :
+
+```bash
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest
+```
+
+> Épinglez l'image Docker à une version spécifique pour des builds de production reproductibles.
 
 </details>
 
+## Une source. Toutes les sorties.
+
+docmd est un compilateur de documentation open source.
+
+Au lieu de considérer votre Markdown comme une simple entrée pour un site web, docmd compile la même source en sorties adaptées aux lecteurs, aux moteurs de recherche, aux LLMs, aux agents de code et aux systèmes de connaissances.
+
+```text
+Markdown
+   │
+   ▼
+ docmd
+   │
+   ├── → Site de documentation statique
+   ├── → Index de recherche hors-ligne
+   ├── → llms.txt / llms-full.txt
+   ├── → Open Knowledge Format (OKF)
+   ├── → Sitemap + métadonnées SEO
+   ├── → robots.txt + Open Graph
+   ├── → Interface MCP pour agents d'IA
+   └── → Contexte de l'Assistant IA
+```
+
+Une seule arborescence source. Un seul pipeline de build. Aucune pile distincte de documentation et de connaissances IA à maintenir.
+
 ## Pourquoi docmd ?
 
-<div align="center">
-  <img width="1000" alt="image" src="https://raw.githubusercontent.com/docmd-io/docmd/refs/heads/main/assets/docmd-comparison.webp" />
-</div>
+La documentation s'adresse de plus en plus à plus d'un type de lecteur.
 
-<!--
-| Fonctionnalité | docmd | Docusaurus | MkDocs | VitePress | Mintlify |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Config requise** | **Aucune** | `docusaurus.config.js` | `mkdocs.yml` | `config.mts` | `docs.json` |
-| **Charge utile JS** | **~18 kb** | ~250 kb | ~40 kb | ~50 kb | ~120 kb |
-| **Navigation** | **SPA Instantanée** | React SPA | Rechargement complet | Vue SPA | SPA Hébergée |
-| **Gestion des versions** | **Native** | Native (complexe) | plugin mike | Manuel | Native |
-| **i18n** | **Native** | Native (complexe) | Basée sur plugins | Native | Native |
-| **Multi-projet** | **Native** | Plugin | Plugin | - | - |
-| **Recherche** | **Intégrée** | Algolia (cloud) | Intégrée | MiniSearch | Cloud |
-| **Assistant IA** | **Intégré — BYOK + Cloud Relay** | - | - | - | Intégré (Cloud) |
-| **Contexte IA (`llms.txt`)** | **Intégré** | - | - | - | Intégré |
-| **Serveur MCP** | **Intégré** | - | - | - | Intégré |
-| **Agent Skills** | **Intégré** | - | - | - | - |
-| **Image Docker** | **Officielle** | - | Officielle | - | - |
-| **Auto-hébergé** | **Oui** | Oui | Oui | Oui | - |
-| **Coût** | **Gratuit (OSS)** | Gratuit (OSS) | Gratuit (OSS) | Gratuit (OSS) | Freemium |
--->
+Les humains ont besoin d'un site web rapide et facile à naviguer. Les moteurs de recherche ont besoin de métadonnées structurées. Les LLMs ont besoin d'un contexte propre. Les agents de code ont besoin d'outils et de protocoles. Les systèmes RAG ont besoin de connaissances structurées.
 
-**Voir la [Comparaison complète avec Docusaurus, Mintlify et autres →](https://docs.docmd.io/comparison/)**
+docmd rassemble tout cela tout en plaçant Markdown au centre.
+
+<a href="https://docs.docmd.io/comparison/">
+  <img width="800" alt="Comparaison de docmd avec d'autres outils de documentation" src="https://raw.githubusercontent.com/docmd-io/docmd/refs/heads/main/assets/docmd-comparison.webp" />
+</a>
+<br/>
+<b>Voir la comparaison complète avec <a href="https://docs.docmd.io/comparison/">Docusaurus, Mintlify et d'autres outils de documentation →</a></b>
 
 ## Fonctionnalités
 
 ### Zéro configuration, démarrage instantané
-Pointez docmd vers n'importe quel dossier Markdown et il fonctionne. La navigation est construite automatiquement depuis votre arborescence. Vous pouvez rédiger votre premier document et le publier en moins d'une minute — sans code superflu, sans pipeline de build à configurer, sans décision préalable.
 
-### Ultra-léger par défaut, rapide partout
-La charge utile JavaScript par défaut est d'environ 18 kb. La navigation entre les pages s'effectue sous forme de SPA instantanée. Le rendu produit du HTML statique — optimisé pour le SEO, incluant sitemap, URLs canoniques et métadonnées Open Graph. La recherche plein texte hors-ligne est intégrée, sans nécessiter de service cloud.
+Pointez docmd vers n'importe quel dossier Markdown et il fonctionne. La navigation est générée automatiquement à partir de votre arborescence de fichiers — aucun boilerplate, frontmatter ou pipeline de build requis pour démarrer.
 
-### Conçu pour l'IA
-docmd traite l'IA comme un moyen de premier ordre pour consommer la documentation — sans remplacer la documentation elle-même.
-- **Assistant IA (`@docmd/plugin-ai`)** — Chat propulsé par RAG et ancré dans votre documentation. Utilisez votre propre clé API ou connectez un fournisseur d'IA local, avec le support de plus de 100 fournisseurs grâce à AIPlug.
-- **Cloud Relay** — activez l'Assistant IA sur une documentation statique sans avoir à gérer votre propre backend IA. [Essayer →](https://cloud.docmd.io)
-- **Serveur MCP** — `docmd mcp` expose vos documents aux agents d'IA via stdio, leur permettant de rechercher, lire et valider le contenu directement.
-- **Contexte (`llms.txt` / `llms-full.txt`)** — contexte documentaire complet généré au moment du build.
-- **Agent Skills** — jeux d'instructions modulaires pour les LLM et agents d'IDE.
-- **Open Knowledge Format (OKF)** — paquets de connaissances structurés et multilingues pour les systèmes d'IA.
-- **Copier en Markdown / Copier le contexte** — boutons d'extraction de contexte en un clic directement depuis le navigateur.
+### Léger par défaut, rapide partout
+
+docmd génère du HTML statique avec un minimum de JavaScript vanilla et une navigation rapide de type SPA. Recherche plein texte hors ligne, sitemap, URLs canoniques, métadonnées Open Graph et autres éléments essentiels sont intégrés directement dans le rendu.
+
+### Prêt pour l'IA et les agents
+
+docmd traite la documentation lisible par machine comme une partie intégrante du build, et non comme un flux de publication séparé.
+
+* **Assistant IA** — Chat basé sur RAG ancré dans votre documentation
+* **Serveur MCP** — permet aux agents de code compatibles de rechercher, lire et valider votre documentation
+* **`llms.txt` / `llms-full.txt`** — contexte documentaire complet lisible par les LLMs
+* **Open Knowledge Format (OKF)** — paquets de connaissances structurés pour l'IA et les systèmes RAG
+* **Agent Skills** — instructions réutilisables pour les LLMs et agents de code
+* **Copier en Markdown / Copier le contexte** — extraction de contexte propre directement depuis le navigateur
+* **Recherche sémantique** — recherche vectorielle optionnelle aux côtés de la recherche par mots-clés intégrée
 
 ### Conçu pour évoluer
-- Internationalisation avec builds multi-locales (index de recherche par langue, llms, okf, hreflang)
-- Gestion des versions pour plusieurs livraisons de documentation (détection automatique de la version courante)
-- Workspaces pour les monorepos et configurations multi-projets
-- Système de plugins pour étendre les fonctionnalités de base (validation des types de retour par hook, compatible async)
-- Thématisation complète, modèles intégrés, CSS/JS personnalisé, mode clair/sombre
+
+* Internationalisation avec recherche par langue et sorties générées
+* Gestion des versions pour plusieurs livraisons de documentation
+* Workspaces pour monorepos et configurations multi-projets
+* Rendu OpenAPI 3.x pour la documentation d'API
+* Modèles intégrés, CSS/JavaScript personnalisés et mode clair/sombre
+
+## Assistant IA & Cloud Relay
+
+docmd comprend un Assistant IA propulsé par RAG et ancré dans votre documentation.
+
+Vous pouvez le connecter à votre propre backend ou à un fournisseur d'IA local. Si votre documentation est déployée en tant que site statique, **docmd Cloud Relay** fournit la passerelle hébergée.
+
+```text
+Votre documentation
+        │
+        ▼
+ @docmd/plugin-ai
+        │
+        ▼
+ docmd Cloud Relay
+        │
+        ▼
+ Votre fournisseur d'IA
+```
+
+Cloud Relay transmet de manière sécurisée les requêtes d'IA au fournisseur de votre choix, évitant ainsi d'exposer les identifiants au navigateur et vous dispensant d'administrer un backend d'IA.
+
+**Cloud Relay est gratuit à utiliser avec votre propre clé de fournisseur d'IA.**
+
+* Utilisez votre propre fournisseur et modèle
+* Gardez les clés d'API hors du navigateur client
+* Fonctionne parfaitement avec l'hébergement statique
+* Aucun backend d'IA à déployer ou maintenir
+* Visibilité sur l'utilisation et questions fréquentes des lecteurs
+* Connectez plusieurs projets de documentation depuis un seul compte
+
+**[Configurer Cloud Relay →](https://cloud.docmd.io)** • [Documentation de l'Assistant IA →](https://docs.docmd.io/guides/ai/ai-assistant/)
+
+> Cloud Relay est gratuit. L'utilisation des modèles peut être facturée séparément par votre fournisseur d'IA.
 
 ## CLI
 
 ```bash
-docmd dev            # serveur de développement local
-docmd build          # construire pour le déploiement
-docmd live           # Éditeur en direct basé sur le navigateur
-docmd init           # initialiser un docmd.config.json dans le dossier actuel
-docmd stop           # arrêter les serveurs `docmd dev` / `docmd live` en cours
-docmd doctor         # diagnostic pré-vol : configuration + statut d'installation des plugins
-docmd migrate        # migrer vers docmd depuis Docusaurus, VitePress, MkDocs ou Starlight
-docmd deploy         # générer la configuration pour Docker, NGINX, Caddy, Vercel, Netlify
-docmd validate       # vérifier l'intégralité des liens internes
-docmd mcp            # exécuter en tant que serveur MCP via stdio
-docmd add <nom>      # installer un plugin ou un modèle
+docmd dev            # Démarrer le serveur de développement local
+docmd build          # Construire pour la production
+docmd live           # Démarrer l'Éditeur en direct basé sur le navigateur
+docmd init           # Créer un fichier de configuration
+docmd doctor         # Vérifier la configuration et le statut des plugins
+docmd validate       # Vérifier les liens internes de la documentation
+docmd migrate        # Migrer depuis Docusaurus, VitePress, MkDocs ou Starlight
+docmd deploy         # Générer la configuration de déploiement
+docmd mcp            # Exécuter le serveur MCP via stdio
+docmd add <name>     # Installer un plugin ou un modèle
+docmd stop           # Arrêter les serveurs de développement docmd en cours d'exécution
 ```
+
+**Voir toutes les [Commandes CLI →](https://docs.docmd.io/reference/cli-commands/)**
 
 ## Plugins
 
-Les fonctionnalités de base sont propulsées par un système de plugins robuste. L'essentiel est inclus par défaut, et des plugins optionnels peuvent être ajoutés pour des besoins spécifiques.
+docmd est conçu autour d'un système de plugins. Les fonctionnalités courantes de documentation sont intégrées au cœur, tandis que des plugins optionnels peuvent être installés selon les besoins.
 
-| Plugin | Statut | Description |
-| :--- | :---: | :--- |
-| `ai` | Cœur | Assistant IA RAG avec support BYOK, fournisseurs locaux et Cloud Relay |
-| `search` | Cœur | Recherche plein texte hors-ligne (mots-clés + sémantique optionnelle via `docmd-search`) |
-| `seo` | Cœur | Balises SEO et métadonnées Open Graph |
-| `sitemap` | Cœur | Génère `sitemap.xml` |
-| `git` | Cœur | Historique des commits Git et dates de dernière mise à jour |
-| `analytics` | Cœur | Intégration d'outils d'analyse légers |
-| `llms` | Cœur | Génération de contexte IA (`llms.txt` / `llms-full.txt`) |
-| `okf` | Cœur | Paquets Open Knowledge Format pour agents IA (par langue) |
-| `mermaid` | Cœur | Support des diagrammes Mermaid |
-| `openapi` | Cœur | Rendu des spécifications OpenAPI 3.x au build |
-| `pwa` | Optionnel | Progressive Web App — navigation hors-ligne |
-| `threads` | Optionnel | Fil de discussion intégré *(par @svallory)* |
-| `math` | Optionnel | Rendu des formules mathématiques KaTeX / LaTeX |
+| Plugin      |  Statut  | Description                                                          |
+| :---------- | :------: | :------------------------------------------------------------------- |
+| `ai`        |   Cœur   | Assistant IA RAG avec support BYOK, fournisseurs locaux et Cloud Relay |
+| `search`    |   Cœur   | Recherche par mots-clés hors-ligne avec recherche sémantique optionnelle |
+| `seo`       |   Cœur   | Métadonnées SEO et Open Graph                                        |
+| `sitemap`   |   Cœur   | Génère `sitemap.xml`                                                 |
+| `git`       |   Cœur   | Historique Git et métadonnées de dernière mise à jour               |
+| `analytics` |   Cœur   | Intégration d'outils d'analyse légers                                |
+| `llms`      |   Cœur   | Génère `llms.txt` et `llms-full.txt`                                 |
+| `okf`       |   Cœur   | Paquets Open Knowledge Format                                        |
+| `mermaid`   |   Cœur   | Rendu de diagrammes Mermaid                                          |
+| `openapi`   |   Cœur   | Moteur de rendu de documentation OpenAPI 3.x                         |
+| `pwa`       | Optionnel| Progressive Web App et navigation hors-ligne                         |
+| `threads`   | Optionnel| Fils de discussion intégrés à la documentation *(par @svallory)*     |
+| `math`      | Optionnel| Rendu mathématique KaTeX / LaTeX                                     |
 
-Installer des plugins optionnels :
+Installer un plugin optionnel :
 
 ```bash
-docmd add <nom-du-plugin>
+docmd add <plugin-name>
 ```
 
-Créez le vôtre : [Guide de développement de plugins](https://docs.docmd.io/fr/development/building-plugins/)
+**Créez le vôtre : [Guide de développement de plugins →](https://docs.docmd.io/development/building-plugins/)**
 
 ## Configuration
 
-Aucune configuration n'est requise pour commencer. Ajoutez un fichier `docmd.config.json` (ou `.ts` / `.js`) à la racine de votre projet uniquement si vous avez besoin de plus de contrôle :
+La configuration est optionnelle.
+
+Ajoutez un fichier `docmd.config.json`, `docmd.config.ts` ou `docmd.config.js` à la racine de votre projet si vous avez besoin de plus de contrôle :
 
 ```json
 {
@@ -261,51 +261,62 @@ Aucune configuration n'est requise pour commencer. Ajoutez un fichier `docmd.con
 }
 ```
 
-Les fichiers de configuration TypeScript et JavaScript sont pris en charge pour les valeurs dynamiques.
+Les configurations en TypeScript et JavaScript peuvent être utilisées lorsque des valeurs dynamiques sont nécessaires.
 
-Référence complète : [Aperçu de la configuration](https://docs.docmd.io/fr/configuration/overview)
-
-## Structure du projet
-
-```text
-mes-docs/
-├── docs/                ← Vos fichiers markdown
-├── assets/              ← Images et fichiers statiques
-├── docmd.config.json    ← Configuration optionnelle
-└── package.json
-```
-
-## Éditeur en direct (Live Editor)
-
-Un éditeur basé sur le navigateur pour rédiger et prévisualiser votre documentation — aucune configuration locale nécessaire.
-
-**Essayez-le sur [live.docmd.io](https://live.docmd.io)**
+**[Référence de configuration →](https://docs.docmd.io/configuration/overview)**
 
 ## API programmatique
 
-Utilisez docmd dans vos scripts Node.js, pipelines CI ou étapes de build personnalisées (compatible CommonJS et ESM).
+Utilisez docmd depuis des scripts Node.js, des pipelines CI ou des systèmes de build personnalisés.
 
 ```javascript
 import { build } from '@docmd/core';
 
+// Construire la documentation par programmation.
 await build('./docmd.config.json', { isDev: false });
 ```
 
-Référence complète : [API Node](https://docs.docmd.io/fr/development/node-api-reference/)
+CommonJS et ESM sont pris en charge.
+
+**[Référence de l'API Node →](https://docs.docmd.io/development/node-api-reference/)**
+
+## Migration
+
+Une documentation existante n'a pas besoin de repartir de zéro.
+
+```bash
+docmd migrate
+```
+
+Des outils de migration sont disponibles pour les frameworks de documentation pris en charge, notamment Docusaurus, VitePress, MkDocs et Starlight.
+
+**[Documentation sur la migration →](https://docs.docmd.io)**
+
+## Open Source
+
+Votre documentation est le cœur intellectuel de votre projet. Elle a sa place dans de simples fichiers Markdown au sein de votre dépôt Git — portable, versionnée et vérifiable.
+
+**Le compilateur docmd et les plugins officiels de base sont sous licence MIT et resteront gratuits à utiliser, sans aucune fonctionnalité de compilation payante.**
+
+La documentation générée peut être hébergée n'importe où et ne dépend d'aucune infrastructure hébergée par docmd.
 
 ## Communauté
 
-- **Bugs & problèmes** → [Issues GitHub](https://github.com/docmd-io/docmd/issues)
-- **Questions & idées** → [Discussions](https://github.com/orgs/docmd-io/discussions)
-- **Contribuer** → [CONTRIBUTING.md](.github/CONTRIBUTING.md)
-- **Feuille de route** → [Discussions GitHub](https://github.com/orgs/docmd-io/discussions/2)
+* **Documentation** → [docs.docmd.io](https://docs.docmd.io)
+* **Questions & idées** → [GitHub Discussions](https://github.com/orgs/docmd-io/discussions)
+* **Bugs & demandes de fonctionnalités** → [GitHub Issues](https://github.com/docmd-io/docmd/issues)
+* **Contribuer** → [CONTRIBUTING.md](.github/CONTRIBUTING.md)
+* **Feuille de route** → [GitHub Discussions](https://github.com/orgs/docmd-io/discussions/2)
 
-## Soutenir le projet
+## Soutenir docmd
 
-- Faire connaître docmd est le moyen le plus direct de soutenir son développement. [Partagez-le sur X](https://twitter.com/intent/tweet?url=https://github.com/docmd-io/docmd&text=docmd%20-%20Une%20documentation%20prête%20pour%20la%20production%20à%20partir%20de%20Markdown%20en%20quelques%20secondes.) avec vos amis ou attribuez-lui une étoile.
-- Si docmd vous fait gagner du temps, un [sponsoring GitHub](https://github.com/sponsors/mgks) est grandement apprécié.
-- Des idées ou des bugs ? Ouvrez une issue ou une PR, et n'hésitez pas à proposer vos propres plugins.
+Si docmd vous est utile :
+
+* Donnez une ⭐ au dépôt
+* Partagez-le avec quelqu'un qui rédige de la documentation
+* Ouvrez des issues, proposez des correctifs ou créez un plugin
+* [Sponsorisez le développement sur GitHub](https://github.com/sponsors/mgks)
 
 ## Licence
 
-Licence MIT. Consultez [`LICENSE`](./LICENSE) pour plus de détails.
+Licence MIT. Consultez [LICENSE](LICENSE) pour plus de détails.
