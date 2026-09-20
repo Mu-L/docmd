@@ -754,7 +754,7 @@
       if (!link) return;
       const rawTarget = (link.getAttribute('target') || link.target || '').replace(/^["']|["']$/g, '');
       const rel = link.getAttribute('rel') || '';
-      if (rawTarget === '_blank' || rel.includes('noopener') || link.hasAttribute('download')) return;
+      if (rawTarget === '_blank' || rel.includes('noopener') || rel.includes('external') || link.hasAttribute('download') || link.hasAttribute('data-spa-ignore')) return;
 
       const url = new URL(link.href).href;
       if (new URL(url).origin !== location.origin) return;
@@ -786,7 +786,7 @@
       if (!link) return;
       const rawTarget = (link.getAttribute('target') || link.target || '').replace(/^["']|["']$/g, '');
       const rel = link.getAttribute('rel') || '';
-      if (rawTarget === '_blank' || rel.includes('noopener') || link.hasAttribute('download')) return;
+      if (rawTarget === '_blank' || rel.includes('noopener') || rel.includes('external') || link.hasAttribute('download') || link.hasAttribute('data-spa-ignore')) return;
 
       // Real <a class="nav-group"> links navigate normally via SPA. The
       // toggle handler above only prevents default for dummy <span>s and

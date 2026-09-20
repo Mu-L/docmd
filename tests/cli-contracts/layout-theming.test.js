@@ -59,6 +59,12 @@ export const test = runTestFile({
         'navigation.ejs uses <%- to render unescaped target/rel attributes'
       );
 
+      const bannerEjs = fs.readFileSync(path.resolve('packages/ui/templates/partials/banner.ejs'), 'utf8');
+      assert(
+        !bannerEjs.includes("<%= _isExternal ? 'target="),
+        'banner.ejs uses <%- rather than <%= for external link target/rel attributes'
+      );
+
       const mainJs = fs.readFileSync(path.resolve('packages/ui/assets/js/docmd-main.js'), 'utf8');
       assert(
         mainJs.includes("rawTarget = (link.getAttribute('target') || link.target || '').replace(/^[\"']|[\"']$/g, '')"),
@@ -67,6 +73,14 @@ export const test = runTestFile({
       assert(
         mainJs.includes("rel.includes('noopener')"),
         'docmd-main.js respects rel="noopener" on external links'
+      );
+      assert(
+        mainJs.includes("rel.includes('external')"),
+        'docmd-main.js respects rel="external" on external links'
+      );
+      assert(
+        mainJs.includes("link.hasAttribute('data-spa-ignore')"),
+        'docmd-main.js respects data-spa-ignore on links'
       );
     }
 
