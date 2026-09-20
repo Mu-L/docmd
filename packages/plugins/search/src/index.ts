@@ -93,7 +93,8 @@ type SearchConfig = {
 const _searchState: {
   lastPeersHash: string | null;
   lastConfig: SearchConfig | null;
-} = { lastPeersHash: null, lastConfig: null };
+  freshInstall: boolean;
+} = { lastPeersHash: null, lastConfig: null, freshInstall: false };
 
 /**
  * Compute the full SearchConfig from the resolved config + filesystem.
@@ -116,7 +117,11 @@ function buildSearchConfig(config: any): SearchConfig {
     const atIdx = pkg.lastIndexOf('@');
     const cleanPkgName = atIdx > 0 ? pkg.slice(0, atIdx) : pkg;
     try { require.resolve(cleanPkgName, { paths: resolvePaths }); }
-    catch { missingPeers.push(pkg); }
+    catch {
+      if (!manualResolvePackageDir(cleanPkgName, [process.cwd(), __dirname])) {
+        missingPeers.push(pkg);
+      }
+    }
   }
   const peersInstalled = missingPeers.length === 0;
   const semanticUsable = !config.offline && semanticRequested && docmdSearchInstalled && peersInstalled;
@@ -499,7 +504,10 @@ export async function onConfigResolved(config: any): Promise<void> {
   const pluginOptions = (config.plugins && config.plugins.search) || {};
   if (pluginOptions.semantic === true && !config.offline) {
     try {
-      await ensureDocmdSearch(fallbackTui, false);
+      const res = await ensureDocmdSearch(fallbackTui, false);
+      if (res.freshInstall) {
+        _searchState.freshInstall = true;
+      }
     } catch { /* ignore */ }
   }
 
@@ -670,7 +678,8 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
       }
     }
 
-    const { ready, freshInstall, reason } = await ensureDocmdSearch(tui, !showTui);
+    const { ready, freshInstall: postBuildFreshInstall, reason } = await ensureDocmdSearch(tui, !showTui);
+    const freshInstall = postBuildFreshInstall || _searchState.freshInstall;
     if (!ready) {
       // Graceful fallback: build keyword index instead. The `reason` field
       // tells the caller whether docmd-search itself or just its peers were
@@ -695,17 +704,29 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
       try {
         const { execSync } = await import('node:child_process');
         const cwd = process.cwd();
-        // Detect the docmd binary from the same node_modules that just got updated
-        const docmdBin = path.join(cwd, 'node_modules', '.bin', 'docmd');
+        // Detect the docmd binary by walking up ancestor directories
+        let docmdBin: string | null = null;
+        let scanDir = cwd;
+        while (true) {
+          const candidate = path.join(scanDir, 'node_modules', '.bin', 'docmd');
+          if (nativeFs.existsSync(candidate)) {
+            docmdBin = candidate;
+            break;
+          }
+          const parent = path.dirname(scanDir);
+          if (parent === scanDir) break;
+          scanDir = parent;
+        }
         // Pass dev context through so the child build applies the same
         // base override (base=/) as the parent dev server. Without this,
         // the subprocess runs a plain `build` which auto-derives the
         // production subpath and the TUI shows the wrong base message.
         const childEnv = { ...process.env };
         if (options?.isDev) childEnv.DOCMD_DEV = 'true';
-        const cmd = nativeFs.existsSync(docmdBin)
+        const docsDir = path.resolve(config.root || process.cwd(), config.srcDir || config.src || 'docs');
+        const cmd = docmdBin
           ? `"${docmdBin}" build`
-          : `node -e "import('docmd-search').then(m => m.indexDirectory({ rootDir: '${cwd}', outDir: '${path.join(outputDir, '_docmd-search')}' }))"`;
+          : `node -e "import('docmd-search').then(m => m.indexDirectory({ rootDir: '${docsDir}', outDir: '${path.join(outputDir, '_docmd-search')}' }))"`;
         execSync(cmd, { stdio: 'inherit', cwd, timeout: 300000, env: childEnv });
         const manifestPath = path.join(outputDir, '_docmd-search/manifest.json');
         if (nativeFs.existsSync(manifestPath)) {
@@ -934,6 +955,44 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
         // The keyword index is tiny and doubles as a runtime safety net.
         semanticBuilt = true;
       } catch (err: any) {
+        const isModuleCacheIssue = err.message?.includes('Cannot find package') ||
+          err.message?.includes('MODULE_NOT_FOUND') ||
+          err.message?.includes('Failed to load model');
+
+        if (isModuleCacheIssue && !freshInstall) {
+          if (showTui) tui.step('Retrying semantic indexing in subprocess...', 'WAIT');
+          try {
+            const { execSync } = await import('node:child_process');
+            const cwd = process.cwd();
+            let docmdBin: string | null = null;
+            let scanDir = cwd;
+            while (true) {
+              const candidate = path.join(scanDir, 'node_modules', '.bin', 'docmd');
+              if (nativeFs.existsSync(candidate)) {
+                docmdBin = candidate;
+                break;
+              }
+              const parent = path.dirname(scanDir);
+              if (parent === scanDir) break;
+              scanDir = parent;
+            }
+            const childEnv = { ...process.env };
+            if (options?.isDev) childEnv.DOCMD_DEV = 'true';
+            const docsDir = path.resolve(config.root || process.cwd(), config.srcDir || config.src || 'docs');
+            const cmd = docmdBin
+              ? `"${docmdBin}" build`
+              : `node -e "import('docmd-search').then(m => m.indexDirectory({ rootDir: '${docsDir}', outDir: '${path.join(outputDir, '_docmd-search')}' }))"`;
+            execSync(cmd, { stdio: 'inherit', cwd, timeout: 300000, env: childEnv });
+            const manifestPath = path.join(outputDir, '_docmd-search/manifest.json');
+            if (nativeFs.existsSync(manifestPath)) {
+              if (showTui) tui.step('Semantic search index built', 'DONE');
+              await stampSemanticFlag(outputDir);
+              semanticBuilt = true;
+              return;
+            }
+          } catch { /* subprocess fallback failed, proceed to keyword fallback */ }
+        }
+
         if (showTui) {
           tui.step('Building semantic search index', 'FAIL');
           tui.warn(`Semantic indexing failed: ${err.message} — falling back to keyword search`);
