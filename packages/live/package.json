@@ -25,7 +25,6 @@
   },
   "dependencies": {
     "@docmd/parser": "workspace:*",
-    "@docmd/plugin-math": "workspace:*",
     "@docmd/plugin-mermaid": "workspace:*",
     "@docmd/themes": "workspace:*",
     "@docmd/tui": "workspace:*",
@@ -37,6 +36,7 @@
   },
   "devDependencies": {
     "@docmd/api": "workspace:*",
+    "@docmd/plugin-math": "workspace:*",
     "@types/node": "^24.13.6"
   },
   "keywords": [
