@@ -722,6 +722,7 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
         // the subprocess runs a plain `build` which auto-derives the
         // production subpath and the TUI shows the wrong base message.
         const childEnv = { ...process.env };
+        if (outputDir) childEnv.DOCMD_PROJECT_OUT = outputDir;
         if (options?.isDev) childEnv.DOCMD_DEV = 'true';
         const docsDir = path.resolve(config.root || process.cwd(), config.srcDir || config.src || 'docs');
         const cmd = docmdBin
@@ -977,6 +978,7 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
               scanDir = parent;
             }
             const childEnv = { ...process.env };
+            if (outputDir) childEnv.DOCMD_PROJECT_OUT = outputDir;
             if (options?.isDev) childEnv.DOCMD_DEV = 'true';
             const docsDir = path.resolve(config.root || process.cwd(), config.srcDir || config.src || 'docs');
             const cmd = docmdBin
