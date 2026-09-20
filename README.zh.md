@@ -16,7 +16,10 @@
 
   <br/>
 
-  <p><b>为人类和机器构建的文档。</b><br/>一份 Markdown 源文件 → 网站、搜索、AI 上下文、Agent 协议。一次构建，全部生成。</p>
+  <p>
+    <b>为人类和机器构建的文档。</b><br/>
+    一份 Markdown 源文件 → 网站、搜索、AI 上下文、Agent 和知识格式。
+  </p>
 
   <p>
     <a href="https://www.npmjs.com/package/@docmd/core"><img src="https://img.shields.io/npm/v/@docmd/core.svg?style=flat-square&color=CB3837" alt="npm version"></a>
@@ -27,210 +30,213 @@
 
   <h4>
     <a href="https://docmd.io">官方网站</a> &nbsp;·&nbsp;
-    <a href="https://docs.docmd.io/zh/">文档中心</a> &nbsp;·&nbsp;
-    <a href="https://cloud.docmd.io">AI 云中继</a> &nbsp;·&nbsp;
+    <a href="https://docs.docmd.io">官方文档</a> &nbsp;·&nbsp;
+    <a href="https://cloud.docmd.io">Cloud Relay</a> &nbsp;·&nbsp;
     <a href="https://live.docmd.io">在线编辑器</a> &nbsp;·&nbsp;
     <a href="https://github.com/docmd-io/docmd-skills">Agent Skills</a> &nbsp;·&nbsp;
-    <a href="https://github.com/docmd-io/docmd/issues">提交 Feedback</a>
+    <a href="https://github.com/docmd-io/docmd/issues">Issues</a>
   </h4>
 
   <br/>
 
-  <a href="https://docs.docmd.io/zh/">
-    <img width="820" alt="docmd 默认主题 — 亮色与暗色模式预览" src="https://raw.githubusercontent.com/docmd-io/docmd/refs/heads/main/assets/docmd-cover.webp" />
+  <a href="https://docmd.io">
+    <img width="820" alt="docmd 文档 — 浅色与深色模式预览" src="https://raw.githubusercontent.com/docmd-io/docmd/refs/heads/main/assets/docmd-cover.webp" />
   </a>
-
-  <br/><br/>
 
 </div>
 
-> ## ✦ 0.9 系列 — AI、自动化与安全
->
-> 0.9.x 系列是 docmd 从面向 AI 的文档生成器跨越为同时服务于**人类与 AI Agent** 的文档平台的重要阶段。
->
-> 该系列引入了 **AI 助手**，支持使用您自有的 API 密钥、本地 AI 语言模型，或通过 **docmd Cloud Relay（云中继）** 为无需后端支持的静态站点提供对话式文档问答。此外，还通过 MCP、自动生成的 LLM 上下文、Agent Skills 以及结构化知识格式，全面扩展了 docmd 的 AI 生态。
->
-> 在 AI 功能之外，该系列重点关注**安全性、隐私保护与自动化**，同时持续优化核心文档体验、搜索引擎、部署流程与开发者工作流。
->
-> [关注 0.9 路线图 →](https://github.com/orgs/docmd-io/discussions/10)
-
 ## 快速开始
 
-在任意包含 Markdown 文件的文件夹中直接运行 docmd — 无需预先安装：
+将 docmd 指向包含 Markdown 文件的文件夹：
 
 ```bash
 npx @docmd/core dev
 ```
 
-<details>
-  <summary><b>启动后可通过 <code>http://localhost:3000</code> 访问</b></summary><br>
+打开 `http://localhost:3000`。
 
-```bash
-    _                 _ 
-  _| |___ ___ _____ _| |
- | . | . |  _|     | . |
- |___|___|___|_|_|_|___|
+大功告成。目录导航将根据您的文件结构自动生成。无需配置文件、Frontmatter 或学习任何框架。
 
- v0.9.0
-
-BUILD
-  Engine          JS
-  Source          docs/
-  Output          site/
-  Versions        2 (06, 05)
-  Locales         7 (en, hi, zh, es, de, ja, fr)
-
-DATA INDEXING
-  [ DONE ] Syncing git metadata
-  [ DONE ] Building search index & RAG embeddings (multi-version)
-  [ DONE ] Generating AI Assistant RAG context
-
-PUBLISHING
-  [ DONE ] Generated robots.txt
-  [ DONE ] Generated .nojekyll (disables Jekyll on GitHub Pages)
-  [ DONE ] Generated sitemap
-  [ DONE ] Generating LLMs context files (llms.txt)
-  [ DONE ] Generating OKF bundles
-
-⬢ Initial build completed in 1.2s.
-
-WATCHING
-  Source          ./docs
-  Config          ./docmd.config.json
-  Assets          ./assets
-
-DEVELOPMENT SERVER RUNNING
-  Local Access    http://127.0.0.1:3000
-  Network Access  http://192.168.1.6:3000
-  Serving from    ./site
-```
-
-</details>
-
-导航栏会根据您的目录文件结构自动生成。无需配置文件、无需 Frontmatter、无需学习复杂的框架语法。
-
-**准备部署发布时：**
+准备好部署时：
 
 ```bash
 npx @docmd/core build
 ```
 
-命令将生成高度优化的静态单页应用 (SPA)，可直接部署至 Vercel、Cloudflare Pages、Netlify、GitHub Pages 或任意静态托管服务商。
+docmd 会生成一个静态站点，可部署至 Vercel、Cloudflare Pages、Netlify、GitHub Pages、S3、NGINX、Caddy 或任何其他静态托管平台。
 
-**环境要求：** Node.js 18+
+**环境要求：Node.js 20+。**
 
 <details>
-  <summary><b>或通过全局安装 / Docker 方式运行</b></summary><br/>
+  <summary><b>全局安装与 Docker</b></summary>
+
+<br/>
+
+全局安装：
 
 ```bash
-# 通过 npm 全局安装
 npm install -g @docmd/core
 
-# 或通过 pnpm
+# 或
 pnpm add -g @docmd/core
-
-# 运行命令
-docmd dev    # 启动本地开发服务器
-docmd build  # 构建生产部署静态文件
 ```
 
-或通过 Docker 运行：
+然后：
 
 ```bash
-docker run -p 3000:3000 ghcr.io/docmd-io/docmd:0.9.0
+docmd dev
+docmd build
 ```
 
-> 建议固定版本号以确保可重复构建。
+或使用 Docker 运行：
+
+```bash
+docker run -p 3000:3000 ghcr.io/docmd-io/docmd:latest
+```
+
+> 建议将 Docker 镜像标签锁定到具体的发布版本，以实现可复现的生产构建。
 
 </details>
 
+## 单一源文件，全方位输出
+
+docmd 是一款开源文档编译器。
+
+docmd 不仅将 Markdown 视为网站的输入源，更能将同一份源文件统一编译输出给人类读者、搜索引擎、大语言模型 (LLM)、代码 Agent 以及知识系统。
+
+```text
+Markdown
+   │
+   ▼
+ docmd
+   │
+   ├── → 静态文档站点
+   ├── → 离线搜索索引
+   ├── → llms.txt / llms-full.txt
+   ├── → Open Knowledge Format (OKF)
+   ├── → 站点地图 + SEO 元数据
+   ├── → robots.txt + Open Graph
+   ├── → 面向 AI Agent 的 MCP 接口
+   └── → AI 助手上下文
+```
+
+一套源码，一条构建流水线。无需分别维护两套独立的文档与 AI 知识库技术栈。
+
 ## 为什么选择 docmd？
 
-<div align="center">
-  <img width="1000" alt="image" src="https://raw.githubusercontent.com/docmd-io/docmd/refs/heads/main/assets/docmd-comparison.webp" />
-</div>
+如今的文档正在迎来不止一种读者。
 
-<!--
-| 功能特性 | docmd | Docusaurus | MkDocs | VitePress | Mintlify |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **必需配置文件** | **无** | `docusaurus.config.js` | `mkdocs.yml` | `config.mts` | `docs.json` |
-| **JS 体积** | **~18 kb** | ~250 kb | ~40 kb | ~50 kb | ~120 kb |
-| **页面导航** | **极速 SPA** | React SPA | 全页刷新 | Vue SPA | 托管 SPA |
-| **版本控制** | **原生内置** | 原生 (较复杂) | mike 插件 | 手动配置 | 原生内置 |
-| **多语言 i18n** | **原生内置** | 原生 (较复杂) | 依赖插件 | 原生内置 | 原生内置 |
-| **多项目 Workspace** | **原生内置** | 插件扩展 | 插件扩展 | - | - |
-| **搜索引擎** | **内置** | Algolia (云端) | 内置 | MiniSearch | 云端 |
-| **AI 助手** | **内置 — BYOK + Cloud Relay** | - | - | - | 内置 (云端) |
-| **AI 上下文 (`llms.txt`)** | **原生内置** | - | - | - | 原生内置 |
-| **MCP 服务器** | **原生内置** | - | - | - | 原生内置 |
-| **Agent Skills** | **原生内置** | - | - | - | - |
-| **Docker 镜像** | **官方提供** | - | 官方提供 | - | - |
-| **私有化自部署** | **支持** | 支持 | 支持 | 支持 | - |
-| **开源免费** | **免费 (OSS)** | 免费 (OSS) | 免费 (OSS) | 免费 (OSS) | Freemium |
--->
+人类用户需要极速且便于导航浏览的网站；搜索引擎需要结构化的元数据；大语言模型需要纯净的上下文；代码 Agent 需要配套的工具与协议；RAG 系统则需要结构化的知识。
 
-**查看与 Docusaurus、Mintlify 等的 [完整对比 →](https://docs.docmd.io/zh/comparison/)**
+docmd 将这一切融为一体，并始终坚持以 Markdown 作为核心。
+
+<a href="https://docs.docmd.io/comparison/">
+  <img width="800" alt="docmd 与其他文档生成工具的对比" src="https://raw.githubusercontent.com/docmd-io/docmd/refs/heads/main/assets/docmd-comparison.webp" />
+</a>
+<br/>
+<b>查看与 <a href="https://docs.docmd.io/comparison/">Docusaurus、Mintlify 及其他文档工具的完整对比 →</a></b>
 
 ## 核心特性
 
-### 零配置，即刻运行
-将 docmd 指向任意 Markdown 文件夹即可直接启动。导航目录会根据文件目录结构自动构建。一分钟内即可完成第一份文档的编写与上线 — 无需配置样板文件，无需搭建构建流水线。
+### 零配置，即开即用
 
-### 极致轻量，流畅无阻
-无框架运行时 — 输出标准的静态 HTML 和极简原生 JavaScript。页面间秒级 SPA 无缝无刷新跳转。天然具备 SEO 优化，内置 sitemap、规范链接 (canonical URLs) 及 Open Graph 社交元数据。内置离线全文搜索，无需任何第三方云服务。
+将 docmd 指向任意 Markdown 文件夹即可直接运行。导航目录根据文件结构自动生成 — 无需配置样板、Frontmatter 或构建流水线即可迅速启动。
 
-### AI 原生架构
-docmd 将 AI 视为了解与消费文档的首要方式 — 但同时保留了文档本身的良好阅读体验。
-- **AI 助手 (`@docmd/plugin-ai`)** — 基于您自身文档的 RAG 检索引擎小组件。使用您自己的 API 密钥或连接本地 AI 提供商，通过 AIPlug 支持 100+ 种主流 AI 服务商。
-- **Cloud Relay（云中继）** — 在静态文档站点上直接启用 AI 助手，无需自主运维 AI 后端服务。[即刻体验 →](https://cloud.docmd.io)
-- **MCP 服务器** — `docmd mcp` 通过 stdio 向 AI Agent 暴露文档，支持 AI Agent 直接检索、阅读与校验文档内容。
-- **上下文文件 (`llms.txt` / `llms-full.txt`)** — 构建时自动生成完整的文档上下文，随时供大语言模型消费。
-- **Agent Skills** — 针对 LLM 和 IDE Agent 的模块化指令集。
-- **Open Knowledge Format (OKF)** — 结构化、多语言的 AI 系统知识包。
-- **复制为 Markdown / 复制上下文** — 浏览器内一键提炼文档上下文，完美适配粘贴至 AI 对话框。
+### 极致轻量，处处飞快
 
-### 专为规模化拓展打造
-- 原生多语言国际化支持（分语言搜索引擎索引、llms、okf 及 hreflang 标签）
-- 多版本文档管理（自动识别与标记当前最新版本）
-- 支持大型 Monorepo 与多项目协同的 Workspaces
-- 灵活强劲的插件系统（支持 Hook 返回值校验与异步支持）
-- 全面主题自订，内置现代精美模板，支持自定义 CSS/JS，内置深浅色模式切换
+docmd 生成基于极简原生 JavaScript 的静态 HTML，带来极速 SPA 级页面切换体验。离线全文检索、站点地图 (Sitemap)、规范网址、Open Graph 元数据等必备功能均直接内置于生成结果中。
+
+### 原生支持 AI 与 Agent
+
+docmd 将面向机器的文档视为构建流程的核心部分，而非独立拆分的发布任务。
+
+* **AI 助手** — 基于自身文档的 RAG 对话问答
+* **MCP 服务器** — 允许兼容的代码 Agent 检索、阅读与验证文档
+* **`llms.txt` / `llms-full.txt`** — 供大模型直接消费的完整文档上下文
+* **Open Knowledge Format (OKF)** — 专为 AI 与 RAG 系统定制的结构化知识包
+* **Agent Skills** — 适用于大模型与 IDE Agent 的可复用指令集
+* **复制为 Markdown / 复制上下文** — 在浏览器中一键提取格式纯净的文档上下文
+* **语义检索** — 在内置关键词搜索的基础上，支持可选的向量语义检索
+
+### 专为规模化拓展而生
+
+* 原生多语言国际化，具备多语言检索与专属产物生成能力
+* 支持多版本文档发行与维护
+* 适用于 Monorepo 与多项目的 Workspaces 工作区
+* OpenAPI 3.x 接口规范文档渲染
+* 内置精美主题模板、自定义 CSS/JavaScript 以及深浅色模式
+
+## AI 助手与 Cloud Relay
+
+docmd 内置了基于您自身文档进行知识增强 (RAG) 的 AI 助手。
+
+您可以将其连接到自己的后端或本地 AI 服务商。如果您的文档以纯静态站点形式部署，**docmd Cloud Relay（云中继）** 则可提供即开即用的托管桥接服务。
+
+```text
+您的文档
+        │
+        ▼
+ @docmd/plugin-ai
+        │
+        ▼
+ docmd Cloud Relay
+        │
+        ▼
+ 您的 AI 模型服务商
+```
+
+Cloud Relay 会安全地将 AI 请求转发至您指定的模型服务商，因此无需将 API 密钥暴露给前端浏览器，您也无需自主搭建和维护 AI 后端服务。
+
+**搭配您自己的 AI 模型密钥，Cloud Relay 完全免费使用。**
+
+* 自带模型服务商与大模型 (BYOK)
+* 敏感 API 密钥绝不泄露给客户端浏览器
+* 完美兼容静态托管环境
+* 无需搭建、运维任何 AI 后端服务
+* 提供用量监控与读者提问热点分析
+* 单个账户即可集中连接与管理多个文档项目
+
+**[配置 Cloud Relay →](https://cloud.docmd.io)** • [AI 助手配置文档 →](https://docs.docmd.io/guides/ai/ai-assistant/)
+
+> Cloud Relay 本身完全免费。模型推理用量由您选择的 AI 服务商单独计费。
 
 ## 命令行 (CLI)
 
 ```bash
 docmd dev            # 启动本地开发服务器
 docmd build          # 构建生产部署静态文件
-docmd live           # 启动基于浏览器的 Live 在线编辑器
-docmd init           # 在当前目录下生成 docmd.config.json 配置文件模板
-docmd stop           # 停止当前后台运行的 `docmd dev` / `docmd live` 服务
-docmd doctor         # 环境与插件安装状态排查诊断
-docmd migrate        # 从 Docusaurus, VitePress, MkDocs 或 Starlight 迁移至 docmd
-docmd deploy         # 自动生成适用于 Docker, NGINX, Caddy, Vercel, Netlify 的部署配置
-docmd validate       # 检查所有内部死链与锚点引用
-docmd mcp            # 通过 stdio 启动 MCP 服务器
-docmd add <name>     # 快速安装插件或主题模板
+docmd live           # 启动基于浏览器的在线编辑器
+docmd init           # 生成配置文件
+docmd doctor         # 检查配置与插件状态
+docmd validate       # 校验文档内部链接
+docmd migrate        # 从 Docusaurus、VitePress、MkDocs 或 Starlight 迁移
+docmd deploy         # 生成部署配置
+docmd mcp            # 通过 stdio 运行 MCP 服务器
+docmd add <name>     # 安装插件或主题模板
+docmd stop           # 停止正在运行的 docmd 开发服务器
 ```
+
+**查看完整的 [命令行指令列表 →](https://docs.docmd.io/reference/cli-commands/)**
 
 ## 插件生态
 
-核心功能由稳健的插件系统驱动。基础功能默认内置，您亦可根据需求自由安装可选插件。
+docmd 基于灵活强劲的插件系统构建。常见的基础文档功能已随核心包直接提供，您亦可根据需求自由安装可选插件。
 
-| 插件名称 | 状态 | 功能描述 |
-| :--- | :---: | :--- |
-| `ai` | 核心 | RAG 强力的 AI 助手，支持 BYOK、本地模型及云中继 |
-| `search` | 核心 | 离线全文检索（关键词匹配 + 可选 `docmd-search` 语义检索） |
-| `seo` | 核心 | SEO 元数据与 Open Graph 标签注入 |
-| `sitemap` | 核心 | 自动生成 `sitemap.xml` |
-| `git` | 核心 | Git 提交历史与页面最后更新时间统计 |
-| `analytics` | 核心 | 轻量无追踪站点访问统计 |
-| `llms` | 核心 | AI 上下文生成 (`llms.txt` / `llms-full.txt`) |
-| `okf` | 核心 | 分语言 Open Knowledge Format 结构化知识包 |
-| `mermaid` | 核心 | Mermaid 流程图与图表渲染 |
-| `openapi` | 核心 | 构建期 OpenAPI 3.x 接口文档渲染器 |
-| `pwa` | 可选 | Progressive Web App — 离线浏览能力 |
-| `threads` | 可选 | 行内文档评论与讨论组 *(由 @svallory 贡献)* |
-| `math` | 可选 | KaTeX / LaTeX 数学公式渲染 |
+| 插件名称    |   状态   | 功能描述                                                             |
+| :---------- | :------: | :------------------------------------------------------------------- |
+| `ai`        |   核心   | RAG 强力的 AI 助手，支持 BYOK、本地模型及 Cloud Relay                |
+| `search`    |   核心   | 离线关键词搜索，支持可选的语义检索                                   |
+| `seo`       |   核心   | SEO 元数据与 Open Graph 标签                                         |
+| `sitemap`   |   核心   | 自动生成 `sitemap.xml`                                               |
+| `git`       |   核心   | Git 历史记录与页面最后更新时间元数据                                 |
+| `analytics` |   核心   | 轻量无追踪访问统计集成                                               |
+| `llms`      |   核心   | 自动生成 `llms.txt` 和 `llms-full.txt`                               |
+| `okf`       |   核心   | Open Knowledge Format 结构化知识包                                   |
+| `mermaid`   |   核心   | Mermaid 流程图与图表渲染                                             |
+| `openapi`   |   核心   | OpenAPI 3.x 接口文档渲染器                                           |
+| `pwa`       |   可选   | Progressive Web App 与离线浏览支持                                   |
+| `threads`   |   可选   | 行内文档评论与讨论组 *(由 @svallory 贡献)*                           |
+| `math`      |   可选   | KaTeX / LaTeX 数学公式渲染                                           |
 
 安装可选插件：
 
@@ -238,11 +244,13 @@ docmd add <name>     # 快速安装插件或主题模板
 docmd add <plugin-name>
 ```
 
-开发您自己的插件：[插件开发指南](https://docs.docmd.io/zh/development/building-plugins/)
+**开发您自己的插件：[插件开发指南 →](https://docs.docmd.io/development/building-plugins/)**
 
 ## 配置文件
 
-开始使用无需任何配置。仅在需要精细化控制时，在根目录下创建 `docmd.config.json`（或 `.ts` / `.js`）：
+配置文件是可选的。
+
+仅在需要更多精细控制时，才在项目根目录下添加 `docmd.config.json`、`docmd.config.ts` 或 `docmd.config.js`：
 
 ```json
 {
@@ -253,51 +261,62 @@ docmd add <plugin-name>
 }
 ```
 
-支持使用 TypeScript / JavaScript 配置文件以注入动态配置。
+当需要动态值时，可以使用 TypeScript 和 JavaScript 配置文件。
 
-完整配置参考：[配置选项总览](https://docs.docmd.io/zh/configuration/overview)
+**[配置参考手册 →](https://docs.docmd.io/configuration/overview)**
 
-## 项目结构示例
+## Node.js 编程接口 (API)
 
-```text
-my-docs/
-├── docs/                ← 存放您的 Markdown 格式文档
-├── assets/              ← 图片与静态资源文件
-├── docmd.config.json    ← 可选的项目配置文件
-└── package.json
-```
-
-## 在线编辑器 (Live Editor)
-
-无需本地搭建开发环境，直接在浏览器中即时撰写与预览文档。
-
-**立即体验：[live.docmd.io](https://live.docmd.io)**
-
-## Node.js Programmatic API
-
-在 Node.js 脚本、CI 流水线或自定义构建任务中调用 docmd（同时兼容 CommonJS 与 ESM 模块）。
+在 Node.js 脚本、CI 流水线或自定义构建系统中直接调用 docmd。
 
 ```javascript
 import { build } from '@docmd/core';
 
+// 通过代码调用构建文档
 await build('./docmd.config.json', { isDev: false });
 ```
 
-完整参考文档：[Node API 参考指南](https://docs.docmd.io/zh/development/node-api-reference/)
+同时支持 CommonJS 与 ESM。
+
+**[Node API 参考手册 →](https://docs.docmd.io/development/node-api-reference/)**
+
+## 平滑迁移
+
+现有的文档无需推倒重来。
+
+```bash
+docmd migrate
+```
+
+针对主流文档框架（包括 Docusaurus、VitePress、MkDocs 和 Starlight）提供专属迁移工具支持。
+
+**[查看迁移文档 →](https://docs.docmd.io)**
+
+## 开源承诺
+
+文档是项目的智慧核心。它应该以纯净的 Markdown 文件保存在您的 Git 仓库中 — 便携、受版本控制且清晰可审计。
+
+**docmd 编译器及官方核心插件均遵循 MIT 开源许可协议，并将永久免费提供，绝不设置任何付费墙或商业版编译器功能。**
+
+构建生成的文档站点可以自由部署在任何服务器或托管平台上，无需依赖 docmd 托管的基础设施。
 
 ## 社区与交流
 
-- **提交 Bug 与问题** → [GitHub Issues](https://github.com/docmd-io/docmd/issues)
-- **提问与想法交流** → [Discussions 论坛](https://github.com/orgs/docmd-io/discussions)
-- **参与贡献** → [CONTRIBUTING.md](.github/CONTRIBUTING.md)
-- **路线图规划** → [GitHub Discussions 讨论区](https://github.com/orgs/docmd-io/discussions/2)
+* **官方文档** → [docs.docmd.io](https://docs.docmd.io)
+* **提问与想法交流** → [GitHub Discussions](https://github.com/orgs/docmd-io/discussions)
+* **Bug 反馈与功能建议** → [GitHub Issues](https://github.com/docmd-io/docmd/issues)
+* **参与贡献** → [CONTRIBUTING.md](.github/CONTRIBUTING.md)
+* **路线图规划** → [GitHub Discussions](https://github.com/orgs/docmd-io/discussions/2)
 
-## 支持项目
+## 支持 docmd
 
-- 向身边的朋友推广是支持 docmd 发展最直接有效的方式。[在 X / Twitter 上分享](https://twitter.com/intent/tweet?url=https://github.com/docmd-io/docmd&text=docmd%20-%20为人类和机器构建的文档。) 或点亮一个 Star。
-- 如果 docmd 为您节省了时间，非常欢迎通过 [GitHub Sponsor 赞助项目](https://github.com/sponsors/mgks)。
-- 想法或 Bug 反馈？欢迎提交 Issue 或 Pull Request，也十分欢迎贡献您自制的插件！
+如果 docmd 对您有所帮助：
+
+* 为本仓库点亮一颗 ⭐
+* 将它分享给身边正在编写文档的朋友或团队
+* 提交 Issue、贡献代码修复或开发专属插件
+* [在 GitHub 上赞助支持开发者](https://github.com/sponsors/mgks)
 
 ## 开源协议
 
-基于 MIT License 开源协议。详见 [`LICENSE`](./LICENSE) 文件。
+遵循 MIT 开源许可协议。详情请参阅 [LICENSE](LICENSE)。
