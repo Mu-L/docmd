@@ -63,13 +63,13 @@
     <% } %>
     <div class="docmd-banner__content">
       <% if (_bLinkUrl && (!_bLink.text || _bLink.text.trim() === '')) { %>
-        <a class="docmd-banner__text-link" href="<%= _bLinkUrl %>" <%= _isExternal ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
+        <a class="docmd-banner__text-link" href="<%= _bLinkUrl %>" <%- _isExternal ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
           <span class="docmd-banner__text"><%- _bInner %></span>
         </a>
       <% } else { %>
         <span class="docmd-banner__text"><%- _bInner %></span>
         <% if (_bLinkUrl) { %>
-          <a class="docmd-banner__link" href="<%= _bLinkUrl %>" <%= _isExternal ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
+          <a class="docmd-banner__link" href="<%= _bLinkUrl %>" <%- _isExternal ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
             <%- _bLink.text || (typeof t === 'function' ? t('readMore') : 'Read more') %>
             <%- renderIcon('arrow-right', { class: 'docmd-banner__link-icon' }) %>
           </a>
@@ -98,7 +98,7 @@
     <% } %>
     <% if (_bImageUrl) { %>
       <% if (_bLinkUrl) { %>
-        <a class="docmd-banner__image-link" href="<%= _bLinkUrl %>" <%= _isExternal ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
+        <a class="docmd-banner__image-link" href="<%= _bLinkUrl %>" <%- _isExternal ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
           <img src="<%= _bImageUrl %>" alt="<%= _b.alt || '' %>" class="docmd-banner__image" loading="lazy">
         </a>
       <% } else { %>
@@ -113,7 +113,7 @@
           </span>
         <% } %>
         <% if (_bLinkUrl) { %>
-          <a class="docmd-banner__text-link" href="<%= _bLinkUrl %>" <%= _isExternal ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
+          <a class="docmd-banner__text-link" href="<%= _bLinkUrl %>" <%- _isExternal ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
             <span class="docmd-banner__text"><%- _bInner %></span>
           </a>
         <% } else { %>
