@@ -700,36 +700,23 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
       // won't see it, so spawn a child docmd build to do the indexing instead
       // of trying to import() it here. The child inherits the updated
       // node_modules and starts with a clean require cache.
+      if (process.env.DOCMD_SUBPROCESS_INDEXING === 'true') {
+        if (showTui) tui.warn('  Recursive subprocess indexing prevented.');
+        return;
+      }
       if (showTui) tui.step('Re-running semantic indexing in subprocess (first install)...', 'WAIT');
       try {
         const { execSync } = await import('node:child_process');
         const cwd = process.cwd();
-        // Detect the docmd binary by walking up ancestor directories
-        let docmdBin: string | null = null;
-        let scanDir = cwd;
-        while (true) {
-          const candidate = path.join(scanDir, 'node_modules', '.bin', 'docmd');
-          if (nativeFs.existsSync(candidate)) {
-            docmdBin = candidate;
-            break;
-          }
-          const parent = path.dirname(scanDir);
-          if (parent === scanDir) break;
-          scanDir = parent;
-        }
-        // Pass dev context through so the child build applies the same
-        // base override (base=/) as the parent dev server. Without this,
-        // the subprocess runs a plain `build` which auto-derives the
-        // production subpath and the TUI shows the wrong base message.
-        const childEnv = { ...process.env };
+        const childEnv: Record<string, string | undefined> = { ...process.env, DOCMD_SUBPROCESS_INDEXING: 'true' };
         if (outputDir) childEnv.DOCMD_PROJECT_OUT = outputDir;
         if (options?.isDev) childEnv.DOCMD_DEV = 'true';
         const docsDir = path.resolve(config.root || process.cwd(), config.srcDir || config.src || 'docs');
-        const cmd = docmdBin
-          ? `"${docmdBin}" build`
-          : `node -e "import('docmd-search').then(m => m.indexDirectory({ rootDir: '${docsDir}', outDir: '${path.join(outputDir, '_docmd-search')}' }))"`;
+        const docmdSearchPath = resolveDocmdSearch() || 'docmd-search';
+        const targetSearchDir = path.join(outputDir, '_docmd-search');
+        const cmd = `node -e "import('${docmdSearchPath}').then(m => m.indexDirectory({ rootDir: '${docsDir}', outDir: '${targetSearchDir}' }))"`;
         execSync(cmd, { stdio: 'inherit', cwd, timeout: 300000, env: childEnv });
-        const manifestPath = path.join(outputDir, '_docmd-search/manifest.json');
+        const manifestPath = path.join(targetSearchDir, 'manifest.json');
         if (nativeFs.existsSync(manifestPath)) {
           if (showTui) tui.step('Semantic search index built', 'DONE');
           await stampSemanticFlag(outputDir);
@@ -960,32 +947,20 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
           err.message?.includes('MODULE_NOT_FOUND') ||
           err.message?.includes('Failed to load model');
 
-        if (isModuleCacheIssue && !freshInstall) {
+        if (isModuleCacheIssue && !freshInstall && process.env.DOCMD_SUBPROCESS_INDEXING !== 'true') {
           if (showTui) tui.step('Retrying semantic indexing in subprocess...', 'WAIT');
           try {
             const { execSync } = await import('node:child_process');
             const cwd = process.cwd();
-            let docmdBin: string | null = null;
-            let scanDir = cwd;
-            while (true) {
-              const candidate = path.join(scanDir, 'node_modules', '.bin', 'docmd');
-              if (nativeFs.existsSync(candidate)) {
-                docmdBin = candidate;
-                break;
-              }
-              const parent = path.dirname(scanDir);
-              if (parent === scanDir) break;
-              scanDir = parent;
-            }
-            const childEnv = { ...process.env };
+            const childEnv: Record<string, string | undefined> = { ...process.env, DOCMD_SUBPROCESS_INDEXING: 'true' };
             if (outputDir) childEnv.DOCMD_PROJECT_OUT = outputDir;
             if (options?.isDev) childEnv.DOCMD_DEV = 'true';
             const docsDir = path.resolve(config.root || process.cwd(), config.srcDir || config.src || 'docs');
-            const cmd = docmdBin
-              ? `"${docmdBin}" build`
-              : `node -e "import('docmd-search').then(m => m.indexDirectory({ rootDir: '${docsDir}', outDir: '${path.join(outputDir, '_docmd-search')}' }))"`;
+            const docmdSearchPath = resolveDocmdSearch() || 'docmd-search';
+            const targetSearchDir = path.join(outputDir, '_docmd-search');
+            const cmd = `node -e "import('${docmdSearchPath}').then(m => m.indexDirectory({ rootDir: '${docsDir}', outDir: '${targetSearchDir}' }))"`;
             execSync(cmd, { stdio: 'inherit', cwd, timeout: 300000, env: childEnv });
-            const manifestPath = path.join(outputDir, '_docmd-search/manifest.json');
+            const manifestPath = path.join(targetSearchDir, 'manifest.json');
             if (nativeFs.existsSync(manifestPath)) {
               if (showTui) tui.step('Semantic search index built', 'DONE');
               await stampSemanticFlag(outputDir);
