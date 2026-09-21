@@ -214,6 +214,14 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
     config.srcDir = config.src;
     config.outputDir = config.out;
 
+    // --- Markdown Options ---
+    config.markdown = {
+        breaks: typeof config.markdown?.breaks === 'boolean' ? config.markdown.breaks : true,
+        linkify: typeof config.markdown?.linkify === 'boolean' ? config.markdown.linkify : true,
+        typographer: typeof config.markdown?.typographer === 'boolean' ? config.markdown.typographer : true,
+        ...(typeof config.markdown === 'object' && config.markdown !== null ? config.markdown : {})
+    };
+
     // --- Exclude / Ignore Patterns (Issue #226) ---
     config.exclude = Array.isArray(config.exclude)
       ? config.exclude.filter((x: any) => typeof x === 'string' && x.trim().length > 0)
