@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
   caption.className = 'docmd-lightbox-caption';
   content.appendChild(img);
   content.appendChild(caption);
-  
+
   const close = document.createElement('button');
   close.className = 'docmd-lightbox-close';
   close.setAttribute('aria-label', 'Close lightbox');

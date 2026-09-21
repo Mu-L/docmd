@@ -222,7 +222,7 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
         ...(typeof config.markdown === 'object' && config.markdown !== null ? config.markdown : {})
     };
 
-    // --- Exclude / Ignore Patterns (Issue #226) ---
+    // --- Exclude / Ignore Patterns ---
     config.exclude = Array.isArray(config.exclude)
       ? config.exclude.filter((x: any) => typeof x === 'string' && x.trim().length > 0)
       : (typeof config.exclude === 'string' && config.exclude.trim() ? [config.exclude.trim()] : []);
