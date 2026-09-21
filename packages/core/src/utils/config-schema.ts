@@ -30,6 +30,73 @@ const KNOWN_CSS_THEMES: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Valid layout banner positions.
+ * - 'top': Site-wide banner (text only, image disallowed)
+ * - 'sidebar-top': Top of the sidebar (image + text allowed)
+ * - 'sidebar-bottom': Bottom of the sidebar (image + text allowed)
+ * - 'toc-top': Top of table of contents rail (image + text allowed)
+ * - 'toc-bottom': Bottom of table of contents rail (image + text allowed)
+ */
+export const VALID_BANNER_POSITIONS: ReadonlySet<string> = new Set([
+    'top',
+    'sidebar-top',
+    'sidebar-bottom',
+    'toc-top',
+    'toc-bottom'
+]);
+
+export function normalizeBannerItem(ub: any, defaultPos: string = 'top'): any {
+    if (!ub) return null;
+    if (typeof ub === 'string') {
+        const text = ub.trim();
+        if (!text) return null;
+        return {
+            content: text,
+            html: undefined,
+            type: 'info',
+            dismissible: defaultPos === 'top',
+            link: null,
+            icon: null,
+            image: null,
+            alt: '',
+            position: defaultPos
+        };
+    }
+    if (typeof ub === 'object') {
+        const pos = (ub.position && VALID_BANNER_POSITIONS.has(ub.position)) ? ub.position : defaultPos;
+        let link: any = null;
+        if (typeof ub.link === 'string' && ub.link.trim()) {
+            link = { url: ub.link.trim(), text: '' };
+        } else if (typeof ub.link === 'object' && ub.link && ub.link.url) {
+            link = { url: String(ub.link.url).trim(), text: String(ub.link.text || '') };
+        }
+        const rawDismiss = ub.dismissible !== undefined
+            ? ub.dismissible
+            : (ub.dismissable !== undefined ? ub.dismissable : ub.closable);
+        const dismissible = rawDismiss !== undefined
+            ? (rawDismiss !== false && rawDismiss !== 'false')
+            : (pos === 'top');
+
+        const bannerObj: any = {
+            content: typeof ub.content === 'string' ? ub.content : (ub.html || ''),
+            html: typeof ub.html === 'string' ? ub.html : undefined,
+            type: ub.type || 'info',
+            dismissible,
+            link,
+            icon: ub.icon || null,
+            image: (pos !== 'top' && typeof ub.image === 'string' && ub.image.trim()) ? ub.image.trim() : null,
+            alt: typeof ub.alt === 'string' ? ub.alt : '',
+            position: pos
+        };
+        if (bannerObj.html && !bannerObj.content) {
+            bannerObj.content = bannerObj.html;
+        }
+        return bannerObj;
+    }
+    return null;
+}
+
+/**
  * Hardcoded English defaults for the 404 page. These are intentionally
  * NOT injected into `config.notFound` during normalisation — if we did,
  * the build site's `|| t('pageNotFound')` fallback would never fire
@@ -126,14 +193,6 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
     }
 
     const _userSetBaseExplicitly = userConfig.base !== undefined || !!process.env.DOCMD_PROJECT_PREFIX;
-    // Top-level QoL defaults — opt out by setting `false`.
-    if (config.pageNavigation === undefined) config.pageNavigation = true;
-    if (config.copyCode === undefined) config.copyCode = true;
-    if (config.autoTitleFromH1 === undefined) config.autoTitleFromH1 = true;
-    // autoNav: when true (default), docmd auto-generates navigation from the
-    // source tree if the user provides no navigation, an empty navigation
-    // array, or no navigation.json. Set false to keep navigation empty.
-    if (config.autoNav === undefined) config.autoNav = true;
 
     // --- 1.5 Security defaults ---
     // Controls how the markdown parser handles raw HTML in user content.
@@ -141,16 +200,42 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
     //   'escape' - raw HTML is HTML-escaped and shown as text
     //   'strip'  - raw HTML blocks are removed from the rendered output
     const VALID_HTML_POLICIES = new Set(['allow', 'escape', 'strip']);
-    const userHtmlPolicy = config.security && config.security.html;
+    const userHtmlPolicy = (config.security && (config.security.html || config.security.htmlPolicy)) || config.htmlPolicy || config.htmlSecurity;
     config.security = {
         html: VALID_HTML_POLICIES.has(userHtmlPolicy) ? userHtmlPolicy : 'allow',
+        ...(typeof config.security === 'object' ? config.security : {})
     };
+    config.security.html = VALID_HTML_POLICIES.has(userHtmlPolicy) ? userHtmlPolicy : 'allow';
+    config.htmlPolicy = config.security.html;
 
     // Failsafe: Keep legacy keys attached for older plugins (SEO, Sitemap) to prevent breakage during transition.
     config.siteTitle = config.title;
     config.siteUrl = config.url;
     config.srcDir = config.src;
     config.outputDir = config.out;
+
+    // --- Markdown Options ---
+    // linkifyDefaultScheme: scheme prepended to bare-domain autolinks (e.g. `github.com`).
+    // 'https' is the industry default — virtually all public sites support HTTPS and
+    // linking to http:// is a security footprint concern. Use 'http' only for
+    // internal/legacy environments where HTTPS is unavailable.
+    const VALID_LINKIFY_SCHEMES = new Set(['https', 'http']);
+    const rawLinkifyScheme = config.markdown?.linkifyDefaultScheme;
+    const resolvedLinkifyScheme = VALID_LINKIFY_SCHEMES.has(rawLinkifyScheme) ? rawLinkifyScheme : 'https';
+    config.markdown = {
+        breaks: typeof config.markdown?.breaks === 'boolean' ? config.markdown.breaks : true,
+        linkify: typeof config.markdown?.linkify === 'boolean' ? config.markdown.linkify : true,
+        typographer: typeof config.markdown?.typographer === 'boolean' ? config.markdown.typographer : true,
+        ...(typeof config.markdown === 'object' && config.markdown !== null ? config.markdown : {}),
+        // Always apply the validated scheme last so a user cannot supply an
+        // invalid value (anything other than 'https' | 'http') via the spread.
+        linkifyDefaultScheme: resolvedLinkifyScheme
+    };
+
+    // --- Exclude / Ignore Patterns ---
+    config.exclude = Array.isArray(config.exclude)
+      ? config.exclude.filter((x: any) => typeof x === 'string' && x.trim().length > 0)
+      : (typeof config.exclude === 'string' && config.exclude.trim() ? [config.exclude.trim()] : []);
 
     // --- Logo Normalization
     if (typeof config.logo === 'string') {
@@ -161,14 +246,101 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
         };
     }
 
-    // --- 2. Layout Structure (V2 Schema) ---
+    // --- 2. Layout Structure (V2/V3 Schema) ---
     const userLayout = config.layout || {};
+
+    // Top-level QoL defaults — opt out by setting `false`.
+    const resolvedPageNav = userLayout.pageNavigation !== undefined ? userLayout.pageNavigation : config.pageNavigation;
+    config.pageNavigation = resolvedPageNav === undefined ? true : !!resolvedPageNav;
+
+    const resolvedCopyCode = userLayout.copyCode !== undefined ? userLayout.copyCode : config.copyCode;
+    config.copyCode = resolvedCopyCode === undefined ? true : !!resolvedCopyCode;
+
+    if (config.autoTitleFromH1 === undefined) config.autoTitleFromH1 = true;
+    if (config.autoNav === undefined) config.autoNav = true;
+
+    // Resolve focusMode (DISABLED by default)
+    // Fallback order:
+    // 1. userLayout.focusMode
+    // 2. userConfig.focusMode
+    // 3. optionsMenu.components.focusMode (layout or root)
+    // 4. default false
+    let isFocusModeEnabled = false;
+    if (typeof userLayout.focusMode === 'boolean') {
+        isFocusModeEnabled = userLayout.focusMode;
+    } else if (typeof userLayout.focusMode === 'object' && userLayout.focusMode !== null) {
+        isFocusModeEnabled = userLayout.focusMode.enabled !== false;
+    } else if (typeof userConfig.focusMode === 'boolean') {
+        isFocusModeEnabled = userConfig.focusMode;
+    } else if (typeof userConfig.focusMode === 'object' && userConfig.focusMode !== null) {
+        isFocusModeEnabled = userConfig.focusMode.enabled !== false;
+    } else if (userLayout.optionsMenu?.components?.focusMode !== undefined) {
+        isFocusModeEnabled = !!userLayout.optionsMenu.components.focusMode;
+    } else if (userConfig.optionsMenu?.components?.focusMode !== undefined) {
+        isFocusModeEnabled = !!userConfig.optionsMenu.components.focusMode;
+    }
+
+    // Resolve print (DISABLED by default)
+    // Fallback order:
+    // 1. userLayout.print
+    // 2. userConfig.print
+    // 3. userLayout.copyWidgets?.print or userConfig.theme?.copyWidgets?.print
+    // 4. userLayout.optionsMenu?.components?.print or userConfig.optionsMenu?.components?.print
+    // 5. default false
+    let isPrintEnabled = false;
+    if (typeof userLayout.print === 'boolean') {
+        isPrintEnabled = userLayout.print;
+    } else if (typeof userLayout.print === 'object' && userLayout.print !== null) {
+        isPrintEnabled = userLayout.print.enabled !== false;
+    } else if (typeof userConfig.print === 'boolean') {
+        isPrintEnabled = userConfig.print;
+    } else if (typeof userConfig.print === 'object' && userConfig.print !== null) {
+        isPrintEnabled = userConfig.print.enabled !== false;
+    } else if (userLayout.copyWidgets?.print !== undefined) {
+        isPrintEnabled = !!userLayout.copyWidgets.print;
+    } else if (userConfig.theme?.copyWidgets?.print !== undefined) {
+        isPrintEnabled = !!userConfig.theme.copyWidgets.print;
+    } else if (userLayout.optionsMenu?.components?.print !== undefined) {
+        isPrintEnabled = !!userLayout.optionsMenu.components.print;
+    } else if (userConfig.optionsMenu?.components?.print !== undefined) {
+        isPrintEnabled = !!userConfig.optionsMenu.components.print;
+    }
+
+    // Resolve copyWidgets (layout.copyWidgets or theme.copyWidgets)
+    const userCopyWidgets = userLayout.copyWidgets || userConfig.theme?.copyWidgets || {};
+    const normalizedCopyWidgets = {
+        enabled: userCopyWidgets.enabled !== false,
+        raw: userCopyWidgets.raw !== false,
+        context: userCopyWidgets.context !== false,
+        ...userCopyWidgets
+    };
+
+    const rawTitleSeparator = userLayout.titleSeparator !== undefined
+        ? userLayout.titleSeparator
+        : (config.titleSeparator !== undefined ? config.titleSeparator : '-');
+
+    const rawTitleAppend = userLayout.titleAppend !== undefined
+        ? userLayout.titleAppend
+        : (config.titleAppend !== undefined ? config.titleAppend : true);
 
     config.layout = {
         spa: true,
         breadcrumbs: true,
-        ...userLayout
+        ...userLayout,
+        titleSeparator: rawTitleSeparator,
+        titleAppend: rawTitleAppend,
+        focusMode: isFocusModeEnabled,
+        print: isPrintEnabled,
+        pageNavigation: config.pageNavigation,
+        copyCode: config.copyCode,
+        copyWidgets: normalizedCopyWidgets
     };
+
+    // Attach root aliases for backward compatibility
+    config.focusMode = isFocusModeEnabled;
+    config.print = isPrintEnabled;
+    if (config.titleSeparator === undefined) config.titleSeparator = rawTitleSeparator;
+    if (config.titleAppend === undefined) config.titleAppend = rawTitleAppend;
 
     config.header = {
         enabled: true,
@@ -203,37 +375,67 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
         }
     }
 
-    // --- 3. Options Menu (Search, Theme, Sponsor) ---
-    config.optionsMenu = {
-        position: 'header',
-        components: {
-            search: true,
-            themeSwitch: true,
-            sponsor: null
-        },
-        ...(userLayout.optionsMenu || config.optionsMenu || {})
+    // --- 3. Options Menu (Search, Theme, Focus Mode, Sponsor) ---
+    // Note: Print is strictly NOT part of the header/menubar options menu.
+    const defaultOptionsMenuComponents = {
+        search: true,
+        themeSwitch: true,
+        focusMode: isFocusModeEnabled,
+        sponsor: null
     };
 
-    // --- 3.1. Site-wide Banner (new in 0.8.7) ---
-    // Sits above the menubar. Opt-in — defaults to null (no banner rendered).
-    if (config.layout?.banner) {
-        const ub = config.layout.banner;
-        config.layout.banner = {
-            content: typeof ub === 'string' ? ub : (ub.content || ub.html || ''),
-            html: typeof ub === 'object' && ub.html ? ub.html : undefined,
-            type: (typeof ub === 'object' && ub.type) ? ub.type : 'info',
-            dismissible: typeof ub === 'object' && ub.dismissible === false ? false : true,
-            link: typeof ub === 'object' && ub.link && ub.link.url ? ub.link : null,
-            icon: typeof ub === 'object' && ub.icon ? ub.icon : null,
-        };
-        // If only a string was passed, `ub` is a string and `content` is the string.
-        // If it's an object, ensure `content` and `html` are mutually consistent.
-        if (config.layout.banner.html && !config.layout.banner.content) {
-            config.layout.banner.content = config.layout.banner.html;
+    const userOptionsMenu = userLayout.optionsMenu || config.optionsMenu || {};
+    config.optionsMenu = {
+        position: 'header',
+        ...userOptionsMenu,
+        components: {
+            ...defaultOptionsMenuComponents,
+            ...(userOptionsMenu.components || {})
         }
-    } else {
-        config.layout.banner = null;
+    };
+    // Ensure print is never rendered in header/menubar options menu
+    if (config.optionsMenu.components) {
+        delete (config.optionsMenu.components as any).print;
     }
+    config.layout.optionsMenu = config.optionsMenu;
+
+    // --- 3.1. Banners (multi-position support) ---
+    // Positions: 'top' | 'sidebar-top' | 'sidebar-bottom' | 'toc-top' | 'toc-bottom'
+    // 'top' allows text only (image disallowed); 'sidebar-*' and 'toc-*' allow both text and images.
+    const rawBanners = config.layout?.banners || userLayout.banners;
+    const rawBanner = config.layout?.banner || userLayout.banner;
+    const bannersMap: Record<string, any> = {};
+
+    if (rawBanners) {
+        if (Array.isArray(rawBanners)) {
+            for (const item of rawBanners) {
+                const norm = normalizeBannerItem(item, 'top');
+                if (norm && VALID_BANNER_POSITIONS.has(norm.position)) {
+                    bannersMap[norm.position] = norm;
+                }
+            }
+        } else if (typeof rawBanners === 'object') {
+            for (const [posKey, item] of Object.entries(rawBanners)) {
+                if (VALID_BANNER_POSITIONS.has(posKey)) {
+                    const norm = normalizeBannerItem(item, posKey);
+                    if (norm) {
+                        norm.position = posKey;
+                        bannersMap[posKey] = norm;
+                    }
+                }
+            }
+        }
+    }
+
+    if (rawBanner) {
+        const norm = normalizeBannerItem(rawBanner, 'top');
+        if (norm && VALID_BANNER_POSITIONS.has(norm.position)) {
+            bannersMap[norm.position] = norm;
+        }
+    }
+
+    config.layout.banners = bannersMap;
+    config.layout.banner = bannersMap['top'] || null;
 
     // --- Menubar (Top Navigation Bar) ---
     const userMenubar = userLayout.menubar || config.menubar;
@@ -279,13 +481,24 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
     }
 
     // --- 4. Theme & Branding ---
+    const rawCustomCss = userConfig.theme?.customCss || userConfig.customCss || [];
+    const normalizedCustomCss = Array.isArray(rawCustomCss) ? rawCustomCss : (rawCustomCss ? [rawCustomCss] : []);
+
+    const rawCustomJs = userConfig.theme?.customJs || userConfig.customJs || [];
+    const normalizedCustomJs = Array.isArray(rawCustomJs) ? rawCustomJs : (rawCustomJs ? [rawCustomJs] : []);
+
     config.theme = {
         name: 'default',
         appearance: 'system',
-        customCss: [],
         codeHighlight: true,
-        ...(config.theme || {})
+        ...(config.theme || {}),
+        customCss: normalizedCustomCss,
+        customJs: normalizedCustomJs,
+        copyWidgets: normalizedCopyWidgets
     };
+
+    config.customCss = normalizedCustomCss;
+    config.customJs = normalizedCustomJs;
 
     // Legacy Support: Map defaultMode to appearance if appearance isn't explicitly set
     if (config.theme.defaultMode && !userConfig.theme?.appearance) {
@@ -325,7 +538,7 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
                 declineText: uc.declineText || null,
                 policyUrl: uc.policyUrl || null,
                 position: ['bottom', 'bottom-left', 'bottom-right', 'center'].includes(uc.position) ? uc.position : 'bottom',
-                dismissible: uc.dismissible !== false,
+                dismissible: (uc.dismissible !== undefined ? uc.dismissible : (uc.dismissable !== undefined ? uc.dismissable : uc.closable)) !== false,
                 expiryDays: typeof uc.expiryDays === 'number' && uc.expiryDays > 0 ? uc.expiryDays : 180,
             };
         } else {
@@ -335,7 +548,19 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
         config.cookie = null;
     }
 
-    config.customJs = config.customJs || [];
+    // Edit Link (layout.editLink or root editLink)
+    const userEditLink = userLayout.editLink || config.editLink;
+    if (userEditLink) {
+        config.editLink = typeof userEditLink === 'object' ? {
+            enabled: userEditLink.enabled !== false,
+            baseUrl: userEditLink.baseUrl || userEditLink.url || '',
+            text: userEditLink.text || null
+        } : null;
+        config.layout.editLink = config.editLink;
+    } else {
+        config.editLink = null;
+        config.layout.editLink = null;
+    }
 
     // Normalize Navigation
     config.navigation = Array.isArray(config.navigation) ? config.navigation : [];
@@ -379,7 +604,10 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
                 id: v.id,
                 dir: v.dir || `docs-${v.id}`,
                 label: v.label || v.id,
-                navigation: v.navigation || null
+                navigation: v.navigation || null,
+                banner: v.banner !== undefined ? v.banner : undefined,
+                banners: v.banners !== undefined ? v.banners : undefined,
+                layout: v.layout !== undefined ? v.layout : undefined
             };
         });
     } else {
@@ -407,7 +635,10 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
                 id: loc.id,
                 label: loc.label || loc.id,
                 dir: loc.dir || 'ltr',
-                translations: loc.translations || {}
+                translations: loc.translations || {},
+                banner: loc.banner !== undefined ? loc.banner : undefined,
+                banners: loc.banners !== undefined ? loc.banners : undefined,
+                layout: loc.layout !== undefined ? loc.layout : undefined
             }))
         };
     } else {

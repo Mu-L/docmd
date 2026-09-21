@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-ai",
-  "version": "0.9.5",
+  "version": "0.9.6",
   "description": "Interactive AI chat with documentation plugin for docmd, powered by docmd-assistant with multi-provider runtime.",
   "type": "module",
   "main": "dist/index.js",
@@ -31,12 +31,12 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
-    "docmd-assistant": "^0.1.17"
+    "docmd-assistant": "^0.1.18"
   },
   "devDependencies": {
     "@docmd/api": "workspace:*",
     "@docmd/utils": "workspace:*",
-    "@types/node": "^24.13.3",
+    "@types/node": "^24.13.6",
     "esbuild": "^0.28.2",
     "typescript": "^6.0.3"
   },

@@ -57,13 +57,13 @@ describe('onPostBuild', () => {
     const pages = [
       {
         outputPath: 'typed.html',
-        frontmatter: { title: 'Typed', type: 'guide', description: 'Has explicit type.' },
+        frontmatter: { title: 'Typed', type: 'guide', description: 'Has explicit type.', keywords: ['cli', 'guide'], tags: ['guide', 'tooling'] },
         sourcePath: typedSrc,
         rawMarkdown: ''
       },
       {
         outputPath: 'untyped.html',
-        frontmatter: { title: 'Untyped', description: 'No type set.' },
+        frontmatter: { title: 'Untyped', description: 'No type set.', keywords: 'search, fallback' },
         sourcePath: untypedSrc,
         rawMarkdown: ''
       },
@@ -94,6 +94,8 @@ describe('onPostBuild', () => {
     const okfYaml = await fs.readFile(okfYamlPath, 'utf8');
     assert.match(okfYaml, /stats:/);
     assert.match(okfYaml, /concepts: 2/);
+    assert.match(okfYaml, /description:\s*"Has explicit type\."/);
+    assert.match(okfYaml, /description:\s*"No type set\."/);
 
     // --- 2. index.md + graph.html + graph.json + concepts/*.md + _meta/* ---
     const okfRoot = path.join(bundleDir, 'okf');
@@ -133,10 +135,16 @@ describe('onPostBuild', () => {
     assert.match(okfYaml, /guide: 1/);
     assert.match(okfYaml, /concept: 1/);
 
-    // --- 8. bundle.json mirrors the manifest ---
+    // --- 8. bundle.json mirrors the manifest and includes description & tags ---
     const bundleJson = JSON.parse(await fs.readFile(path.join(okfRoot, '_meta', 'bundle.json'), 'utf8'));
     assert.equal(bundleJson.stats.concepts, 2);
     assert.deepEqual(bundleJson.stats.by_type, { guide: 1, concept: 1 });
+    const typedConcept = bundleJson.concepts.find((c: any) => c.id === 'typed');
+    const untypedConcept = bundleJson.concepts.find((c: any) => c.id === 'untyped');
+    assert.equal(typedConcept.description, 'Has explicit type.');
+    assert.deepEqual(typedConcept.tags.sort(), ['cli', 'guide', 'tooling'].sort());
+    assert.equal(untypedConcept.description, 'No type set.');
+    assert.deepEqual(untypedConcept.tags.sort(), ['fallback', 'search'].sort());
   });
 
   it('respects config.plugins.okf === false (exits cleanly)', async () => {

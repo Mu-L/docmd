@@ -17,27 +17,32 @@ import fs from 'fs/promises';
 import nativeFs from 'fs';
 import type { PluginDescriptor } from '@docmd/api';
 import { outputPathToPathname, sanitizeUrl } from '@docmd/api';
-import { attrEsc } from '@docmd/utils';
+import { attrEsc, jsonInject, resolveTitle } from '@docmd/utils';
 
 export const plugin: PluginDescriptor = {
   name: 'seo',
-  version: '0.9.5',
+  version: '0.9.6',
   capabilities: ['head', 'post-build']
 };
 
 /**
  * Generates HTML meta tags for a specific page.
  * @param {Object} config - Project config
- * @param {Object} pageData - { frontmatter, outputPath }
+ * @param {Object} pageData - { frontmatter, outputPath, breadcrumbs, searchData, urlContext }
  * @param {string} relativePathToRoot - Path relative to root (for assets)
  * @returns {string} HTML string of meta tags
  */
-
 export function generateMetaTags(config: any, pageData: any, _relativePathToRoot: string) {
+  const { frontmatter = {}, outputPath } = pageData;
+
+  // Suppress meta tags if frontmatter explicitly disables meta components (e.g. no-style pages)
+  if (frontmatter.components?.meta === false) {
+    return '';
+  }
+
   let html = '';
-  const { frontmatter, outputPath } = pageData;
   const seo = frontmatter.seo || {}; // Page-specific SEO overrides
-  const globalSeo = config.plugins?.seo || {};
+  const globalSeo = config.plugins?.seo || config.seo || {};
 
   // 1. Robots
   if (frontmatter.noindex || seo.noindex) {
@@ -66,27 +71,25 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
     description = pageData.searchData.content.length > 150 ? contentPrefix + '...' : contentPrefix;
   }
 
-  // Phase 1.B (T-S3 fix): all content="..." values are user-controllable
-  // (frontmatter.title, frontmatter.description, config.url, config.title, etc.).
+  // Phase 1.B (T-S3 fix): all content="..." values are user-controllable.
   // Apply attrEsc() to prevent stored XSS in social-media previews.
   html += `<meta name="description" content="${attrEsc(description)}">\n`;
 
   // 3. Canonical URL
-  // Use centralised URL utility for consistent URL generation.
   const siteUrl = config.url ? config.url.replace(/\/$/, '') : '';
   const pathname = outputPathToPathname(outputPath);
   const pageUrl = siteUrl ? sanitizeUrl(siteUrl + pathname) : '';
 
   const isOffline = !!pageData.urlContext?.offline;
-
-  const canonical = seo.canonicalUrl || frontmatter.canonicalUrl || pageUrl;
+  const canonicalDisabled = seo.canonical === false || frontmatter.canonical === false || frontmatter.canonicalUrl === false;
+  const canonical = canonicalDisabled ? null : (seo.canonicalUrl || frontmatter.canonicalUrl || pageUrl);
   if (canonical && (!isOffline || canonical.startsWith('http'))) {
     html += `<link rel="canonical" href="${attrEsc(canonical)}">\n`;
   }
 
   // 4. Open Graph (Facebook/LinkedIn)
-  const appendTitle = frontmatter.titleAppend !== false;
-  const fullTitle = (appendTitle && siteTitle && pageTitle !== siteTitle) ? `${pageTitle} - ${siteTitle}` : pageTitle;
+  // Unified title resolution respecting frontmatter > layout > seo > root hierarchy & formatTitleSeparator
+  const fullTitle = resolveTitle(pageTitle, siteTitle, config, frontmatter);
 
   html += `<meta property="og:title" content="${attrEsc(fullTitle)}">\n`;
   html += `<meta property="og:description" content="${attrEsc(description)}">\n`;
@@ -99,7 +102,6 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
   let image = seo.image || frontmatter.image || globalSeo.openGraph?.defaultImage;
   if (image) {
     if (!image.startsWith('http')) {
-      // Resolve relative image path to absolute URL
       image = siteUrl ? `${siteUrl}/${image.replace(/^\.?\//, '')}` : '';
     }
     if (image && (!isOffline || image.startsWith('http'))) {
@@ -126,6 +128,115 @@ export function generateMetaTags(config: any, pageData: any, _relativePathToRoot
   if (keywords) {
     const kwStr = Array.isArray(keywords) ? keywords.join(', ') : keywords;
     html += `<meta name="keywords" content="${attrEsc(kwStr)}">\n`;
+  }
+
+  // 7. Structured Data (JSON-LD)
+  if (!isOffline && siteUrl) {
+    const isRoot = pathname === '/' || pathname === '/index.html' || pathname === '' || frontmatter.isHome === true;
+
+    // 7.1 Organization Schema
+    const orgConfig = seo.organization || frontmatter.organization || (isRoot ? (globalSeo.organization || config.organization) : null);
+    if (orgConfig && typeof orgConfig === 'object') {
+      const orgSchema: Record<string, any> = {
+        '@context': 'https://schema.org',
+        '@type': orgConfig['@type'] || 'Organization',
+        'name': orgConfig.name || siteTitle || 'Organization',
+        'url': orgConfig.url || `${siteUrl}/`
+      };
+      if (orgConfig.logo) {
+        orgSchema.logo = orgConfig.logo.startsWith('http')
+          ? orgConfig.logo
+          : `${siteUrl}/${orgConfig.logo.replace(/^\.?\//, '')}`;
+      }
+      if (Array.isArray(orgConfig.sameAs) && orgConfig.sameAs.length > 0) {
+        orgSchema.sameAs = orgConfig.sameAs;
+      }
+      html += `<script type="application/ld+json">\n${jsonInject(orgSchema)}\n</script>\n`;
+    }
+
+    // 7.2 WebSite Schema with SearchAction (Homepage only)
+    const webSiteConfig = seo.webSite ?? globalSeo.webSite;
+    if (isRoot && webSiteConfig !== false) {
+      const searchActionEnabled = (seo.searchAction ?? globalSeo.searchAction) !== false && config.search !== false;
+      const searchTarget = globalSeo.searchUrl || `${siteUrl}/?q={search_term_string}`;
+      const webSiteSchema: Record<string, any> = {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        'name': (typeof webSiteConfig === 'object' && webSiteConfig.name) || siteTitle || 'Documentation',
+        'url': `${siteUrl}/`
+      };
+      if (searchActionEnabled) {
+        webSiteSchema.potentialAction = {
+          '@type': 'SearchAction',
+          'target': searchTarget,
+          'query-input': 'required name=search_term_string'
+        };
+      }
+      html += `<script type="application/ld+json">\n${jsonInject(webSiteSchema)}\n</script>\n`;
+    }
+
+    // 7.3 Breadcrumbs Schema (schema.org/BreadcrumbList)
+    // Active for all non-root pages unless explicitly disabled
+    const breadcrumbsEnabled = (seo.breadcrumbs ?? globalSeo.breadcrumbs ?? frontmatter.breadcrumbs) !== false;
+    if (!isRoot && breadcrumbsEnabled) {
+      const itemList: any[] = [
+        {
+          '@type': 'ListItem',
+          'position': 1,
+          'name': siteTitle || 'Home',
+          'item': `${siteUrl}/`
+        }
+      ];
+
+      if (Array.isArray(pageData.breadcrumbs) && pageData.breadcrumbs.length > 0) {
+        pageData.breadcrumbs.forEach((bc: any, idx: number) => {
+          const itemUrl = bc.path ? sanitizeUrl(`${siteUrl}/${bc.path.replace(/^\//, '')}`) : undefined;
+          itemList.push({
+            '@type': 'ListItem',
+            'position': idx + 2,
+            'name': bc.title,
+            ...(itemUrl ? { 'item': itemUrl } : {})
+          });
+        });
+      } else {
+        // Fallback: derive breadcrumb hierarchy from path segments
+        const segments = pathname.replace(/^\/|\/index\.html$|\.html$/g, '').split('/').filter(Boolean);
+        let accumulated = siteUrl;
+        segments.forEach((seg, idx) => {
+          accumulated += `/${seg}`;
+          const isLast = idx === segments.length - 1;
+          const segName = isLast ? pageTitle : seg.replace(/[-_]/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+          itemList.push({
+            '@type': 'ListItem',
+            'position': idx + 2,
+            'name': segName,
+            'item': accumulated
+          });
+        });
+      }
+
+      const breadcrumbsSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        'itemListElement': itemList
+      };
+      html += `<script type="application/ld+json">\n${jsonInject(breadcrumbsSchema)}\n</script>\n`;
+    }
+  }
+
+  // 7.4 Custom frontmatter ldJson support (direct object or array)
+  const customLdJson = seo.ldJson || frontmatter.ldJson;
+  if (customLdJson) {
+    const items = Array.isArray(customLdJson) ? customLdJson : [customLdJson];
+    for (const item of items) {
+      if (item && typeof item === 'object') {
+        const schemaObj = {
+          '@context': 'https://schema.org',
+          ...item
+        };
+        html += `<script type="application/ld+json">\n${jsonInject(schemaObj)}\n</script>\n`;
+      }
+    }
   }
 
   return html;
@@ -196,12 +307,6 @@ export async function onPostBuild({ config, outputDir, log }: any) {
   if (log) log('Generated robots.txt');
 
   // Auto-generate .nojekyll at the site root.
-  // GitHub Pages runs Jekyll by default, which silently drops every file or
-  // directory whose name starts with a dot — including _docmd-search/ (the
-  // semantic index) and docmd-search-client.js (the browser bundle).
-  // An empty .nojekyll file disables Jekyll so those assets are served as-is.
-  // This is a zero-config fix: users deploying to GitHub Pages never need to
-  // think about it.
   const nojekyllPath = path.join(outputDir, '.nojekyll');
   if (!nativeFs.existsSync(nojekyllPath)) {
     await fs.writeFile(nojekyllPath, '');

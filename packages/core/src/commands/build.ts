@@ -17,7 +17,7 @@ import { fileURLToPath } from 'url';
 import nativeFs from 'fs';
 import { fsUtils as fs, WorkerPool } from '@docmd/utils';
 import { loadConfig } from '../utils/config-loader.js';
-import { TUI, loadPlugins, getPluginLoadErrors, type ResolvedAsset } from '@docmd/api';
+import { TUI, loadPlugins, getPluginLoadErrors, preflightEnsureRuntimeDeps, type PreflightRequirements, type ResolvedAsset } from '@docmd/api';
 import { flushNormaliserWarnings, setNormaliserVerbose } from '@docmd/parser';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -113,6 +113,31 @@ export async function buildSite(configPath: string, opts: any = {}) {
     delete workerConfig._workerPool;
     const workerPool = opts.workerPool || new WorkerPool(workerScript, { config: workerConfig, cwd: process.cwd() });
     config._workerPool = workerPool;
+
+    // Pre-flight check: ensure missing plugins/templates/engines/search are installed together
+    const preflightReqs: PreflightRequirements = {
+      templates: [],
+      plugins: [],
+      engines: [],
+      semanticSearch: false,
+    };
+    if (config.theme?.template) preflightReqs.templates!.push(config.theme.template);
+    if (config.site?.template) preflightReqs.templates!.push(config.site.template);
+    if (config.engine) preflightReqs.engines!.push(config.engine);
+    if (config.plugins) {
+      if (Array.isArray(config.plugins)) {
+        preflightReqs.plugins!.push(...config.plugins);
+      } else if (typeof config.plugins === 'object') {
+        for (const [k, v] of Object.entries(config.plugins)) {
+          if (v !== false) preflightReqs.plugins!.push(k);
+          if (k === 'search' && (v as any)?.semantic) preflightReqs.semanticSearch = true;
+        }
+      }
+    }
+    if (config.search?.semantic || config.search?.engine === 'semantic') {
+      preflightReqs.semanticSearch = true;
+    }
+    await preflightEnsureRuntimeDeps(preflightReqs, process.cwd());
 
     const hooks = await loadPlugins(config, { resolvePaths: [__dirname], isDev: options.isDev });
 

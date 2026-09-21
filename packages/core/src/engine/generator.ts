@@ -13,7 +13,7 @@
  */
 
 import path from 'path';
-import { fsUtils as fs } from '@docmd/utils';
+import { fsUtils as fs, resolveTitle, resolveTitleSeparator, resolveTitleAppend } from '@docmd/utils';
 import { createRequire } from 'module';
 import { execSync } from 'child_process';
 
@@ -255,7 +255,7 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
   // When fallbackSrcDir is set (non-default locale), scan the fallback dir as the canonical
   // file list, then check the locale dir for overrides per file.
   const scanDir = fallbackSrcDir || srcDir;
-  const mdFiles = await findFilesRecursive(scanDir, ['.md', '.markdown', '.ejs']);
+  const mdFiles = await findFilesRecursive(scanDir, ['.md', '.markdown', '.ejs'], config.exclude);
 
   // Build set of locale directory names to skip when scanning a non-locale-specific dir
   // This prevents locale subdirs inside old version dirs from being rendered as regular pages
@@ -601,7 +601,8 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
         urls: pageUrls,
         html: page.htmlContent,
         urlContext,
-        config
+        config,
+        breadcrumbs
       };
 
       if (hooks.onBeforeRender) {
@@ -736,6 +737,15 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
           TUI.warn(`Template resolver failed for "${page.outputPath}" — falling back to default. ${e.message}`);
         }
       }
+      const fullTitle = resolveTitle(
+        page.frontmatter.title,
+        config.title,
+        config,
+        page.frontmatter
+      );
+      const titleSeparator = resolveTitleSeparator(config, page.frontmatter);
+      const titleAppend = resolveTitleAppend(config, page.frontmatter);
+
       let fullHtml = await parser.renderTemplateAsync(templateString, {
         content: page.htmlContent,
         rawMarkdown: page.rawMarkdown || '',
@@ -746,6 +756,9 @@ export async function renderPages({ config, srcDir, fallbackSrcDir, outputDir, h
         coreVersion: coreVersion || CORE_VERSION,
         siteTitle: config.title,
         pageTitle: page.frontmatter.title,
+        fullTitle,
+        titleSeparator,
+        titleAppend,
         description: page.frontmatter.description || '',
         appearance: config.theme?.appearance || config.theme?.defaultMode || 'system',
         defaultMode: config.theme?.appearance || config.theme?.defaultMode || 'system',

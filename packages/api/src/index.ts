@@ -28,6 +28,9 @@ export {
   getBuildStatusReporter,
   installPackages,
   manualResolvePackageEntry,
+  fetchLatestNpmVersion,
+  preflightEnsureRuntimeDeps,
+  type PreflightRequirements,
 } from './runtime-deps.js';
 
 // RPC action/event dispatcher

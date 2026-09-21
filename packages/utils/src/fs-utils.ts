@@ -53,6 +53,23 @@ export async function writeJson(file: string, object: any, options: any = {}) {
   await fs.writeFile(file, content, 'utf8');
 }
 
+/**
+ * Strips single-line (//) and multi-line (/* *\/) comments as well as trailing commas
+ * from a JSON/JSONC string while safely preserving comment characters inside string literals.
+ */
+export function stripJsonComments(jsonString: string): string {
+  return jsonString
+    .replace(/\\"|"(?:\\"|[^"])*"|(\/\/.*|\/\*[\s\S]*?\*\/)/g, (m, g) => (g ? '' : m))
+    .replace(/,\s*([}\]])/g, '$1');
+}
+
+/**
+ * Parses JSON with comments (JSONC) and trailing commas.
+ */
+export function parseJsonc(jsonString: string): any {
+  return JSON.parse(stripJsonComments(jsonString));
+}
+
 export default {
   ...fs,
   ensureDir,
@@ -60,5 +77,7 @@ export default {
   copy,
   pathExists: exists,
   exists,
-  writeJson
+  writeJson,
+  stripJsonComments,
+  parseJsonc
 };

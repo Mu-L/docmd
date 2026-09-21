@@ -72,7 +72,7 @@ export const test = runTestFile({
       assert(docmdMainJs.includes('updateTocClass()'), 'TOC JS: docmd-main.js calls updateTocClass');
     }
 
-    // 2. Page-relative links in workspace project subdirectory resolve correctly (#184)
+    // 2. Page-relative links in workspace project subdirectory resolve correctly
     {
       const dir = setup('url-routing-workspace-nested-links');
       
@@ -119,7 +119,7 @@ export const test = runTestFile({
       assert(targetLink === '../../../nested/subdir/page-b/', `Workspace nested link: relative link resolves correctly to absolute subpath (got: ${targetLink})`);
     }
 
-    // 3. Custom assets and links under subpath builds (e.g. GitHub Pages) (#175)
+    // 3. Custom assets and links under subpath builds (e.g. GitHub Pages)
     {
       const dir = setup('url-routing-subpath-assets');
       
@@ -151,7 +151,7 @@ export const test = runTestFile({
       assert(targetLink === './guide/page/', `Subpath build: custom root-relative link is rewritten with page-relative prefix (got: ${targetLink})`);
     }
 
-    // 4. Auto navigation clickable folders and index deduplication (#184 / i18n auto nav)
+    // 4. Auto navigation clickable folders and index deduplication
     {
       const dir = setup('url-routing-auto-nav-folders');
       writeFile(dir, 'docs/index.md', '# Home\n');
@@ -195,7 +195,7 @@ export const test = runTestFile({
       assert(!frLiTag.includes('collapsible'), 'Auto Nav: Folder "fr" with only an index page is rendered as a simple non-collapsible link');
     }
 
-    // 5. Zero-config root homepage SPA link synchronization (#196)
+    // 5. Zero-config root homepage SPA link synchronization
     {
       const docmdMainJsPath = path.join(rootDir, 'packages/ui/assets/js/docmd-main.js');
       const docmdMainJs = fs.readFileSync(docmdMainJsPath, 'utf8');
@@ -240,6 +240,172 @@ export const test = runTestFile({
       assert(html.includes('summer-banner__link'), 'Banner Test: Link rendered inside summer-banner');
       assert(html.includes('data-docmd-banner-dismiss'), 'Banner Test: Dismiss button present inside summer-banner');
       assert(html.includes('summer-banner--info'), 'Banner Test: Type class applied to summer-banner');
+    }
+
+    // 7. Multi-position banner in default template (top, sidebar-top, sidebar-bottom, toc-top, toc-bottom)
+    {
+      const proj = setup('multi-position-banners-default');
+      writeFile(proj, 'docs/index.md', '# Multi Banner\n\n## Section One\n\nSome text.\n\n## Section Two\n\nMore text.\n');
+      writeFile(proj, 'docmd.config.json', JSON.stringify({
+        title: 'Multi Banner Test',
+        layout: {
+          banners: [
+            {
+              position: 'top',
+              content: '**Top Announcement**',
+              image: 'https://docmd.io/disallowed.png', // Must be ignored on top
+              link: 'https://docmd.io'
+            },
+            {
+              position: 'sidebar-top',
+              content: 'Sidebar Top Promotion',
+              image: '/assets/sidebar-ad.png',
+              link: 'https://cloud.docmd.io'
+            },
+            {
+              position: 'sidebar-bottom',
+              content: 'Sidebar Bottom Notice',
+              type: 'warning'
+            },
+            {
+              position: 'toc-top',
+              content: 'TOC Top Sponsor',
+              image: 'https://docmd.io/sponsor.png'
+            },
+            {
+              position: 'toc-bottom',
+              content: 'TOC Bottom Survey',
+              link: 'https://docmd.io/survey'
+            }
+          ]
+        }
+      }, null, 2) + '\n');
+
+      const result = build(proj);
+      assert(result.ok, 'Multi-Banner Test: build with multi-position banners succeeds');
+      const html = fs.readFileSync(path.join(proj, 'site/index.html'), 'utf8');
+
+      // Top banner checks
+      assert(html.includes('data-docmd-banner="top"'), 'Multi-Banner Test: top banner rendered');
+      assert(html.includes('Top Announcement'), 'Multi-Banner Test: top banner content rendered');
+      assert(!html.includes('disallowed.png'), 'Multi-Banner Test: top banner disallows/strips image');
+
+      // Sidebar banner checks
+      assert(html.includes('data-docmd-banner="sidebar-top"'), 'Multi-Banner Test: sidebar-top banner rendered');
+      assert(html.includes('sidebar-ad.png'), 'Multi-Banner Test: sidebar-top image rendered');
+      assert(html.includes('Sidebar Top Promotion'), 'Multi-Banner Test: sidebar-top text rendered');
+      assert(html.includes('data-docmd-banner="sidebar-bottom"'), 'Multi-Banner Test: sidebar-bottom banner rendered');
+      assert(html.includes('Sidebar Bottom Notice'), 'Multi-Banner Test: sidebar-bottom text rendered');
+
+      // TOC banner checks
+      assert(html.includes('data-docmd-banner="toc-top"'), 'Multi-Banner Test: toc-top banner rendered');
+      assert(html.includes('sponsor.png'), 'Multi-Banner Test: toc-top image rendered');
+      assert(html.includes('data-docmd-banner="toc-bottom"'), 'Multi-Banner Test: toc-bottom banner rendered');
+      assert(html.includes('TOC Bottom Survey'), 'Multi-Banner Test: toc-bottom text rendered');
+    }
+
+    // 8. Multi-position banner in Summer template
+    {
+      const proj = setup('multi-position-banners-summer');
+      writeFile(proj, 'docs/index.md', '# Summer Multi Banner\n\n## Heading A\n\nText A\n\n## Heading B\n\nText B\n');
+      writeFile(proj, 'docmd.config.json', JSON.stringify({
+        title: 'Summer Multi Banner Test',
+        theme: { template: 'summer' },
+        layout: {
+          banners: {
+            'top': { content: 'Summer Top Bar', link: 'https://docmd.io' },
+            'sidebar-top': { content: 'Summer Sidebar Top', image: '/img/summer.png' },
+            'toc-bottom': { content: 'Summer TOC Bottom', link: 'https://docmd.io/docs' }
+          }
+        }
+      }, null, 2) + '\n');
+
+      const result = build(proj);
+      assert(result.ok, 'Summer Multi-Banner Test: build succeeds');
+      const html = fs.readFileSync(path.join(proj, 'site/index.html'), 'utf8');
+
+      assert(html.includes('summer-banner--pos-top') || html.includes('data-docmd-banner="top"'), 'Summer Multi-Banner Test: top banner rendered');
+      assert(html.includes('summer-banner--pos-sidebar-top'), 'Summer Multi-Banner Test: sidebar-top banner rendered');
+      assert(html.includes('summer-banner--pos-toc-bottom'), 'Summer Multi-Banner Test: toc-bottom banner rendered');
+      assert(html.includes('Summer Sidebar Top'), 'Summer Multi-Banner Test: sidebar-top text rendered');
+      assert(html.includes('summer.png'), 'Summer Multi-Banner Test: sidebar-top image rendered');
+    }
+
+    // 9. Banner Hierarchy Resolution: Version overrides Language / Project
+    {
+      const proj = setup('banner-hierarchy');
+      writeFile(proj, 'docs/index.md', '# Root Docs\n');
+      writeFile(proj, 'docs-v2/index.md', '# V2 Docs\n');
+      writeFile(proj, 'docmd.config.json', JSON.stringify({
+        title: 'Hierarchy Test',
+        layout: {
+          banners: {
+            'top': { content: 'Project Root Top Banner' },
+            'sidebar-top': { content: 'Project Root Sidebar Banner' }
+          }
+        },
+        versions: {
+          current: 'v1',
+          all: [
+            { id: 'v1', dir: 'docs', label: 'v1.0' },
+            {
+              id: 'v2',
+              dir: 'docs-v2',
+              label: 'v2.0',
+              banners: {
+                'top': { content: 'Version 2 Overridden Banner' }
+              }
+            }
+          ]
+        }
+      }, null, 2) + '\n');
+
+      const result = build(proj);
+      assert(result.ok, 'Banner Hierarchy: build with version override succeeds');
+
+      const v1Html = fs.readFileSync(path.join(proj, 'site/index.html'), 'utf8');
+      assert(v1Html.includes('Project Root Top Banner'), 'Banner Hierarchy: v1 uses project top banner');
+      assert(v1Html.includes('Project Root Sidebar Banner'), 'Banner Hierarchy: v1 uses project sidebar banner');
+
+      const v2Html = fs.readFileSync(path.join(proj, 'site/v2/index.html'), 'utf8');
+      assert(v2Html.includes('Version 2 Overridden Banner'), 'Banner Hierarchy: v2 overrides top banner');
+      assert(v2Html.includes('Project Root Sidebar Banner'), 'Banner Hierarchy: v2 inherits project sidebar banner');
+    }
+
+    // 10. Banner dismissable alias and card persistence defaults
+    {
+      const proj = setup('banner-dismissable-contracts');
+      writeFile(proj, 'docs/index.md', '# Banner Dismissable Contracts\n\nContent.\n');
+      writeFile(proj, 'docmd.config.json', JSON.stringify({
+        title: 'Banner Dismissable Contracts',
+        layout: {
+          banners: {
+            'top': {
+              content: 'Top Non Dismissible',
+              dismissable: false // using "dismissable" spelling
+            },
+            'toc-top': {
+              content: 'TOC Card Default Non Dismissible'
+              // omitted dismissible -> should default to false
+            },
+            'sidebar-bottom': {
+              content: 'Sidebar Card Explicit Dismissible',
+              dismissable: true // explicitly opt-in with alias
+            }
+          }
+        }
+      }, null, 2) + '\n');
+
+      const result = build(proj);
+      assert(result.ok, 'Banner Dismissable: build succeeds');
+
+      const html = fs.readFileSync(path.join(proj, 'site/index.html'), 'utf8');
+      // Top banner with dismissable: false must NOT have is-dismissible or data-docmd-banner-dismiss inside its top banner
+      assert(!html.includes('docmd-banner--pos-top is-dismissible'), 'Banner Dismissable: top with dismissable: false is not dismissible');
+      // TOC card banner with omitted dismissible must NOT have is-dismissible
+      assert(!html.includes('docmd-banner--pos-toc-top is-dismissible'), 'Banner Dismissable: toc-top omitted dismissible defaults to persistent');
+      // Sidebar card with dismissable: true MUST have is-dismissible
+      assert(html.includes('docmd-banner--pos-sidebar-bottom is-dismissible'), 'Banner Dismissable: sidebar-bottom with dismissable: true is dismissible');
     }
   }
 });

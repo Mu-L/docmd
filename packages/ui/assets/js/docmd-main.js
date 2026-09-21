@@ -509,34 +509,36 @@
     if (headingAnchor) {
       e.preventDefault();
       const targetUrl = headingAnchor.href;
-      navigator.clipboard.writeText(targetUrl).then(() => {
-        const originalHTML = headingAnchor.innerHTML;
-        headingAnchor.classList.add('copied');
-        // Swap icon to checkmark
-        headingAnchor.innerHTML = '';
-        const checkSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        checkSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-        checkSvg.setAttribute('width', '16');
-        checkSvg.setAttribute('height', '16');
-        checkSvg.setAttribute('viewBox', '0 0 24 24');
-        checkSvg.setAttribute('fill', 'none');
-        checkSvg.setAttribute('stroke', 'currentColor');
-        checkSvg.setAttribute('stroke-width', '2');
-        checkSvg.setAttribute('stroke-linecap', 'round');
-        checkSvg.setAttribute('stroke-linejoin', 'round');
-        checkSvg.classList.add('lucide', 'lucide-check');
-        const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-        polyline.setAttribute('points', '20 6 9 17 4 12');
-        checkSvg.appendChild(polyline);
-        headingAnchor.appendChild(checkSvg);
-        setTimeout(() => {
-          headingAnchor.classList.remove('copied');
-          headingAnchor.innerHTML = originalHTML;
-        }, 2000);
-      });
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(targetUrl).then(() => {
+          const originalHTML = headingAnchor.innerHTML;
+          headingAnchor.classList.add('copied');
+          // Swap icon to checkmark
+          headingAnchor.innerHTML = '';
+          const checkSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          checkSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+          checkSvg.setAttribute('width', '16');
+          checkSvg.setAttribute('height', '16');
+          checkSvg.setAttribute('viewBox', '0 0 24 24');
+          checkSvg.setAttribute('fill', 'none');
+          checkSvg.setAttribute('stroke', 'currentColor');
+          checkSvg.setAttribute('stroke-width', '2');
+          checkSvg.setAttribute('stroke-linecap', 'round');
+          checkSvg.setAttribute('stroke-linejoin', 'round');
+          checkSvg.classList.add('lucide', 'lucide-check');
+          const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+          polyline.setAttribute('points', '20 6 9 17 4 12');
+          checkSvg.appendChild(polyline);
+          headingAnchor.appendChild(checkSvg);
+          setTimeout(() => {
+            headingAnchor.classList.remove('copied');
+            headingAnchor.innerHTML = originalHTML;
+          }, 2000);
+        }).catch(() => { /* clipboard permission rejected */ });
+      }
       // Also update the URL hash in the address bar
       history.pushState({}, '', targetUrl);
-      const hash = new URL(targetUrl).hash;
+      const hash = headingAnchor.hash || (targetUrl.includes('#') ? '#' + targetUrl.split('#')[1] : '');
       if (hash) {
         const target = findTargetElement(hash);
         if (target) target.scrollIntoView({ behavior: 'smooth' });
@@ -749,7 +751,10 @@
     // Intent-based Hover Prefetching
     document.addEventListener('mouseover', (e) => {
       const link = e.target.closest('.sidebar-nav a, .page-navigation a, .page-footer a, .main-content a');
-      if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+      if (!link) return;
+      const rawTarget = (link.getAttribute('target') || link.target || '').replace(/^["']|["']$/g, '');
+      const rel = link.getAttribute('rel') || '';
+      if (rawTarget === '_blank' || rel.includes('noopener') || rel.includes('external') || link.hasAttribute('download') || link.hasAttribute('data-spa-ignore')) return;
 
       const url = new URL(link.href).href;
       if (new URL(url).origin !== location.origin) return;
@@ -778,7 +783,10 @@
       if (e.target.closest('[data-spa-ignore], .language-switcher-item, .version-dropdown-item')) return;
 
       const link = e.target.closest('.sidebar-nav a, .page-navigation a, .page-footer a, .main-content a');
-      if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+      if (!link) return;
+      const rawTarget = (link.getAttribute('target') || link.target || '').replace(/^["']|["']$/g, '');
+      const rel = link.getAttribute('rel') || '';
+      if (rawTarget === '_blank' || rel.includes('noopener') || rel.includes('external') || link.hasAttribute('download') || link.hasAttribute('data-spa-ignore')) return;
 
       // Real <a class="nav-group"> links navigate normally via SPA. The
       // toggle handler above only prevents default for dummy <span>s and
@@ -1080,6 +1088,75 @@
     window.docmdNavigate = navigateTo;
   }
 
+  // ---------------------------------------------------------------------------
+  // Focus Mode (Zen Reading Experience - docmd v0.9.6)
+  // ---------------------------------------------------------------------------
+  function initializeFocusMode() {
+    function setFocusMode(enabled) {
+      if (enabled) {
+        document.body.classList.add('focus-mode');
+        try { localStorage.setItem('docmd-focus-mode', 'true'); } catch (_) { /* ignore */ }
+      } else {
+        document.body.classList.remove('focus-mode');
+        try { localStorage.setItem('docmd-focus-mode', 'false'); } catch (_) { /* ignore */ }
+      }
+      try {
+        window.dispatchEvent(new CustomEvent('docmd:focus-mode', { detail: { enabled } }));
+      } catch (_) { /* ignore */ }
+    }
+
+    function toggleFocusMode() {
+      if (!document.querySelector('.focus-mode-toggle-button, .docmd-focus-toolbar')) return;
+      const isCurrentlyFocus = document.body.classList.contains('focus-mode');
+      setFocusMode(!isCurrentlyFocus);
+    }
+
+    // Restore focus mode state if previously enabled and supported on this page
+    try {
+      if (localStorage.getItem('docmd-focus-mode') === 'true') {
+        if (document.querySelector('.focus-mode-toggle-button, .docmd-focus-toolbar')) {
+          document.body.classList.add('focus-mode');
+        }
+      }
+    } catch (_) { /* ignore */ }
+
+    // Wire focus mode and print buttons via event delegation
+    document.addEventListener('click', (e) => {
+      const focusBtn = e.target.closest('.focus-mode-toggle-button');
+      if (focusBtn) {
+        e.preventDefault();
+        toggleFocusMode();
+        return;
+      }
+
+      const printBtn = e.target.closest('.print-button');
+      if (printBtn) {
+        e.preventDefault();
+        window.print();
+        return;
+      }
+    });
+
+    // Keyboard shortcuts: Alt+F to toggle focus mode, Escape to exit focus mode
+    document.addEventListener('keydown', (e) => {
+      const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+      const isInput = tag === 'input' || tag === 'textarea' || (e.target && e.target.isContentEditable);
+
+      if (e.altKey && (e.key === 'f' || e.key === 'F')) {
+        if (!isInput) {
+          e.preventDefault();
+          toggleFocusMode();
+        }
+      } else if (e.key === 'Escape') {
+        const searchOpen = document.querySelector('.docmd-search-modal, .summer-search-dropdown:not([style*="display: none"])');
+        if (!searchOpen && document.body.classList.contains('focus-mode')) {
+          e.preventDefault();
+          setFocusMode(false);
+        }
+      }
+    });
+  }
+
   // 4. BOOTSTRAP
   function bootstrap() {
     if (document.body.dataset.bootstrapped === 'true') return;
@@ -1114,6 +1191,7 @@
     initializeSPA();
     initBanner();
     initCookieConsent();
+    initializeFocusMode();
 
     setTimeout(() => {
       // PWA Unregistration Safety Net:
@@ -1152,32 +1230,54 @@
 /* global sessionStorage */
 // ---------------------------------------------------------------------------
 function initBanner() {
-  const banner = document.querySelector('[data-docmd-banner]');
-  if (!banner) return;
-  try {
-    if (sessionStorage.getItem('docmd-banner-dismissed') === '1') {
-      banner.remove();
-      document.body.classList.remove('has-banner');
-      return;
-    }
-  } catch (_) { /* sessionStorage blocked — leave visible */ }
-  const closeBtn = banner.querySelector('[data-docmd-banner-dismiss]');
-  if (!closeBtn) return;
-  closeBtn.addEventListener('click', () => {
-    banner.style.transition = 'opacity 0.15s ease, max-height 0.25s ease, padding 0.25s ease, margin 0.25s ease';
-    banner.style.overflow = 'hidden';
-    banner.style.maxHeight = banner.offsetHeight + 'px';
-    // Force reflow before collapsing
-    void banner.offsetHeight;
-    banner.style.opacity = '0';
-    banner.style.maxHeight = '0';
-    banner.style.padding = '0';
-    banner.style.margin = '0';
-    setTimeout(() => {
-      banner.remove();
-      document.body.classList.remove('has-banner');
-      try { sessionStorage.setItem('docmd-banner-dismissed', '1'); } catch (_) { /* ignore */ }
-    }, 260);
+  const banners = document.querySelectorAll('[data-docmd-banner]');
+  if (!banners || !banners.length) return;
+
+  banners.forEach((banner) => {
+    const pos = banner.getAttribute('data-docmd-banner') || 'top';
+    const isDismissible = banner.classList.contains('is-dismissible') || !!banner.querySelector('[data-docmd-banner-dismiss]');
+    if (!isDismissible) return;
+
+    const storageKey = 'docmd-banner-dismissed-' + pos;
+    try {
+      if (
+        sessionStorage.getItem(storageKey) === '1' ||
+        (pos === 'top' && sessionStorage.getItem('docmd-banner-dismissed') === '1')
+      ) {
+        banner.remove();
+        if (pos === 'top') {
+          document.body.classList.remove('has-banner');
+        }
+        return;
+      }
+    } catch (_) { /* sessionStorage blocked — leave visible */ }
+
+    const closeBtn = banner.querySelector('[data-docmd-banner-dismiss]');
+    if (!closeBtn) return;
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      banner.style.transition = 'opacity 0.15s ease, max-height 0.25s ease, padding 0.25s ease, margin 0.25s ease';
+      banner.style.overflow = 'hidden';
+      banner.style.maxHeight = banner.offsetHeight + 'px';
+      // Force reflow before collapsing
+      void banner.offsetHeight;
+      banner.style.opacity = '0';
+      banner.style.maxHeight = '0';
+      banner.style.padding = '0';
+      banner.style.margin = '0';
+      setTimeout(() => {
+        banner.remove();
+        if (pos === 'top') {
+          document.body.classList.remove('has-banner');
+        }
+        try {
+          sessionStorage.setItem(storageKey, '1');
+          if (pos === 'top') {
+            sessionStorage.setItem('docmd-banner-dismissed', '1');
+          }
+        } catch (_) { /* ignore */ }
+      }, 260);
+    });
   });
 }
 

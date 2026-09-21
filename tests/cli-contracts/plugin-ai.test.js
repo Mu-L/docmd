@@ -2,13 +2,10 @@
  * --------------------------------------------------------------------
  * docmd : the zero-config documentation engine.
  *
- * Plugin AI disable regression tests (Issue #209)
- *
- * Covers:
- *   - Setting `plugins.ai.assistant: false` (or `enabled: false` / `chat: false`)
- *     properly disables emitting docmd-ai.js / docmd-ai.css assets.
- *   - The generated HTML contains no AI Assistant scripts or stylesheet links.
- *   - When enabled, assets and tags are properly emitted.
+ * Plugin AI test suite:
+ *   - Disable/enable flags & assets emission
+ *   - AI Assistant MCP tools registered in client bundle
+ *   - AI Assistant streaming replacement protocol & metadata
  * --------------------------------------------------------------------
  */
 
@@ -20,7 +17,7 @@ import {
   runTestFile
 } from '../shared.js';
 import fs from 'node:fs';
-import path from 'path';
+import path from 'node:path';
 
 let passed = 0;
 let failed = 0;
@@ -38,7 +35,7 @@ function assert(condition, message) {
 }
 
 export const test = runTestFile({
-  name: 'Plugin AI disable flags (Issue #209)',
+  name: 'Plugin AI contracts (flags, tools, streaming)',
   emoji: '🤖',
   run: async () => {
     // Case 1: plugins.ai.assistant: false -> No AI assets emitted or injected
@@ -126,6 +123,41 @@ export const test = runTestFile({
       assert(html.includes('window.__docmd_ai_config'), 'HTML contains window.__docmd_ai_config when enabled');
     }
 
+    // Case 4: AI Assistant Client Bundle includes all MCP tools
+    {
+      const aiClientJsPath = path.resolve('packages/plugins/ai/dist/client/index.js');
+      assert(fs.existsSync(aiClientJsPath), 'AI plugin client bundle exists at dist/client/index.js');
+
+      const clientJs = fs.readFileSync(aiClientJsPath, 'utf8');
+      assert(clientJs.includes('navigate_to_page'), 'AI client bundle registers navigate_to_page tool');
+      assert(clientJs.includes('copy_code_snippet'), 'AI client bundle registers copy_code_snippet tool');
+      assert(clientJs.includes('read_documentation_page'), 'AI client bundle registers read_documentation_page tool');
+      assert(clientJs.includes('get_site_structure'), 'AI client bundle registers get_site_structure tool');
+      assert(clientJs.includes('search_documentation'), 'AI client bundle registers search_documentation tool');
+    }
+
+    // Case 5: AI Assistant stream replacement protocol and synthesis fallback
+    // This test requires the sibling `docmd-assistant` repo to be present
+    // at `../docmd-assistant`. On CI (GitHub Actions), only `docmd` is
+    // checked out, so we skip gracefully when the module is absent.
+    {
+      const assistantDistPath = path.resolve('../docmd-assistant/dist/index.js');
+      const assistantTypesPath = path.resolve('../docmd-assistant/src/types.ts');
+      if (fs.existsSync(assistantDistPath) && fs.existsSync(assistantTypesPath)) {
+        const { DocmdAssistantEngine } = await import(assistantDistPath);
+        const engine = new DocmdAssistantEngine();
+        assert(typeof engine.sendMessageStream === 'function', 'DocmdAssistantEngine exposes sendMessageStream method');
+
+        const assistantTypes = fs.readFileSync(assistantTypesPath, 'utf8');
+        assert(
+          assistantTypes.includes('meta?: { replace?: boolean; turn?: number; isFinal?: boolean }'),
+          'StreamCallbacks.onChunk accepts replace and turn metadata'
+        );
+      }
+      // If docmd-assistant is not present, silently skip — it is a separate
+      // closed-source repo and is not part of the docmd monorepo CI.
+    }
+
     return { passed, failed, failures };
   }
 });
@@ -135,3 +167,14 @@ export const results = {
   get failed() { return failed; },
   get failures() { return [...failures]; }
 };
+
+if (process.argv[1] && process.argv[1].endsWith('plugin-ai.test.js')) {
+  console.log(`Running ${test.name}...`);
+  test.run().then(() => {
+    console.log(`Passed: ${passed}, Failed: ${failed}`);
+    if (failed > 0) process.exit(1);
+  }).catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

@@ -284,6 +284,33 @@ export const test = runTestFile({
         'PAA-4: post-build hooks receive an immutable declaration snapshot, not an output manifest');
     }
 
+    // Assets discovery: findFilesRecursive respects .gitignore and config.exclude
+    {
+      const { findFilesRecursive } = await import('../../packages/core/dist/engine/assets.js');
+      const testDir = path.resolve('tests/_tmp_ignore_test_' + Date.now());
+      fs.mkdirSync(path.join(testDir, 'docs', 'drafts'), { recursive: true });
+      fs.mkdirSync(path.join(testDir, 'docs', 'published'), { recursive: true });
+
+      fs.writeFileSync(path.join(testDir, '.gitignore'), 'drafts/\n*.secret.md\n# comment\n');
+      fs.writeFileSync(path.join(testDir, 'docs', 'drafts', 'wip.md'), '# Draft');
+      fs.writeFileSync(path.join(testDir, 'docs', 'published', 'guide.md'), '# Guide');
+      fs.writeFileSync(path.join(testDir, 'docs', 'published', 'passwords.secret.md'), '# Secret');
+      fs.writeFileSync(path.join(testDir, 'docs', 'published', 'custom-excluded.md'), '# Custom Excluded');
+
+      const foundFiles = await findFilesRecursive(
+        path.join(testDir, 'docs'),
+        ['.md'],
+        ['custom-excluded.md']
+      );
+      const relativeFound = foundFiles.map(f => path.relative(testDir, f).replace(/\\/g, '/'));
+
+      assert(relativeFound.includes('docs/published/guide.md'), 'findFilesRecursive includes non-ignored markdown file');
+      assert(!relativeFound.some(f => f.includes('drafts')), 'findFilesRecursive excludes gitignored folder drafts/');
+      assert(!relativeFound.some(f => f.endsWith('.secret.md')), 'findFilesRecursive excludes gitignored pattern *.secret.md');
+      assert(!relativeFound.some(f => f.includes('custom-excluded.md')), 'findFilesRecursive excludes custom extraExclude pattern');
+
+      fs.rmSync(testDir, { recursive: true, force: true });
+    }
   }
 });
 
