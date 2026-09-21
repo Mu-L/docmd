@@ -291,11 +291,13 @@ export const test = runTestFile({
       fs.mkdirSync(path.join(testDir, 'docs', 'drafts'), { recursive: true });
       fs.mkdirSync(path.join(testDir, 'docs', 'published'), { recursive: true });
 
-      fs.writeFileSync(path.join(testDir, '.gitignore'), 'drafts/\n*.secret.md\n# comment\n');
+      fs.writeFileSync(path.join(testDir, '.gitignore'), 'drafts/\n*.secret.md\n/anchored-root\n# comment\n');
       fs.writeFileSync(path.join(testDir, 'docs', 'drafts', 'wip.md'), '# Draft');
       fs.writeFileSync(path.join(testDir, 'docs', 'published', 'guide.md'), '# Guide');
       fs.writeFileSync(path.join(testDir, 'docs', 'published', 'passwords.secret.md'), '# Secret');
       fs.writeFileSync(path.join(testDir, 'docs', 'published', 'custom-excluded.md'), '# Custom Excluded');
+      fs.mkdirSync(path.join(testDir, 'docs', 'anchored-root'), { recursive: true });
+      fs.writeFileSync(path.join(testDir, 'docs', 'anchored-root', 'skip.md'), '# Should be excluded');
 
       const foundFiles = await findFilesRecursive(
         path.join(testDir, 'docs'),
@@ -308,6 +310,7 @@ export const test = runTestFile({
       assert(!relativeFound.some(f => f.includes('drafts')), 'findFilesRecursive excludes gitignored folder drafts/');
       assert(!relativeFound.some(f => f.endsWith('.secret.md')), 'findFilesRecursive excludes gitignored pattern *.secret.md');
       assert(!relativeFound.some(f => f.includes('custom-excluded.md')), 'findFilesRecursive excludes custom extraExclude pattern');
+      assert(!relativeFound.some(f => f.includes('anchored-root')), 'findFilesRecursive excludes anchored-root folder');
 
       fs.rmSync(testDir, { recursive: true, force: true });
     }
