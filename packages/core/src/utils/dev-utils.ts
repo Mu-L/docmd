@@ -151,10 +151,14 @@ export async function serveStatic(req: any, res: any, rootDir: string) {
     }
 
     if (stats.isDirectory()) {
-      if (!req.url.split('?')[0].endsWith('/')) {
-        res.writeHead(301, { 'Location': req.url + '/' });
-        res.end();
-        return;
+      const urlParts = (req.url || '/').split('?');
+      if (!urlParts[0].endsWith('/')) {
+        const safeRedirect = `${urlParts[0]}/${urlParts[1] ? `?${urlParts[1]}` : ''}`;
+        if (safeRedirect.startsWith('/') && !safeRedirect.startsWith('//')) {
+          res.writeHead(301, { 'Location': safeRedirect });
+          res.end();
+          return;
+        }
       }
       filePath = path.join(filePath, 'index.html');
       await fs.stat(filePath);
@@ -184,18 +188,28 @@ export async function serveStatic(req: any, res: any, rootDir: string) {
         const liveReloadScript = `${getDevInfoScript()}<script src="/__dev/docmd-api.js"></script></body>`;
         res.end(htmlStr.replace('</body>', liveReloadScript));
       } catch {
-        res.writeHead(404, { 'Content-Type': 'text/html' });
+        res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+        const safeUrl = (req.url || '').replace(/[<>&"']/g, (c) => {
+          switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '"': return '&quot;';
+            case "'": return '&#39;';
+            default: return c;
+          }
+        });
         res.end(`
           <div style="font-family:system-ui;text-align:center;padding:50px;">
             <h1>404 Not Found</h1>
-            <p>The requested URL <code>${req.url}</code> was not found.</p>
+            <p>The requested URL <code>${safeUrl}</code> was not found.</p>
             <p style="color:#666;font-size:0.9em;">(docmd dev server)</p>
           </div>
         `);
       }
     } else {
-      res.writeHead(500);
-      res.end(`Server Error: ${err.code}`);
+      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('500 Server Error');
     }
   }
 }

@@ -151,12 +151,16 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
 
   // 7. Optional auto-fix.
   if (opts.fix && report.autoInstallCandidates.length > 0) {
-    const { execSync } = await import('node:child_process');
+    const { spawnSync } = await import('node:child_process');
     const cwd = process.cwd();
     const pkgManager = detectPackageManager(cwd);
-    const cmd = `${pkgManager} add ${report.autoInstallCandidates.join(' ')}`;
     try {
-      execSync(cmd, { stdio: 'inherit', cwd, timeout: 180000 });
+      spawnSync(pkgManager, ['add', ...report.autoInstallCandidates], {
+        stdio: 'inherit',
+        cwd,
+        timeout: 180000,
+        shell: process.platform === 'win32'
+      });
     } catch (e: any) {
       report.errors.push(`Auto-install failed: ${e.message}`);
     }
