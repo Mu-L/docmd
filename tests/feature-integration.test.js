@@ -98,7 +98,7 @@ function build(dir, expectFail = false) {
 // Run a command, return its numeric exit
 // code. 0 on success, 1+ on documented failure paths. -1 if the
 // process was killed by a signal (rare; mostly for diagnostics).
-function exitCodeOf(cmd, cwd) {
+function _exitCodeOf(cmd, cwd) {
   try {
     execSync(cmd, { cwd, stdio: 'pipe' });
     return 0;
@@ -977,6 +977,88 @@ console.log('\n🏷️ Test 29: Hreflang Tags Consistency');
     !!readSite(dir, 'index.html')?.match(/<meta\s+name=["']description["']/i));
   assert('mega: custom assets copied',
     fs.existsSync(path.join(dir, 'site/assets/css/custom.css')));
+}
+
+// ─── TEST 32: Focus Mode & Print Configuration Hierarchy ───
+// Verify that focusMode and print are disabled by default.
+// When enabled, print button renders in the copy-widgets row and focus toolbar,
+// and NEVER in the header/options-menu.
+{
+  // Part A: Zero-config defaults (both disabled)
+  const dirA = setup('features-32-focus-print-default');
+  writeFile(dirA, 'docs/index.md', '# Default Page\nContent here.\n');
+  const rA = build(dirA);
+  assert('builds with default config', rA.ok);
+  const htmlA = readSite(dirA, 'index.html');
+  assert('default: no focus toolbar', !htmlA?.includes('id="docmd-focus-toolbar"'));
+  assert('default: no focus mode button in options-menu', !htmlA?.includes('focus-mode-toggle-button'));
+  assert('default: no print button in copy-widgets or options-menu', !htmlA?.includes('print-button'));
+
+  // Part B: Modern layout config with focusMode and print enabled
+  const dirB = setup('features-32-focus-print-enabled');
+  writeFile(dirB, 'docmd.config.js', `export default {
+    title: 'Focus & Print Site',
+    layout: {
+      focusMode: true,
+      print: true
+    }
+  };`);
+  writeFile(dirB, 'docs/index.md', '# Focus Page\nFocused content.\n');
+  const rB = build(dirB);
+  assert('builds with focus & print enabled', rB.ok);
+  const htmlB = readSite(dirB, 'index.html');
+  assert('enabled: focus toolbar present', htmlB?.includes('id="docmd-focus-toolbar"'));
+  assert('enabled: focus mode button in options-menu', htmlB?.includes('class="focus-mode-toggle-button"'));
+  assert('enabled: print button in focus toolbar', htmlB?.includes('class="docmd-focus-btn print-button"'));
+  assert('enabled: print button in copy-widgets row', htmlB?.includes('class="docmd-copy-btn print-button"'));
+  assert('enabled: options-menu does NOT have print button', !htmlB?.match(/<div class="docmd-options-menu"[^>]*>[\s\S]*?<button class="print-button"/));
+
+  // Part C: Backwards compatibility with root-level focusMode, print, and customJs
+  const dirC = setup('features-32-legacy-fallbacks');
+  writeFile(dirC, 'docmd.config.js', `export default {
+    title: 'Legacy Fallbacks Site',
+    focusMode: true,
+    print: true,
+    customJs: ['assets/legacy.js']
+  };`);
+  writeFile(dirC, 'docs/index.md', '# Legacy Page\nLegacy fallback testing.\n');
+  const rC = build(dirC);
+  assert('builds with root-level legacy fallbacks', rC.ok);
+  const htmlC = readSite(dirC, 'index.html');
+  assert('legacy fallback: focus mode enabled', htmlC?.includes('class="focus-mode-toggle-button"'));
+  assert('legacy fallback: print button enabled in copy widgets', htmlC?.includes('class="docmd-copy-btn print-button"'));
+  assert('legacy fallback: customJs script included', htmlC?.includes('assets/legacy.js'));
+}
+
+// ─── TEST 33: JSONC Configuration Support & Trailing Commas ───
+// Verify that docmd.config.jsonc is auto-detected and loaded correctly,
+// supporting single-line comments (//), multi-line comments (/* */),
+// and trailing commas without crashing JSON parsing.
+{
+  const dir = setup('features-33-jsonc-support');
+  writeFile(dir, 'docmd.config.jsonc', `{
+    // Site title with single line comment
+    "title": "JSONC Configured Docs // with comment chars",
+    /* Multi-line comment explaining
+       the layout and theme settings */
+    "footer": {
+      "copyright": "Preserves // strings and /* strings */ cleanly",
+    },
+    "theme": {
+      "name": "default",
+    },
+    "layout": {
+      "print": true,
+      "focusMode": false,
+    },
+  }`);
+  writeFile(dir, 'docs/index.md', '# JSONC Page\nTesting JSONC support.\n');
+  const r = build(dir);
+  assert('builds with docmd.config.jsonc', r.ok);
+  const html = readSite(dir, 'index.html');
+  assert('jsonc: page title rendered with comment characters', html?.includes('JSONC Configured Docs // with comment chars'));
+  assert('jsonc: layout print button present', html?.includes('class="docmd-copy-btn print-button"'));
+  assert('jsonc: footer copyright preserved with comment characters', html?.includes('Preserves // strings and /* strings */ cleanly'));
 }
 
 // ─── SUMMARY ───

@@ -28,8 +28,14 @@
     <% } %>
 
     <% if (optionsMenu.components.themeSwitch !== false) { %>
-    <button class="theme-toggle-button" aria-label="<%= typeof t === 'function' ? t('toggleTheme') : 'Toggle theme' %>">
+    <button class="theme-toggle-button" aria-label="<%= typeof t === 'function' ? t('toggleTheme') : 'Toggle theme' %>" title="<%= typeof t === 'function' ? t('toggleTheme') : 'Toggle theme' %>">
         <%- renderIcon('sun', { class: 'icon-sun' }) %> <%- renderIcon('moon', { class: 'icon-moon' }) %>
+    </button>
+    <% } %>
+
+    <% if (optionsMenu.components.focusMode === true || (locals.config && (config.layout?.focusMode === true || config.focusMode === true || config.optionsMenu?.components?.focusMode === true || config.layout?.optionsMenu?.components?.focusMode === true))) { %>
+    <button class="focus-mode-toggle-button" aria-label="<%= typeof t === 'function' ? t('focusMode') : 'Focus mode' %>" title="<%= typeof t === 'function' ? t('focusMode') : 'Focus mode' %> (Alt+F)">
+        <%- renderIcon('maximize-2', { class: 'icon-focus-enter' }) %>
     </button>
     <% } %>
 

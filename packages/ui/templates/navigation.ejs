@@ -74,7 +74,7 @@
         </span>
         <% } else { %>
         <a href="<%= href %>" class="<%= isActive ? 'active' : '' %> <%= hasChildren ? 'nav-group' : '' %>"
-          <%=isExternal ? 'target="_blank" rel="noopener"' : '' %>>
+          <%- isExternal ? 'target="_blank" rel="noopener"' : '' %>>
           <% if (item.icon) { %> <%- renderIcon(item.icon) %>
           <% } %>
           <span class="nav-item-title">

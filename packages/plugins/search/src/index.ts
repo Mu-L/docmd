@@ -33,7 +33,7 @@ const require = createRequire(import.meta.url);
 
 export const plugin: PluginDescriptor = {
   name: 'search',
-  version: '0.9.5',
+  version: '0.9.6',
   // `init` lets onConfigResolved run at config-parse time — that's where we
   // compute the single `searchConfig` object. The build pipeline reads
   // it from `config._searchConfig` everywhere else, so there's exactly
@@ -93,7 +93,8 @@ type SearchConfig = {
 const _searchState: {
   lastPeersHash: string | null;
   lastConfig: SearchConfig | null;
-} = { lastPeersHash: null, lastConfig: null };
+  freshInstall: boolean;
+} = { lastPeersHash: null, lastConfig: null, freshInstall: false };
 
 /**
  * Compute the full SearchConfig from the resolved config + filesystem.
@@ -116,7 +117,11 @@ function buildSearchConfig(config: any): SearchConfig {
     const atIdx = pkg.lastIndexOf('@');
     const cleanPkgName = atIdx > 0 ? pkg.slice(0, atIdx) : pkg;
     try { require.resolve(cleanPkgName, { paths: resolvePaths }); }
-    catch { missingPeers.push(pkg); }
+    catch {
+      if (!manualResolvePackageDir(cleanPkgName, [process.cwd(), __dirname])) {
+        missingPeers.push(pkg);
+      }
+    }
   }
   const peersInstalled = missingPeers.length === 0;
   const semanticUsable = !config.offline && semanticRequested && docmdSearchInstalled && peersInstalled;
@@ -254,7 +259,11 @@ async function getLatestDocmdSearchVersion(): Promise<string> {
  * - @huggingface/transformers: the ML model runtime
  * - onnxruntime-node: ONNX backend for Node.js
  */
-const PEER_DEPS = ['@huggingface/transformers@^4.0.0', 'onnxruntime-node@^1.20.0'];
+const PEER_DEPS = [
+  '@huggingface/transformers@^4.2.0',
+  'onnxruntime-node@^1.27.0',
+  'sharp@^0.35.4'
+];
 
 /**
  * Auto-install docmd-search package along with its peer dependencies.
@@ -282,7 +291,7 @@ async function autoInstallDocmdSearch(tui: any, quiet: boolean): Promise<boolean
     return true;
   } else {
     const manualHint = 'Could not auto-install docmd-search. Please install manually:\n' +
-      '  npm install docmd-search @huggingface/transformers onnxruntime-node\n' +
+      '  npm install docmd-search @huggingface/transformers onnxruntime-node sharp\n' +
       'Or disable semantic search: plugins: { search: { semantic: false } }';
     if (!quiet && tui) {
       tui.step('Failed to install docmd-search', 'FAIL');
@@ -314,7 +323,7 @@ async function installPeerDeps(tui: any, quiet: boolean): Promise<boolean> {
     return true;
   } else {
     const manualHint = 'Could not auto-install peer dependencies. Please install manually:\n' +
-      '  npm install @huggingface/transformers onnxruntime-node\n' +
+      '  npm install @huggingface/transformers onnxruntime-node sharp\n' +
       'Or disable semantic search: plugins: { search: { semantic: false } }';
     if (!quiet && tui) {
       tui.step('Failed to install peer dependencies', 'FAIL');
@@ -495,7 +504,10 @@ export async function onConfigResolved(config: any): Promise<void> {
   const pluginOptions = (config.plugins && config.plugins.search) || {};
   if (pluginOptions.semantic === true && !config.offline) {
     try {
-      await ensureDocmdSearch(fallbackTui, false);
+      const res = await ensureDocmdSearch(fallbackTui, false);
+      if (res.freshInstall) {
+        _searchState.freshInstall = true;
+      }
     } catch { /* ignore */ }
   }
 
@@ -550,6 +562,30 @@ async function stampSemanticFlag(outputDir: string) {
       if (updated !== src) await fs.writeFile(file, updated, 'utf8');
     } catch { /* non-critical: best-effort flag stamping */ }
   }));
+}
+
+/**
+ * Read and parse .gitignore files for search indexing.
+ */
+function getGitignorePatterns(dir: string): string[] {
+  const patterns: string[] = [];
+  const candidateDirs = [process.cwd(), path.resolve(dir)];
+  for (const cDir of candidateDirs) {
+    const gitignorePath = path.join(cDir, '.gitignore');
+    try {
+      if (nativeFs.existsSync(gitignorePath)) {
+        const content = nativeFs.readFileSync(gitignorePath, 'utf8');
+        for (const line of content.split(/\r?\n/)) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+          patterns.push(trimmed);
+        }
+      }
+    } catch {
+      // Ignore read errors
+    }
+  }
+  return patterns;
 }
 
 // Recursively collect all .html files under a directory.
@@ -642,7 +678,8 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
       }
     }
 
-    const { ready, freshInstall, reason } = await ensureDocmdSearch(tui, !showTui);
+    const { ready, freshInstall: postBuildFreshInstall, reason } = await ensureDocmdSearch(tui, !showTui);
+    const freshInstall = postBuildFreshInstall || _searchState.freshInstall;
     if (!ready) {
       // Graceful fallback: build keyword index instead. The `reason` field
       // tells the caller whether docmd-search itself or just its peers were
@@ -663,23 +700,23 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
       // won't see it, so spawn a child docmd build to do the indexing instead
       // of trying to import() it here. The child inherits the updated
       // node_modules and starts with a clean require cache.
+      if (process.env.DOCMD_SUBPROCESS_INDEXING === 'true') {
+        if (showTui) tui.warn('  Recursive subprocess indexing prevented.');
+        return;
+      }
       if (showTui) tui.step('Re-running semantic indexing in subprocess (first install)...', 'WAIT');
       try {
         const { execSync } = await import('node:child_process');
         const cwd = process.cwd();
-        // Detect the docmd binary from the same node_modules that just got updated
-        const docmdBin = path.join(cwd, 'node_modules', '.bin', 'docmd');
-        // Pass dev context through so the child build applies the same
-        // base override (base=/) as the parent dev server. Without this,
-        // the subprocess runs a plain `build` which auto-derives the
-        // production subpath and the TUI shows the wrong base message.
-        const childEnv = { ...process.env };
+        const childEnv: Record<string, string | undefined> = { ...process.env, DOCMD_SUBPROCESS_INDEXING: 'true' };
+        if (outputDir) childEnv.DOCMD_PROJECT_OUT = outputDir;
         if (options?.isDev) childEnv.DOCMD_DEV = 'true';
-        const cmd = nativeFs.existsSync(docmdBin)
-          ? `"${docmdBin}" build`
-          : `node -e "import('docmd-search').then(m => m.indexDirectory({ rootDir: '${cwd}', outDir: '${path.join(outputDir, '_docmd-search')}' }))"`;
+        const docsDir = path.resolve(config.root || process.cwd(), config.srcDir || config.src || 'docs');
+        const docmdSearchPath = resolveDocmdSearch() || 'docmd-search';
+        const targetSearchDir = path.join(outputDir, '_docmd-search');
+        const cmd = `node -e "import('${docmdSearchPath}').then(m => m.indexDirectory({ rootDir: '${docsDir}', outDir: '${targetSearchDir}' }))"`;
         execSync(cmd, { stdio: 'inherit', cwd, timeout: 300000, env: childEnv });
-        const manifestPath = path.join(outputDir, '_docmd-search/manifest.json');
+        const manifestPath = path.join(targetSearchDir, 'manifest.json');
         if (nativeFs.existsSync(manifestPath)) {
           if (showTui) tui.step('Semantic search index built', 'DONE');
           await stampSemanticFlag(outputDir);
@@ -757,10 +794,16 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
 
           // Always exclude semantic index output dir and --ui artifacts from indexing
           const builtinExcludes = ['**/_docmd-search/**', '**/_site/**', '**/_ui/**'];
-          const mergedExclude = [...builtinExcludes, ...(pluginOptions.exclude || [])];
 
           for (const ver of versions) {
             const versionIndexDir = path.join(ver.dir, '_docmd-search');
+            const gitignorePatterns = getGitignorePatterns(ver.dir);
+            const mergedExclude = [
+              ...builtinExcludes,
+              ...(config.exclude || []),
+              ...gitignorePatterns,
+              ...(pluginOptions.exclude || []),
+            ];
             try {
               await docmdSearch.indexDirectory(
                 {
@@ -852,8 +895,11 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
         // docmd-search --ui artifacts (_site/, _ui/) so the indexer never
         // crawls its own output. Merge with any user-supplied excludes.
         const builtinExcludes = ['**/_docmd-search/**', '**/_site/**', '**/_ui/**'];
+        const gitignorePatterns = getGitignorePatterns(docsDir);
         const mergedExclude = [
           ...builtinExcludes,
+          ...(config.exclude || []),
+          ...gitignorePatterns,
           ...(pluginOptions.exclude || []),
         ];
         const sourceIndexDir = path.join(docsDir, '_docmd-search');
@@ -897,6 +943,33 @@ export async function onPostBuild({ config, pages, outputDir, tui, options, runW
         // The keyword index is tiny and doubles as a runtime safety net.
         semanticBuilt = true;
       } catch (err: any) {
+        const isModuleCacheIssue = err.message?.includes('Cannot find package') ||
+          err.message?.includes('MODULE_NOT_FOUND') ||
+          err.message?.includes('Failed to load model');
+
+        if (isModuleCacheIssue && !freshInstall && process.env.DOCMD_SUBPROCESS_INDEXING !== 'true') {
+          if (showTui) tui.step('Retrying semantic indexing in subprocess...', 'WAIT');
+          try {
+            const { execSync } = await import('node:child_process');
+            const cwd = process.cwd();
+            const childEnv: Record<string, string | undefined> = { ...process.env, DOCMD_SUBPROCESS_INDEXING: 'true' };
+            if (outputDir) childEnv.DOCMD_PROJECT_OUT = outputDir;
+            if (options?.isDev) childEnv.DOCMD_DEV = 'true';
+            const docsDir = path.resolve(config.root || process.cwd(), config.srcDir || config.src || 'docs');
+            const docmdSearchPath = resolveDocmdSearch() || 'docmd-search';
+            const targetSearchDir = path.join(outputDir, '_docmd-search');
+            const cmd = `node -e "import('${docmdSearchPath}').then(m => m.indexDirectory({ rootDir: '${docsDir}', outDir: '${targetSearchDir}' }))"`;
+            execSync(cmd, { stdio: 'inherit', cwd, timeout: 300000, env: childEnv });
+            const manifestPath = path.join(targetSearchDir, 'manifest.json');
+            if (nativeFs.existsSync(manifestPath)) {
+              if (showTui) tui.step('Semantic search index built', 'DONE');
+              await stampSemanticFlag(outputDir);
+              semanticBuilt = true;
+              return;
+            }
+          } catch { /* subprocess fallback failed, proceed to keyword fallback */ }
+        }
+
         if (showTui) {
           tui.step('Building semantic search index', 'FAIL');
           tui.warn(`Semantic indexing failed: ${err.message} — falling back to keyword search`);

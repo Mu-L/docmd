@@ -349,6 +349,19 @@ console.log('\n🔒 Test S9: Plugin loader rejects local-path escape (Phase 1.A,
   assert('original title preserved (or build failed loudly)', titlePreserved);
 }
 
+// ─── TEST S9b: Dependency Overrides & Security Pins ─────────────────────
+console.log('\n🔒 Test S9b: Dependency overrides and security pins');
+{
+  const rootPkg = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, '../package.json'), 'utf8'));
+  assert('Root package.json overrides sharp to ^0.35.4 (libvips vulnerability mitigation)', rootPkg.pnpm?.overrides?.sharp === '^0.35.4');
+  assert('Root package.json overrides adm-zip to >=0.6.0 or >=0.6.1 (zip slip mitigation)', rootPkg.pnpm?.overrides?.['adm-zip'] === '>=0.6.0' || rootPkg.pnpm?.overrides?.['adm-zip'] === '>=0.6.1');
+
+  const searchPluginSrc = fs.readFileSync(path.resolve(import.meta.dirname, '../packages/plugins/search/src/index.ts'), 'utf8');
+  assert('Search plugin PEER_DEPS includes sharp@^0.35.4', searchPluginSrc.includes("'sharp@^0.35.4'"));
+  assert('Search plugin PEER_DEPS includes onnxruntime-node@^1.27.0', searchPluginSrc.includes("'onnxruntime-node@^1.27.0'"));
+  assert('Search plugin PEER_DEPS includes @huggingface/transformers@^4.2.0', searchPluginSrc.includes("'@huggingface/transformers@^4.2.0'"));
+}
+
 // ─── TEST S10: MCP read_doc rejects path traversal (Phase 1.A, S-3) ───────
 console.log('\n🔒 Test S10: MCP read_doc rejects path traversal (Phase 1.A, S-3)');
 

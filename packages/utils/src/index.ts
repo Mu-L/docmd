@@ -2,6 +2,8 @@ export * from './hash.js';
 export * from './path.js';
 export * from './watcher-utils.js';
 export * from './worker-pool.js';
+export * from './fs-utils.js';
 export { default as fsUtils } from './fs-utils.js';
 export * from './git.js';
 export * from './html-escape.js';
+export * from './title.js';

@@ -1,6 +1,6 @@
 {
   "name": "@docmd/plugin-mermaid",
-  "version": "0.9.5",
+  "version": "0.9.6",
   "description": "Mermaid diagram support plugin for docmd.",
   "type": "module",
   "main": "dist/index.js",
@@ -31,10 +31,10 @@
   },
   "devDependencies": {
     "@docmd/api": "workspace:*",
-    "@types/node": "^24.13.3",
+    "@types/node": "^24.13.6",
     "esbuild": "^0.28.2",
     "mermaid": "^11.17.2",
-    "tsx": "^4.23.13"
+    "tsx": "^4.23.15"
   },
   "keywords": [
     "docmd",

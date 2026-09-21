@@ -99,7 +99,7 @@ export const test = runTestFile({
       // Root deploys no longer emit <base href="/"> — relies on
       // relativePathToRoot + ./assets/...
       assert(!/<base\s+href="\/"\s*>/.test(html),
-        'URL-1c: root project does NOT emit <base href="/"> (fixes #175 and #177)');
+        'URL-1c: root project does NOT emit <base href="/"> (preserves subpath & offline asset resolution)');
       assert(/href="\.\/assets\/template\/summer\.css/.test(html),
         'URL-1c: rendered HTML uses relative ./assets/template/summer.css');
       assert(/src="\.\/assets\/template\/summer\.js/.test(html),
@@ -132,8 +132,7 @@ export const test = runTestFile({
     // root-relative asset paths (/search/assets/...) with NO <base> tag.
     // As of 0.8.15, docmd stopped emitting <base> tags for non-offline
     // builds: root-relative URLs handle subpath rooting at any page
-    // depth without one, which also fixes #175 (the <base> tag was
-    // breaking nested-page asset resolution on GH Pages subpath deploys).
+    // depth without one (preventing broken nested-page asset resolution on GH Pages subpath deploys).
     {
       const proj = setup('asset-base-url-workspace-summer');
       fs.mkdirSync(path.join(proj, 'docs-main'), { recursive: true });
@@ -168,11 +167,10 @@ export const test = runTestFile({
         'URL-1e: /search/ sub-site uses page-relative assets paths');
     }
 
-    // URL-1f: issue #175 — GitHub Pages project site (url has subpath,
+    // URL-1f: GitHub Pages project site (url has subpath,
     // no explicit base). As of 0.8.15, docmd uses page-relative asset
-    // paths (./assets/...) with NO <base> tag. This fixes
-    // the #175 regression where the <base> tag + depth-relative paths
-    // broke nested-page asset resolution on subpath deploys.
+    // paths (./assets/...) with NO <base> tag. This ensures
+    // nested-page asset resolution works cleanly on subpath deploys.
     {
       const proj = setup('asset-base-url-gh-pages-subpath');
       writeFile(proj, 'docs/index.md', '# Home\n');
@@ -192,7 +190,7 @@ export const test = runTestFile({
         'URL-1f: CSS link is page-relative (./assets/...)');
     }
 
-    // URL-1g: issue #177 — --offline mode must NOT emit a <base> tag.
+    // URL-1g: --offline mode must NOT emit a <base> tag.
     // file:// resolution breaks if <base href="/"> is present because
     // it re-roots every relative URL to the filesystem root.
     {
@@ -212,7 +210,7 @@ export const test = runTestFile({
       assert(result.includes('Build complete'), 'URL-1g: --offline build completes');
       const pageHtml = fs.readFileSync(path.join(proj, 'site/guide/page/index.html'), 'utf8');
       assert(!/<base\s+href=/.test(pageHtml),
-        'URL-1g: --offline mode emits NO <base> tag (fixes #177)');
+        'URL-1g: --offline mode emits NO <base> tag');
       assert(/href="\.\.\/\.\.\/assets\/css\/docmd-main\.css/.test(pageHtml),
         'URL-1g: nested page uses page-relative CSS path (resolves under file://)');
     }

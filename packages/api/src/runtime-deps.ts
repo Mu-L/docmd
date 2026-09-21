@@ -292,7 +292,7 @@ export function resetInstallState(): void {
  * registry yet, e.g. during a release where core is bumped before the
  * plugins are published.
  */
-async function fetchLatestNpmVersion(packageName: string): Promise<string | null> {
+export async function fetchLatestNpmVersion(packageName: string): Promise<string | null> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4000);
@@ -434,13 +434,34 @@ export async function installRuntimeDep(packageName: string): Promise<boolean> {
         if (currentPm !== 'npm') {
           return executeInstall('npm');
         }
+        // npm v10+ exits with code 1 when the .npmrc contains unknown env-config
+        // keys (e.g. "verify-deps-before-run", "_jsr-registry"). These emit
+        // `npm warn Unknown env config ...` lines but do NOT indicate a failed
+        // install. Detect this: if stderr contains ONLY `npm warn` lines (no
+        // `npm error`) and the package was written to node_modules, treat as ok.
+        const stderrStr = stderr.toString();
+        const stderrLines = stderrStr.split('\n').filter(Boolean);
+        const hasOnlyWarnings = stderrLines.length > 0 &&
+          stderrLines.every(l => l.trimStart().startsWith('npm warn'));
+        if (hasOnlyWarnings) {
+          // Double-check by looking for success markers in stdout
+          const stdoutStr = stdout.toString();
+          const looksLikeSuccess =
+            stdoutStr.includes('added') ||
+            stdoutStr.includes('up to date') ||
+            stdoutStr.includes('audited') ||
+            stdoutStr.includes(packageName);
+          if (looksLikeSuccess) {
+            ensureNativePostinstalls(cwd);
+            reporter.finish(shortName, 'DONE');
+            return resolve(true);
+          }
+        }
         reporter.finish(shortName, 'FAIL');
-        const surface = stderr
-          .toString()
-          .split('\n')
-          .filter(Boolean)
+        const surface = stderrLines
+          .filter(l => !l.trimStart().startsWith('npm warn'))
           .slice(0, 3)
-          .join(' | ');
+          .join(' | ') || stderrLines.slice(0, 3).join(' | ');
         const hasProject = (() => {
           let dir = path.resolve(cwd);
           while (true) {
@@ -472,6 +493,7 @@ export async function installRuntimeDep(packageName: string): Promise<boolean> {
         _failedInstalls.add(packageName);
         resolve(false);
       });
+
     };
 
     executeInstall(pm);
@@ -672,3 +694,152 @@ export async function tryLoadAfterInstall(
   TUI.warn(`Post-install load of ${packageName} from ${consumerCwd} failed: package not found in node_modules tree`);
   return null;
 }
+
+/**
+ * Requirements specification for pre-flight dependency installation.
+ */
+export interface PreflightRequirements {
+  templates?: string[];
+  plugins?: string[];
+  engines?: string[];
+  semanticSearch?: boolean;
+}
+
+/**
+ * Pre-flight batch installer for all runtime dependencies configured
+ * across a project or workspace.
+ *
+ * Scans for missing official templates, plugins, engines, and semantic
+ * search packages, and installs all missing packages together in a
+ * single batch command. This prevents package managers (specifically
+ * modern npm tree reconciliation) from pruning previously installed
+ * packages when multiple runtime installs occur.
+ */
+export async function preflightEnsureRuntimeDeps(
+  requirements: PreflightRequirements,
+  cwd: string = process.cwd()
+): Promise<boolean> {
+  if (!isMainThread) return true;
+
+  const missingOfficial: string[] = [];
+  const missingOther: string[] = [];
+  const registry = loadRuntimeRegistry();
+
+  const isResolvable = (pkgName: string): boolean => {
+    // 1. Check monorepo source during monorepo dev
+    if (pkgName.startsWith('@docmd/plugin-')) {
+      const id = pkgName.replace('@docmd/plugin-', '');
+      const local = path.resolve(__monorepoRoot, 'packages/plugins', id, 'dist/index.js');
+      if (nativeFs.existsSync(local)) return true;
+    } else if (pkgName.startsWith('@docmd/template-')) {
+      const id = pkgName.replace('@docmd/template-', '');
+      const local = path.resolve(__monorepoRoot, 'packages/templates', id, 'dist/index.js');
+      if (nativeFs.existsSync(local)) return true;
+    }
+    // 2. Check filesystem walk-up
+    return findPackageDir(pkgName, [cwd, process.cwd()]) !== null;
+  };
+
+  // Check templates
+  if (requirements.templates) {
+    for (const tpl of requirements.templates) {
+      if (!tpl || tpl === 'default') continue;
+      const pkg = tpl.startsWith('@docmd/template-') ? tpl : `@docmd/template-${tpl}`;
+      if (!isResolvable(pkg)) {
+        const short = shortKey(pkg);
+        if (short && registry[short]) {
+          if (!missingOfficial.includes(pkg)) missingOfficial.push(pkg);
+        } else {
+          TUI.warn(`Template "${tpl}" not found in official registry`);
+        }
+      }
+    }
+  }
+
+  // Check plugins
+  if (requirements.plugins) {
+    for (const p of requirements.plugins) {
+      if (!p) continue;
+      const pkg = p.startsWith('@docmd/plugin-') ? p : `@docmd/plugin-${p}`;
+      if (!isResolvable(pkg)) {
+        const short = shortKey(pkg);
+        if (short && registry[short]) {
+          if (!missingOfficial.includes(pkg)) missingOfficial.push(pkg);
+        } else if (isValidRuntimeDepName(pkg)) {
+          TUI.warn(`Plugin "${p}" not found in official registry`);
+        }
+      }
+    }
+  }
+
+  // Check engines
+  if (requirements.engines) {
+    for (const eng of requirements.engines) {
+      if (!eng || eng === 'js') continue;
+      const pkg = eng.startsWith('@docmd/engine-') ? eng : `@docmd/engine-${eng}`;
+      if (!isResolvable(pkg)) {
+        const short = shortKey(pkg);
+        if (short && registry[short]) {
+          if (!missingOfficial.includes(pkg)) missingOfficial.push(pkg);
+        } else {
+          TUI.warn(`Engine "${eng}" not found in official registry`);
+        }
+      }
+    }
+  }
+
+  // Check semantic search
+  if (requirements.semanticSearch) {
+    const searchInstalled = isResolvable('docmd-search');
+    const peersInstalled = isResolvable('@huggingface/transformers') && isResolvable('onnxruntime-node');
+    if (!searchInstalled || !peersInstalled) {
+      if (!searchInstalled) {
+        missingOther.push('docmd-search');
+      }
+      if (!isResolvable('@huggingface/transformers')) missingOther.push('@huggingface/transformers@^4.2.0');
+      if (!isResolvable('onnxruntime-node')) missingOther.push('onnxruntime-node@^1.27.0');
+      if (!isResolvable('sharp')) missingOther.push('sharp@^0.35.4');
+    }
+  }
+
+  if (missingOfficial.length === 0 && missingOther.length === 0) {
+    return true;
+  }
+
+  // Resolve version for each missing official package
+  const toInstall: string[] = [];
+  const version = getDocmdVersion();
+  for (const pkg of missingOfficial) {
+    let resolved = version;
+    if (version !== 'latest') {
+      const npmLatest = await fetchLatestNpmVersion(pkg);
+      if (npmLatest && npmLatest !== version) {
+        resolved = npmLatest;
+      }
+    }
+    toInstall.push(resolved === 'latest' ? pkg : `${pkg}@${resolved}`);
+  }
+
+  for (const pkg of missingOther) {
+    if (pkg === 'docmd-search') {
+      const latest = await fetchLatestNpmVersion('docmd-search');
+      toInstall.push(latest ? `docmd-search@${latest}` : 'docmd-search');
+    } else {
+      toInstall.push(pkg);
+    }
+  }
+
+  const shortNames = toInstall.map(p => {
+    const withoutScope = p.startsWith('@') ? p.slice(1).replace(/^[^\/]+\//, '') : p;
+    return withoutScope.split('@')[0];
+  });
+  TUI.step(`Pre-flight: installing runtime dependencies (${shortNames.join(', ')})`, 'WAIT');
+  const ok = await installPackages(toInstall, cwd);
+  if (ok) {
+    TUI.step('Pre-flight: runtime dependencies ready', 'DONE');
+  } else {
+    TUI.step('Pre-flight: failed to install runtime dependencies', 'FAIL');
+  }
+  return ok;
+}
+
