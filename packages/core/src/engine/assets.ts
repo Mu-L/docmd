@@ -93,13 +93,46 @@ function getGitignorePatterns(startDir: string): string[] {
 /**
  * Check if a file or directory matches gitignore / exclude patterns.
  */
-function isExcludedPath(fullPath: string, name: string, patterns: string[]): boolean {
+function isExcludedPath(fullPath: string, name: string, patterns: string[], projectRoot?: string): boolean {
   if (patterns.length === 0) return false;
   const normalizedPath = fullPath.replace(/\\/g, '/');
+  const normalizedRoot = projectRoot ? path.resolve(projectRoot).replace(/\\/g, '/') : null;
 
   for (const pat of patterns) {
+    // Detect anchored patterns (leading '/') — in gitignore, '/' means relative to the
+    // directory containing the .gitignore, not the absolute filesystem path (Issue #244).
+    const isAnchored = pat.startsWith('/');
     const cleanPat = pat.replace(/^\/+|\/+$/g, '');
     if (!cleanPat) continue;
+
+    if (isAnchored && normalizedRoot) {
+      // For anchored patterns, match only against the path relative to the project root.
+      // This prevents '/airo' from matching '/Users/someone/github/airo/docs/page.md'.
+      const relPath = normalizedPath.startsWith(normalizedRoot + '/')
+        ? normalizedPath.slice(normalizedRoot.length + 1)
+        : null;
+      if (!relPath) continue;
+
+      if (relPath === cleanPat || relPath.startsWith(cleanPat + '/')) return true;
+
+      // Anchored wildcard match
+      if (cleanPat.includes('*')) {
+        try {
+          const regexStr = cleanPat
+            .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+            .replace(/\*\*/g, '.*')
+            .replace(/\*/g, '[^/]*');
+          const re = new RegExp(`^${regexStr}(/|$)`);
+          if (re.test(relPath)) return true;
+        } catch {
+          // Ignore regex failure
+        }
+      }
+      // Anchored patterns must not fall through to unanchored checks
+      continue;
+    }
+
+    // Non-anchored pattern checks (match anywhere in relative or absolute path):
 
     // Exact name match (e.g. 'drafts' or 'secret.md')
     if (name === cleanPat) return true;
@@ -116,7 +149,7 @@ function isExcludedPath(fullPath: string, name: string, patterns: string[]): boo
       if (name.startsWith(prefix)) return true;
     }
 
-    // Directory segment match (e.g. '/drafts/' or end of path)
+    // Directory segment match (e.g. 'drafts' anywhere in path)
     if (normalizedPath.includes(`/${cleanPat}/`) || normalizedPath.endsWith(`/${cleanPat}`)) {
       return true;
     }
@@ -141,8 +174,12 @@ function isExcludedPath(fullPath: string, name: string, patterns: string[]): boo
 export async function findFilesRecursive(
   dir: string,
   extensions: string[],
-  extraExclude: string[] = []
+  extraExclude: string[] = [],
+  _projectRoot?: string
 ): Promise<string[]> {
+  // Track the top-level source root so anchored gitignore patterns are resolved
+  // relative to it rather than the absolute filesystem path (Issue #244).
+  const projectRoot = _projectRoot ?? dir;
   let files: string[] = [];
   if (!await fs.exists(dir)) return [];
 
@@ -164,13 +201,13 @@ export async function findFilesRecursive(
 
     const fullPath = path.join(dir, item.name);
 
-    // Filter out items matching .gitignore or user-configured exclude patterns (Issue #226)
-    if (isExcludedPath(fullPath, item.name, allExcludes)) {
+    // Filter out items matching .gitignore or user-configured exclude patterns (Issue #226, #244)
+    if (isExcludedPath(fullPath, item.name, allExcludes, projectRoot)) {
       continue;
     }
 
     if (item.isDirectory()) {
-      files = files.concat(await findFilesRecursive(fullPath, extensions, extraExclude));
+      files = files.concat(await findFilesRecursive(fullPath, extensions, extraExclude, projectRoot));
     } else if (item.isFile()) {
       if (!extensions || extensions.includes(path.extname(item.name))) {
         files.push(fullPath);
