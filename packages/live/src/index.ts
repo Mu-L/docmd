@@ -78,8 +78,8 @@ async function start() {
 
     // Dynamic routing for project-local user assets (bypassing the precompiled bundle)
     if (safePathStr.startsWith('assets/')) {
-      const userAssetPath = path.join(process.cwd(), safePathStr);
       try {
+        const userAssetPath = canonicalSafePath(process.cwd(), safePathStr);
         await fs.stat(userAssetPath);
         filePath = userAssetPath;
       } catch {
@@ -92,7 +92,7 @@ async function start() {
 
       // If it's a directory, serve its index.html
       if (stats.isDirectory()) {
-        filePath = path.join(filePath, 'index.html');
+        filePath = canonicalSafePath(filePath, 'index.html');
         await fs.stat(filePath);
       }
 
@@ -103,13 +103,13 @@ async function start() {
       res.writeHead(200, { 'Content-Type': contentType });
       res.end(content);
 
-    } catch (err) {
+    } catch (err: any) {
       if (err.code === 'ENOENT') {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
         res.end('404 Not Found');
       } else {
-        res.writeHead(500);
-        res.end(`Server Error: ${err.code}`);
+        res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('500 Server Error');
       }
     }
   });
