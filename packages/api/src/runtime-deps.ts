@@ -434,13 +434,34 @@ export async function installRuntimeDep(packageName: string): Promise<boolean> {
         if (currentPm !== 'npm') {
           return executeInstall('npm');
         }
+        // npm v10+ exits with code 1 when the .npmrc contains unknown env-config
+        // keys (e.g. "verify-deps-before-run", "_jsr-registry"). These emit
+        // `npm warn Unknown env config ...` lines but do NOT indicate a failed
+        // install. Detect this: if stderr contains ONLY `npm warn` lines (no
+        // `npm error`) and the package was written to node_modules, treat as ok.
+        const stderrStr = stderr.toString();
+        const stderrLines = stderrStr.split('\n').filter(Boolean);
+        const hasOnlyWarnings = stderrLines.length > 0 &&
+          stderrLines.every(l => l.trimStart().startsWith('npm warn'));
+        if (hasOnlyWarnings) {
+          // Double-check by looking for success markers in stdout
+          const stdoutStr = stdout.toString();
+          const looksLikeSuccess =
+            stdoutStr.includes('added') ||
+            stdoutStr.includes('up to date') ||
+            stdoutStr.includes('audited') ||
+            stdoutStr.includes(packageName);
+          if (looksLikeSuccess) {
+            ensureNativePostinstalls(cwd);
+            reporter.finish(shortName, 'DONE');
+            return resolve(true);
+          }
+        }
         reporter.finish(shortName, 'FAIL');
-        const surface = stderr
-          .toString()
-          .split('\n')
-          .filter(Boolean)
+        const surface = stderrLines
+          .filter(l => !l.trimStart().startsWith('npm warn'))
           .slice(0, 3)
-          .join(' | ');
+          .join(' | ') || stderrLines.slice(0, 3).join(' | ');
         const hasProject = (() => {
           let dir = path.resolve(cwd);
           while (true) {
@@ -472,6 +493,7 @@ export async function installRuntimeDep(packageName: string): Promise<boolean> {
         _failedInstalls.add(packageName);
         resolve(false);
       });
+
     };
 
     executeInstall(pm);

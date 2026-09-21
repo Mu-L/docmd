@@ -287,6 +287,7 @@ export interface DocConfigShape {
     breaks?: boolean;
     linkify?: boolean;
     typographer?: boolean;
+    linkifyDefaultScheme?: 'https' | 'http';
     [key: string]: any;
   };
   [key: string]: any;

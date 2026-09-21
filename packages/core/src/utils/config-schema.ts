@@ -215,11 +215,21 @@ export function normalizeConfig(userConfig: any, options: any = {}) {
     config.outputDir = config.out;
 
     // --- Markdown Options ---
+    // linkifyDefaultScheme: scheme prepended to bare-domain autolinks (e.g. `github.com`).
+    // 'https' is the industry default — virtually all public sites support HTTPS and
+    // linking to http:// is a security footprint concern. Use 'http' only for
+    // internal/legacy environments where HTTPS is unavailable.
+    const VALID_LINKIFY_SCHEMES = new Set(['https', 'http']);
+    const rawLinkifyScheme = config.markdown?.linkifyDefaultScheme;
+    const resolvedLinkifyScheme = VALID_LINKIFY_SCHEMES.has(rawLinkifyScheme) ? rawLinkifyScheme : 'https';
     config.markdown = {
         breaks: typeof config.markdown?.breaks === 'boolean' ? config.markdown.breaks : true,
         linkify: typeof config.markdown?.linkify === 'boolean' ? config.markdown.linkify : true,
         typographer: typeof config.markdown?.typographer === 'boolean' ? config.markdown.typographer : true,
-        ...(typeof config.markdown === 'object' && config.markdown !== null ? config.markdown : {})
+        ...(typeof config.markdown === 'object' && config.markdown !== null ? config.markdown : {}),
+        // Always apply the validated scheme last so a user cannot supply an
+        // invalid value (anything other than 'https' | 'http') via the spread.
+        linkifyDefaultScheme: resolvedLinkifyScheme
     };
 
     // --- Exclude / Ignore Patterns ---

@@ -235,12 +235,17 @@ function createMarkdownProcessor(config: any = {}, pluginsCallback: any) {
 
   // Linkify-it's default normalizer prepends http:// when match.schema is empty.
   // Explicit protocols (http://, mailto:, etc.) have a non-empty schema and are left intact.
+  // linkifyDefaultScheme controls what we replace http:// with for schemeless matches.
+  // Industry default is 'https' — virtually all public sites support HTTPS.
   if (mdOptions.linkify && md.linkify) {
+    const linkifyScheme = (config.markdown?.linkifyDefaultScheme === 'http') ? 'http' : 'https';
     const defaultNormalize = md.linkify.normalize.bind(md.linkify);
     md.linkify.normalize = (match: any) => {
       defaultNormalize(match);
+      // match.schema is empty string for bare domains (e.g. github.com),
+      // non-empty (e.g. 'http:') for explicit-scheme URLs.
       if (!match.schema) {
-        match.url = match.url.replace(/^http:\/\//, 'https://');
+        match.url = `${linkifyScheme}://${match.url.replace(/^https?:\/\//, '')}`;
       }
     };
   }
