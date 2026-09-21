@@ -283,6 +283,12 @@ export interface DocConfigShape {
   versions?: Record<string, any>;
   workspace?: Record<string, any>;
   plugins?: Record<string, any>;
+  markdown?: {
+    breaks?: boolean;
+    linkify?: boolean;
+    typographer?: boolean;
+    [key: string]: any;
+  };
   [key: string]: any;
 }
 

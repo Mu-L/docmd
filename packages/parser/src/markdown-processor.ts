@@ -208,8 +208,8 @@ function createMarkdownProcessor(config: any = {}, pluginsCallback: any) {
   const htmlPolicy = (config && config.security && config.security.html) || 'allow';
   const mdOptions: any = {
     html: htmlPolicy === 'allow',
-    linkify: true,
-    typographer: true,
+    linkify: config.markdown?.linkify ?? true,
+    typographer: config.markdown?.typographer ?? true,
     breaks: config.markdown?.breaks ?? true,
   };
 
@@ -232,6 +232,18 @@ function createMarkdownProcessor(config: any = {}, pluginsCallback: any) {
   };
 
   const md = new MarkdownIt(mdOptions);
+
+  // Linkify-it's default normalizer prepends http:// when match.schema is empty.
+  // Explicit protocols (http://, mailto:, etc.) have a non-empty schema and are left intact.
+  if (mdOptions.linkify && md.linkify) {
+    const defaultNormalize = md.linkify.normalize.bind(md.linkify);
+    md.linkify.normalize = (match: any) => {
+      defaultNormalize(match);
+      if (!match.schema) {
+        match.url = match.url.replace(/^http:\/\//, 'https://');
+      }
+    };
+  }
 
   const HTML_SEQUENCES: [RegExp, RegExp][] = [
   [/^<(script|pre|style|textarea)(?=(\s|>|$))/i, /<\/(script|pre|style|textarea)>/i],
