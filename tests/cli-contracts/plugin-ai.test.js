@@ -137,16 +137,25 @@ export const test = runTestFile({
     }
 
     // Case 5: AI Assistant stream replacement protocol and synthesis fallback
+    // This test requires the sibling `docmd-assistant` repo to be present
+    // at `../docmd-assistant`. On CI (GitHub Actions), only `docmd` is
+    // checked out, so we skip gracefully when the module is absent.
     {
-      const { DocmdAssistantEngine } = await import(path.resolve('../docmd-assistant/dist/index.js'));
-      const engine = new DocmdAssistantEngine();
-      assert(typeof engine.sendMessageStream === 'function', 'DocmdAssistantEngine exposes sendMessageStream method');
+      const assistantDistPath = path.resolve('../docmd-assistant/dist/index.js');
+      const assistantTypesPath = path.resolve('../docmd-assistant/src/types.ts');
+      if (fs.existsSync(assistantDistPath) && fs.existsSync(assistantTypesPath)) {
+        const { DocmdAssistantEngine } = await import(assistantDistPath);
+        const engine = new DocmdAssistantEngine();
+        assert(typeof engine.sendMessageStream === 'function', 'DocmdAssistantEngine exposes sendMessageStream method');
 
-      const assistantTypes = fs.readFileSync(path.resolve('../docmd-assistant/src/types.ts'), 'utf8');
-      assert(
-        assistantTypes.includes('meta?: { replace?: boolean; turn?: number; isFinal?: boolean }'),
-        'StreamCallbacks.onChunk accepts replace and turn metadata'
-      );
+        const assistantTypes = fs.readFileSync(assistantTypesPath, 'utf8');
+        assert(
+          assistantTypes.includes('meta?: { replace?: boolean; turn?: number; isFinal?: boolean }'),
+          'StreamCallbacks.onChunk accepts replace and turn metadata'
+        );
+      }
+      // If docmd-assistant is not present, silently skip — it is a separate
+      // closed-source repo and is not part of the docmd monorepo CI.
     }
 
     return { passed, failed, failures };
