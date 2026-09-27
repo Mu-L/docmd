@@ -1,53 +1,39 @@
 {
-  "name": "@docmd/api",
+  "name": "@docmd/engine-python",
   "version": "0.9.7",
-  "description": "Plugin API surface for docmd.",
+  "description": "Python-accelerated engine for docmd using Python 3 runtime.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "default": "./dist/index.js"
     }
   },
   "scripts": {
-    "build:registry": "node ../../scripts/build-plugin-registry.mjs",
-    "prebuild": "npm run build:registry",
-    "build": "tsc && node scripts/copy-registry.mjs"
+    "build": "tsc"
   },
   "files": [
     "dist",
-    "registry"
+    "python"
   ],
   "engines": {
     "node": ">=20.0.0"
   },
-  "dependencies": {
-    "@docmd/parser": "workspace:*",
-    "@docmd/tui": "workspace:*",
-    "@docmd/utils": "workspace:*"
-  },
   "devDependencies": {
     "@types/node": "^24.13.6"
   },
-  "optionalDependencies": {
-    "@docmd/engine-js": "workspace:*",
-    "@docmd/engine-rust": "workspace:*",
-    "@docmd/engine-python": "workspace:*"
-  },
   "keywords": [
     "docmd",
-    "documentation",
-    "api",
-    "plugin",
-    "hooks",
-    "rpc",
+    "engine",
+    "python",
+    "performance",
     "markdown",
     "minimalist",
     "zero-config",
     "site-generator",
-    "static-site-generator",
+    "documentation",
     "docs"
   ],
   "author": {

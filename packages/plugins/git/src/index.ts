@@ -44,6 +44,8 @@ async function getEngine(): Promise<Engine | null> {
     const { loadEngine } = await import('@docmd/api');
     if (_configuredEngine === 'js') {
       _engine = await loadEngine('js');
+    } else if (_configuredEngine === 'python') {
+      _engine = await loadEngine('python').catch(() => loadEngine('js'));
     } else {
       // Default: try Rust, fall back to JS
       _engine = await loadEngine('rust').catch(() => loadEngine('js'));

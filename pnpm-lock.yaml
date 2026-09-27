@@ -61,6 +61,9 @@ importers:
       '@docmd/engine-js':
         specifier: workspace:*
         version: link:../engines/js
+      '@docmd/engine-python':
+        specifier: workspace:*
+        version: link:../engines/python
       '@docmd/engine-rust':
         specifier: workspace:*
         version: link:../engines/rust
@@ -146,6 +149,12 @@ importers:
         version: 24.13.6
 
   packages/engines/js:
+    devDependencies:
+      '@types/node':
+        specifier: ^24.13.6
+        version: 24.13.6
+
+  packages/engines/python:
     devDependencies:
       '@types/node':
         specifier: ^24.13.6

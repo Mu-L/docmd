@@ -75,6 +75,7 @@ export {
   engineRegistry,
   registerEngine,
   loadEngine,
+  resolveEngine,
   isEngineAvailable,
   getAvailableEngines,
   runTask,
@@ -82,6 +83,9 @@ export {
   readFilesBatch,
   getGitLog,
   buildSearchIndex,
+  chunkText,
+  quantizeVectors,
+  cosineSimilarity,
 } from './engine.js';
 
 // Types

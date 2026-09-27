@@ -33,6 +33,9 @@ const ALLOWED_TASK_TYPES = new Set([
   'git:status',
   'search:index',
   'search:query',
+  'search:chunk',
+  'search:quantize',
+  'search:cosine',
 ]);
 
 // ---------------------------------------------------------------------------
@@ -111,7 +114,36 @@ export async function loadEngine(name: string = 'js'): Promise<Engine> {
     }
   }
 
-  throw new Error(`Unknown engine: '${name}'. Available built-in engines: js, rust`);
+  if (name === 'python') {
+    // Python engine is an optional performance accelerator. Try to load
+    // it; if the package is missing, auto-install it; if install fails
+    // OR Python 3 is not available on this system, fall back to JS.
+    try {
+      const { createPythonEngine, isPythonEngineAvailable } = await import('@docmd/engine-python');
+      if (!isPythonEngineAvailable()) {
+        console.warn('[docmd] Python 3 not available on this system, falling back to JS engine.');
+        return loadEngine('js');
+      }
+      return createPythonEngine();
+    } catch (error) {
+      if (isValidRuntimeDepName('@docmd/engine-python')) {
+        const installed = await installRuntimeDep('@docmd/engine-python');
+        if (installed) {
+          const reloaded = await tryLoadAfterInstall('@docmd/engine-python');
+          if (reloaded) {
+            const { createPythonEngine, isPythonEngineAvailable } = reloaded as any;
+            if (isPythonEngineAvailable && isPythonEngineAvailable()) {
+              return createPythonEngine();
+            }
+          }
+        }
+      }
+      console.warn(`[docmd] Python engine unavailable (${(error as Error).message}), falling back to JS engine.`);
+      return loadEngine('js');
+    }
+  }
+
+  throw new Error(`Unknown engine: '${name}'. Available built-in engines: js, rust, python`);
 }
 
 /**
@@ -127,6 +159,14 @@ export async function isEngineAvailable(name: string): Promise<boolean> {
       return false;
     }
   }
+  if (name === 'python') {
+    try {
+      const { isPythonEngineAvailable } = await import('@docmd/engine-python');
+      return isPythonEngineAvailable();
+    } catch {
+      return false;
+    }
+  }
   return engineRegistry.has(name);
 }
 
@@ -136,6 +176,7 @@ export async function isEngineAvailable(name: string): Promise<boolean> {
 export async function getAvailableEngines(): Promise<string[]> {
   const engines: string[] = ['js'];
   if (await isEngineAvailable('rust')) engines.push('rust');
+  if (await isEngineAvailable('python')) engines.push('python');
   return engines;
 }
 
@@ -235,4 +276,63 @@ export async function buildSearchIndex(
   }>,
 ): Promise<string> {
   return runTask(engine, 'search:index', { documents });
+}
+
+/**
+ * Resolve an engine for plugins according to preference or availability.
+ * If preference is given (e.g. 'rust', 'python', 'js', or an array like ['rust', 'python']),
+ * it attempts to load in that order, falling back to 'js'.
+ *
+ * This allows plugins to easily request accelerated engines without needing
+ * to implement their own fallback logic.
+ */
+export async function resolveEngine(preference?: string | string[]): Promise<Engine> {
+  const prefs = Array.isArray(preference) ? preference : (preference ? [preference] : ['rust', 'python', 'js']);
+  for (const name of prefs) {
+    if (name === 'js') continue;
+    try {
+      if (await isEngineAvailable(name)) {
+        return await loadEngine(name);
+      }
+    } catch {
+      // try next
+    }
+  }
+  return loadEngine('js');
+}
+
+/**
+ * Chunk markdown text by headings and word boundaries.
+ */
+export async function chunkText(
+  engine: Engine,
+  text: string,
+  file: string,
+  chunkSize = 256,
+  chunkOverlap = 32,
+): Promise<Array<{ file: string; heading?: string; text: string; range: [number, number] }>> {
+  return runTask(engine, 'search:chunk', { text, file, chunkSize, chunkOverlap });
+}
+
+/**
+ * Quantize float32 vectors to int8.
+ */
+export async function quantizeVectors(
+  engine: Engine,
+  vectors: number[][],
+  dimensions = 384,
+): Promise<{ quantized: number[][]; mins: number[]; ranges: number[] }> {
+  return runTask(engine, 'search:quantize', { vectors, dimensions });
+}
+
+/**
+ * Compute cosine similarity between a query vector and corpus vectors.
+ */
+export async function cosineSimilarity(
+  engine: Engine,
+  query: number[],
+  vectors: number[][],
+  topK = 10,
+): Promise<Array<{ index: number; score: number }>> {
+  return runTask(engine, 'search:cosine', { query, vectors, topK });
 }
