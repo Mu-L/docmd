@@ -86,6 +86,7 @@ export {
   chunkText,
   quantizeVectors,
   cosineSimilarity,
+  shutdownEngines,
 } from './engine.js';
 
 // Types

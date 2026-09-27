@@ -42,6 +42,8 @@ export interface Engine {
   readonly version: string;
   run<T = any>(task: EngineTask): Promise<EngineResult<T>>;
   supports?(taskType: string): boolean;
+  shutdown?(): void;
+  destroy?(): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -160,5 +162,8 @@ export function createRustEngine(): Engine {
         return { success: false, error: (error as Error).message, duration: Date.now() - start };
       }
     },
+
+    shutdown(): void {},
+    async destroy(): Promise<void> {},
   };
 }

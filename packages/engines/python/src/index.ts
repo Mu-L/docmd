@@ -44,6 +44,7 @@ export interface Engine {
   run<T = any>(task: EngineTask): Promise<EngineResult<T>>;
   supports?(taskType: string): boolean;
   shutdown?(): void;
+  destroy?(): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -138,13 +139,30 @@ class PythonWorkerPool {
   private reqIdCounter = 0;
   private pythonBin: string;
   private runnerPath: string;
+  private idleTimer: NodeJS.Timeout | null = null;
 
   constructor(pythonBin: string, runnerPath: string) {
     this.pythonBin = pythonBin;
     this.runnerPath = runnerPath;
   }
 
+  private scheduleIdleTimeout(): void {
+    if (this.idleTimer) clearTimeout(this.idleTimer);
+    this.idleTimer = setTimeout(() => {
+      if (this.pending.size === 0) {
+        this.cleanup();
+      }
+    }, 1500);
+    if (this.idleTimer && typeof this.idleTimer.unref === 'function') {
+      this.idleTimer.unref();
+    }
+  }
+
   private startWorker(): ChildProcess {
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
     if (this.worker && !this.worker.killed) return this.worker;
 
     const child = spawn(this.pythonBin, [this.runnerPath, '--listen'], {
@@ -178,6 +196,9 @@ class PythonWorkerPool {
           } else {
             req.resolve({ success: false, error: msg.error || 'Python task error', duration });
           }
+          if (this.pending.size === 0) {
+            this.scheduleIdleTimeout();
+          }
         }
       } catch (e: any) {
         // Line wasn't valid JSON, ignore
@@ -195,9 +216,14 @@ class PythonWorkerPool {
       req.resolve({ success: false, error: errorMsg, duration: Date.now() - req.start });
     }
     this.pending.clear();
+    this.scheduleIdleTimeout();
   }
 
   public cleanup(): void {
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
     if (this.rl) {
       try { this.rl.close(); } catch { /* ignore */ }
       this.rl = null;
@@ -227,6 +253,7 @@ class PythonWorkerPool {
         const timeoutMs = task.timeout || 60000;
         const timer = setTimeout(() => {
           this.pending.delete(id);
+          if (this.pending.size === 0) this.scheduleIdleTimeout();
           resolve({ success: false, error: `Python task '${task.type}' timed out after ${timeoutMs}ms`, duration: Date.now() - start });
         }, timeoutMs);
 
@@ -237,6 +264,7 @@ class PythonWorkerPool {
           if (err) {
             clearTimeout(timer);
             this.pending.delete(id);
+            if (this.pending.size === 0) this.scheduleIdleTimeout();
             resolve({ success: false, error: `Failed to write to Python worker: ${err.message}`, duration: Date.now() - start });
           }
         });
@@ -346,10 +374,18 @@ export function createPythonEngine(): Engine {
     },
 
     shutdown(): void {
-      if (_globalWorkerPool) {
-        _globalWorkerPool.cleanup();
-        _globalWorkerPool = null;
-      }
+      shutdownPythonEngine();
+    },
+
+    async destroy(): Promise<void> {
+      shutdownPythonEngine();
     },
   };
+}
+
+export function shutdownPythonEngine(): void {
+  if (_globalWorkerPool) {
+    _globalWorkerPool.cleanup();
+    _globalWorkerPool = null;
+  }
 }

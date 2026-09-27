@@ -42,6 +42,37 @@ const ALLOWED_TASK_TYPES = new Set([
 // Engine Loading
 // ---------------------------------------------------------------------------
 
+const _loadedEngines = new Set<Engine>();
+
+function registerLoadedEngine(engine: Engine): Engine {
+  _loadedEngines.add(engine);
+  return engine;
+}
+
+/**
+ * Shut down all active engines that support cleanup (e.g. terminating worker processes).
+ */
+export async function shutdownEngines(): Promise<void> {
+  for (const engine of _loadedEngines) {
+    if (typeof (engine as any).shutdown === 'function') {
+      try {
+        await (engine as any).shutdown();
+      } catch {
+        // ignore
+      }
+    }
+  }
+  _loadedEngines.clear();
+  try {
+    const py = await import('@docmd/engine-python').catch(() => null);
+    if (py && typeof (py as any).shutdownPythonEngine === 'function') {
+      (py as any).shutdownPythonEngine();
+    }
+  } catch {
+    // ignore
+  }
+}
+
 /**
  * Load an engine by name.
  *
@@ -57,7 +88,7 @@ export async function loadEngine(name: string = 'js'): Promise<Engine> {
   const loader = engineRegistry.get(name);
   if (loader) {
     const engine = await loader();
-    if (engine) return engine;
+    if (engine) return registerLoadedEngine(engine);
   }
 
   if (name === 'js') {
@@ -67,7 +98,7 @@ export async function loadEngine(name: string = 'js'): Promise<Engine> {
     // JS engine — call it a fatal loader failure if install also fails.
     try {
       const { createJsEngine } = await import('@docmd/engine-js');
-      return createJsEngine();
+      return registerLoadedEngine(createJsEngine());
     } catch (err) {
       if (!isValidRuntimeDepName('@docmd/engine-js')) throw err;
       const installed = await installRuntimeDep('@docmd/engine-js');
@@ -75,7 +106,7 @@ export async function loadEngine(name: string = 'js'): Promise<Engine> {
         const reloaded = await tryLoadAfterInstall('@docmd/engine-js');
         if (reloaded) {
           const { createJsEngine } = reloaded as any;
-          return createJsEngine();
+          return registerLoadedEngine(createJsEngine());
         }
       }
       throw new Error(
@@ -95,7 +126,7 @@ export async function loadEngine(name: string = 'js'): Promise<Engine> {
         console.warn('[docmd] Rust engine not supported on this platform, falling back to JS engine.');
         return loadEngine('js');
       }
-      return createRustEngine();
+      return registerLoadedEngine(createRustEngine());
     } catch (error) {
       if (isValidRuntimeDepName('@docmd/engine-rust')) {
         const installed = await installRuntimeDep('@docmd/engine-rust');
@@ -104,7 +135,7 @@ export async function loadEngine(name: string = 'js'): Promise<Engine> {
           if (reloaded) {
             const { createRustEngine, isRustEngineAvailable } = reloaded as any;
             if (isRustEngineAvailable && isRustEngineAvailable()) {
-              return createRustEngine();
+              return registerLoadedEngine(createRustEngine());
             }
           }
         }
@@ -124,7 +155,7 @@ export async function loadEngine(name: string = 'js'): Promise<Engine> {
         console.warn('[docmd] Python 3 not available on this system, falling back to JS engine.');
         return loadEngine('js');
       }
-      return createPythonEngine();
+      return registerLoadedEngine(createPythonEngine());
     } catch (error) {
       if (isValidRuntimeDepName('@docmd/engine-python')) {
         const installed = await installRuntimeDep('@docmd/engine-python');
@@ -133,7 +164,7 @@ export async function loadEngine(name: string = 'js'): Promise<Engine> {
           if (reloaded) {
             const { createPythonEngine, isPythonEngineAvailable } = reloaded as any;
             if (isPythonEngineAvailable && isPythonEngineAvailable()) {
-              return createPythonEngine();
+              return registerLoadedEngine(createPythonEngine());
             }
           }
         }
