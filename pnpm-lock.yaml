@@ -401,8 +401,8 @@ importers:
   packages/plugins/search:
     dependencies:
       docmd-search:
-        specifier: '>=0.1.5'
-        version: 0.1.5(@huggingface/transformers@4.2.0(@types/node@24.13.6))(adm-zip@0.6.1)(onnxruntime-node@1.29.0)(protobufjs@8.8.0)(sharp@0.35.4(@types/node@24.13.6))
+        specifier: '>=0.1.6'
+        version: 0.1.6(@huggingface/transformers@4.2.0(@types/node@24.13.6))(adm-zip@0.6.1)(onnxruntime-node@1.29.0)(protobufjs@8.8.0)(sharp@0.35.4(@types/node@24.13.6))
       markdown-it:
         specifier: ^14.3.2
         version: 14.3.2
@@ -1458,34 +1458,6 @@ packages:
   docmd-assistant@0.1.18:
     resolution: {integrity: sha512-gkCuCeeB6DswUXjDafwKEteyOfNXTIfAMng+Hu+WxHP0l7KNqkanyU2ktTBpOutXCUSoVL/ojnaiBprFagdObw==}
     engines: {node: '>=20.0.0'}
-
-  docmd-search@0.1.5:
-    resolution: {integrity: sha512-/3z3d2pAr6vsxdEmI+X9mFg8/UhgtDtMAINw+qdJEJMW4T5lWfXHL1/MU83UtTXH2xrOZ3BiANXCcAQRd0wJcQ==}
-    engines: {node: '>=20.0.0'}
-    hasBin: true
-    peerDependencies:
-      '@docmd/engine-js': '>=0.8.10'
-      '@docmd/engine-rust': '>=0.8.10'
-      '@huggingface/transformers': ^4.2.0
-      adm-zip: '>=0.6.1'
-      onnxruntime-node: ^1.29.0
-      protobufjs: ^8.8.0
-      sharp: ^0.35.4
-    peerDependenciesMeta:
-      '@docmd/engine-js':
-        optional: true
-      '@docmd/engine-rust':
-        optional: true
-      '@huggingface/transformers':
-        optional: true
-      adm-zip:
-        optional: true
-      onnxruntime-node:
-        optional: true
-      protobufjs:
-        optional: true
-      sharp:
-        optional: true
 
   docmd-search@0.1.6:
     resolution: {integrity: sha512-KrESkYVwKAtKLIdBeM4p+JjkAfkl/rW0fvaa2fNl2MkJzCdhbk/raVv/I4k5YkIUQI1f2+BILb8xCr6LAr61iw==}
@@ -2972,7 +2944,7 @@ snapshots:
     dependencies:
       aiplug: 0.1.2
 
-  docmd-search@0.1.5(@huggingface/transformers@4.2.0(@types/node@24.13.6))(adm-zip@0.6.1)(onnxruntime-node@1.29.0)(protobufjs@8.8.0)(sharp@0.35.4(@types/node@24.13.6)):
+  docmd-search@0.1.6(@huggingface/transformers@4.2.0(@types/node@24.13.6))(adm-zip@0.6.1)(onnxruntime-node@1.29.0)(protobufjs@8.8.0)(sharp@0.35.4(@types/node@24.13.6)):
     optionalDependencies:
       '@huggingface/transformers': 4.2.0(@types/node@24.13.6)
       adm-zip: 0.6.1
