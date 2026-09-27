@@ -40,10 +40,10 @@
     "@docmd/ui": "workspace:*",
     "@docmd/utils": "workspace:*",
     "esbuild": "^0.28.2",
-    "ws": "^8.21.3"
+    "ws": "^8.22.0"
   },
   "devDependencies": {
-    "@types/node": "^24.13.6"
+    "@types/node": "^24.19.0"
   },
   "allowScripts": {
     "esbuild": true,
