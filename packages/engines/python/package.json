@@ -1,53 +1,39 @@
 {
-  "name": "@docmd/plugin-pwa",
+  "name": "@docmd/engine-python",
   "version": "0.9.7",
-  "description": "Progressive Web App (PWA) plugin for docmd.",
+  "description": "Python-accelerated engine for docmd using Python 3 runtime.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "docmd": {
-    "key": "pwa",
-    "kind": "plugin",
-    "displayName": "PWA",
-    "tagline": "Progressive Web App support for docmd with offline caching.",
-    "capabilities": [
-      "post-build",
-      "head",
-      "body"
-    ]
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "scripts": {
     "build": "tsc"
   },
   "files": [
-    "dist"
+    "dist",
+    "python"
   ],
   "engines": {
     "node": ">=20.0.0"
   },
-  "peerDependencies": {
-    "@docmd/api": "workspace:*"
-  },
-  "dependencies": {
-    "@docmd/utils": "workspace:*"
-  },
   "devDependencies": {
-    "@docmd/api": "workspace:*",
     "@types/node": "^24.13.6"
   },
   "keywords": [
     "docmd",
-    "plugin",
-    "pwa",
-    "progressive-web-app",
-    "service-worker",
-    "manifest",
-    "offline",
+    "engine",
+    "python",
+    "performance",
     "markdown",
     "minimalist",
     "zero-config",
     "site-generator",
-    "static-site-generator",
+    "documentation",
     "docs"
   ],
   "author": {

@@ -24,8 +24,8 @@ importers:
         specifier: ^5.6.2
         version: 5.6.2
       docmd-search:
-        specifier: ^0.1.5
-        version: 0.1.5(@huggingface/transformers@4.2.0(@types/node@26.6.2))(adm-zip@0.6.1)(onnxruntime-node@1.29.0)(protobufjs@8.8.0)(sharp@0.35.4(@types/node@26.6.2))
+        specifier: ^0.1.6
+        version: 0.1.6(@huggingface/transformers@4.2.0(@types/node@26.6.2))(adm-zip@0.6.1)(onnxruntime-node@1.29.0)(protobufjs@8.8.0)(sharp@0.35.4(@types/node@26.6.2))
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
@@ -61,6 +61,9 @@ importers:
       '@docmd/engine-js':
         specifier: workspace:*
         version: link:../engines/js
+      '@docmd/engine-python':
+        specifier: workspace:*
+        version: link:../engines/python
       '@docmd/engine-rust':
         specifier: workspace:*
         version: link:../engines/rust
@@ -146,6 +149,12 @@ importers:
         version: 24.13.6
 
   packages/engines/js:
+    devDependencies:
+      '@types/node':
+        specifier: ^24.13.6
+        version: 24.13.6
+
+  packages/engines/python:
     devDependencies:
       '@types/node':
         specifier: ^24.13.6
@@ -392,8 +401,8 @@ importers:
   packages/plugins/search:
     dependencies:
       docmd-search:
-        specifier: '>=0.1.5'
-        version: 0.1.5(@huggingface/transformers@4.2.0(@types/node@24.13.6))(adm-zip@0.6.1)(onnxruntime-node@1.29.0)(protobufjs@8.8.0)(sharp@0.35.4(@types/node@24.13.6))
+        specifier: '>=0.1.6'
+        version: 0.1.6(@huggingface/transformers@4.2.0(@types/node@24.13.6))(adm-zip@0.6.1)(onnxruntime-node@1.29.0)(protobufjs@8.8.0)(sharp@0.35.4(@types/node@24.13.6))
       markdown-it:
         specifier: ^14.3.2
         version: 14.3.2
@@ -1450,12 +1459,13 @@ packages:
     resolution: {integrity: sha512-gkCuCeeB6DswUXjDafwKEteyOfNXTIfAMng+Hu+WxHP0l7KNqkanyU2ktTBpOutXCUSoVL/ojnaiBprFagdObw==}
     engines: {node: '>=20.0.0'}
 
-  docmd-search@0.1.5:
-    resolution: {integrity: sha512-/3z3d2pAr6vsxdEmI+X9mFg8/UhgtDtMAINw+qdJEJMW4T5lWfXHL1/MU83UtTXH2xrOZ3BiANXCcAQRd0wJcQ==}
+  docmd-search@0.1.6:
+    resolution: {integrity: sha512-KrESkYVwKAtKLIdBeM4p+JjkAfkl/rW0fvaa2fNl2MkJzCdhbk/raVv/I4k5YkIUQI1f2+BILb8xCr6LAr61iw==}
     engines: {node: '>=20.0.0'}
     hasBin: true
     peerDependencies:
       '@docmd/engine-js': '>=0.8.10'
+      '@docmd/engine-python': '>=0.8.10'
       '@docmd/engine-rust': '>=0.8.10'
       '@huggingface/transformers': ^4.2.0
       adm-zip: '>=0.6.1'
@@ -1464,6 +1474,8 @@ packages:
       sharp: ^0.35.4
     peerDependenciesMeta:
       '@docmd/engine-js':
+        optional: true
+      '@docmd/engine-python':
         optional: true
       '@docmd/engine-rust':
         optional: true
@@ -2932,7 +2944,7 @@ snapshots:
     dependencies:
       aiplug: 0.1.2
 
-  docmd-search@0.1.5(@huggingface/transformers@4.2.0(@types/node@24.13.6))(adm-zip@0.6.1)(onnxruntime-node@1.29.0)(protobufjs@8.8.0)(sharp@0.35.4(@types/node@24.13.6)):
+  docmd-search@0.1.6(@huggingface/transformers@4.2.0(@types/node@24.13.6))(adm-zip@0.6.1)(onnxruntime-node@1.29.0)(protobufjs@8.8.0)(sharp@0.35.4(@types/node@24.13.6)):
     optionalDependencies:
       '@huggingface/transformers': 4.2.0(@types/node@24.13.6)
       adm-zip: 0.6.1
@@ -2940,7 +2952,7 @@ snapshots:
       protobufjs: 8.8.0
       sharp: 0.35.4(@types/node@24.13.6)
 
-  docmd-search@0.1.5(@huggingface/transformers@4.2.0(@types/node@26.6.2))(adm-zip@0.6.1)(onnxruntime-node@1.29.0)(protobufjs@8.8.0)(sharp@0.35.4(@types/node@26.6.2)):
+  docmd-search@0.1.6(@huggingface/transformers@4.2.0(@types/node@26.6.2))(adm-zip@0.6.1)(onnxruntime-node@1.29.0)(protobufjs@8.8.0)(sharp@0.35.4(@types/node@26.6.2)):
     optionalDependencies:
       '@huggingface/transformers': 4.2.0(@types/node@26.6.2)
       adm-zip: 0.6.1
