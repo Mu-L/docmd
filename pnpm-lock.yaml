@@ -24,8 +24,8 @@ importers:
         specifier: ^5.6.2
         version: 5.6.2
       docmd-search:
-        specifier: ^0.1.5
-        version: 0.1.5(@huggingface/transformers@4.2.0(@types/node@26.6.2))(adm-zip@0.6.1)(onnxruntime-node@1.29.0)(protobufjs@8.8.0)(sharp@0.35.4(@types/node@26.6.2))
+        specifier: ^0.1.6
+        version: 0.1.6(@huggingface/transformers@4.2.0(@types/node@26.6.2))(adm-zip@0.6.1)(onnxruntime-node@1.29.0)(protobufjs@8.8.0)(sharp@0.35.4(@types/node@26.6.2))
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
@@ -1473,6 +1473,37 @@ packages:
       sharp: ^0.35.4
     peerDependenciesMeta:
       '@docmd/engine-js':
+        optional: true
+      '@docmd/engine-rust':
+        optional: true
+      '@huggingface/transformers':
+        optional: true
+      adm-zip:
+        optional: true
+      onnxruntime-node:
+        optional: true
+      protobufjs:
+        optional: true
+      sharp:
+        optional: true
+
+  docmd-search@0.1.6:
+    resolution: {integrity: sha512-KrESkYVwKAtKLIdBeM4p+JjkAfkl/rW0fvaa2fNl2MkJzCdhbk/raVv/I4k5YkIUQI1f2+BILb8xCr6LAr61iw==}
+    engines: {node: '>=20.0.0'}
+    hasBin: true
+    peerDependencies:
+      '@docmd/engine-js': '>=0.8.10'
+      '@docmd/engine-python': '>=0.8.10'
+      '@docmd/engine-rust': '>=0.8.10'
+      '@huggingface/transformers': ^4.2.0
+      adm-zip: '>=0.6.1'
+      onnxruntime-node: ^1.29.0
+      protobufjs: ^8.8.0
+      sharp: ^0.35.4
+    peerDependenciesMeta:
+      '@docmd/engine-js':
+        optional: true
+      '@docmd/engine-python':
         optional: true
       '@docmd/engine-rust':
         optional: true
@@ -2949,7 +2980,7 @@ snapshots:
       protobufjs: 8.8.0
       sharp: 0.35.4(@types/node@24.13.6)
 
-  docmd-search@0.1.5(@huggingface/transformers@4.2.0(@types/node@26.6.2))(adm-zip@0.6.1)(onnxruntime-node@1.29.0)(protobufjs@8.8.0)(sharp@0.35.4(@types/node@26.6.2)):
+  docmd-search@0.1.6(@huggingface/transformers@4.2.0(@types/node@26.6.2))(adm-zip@0.6.1)(onnxruntime-node@1.29.0)(protobufjs@8.8.0)(sharp@0.35.4(@types/node@26.6.2)):
     optionalDependencies:
       '@huggingface/transformers': 4.2.0(@types/node@26.6.2)
       adm-zip: 0.6.1
